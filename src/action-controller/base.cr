@@ -1,6 +1,12 @@
 require "router"
 require "./responders"
 
+{% if flag?(:without_openssl) %}
+  require "digest/sha1"
+{% else %}
+  require "openssl/sha1"
+{% end %}
+
 abstract class ActionController::Base
   include ActionController::Responders
 
@@ -46,6 +52,7 @@ abstract class ActionController::Base
     "show"    => {"get", "/:id"},
     "create"  => {"post", "/"},
     "update"  => {"patch", "/:id"},
+    "replace" => {"put", "/:id"},
     "destroy" => {"delete", "/:id"},
   }
 
@@ -119,7 +126,7 @@ abstract class ActionController::Base
       {% for name, index in @type.methods.map(&.name.stringify) %}
         {% args = CRUD_METHODS[name] %}
         {% if args %}
-          {% ROUTES[name.id] = {args[0], args[1], nil} %}
+          {% ROUTES[name.id] = {args[0], args[1], nil, false} %}
         {% end %}
       {% end %}
 
@@ -127,7 +134,7 @@ abstract class ActionController::Base
       {% for name, details in ROUTES %}
         {% block = details[2] %}
         {% if block != nil %} # Skip the CRUD
-          def {{name}}
+          def {{name}}({{*block.args}})
             {{block.body}}
           end
         {% end %}
@@ -165,6 +172,7 @@ abstract class ActionController::Base
       def self.draw_routes(router)
         {% for name, details in ROUTES %}
           router.{{details[0].id}} "{{NAMESPACE[0].id}}{{details[1].id}}" do |context, params|
+            {% is_websocket = details[3] %}
 
             # Check if force SSL is set and redirect to HTTPS if HTTP
             {% force = false %}
@@ -182,7 +190,14 @@ abstract class ActionController::Base
             {% end %}
             {% if force %}
               if request_protocol(context.request) != :https
+              {% if is_websocket %}
+                response = context.response
+                response.status_code = {{STATUS_CODES[:precondition_failed]}}
+                response.content_type = MIME_TYPES[:text]
+                response.print "WebSocket Secure (wss://) connection required"
+              {% else %}
                 redirect_to_https(context)
+              {% end %}
               else
             {% end %}
 
@@ -245,7 +260,38 @@ abstract class ActionController::Base
             {% end %}
 
               # Call the action
-              instance.{{name}}
+              {% if is_websocket %}
+                # Based on code from https://github.com/crystal-lang/crystal/blob/master/src/http/server/handlers/websocket_handler.cr
+                if websocket_upgrade_request?(context.request)
+                  key = context.request.headers["Sec-Websocket-Key"]
+
+                  accept_code =
+                    {% if flag?(:without_openssl) %}
+                      Digest::SHA1.base64digest("#{key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
+                    {% else %}
+                      Base64.strict_encode(OpenSSL::SHA1.hash("#{key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
+                    {% end %}
+
+                  response = context.response
+                  response.status_code = 101
+                  response.headers["Upgrade"] = "websocket"
+                  response.headers["Connection"] = "Upgrade"
+                  response.headers["Sec-Websocket-Accept"] = accept_code
+                  response.upgrade do |io|
+                    ws_session = HTTP::WebSocket.new(io)
+                    instance.{{name}}(ws_session)
+                    ws_session.run
+                    io.close
+                  end
+                else
+                  response = context.response
+                  response.status_code = {{STATUS_CODES[:upgrade_required]}}
+                  response.content_type = MIME_TYPES[:text]
+                  response.print "This service requires use of the WebSocket protocol"
+                end
+              {% else %}
+                instance.{{name}}
+              {% end %}
 
             {% if !before_actions.empty? %}
               end # END before action render_called check
@@ -332,9 +378,13 @@ abstract class ActionController::Base
   # Define each method for supported http methods
   {% for http_method in ::Router::HTTP_METHODS %}
     macro {{http_method.id}}(path, name, &block)
-      \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, block } %}
+      \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, block, false } %}
     end
   {% end %}
+
+  macro ws(path, name, &block)
+    {% LOCAL_ROUTES[name.id] = {"get", path, block, true} %}
+  end
 
   macro rescue_from(error_class, method = nil, &block)
     {% if method %}
@@ -423,7 +473,7 @@ abstract class ActionController::Base
   end
 
   macro param(name)
-    # extract type and name etc
+    # TODO:: extract type and name etc
     # safe_params == hash of extracted params
   end
 
@@ -438,6 +488,13 @@ abstract class ActionController::Base
     resp = context.response
     resp.status_code = 302
     resp.headers["Location"] = "https://#{req.host}#{req.resource}"
+  end
+
+  def self.websocket_upgrade_request?(request)
+    return false unless upgrade = request.headers["Upgrade"]?
+    return false unless upgrade.compare("websocket", case_insensitive: true) == 0
+
+    request.headers.includes_word?("Connection", "Upgrade")
   end
 
   # ===============

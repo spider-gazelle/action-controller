@@ -106,6 +106,24 @@ describe "end to end requests and responses" do
     result.not_nil!.status_code.should eq(200)
   end
 
+  it "should reject non-websocket requests to websocket endpoints" do
+    result = curl("GET", "/hello/websocket")
+    result.not_nil!.body.should eq("This service requires use of the WebSocket protocol")
+    result.not_nil!.status_code.should eq(426)
+  end
+
+  it "should accept websockets" do
+    result = nil
+    ws = HTTP::WebSocket.new "localhost", "/hello/websocket", 3000
+    ws.on_message do |message|
+      result = message
+      ws.close
+    end
+    ws.send "hello"
+    ws.run
+    result.not_nil!.should eq("hello + 123")
+  end
+
   it "should list routes" do
     BobJane.routes.should eq([
       {:redirect, :get, "/bob_jane/redirect"},

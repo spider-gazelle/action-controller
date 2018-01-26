@@ -100,6 +100,21 @@ class HelloWorld < Application
     head :accepted
   end
 
+  SOCKETS = [] of HTTP::WebSocket
+  ws "/websocket", :websocket do |socket|
+    puts "Socket opened"
+    SOCKETS << socket
+
+    socket.on_message do |message|
+      SOCKETS.each { |socket| socket.send "#{message} + #{@me}" }
+    end
+
+    socket.on_close do
+      puts "Socket closed"
+      SOCKETS.delete(socket)
+    end
+  end
+
   private def set_var
     me = @me
     me ||= 0
