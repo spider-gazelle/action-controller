@@ -34,7 +34,7 @@ class Books < Application
     render json: ["book1", "book2"]
   end
 
-  # route => "/show/:id"
+  # route => "/books/:id"
   def show
 
     # Using the Accepts header will select the appropriate response
@@ -51,6 +51,21 @@ class Books < Application
       end
     end
   end
+
+  # Websocket support
+  # route => "/books/realtime"
+  ws "/realtime", :realtime do |socket|
+    SOCKETS << socket
+
+    socket.on_message do |message|
+      SOCKETS.each { |socket| socket.send "Echo back from server: #{message}" }
+    end
+
+    socket.on_close do
+      SOCKETS.delete(socket)
+    end
+  end
+  SOCKETS = [] of HTTP::WebSocket
 end
 ```
 
