@@ -1,0 +1,13 @@
+name: action-controller
+version: 0.1.0
+
+dependencies:
+  habitat:
+    github: luckyframework/habitat
+  router:
+    github: tbrand/router.cr
+
+authors:
+  - Stephen von Takach <steve@acaprojects.com>
+
+license: MIT
