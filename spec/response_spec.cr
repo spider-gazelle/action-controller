@@ -14,8 +14,20 @@ describe "end to end requests and responses" do
     result.not_nil!.body.should eq("index")
   end
 
+  it "creates and works with session data" do
+    result = curl("GET", "/bob_jane/")
+    result.not_nil!.body.should eq("index")
+    cookie = result.not_nil!.headers["Set-Cookie"]
+    cookie.starts_with?("_test_session_=").should eq(true)
+
+    cookie = cookie.split("%3B")[0]
+    result = curl("GET", "/bob_jane/redirect", {"Cookie" => cookie})
+    result.not_nil!.headers["Location"].should eq("/other_route")
+  end
+
   it "#redirect" do
-    result = curl("GET", "/bob_jane/redirect")
+    cookie = "_test_session_=CKQMLS12oJZBIh3Hlbpg19XGFAphCiRW7NMHq31epbpGTfI9N0T7WeIR1C%2FFDJ%2FW--IEb0qAXKV9DtrLdnyqzdGbBM2ww%3D"
+    result = curl("GET", "/bob_jane/redirect", {"Cookie" => cookie})
     result.not_nil!.headers["Location"].should eq("/other_route")
   end
 

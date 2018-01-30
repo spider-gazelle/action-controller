@@ -1,11 +1,7 @@
 require "router"
 require "./responders"
-
-{% if flag?(:without_openssl) %}
-  require "digest/sha1"
-{% else %}
-  require "openssl/sha1"
-{% end %}
+require "./session"
+require "openssl/sha1"
 
 abstract class ActionController::Base
   include ActionController::Responders
@@ -63,6 +59,7 @@ abstract class ActionController::Base
   getter cookies : HTTP::Cookies
   getter request : HTTP::Request
   getter response : HTTP::Server::Response
+  getter __session__ : Session | Nil
 
   def initialize(context : HTTP::Server::Context, params : Hash(String, String), @action_name)
     @render_called = false
@@ -80,6 +77,10 @@ abstract class ActionController::Base
       values.unshift(value)
       @params.set_all(key, values)
     end
+  end
+
+  def session
+    @__session__ ||= Session.from_cookies(@cookies)
   end
 
   macro inherited
@@ -265,12 +266,7 @@ abstract class ActionController::Base
                 if websocket_upgrade_request?(context.request)
                   key = context.request.headers["Sec-Websocket-Key"]
 
-                  accept_code =
-                    {% if flag?(:without_openssl) %}
-                      Digest::SHA1.base64digest("#{key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
-                    {% else %}
-                      Base64.strict_encode(OpenSSL::SHA1.hash("#{key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
-                    {% end %}
+                  accept_code = Base64.strict_encode(OpenSSL::SHA1.hash("#{key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
 
                   response = context.response
                   response.status_code = 101
@@ -278,10 +274,13 @@ abstract class ActionController::Base
                   response.headers["Connection"] = "Upgrade"
                   response.headers["Sec-Websocket-Accept"] = accept_code
                   response.upgrade do |io|
-                    ws_session = HTTP::WebSocket.new(io)
-                    instance.{{name}}(ws_session)
-                    ws_session.run
-                    io.close
+                    begin
+                      ws_session = HTTP::WebSocket.new(io)
+                      instance.{{name}}(ws_session)
+                      ws_session.run
+                    ensure
+                      io.close
+                    end
                   end
                 else
                   response = context.response
@@ -326,6 +325,12 @@ abstract class ActionController::Base
                 {% end %}
               end
             {% end %}
+
+            # Check if session needs to be written
+            session = instance.__session__
+            if session && session.modified
+              session.encode(context.response.cookies)
+            end
 
             # Implement error handling
             {% if !RESCUE.empty? %}

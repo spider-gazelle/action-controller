@@ -7,11 +7,12 @@ class BobJane < ActionController::Base
 
   # Test default CRUD
   def index
+    session["hello"] = "other_route"
     render text: "index"
   end
 
   get "/redirect", :redirect do
-    redirect_to "/other_route"
+    redirect_to "/#{session["hello"]}"
   end
 
   get "/params/:id", :param_id do
@@ -161,4 +162,12 @@ class MockServer
       server.close
     end
   end
+end
+
+# require "random"
+# Random::Secure.hex
+
+ActionController::Session.configure do
+  settings.key = "_test_session_"
+  settings.secret = "4f74c0b358d5bab4000dd3c75465dc2c"
 end
