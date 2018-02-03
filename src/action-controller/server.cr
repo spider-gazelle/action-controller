@@ -4,14 +4,17 @@ class ActionController::Server
   @server : HTTP::Server?
   @route_handler = RouteHandler.new
 
-  def initialize(@port : Int32)
+  def initialize(@port : Int32, @before_handlers = [] of HTTP::Handler, @after_handlers = [] of HTTP::Handler)
   end
 
-  def run(before_handlers = [] of HTTP::Handler, after_handlers = [] of HTTP::Handler)
+  getter :before_handlers
+  getter :after_handlers
+
+  def run
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       {{klass}}.draw_routes(self)
     {% end %}
-    @server = HTTP::Server.new(@port, before_handlers + [route_handler] + after_handlers).listen
+    @server = HTTP::Server.new(@port, @before_handlers + [route_handler] + @after_handlers).listen
   end
 
   def close
