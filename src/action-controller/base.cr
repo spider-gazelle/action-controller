@@ -173,7 +173,7 @@ abstract class ActionController::Base
 
       def self.draw_routes(router)
         {% for name, details in ROUTES %}
-          router.{{details[0].id}} "{{NAMESPACE[0].id}}{{details[1].id}}" do |context, params|
+          router.{{details[0].id}} "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/") do |context, params|
             {% is_websocket = details[3] %}
 
             # Check if force SSL is set and redirect to HTTPS if HTTP
@@ -362,7 +362,7 @@ abstract class ActionController::Base
       def self.routes
         [
           {% for name, details in ROUTES %}
-            { "{{@type.name}}", :{{name}}, :{{details[0].id}}, "{{NAMESPACE[0].id}}{{details[1].id}}"},
+            { "{{@type.name}}", :{{name}}, :{{details[0].id}}, "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/")},
           {% end %}
         ]
       end

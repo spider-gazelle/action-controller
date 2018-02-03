@@ -24,7 +24,8 @@ class ActionController::Server
   end
 
   def self.print_routes
-    routes = [] of {Symbol, Symbol, String}
+    # Class, name, verb, route
+    routes = [] of {String, Symbol, Symbol, String}
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       routes.concat {{klass}}.routes
     {% end %}
