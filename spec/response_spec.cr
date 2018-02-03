@@ -1,7 +1,7 @@
 require "./spec_helper"
 
 describe "end to end requests and responses" do
-  mock_server = MockServer.new(3000)
+  mock_server = ActionController::Server.new(3000)
 
   spawn do
     mock_server.run
@@ -138,12 +138,12 @@ describe "end to end requests and responses" do
 
   it "should list routes" do
     BobJane.routes.should eq([
-      {:redirect, :get, "/bob_jane/redirect"},
-      {:param_id, :get, "/bob_jane/params/:id"},
-      {:deep_show, :get, "/bob_jane/params/:id/test/:test_id"},
-      {:create, :post, "/bob_jane/post_test"},
-      {:update, :put, "/bob_jane/put_test"},
-      {:index, :get, "/bob_jane/"},
+      {"BobJane", :redirect, :get, "/bob_jane/redirect"},
+      {"BobJane", :param_id, :get, "/bob_jane/params/:id"},
+      {"BobJane", :deep_show, :get, "/bob_jane/params/:id/test/:test_id"},
+      {"BobJane", :create, :post, "/bob_jane/post_test"},
+      {"BobJane", :update, :put, "/bob_jane/put_test"},
+      {"BobJane", :index, :get, "/bob_jane/"},
     ])
   end
 

@@ -159,7 +159,8 @@ abstract class ActionController::Base
   end
 
   def self.routes
-    [] of {Symbol, Symbol, String}
+    # Class, name, verb, route
+    [] of {String, Symbol, Symbol, String}
   end
 
   def self.__yield__(inst)
@@ -361,7 +362,7 @@ abstract class ActionController::Base
       def self.routes
         [
           {% for name, details in ROUTES %}
-            {:{{name}}, :{{details[0].id}}, "{{NAMESPACE[0].id}}{{details[1].id}}"},
+            { "{{@type.name}}", :{{name}}, :{{details[0].id}}, "{{NAMESPACE[0].id}}{{details[1].id}}"},
           {% end %}
         ]
       end
