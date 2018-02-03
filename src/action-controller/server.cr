@@ -7,11 +7,11 @@ class ActionController::Server
   def initialize(@port : Int32)
   end
 
-  def run
+  def run(before_handlers = [] of HTTP::Handler, after_handlers = [] of HTTP::Handler)
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       {{klass}}.draw_routes(self)
     {% end %}
-    @server = HTTP::Server.new(@port, [route_handler]).listen
+    @server = HTTP::Server.new(@port, before_handlers + [route_handler] + after_handlers).listen
   end
 
   def close
@@ -28,7 +28,7 @@ class ActionController::Server
 
     puts "Verb\tURI Pattern\tController#Action"
     routes.each do |route|
-      puts "#{route[1]}\t#{route[2]}\t#{route[0]}"
+      puts "#{route[2]}\t#{route[3]}\t#{route[0]}##{route[1]}"
     end
   end
 end
