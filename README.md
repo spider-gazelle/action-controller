@@ -1,5 +1,7 @@
 # Spider-Gazelle Action Controller
 
+[![Build Status](https://travis-ci.org/spider-gazelle/action-controller.svg?branch=master)](https://travis-ci.org/spider-gazelle/action-controller)
+
 Extending [router.cr](https://github.com/tbrand/router.cr) for a Rails like DSL without the overhead.
 
 
