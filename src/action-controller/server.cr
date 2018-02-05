@@ -16,7 +16,8 @@ class ActionController::Server
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       {{klass}}.__init_routes__(self)
     {% end %}
-    @server = HTTP::Server.new(@host, @port, @before_handlers + [route_handler] + @after_handlers).listen
+    server = @server = HTTP::Server.new(@host, @port, @before_handlers + [route_handler] + @after_handlers)
+    server.listen
   end
 
   def close
