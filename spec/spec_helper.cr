@@ -1,5 +1,4 @@
 require "spec"
-require "./curl"
 require "../src/action-controller"
 
 class BobJane < ActionController::Base
@@ -53,20 +52,6 @@ class HelloWorld < Application
   after_action :after, only: :show
 
   before_action :render_early, only: :update
-
-  def self.controller(params = {} of String => String, referer = "", accept = nil, action = :example)
-    request = HTTP::Request.new("GET", "/")
-    request.headers.add("Referer", referer)
-    request.headers.add("Accept", accept) if accept
-    context = create_context(request)
-    HelloWorld.new(context, params, action)
-  end
-
-  def self.create_context(request)
-    io = IO::Memory.new
-    response = HTTP::Server::Response.new(io)
-    HTTP::Server::Context.new(request, response)
-  end
 
   def show
     raise "set_var was set!" if @me
@@ -142,6 +127,7 @@ class HelloWorld < Application
 end
 
 require "../src/action-controller/server"
+require "./curl_context"
 
 # require "random"
 # Random::Secure.hex

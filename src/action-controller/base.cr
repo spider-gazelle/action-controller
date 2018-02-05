@@ -61,7 +61,9 @@ abstract class ActionController::Base
   getter response : HTTP::Server::Response
   getter __session__ : Session | Nil
 
-  def initialize(context : HTTP::Server::Context, params : Hash(String, String), @action_name)
+  def initialize(context : HTTP::Server::Context, params = {} of String => String, @action_name = :index)
+    # Default params are provided to simplify testing
+
     @render_called = false
     @request = context.request
     @response = context.response
