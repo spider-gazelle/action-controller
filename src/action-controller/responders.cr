@@ -141,8 +141,6 @@ module ActionController::Responders
   end
 
   macro redirect_to(path, status = :found)
-    # TODO:: Support redirect to path name (Symbol)
-
     @response.status_code = {{REDIRECTION_CODES[status] || status}}
     @response.headers["Location"] = {{path}}
     @render_called = true

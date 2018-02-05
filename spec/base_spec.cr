@@ -13,4 +13,10 @@ describe ActionController::Base do
       :xml  => "application/xml",
     })
   end
+
+  it "should provide helper methods for redirection" do
+    HelloWorld.index.should eq("/hello/")
+    HelloWorld.show(id: 23).should eq("/hello/23")
+    HelloWorld.show({"id" => "23"}).should eq("/hello/23")
+  end
 end

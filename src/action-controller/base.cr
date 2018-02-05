@@ -1,7 +1,7 @@
-require "router"
+require "openssl/sha1"
 require "./responders"
 require "./session"
-require "openssl/sha1"
+require "./support"
 
 abstract class ActionController::Base
   include ActionController::Responders
@@ -154,11 +154,11 @@ abstract class ActionController::Base
   end
 
   # To support inheritance
-  def self.draw_routes(router)
+  def self.__init_routes__(router)
     nil
   end
 
-  def self.routes
+  def self.__route_list__
     # Class, name, verb, route
     [] of {String, Symbol, Symbol, String}
   end
@@ -171,7 +171,7 @@ abstract class ActionController::Base
     {% if !@type.abstract? && !ROUTES.empty? %}
       {% CONCRETE_CONTROLLERS[@type.name.id] = NAMESPACE[0] %}
 
-      def self.draw_routes(router)
+      def self.__init_routes__(router)
         {% for name, details in ROUTES %}
           router.{{details[0].id}} "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/") do |context, params|
             {% is_websocket = details[3] %}
@@ -191,14 +191,14 @@ abstract class ActionController::Base
               {% end %}
             {% end %}
             {% if force %}
-              if request_protocol(context.request) != :https
+              if ActionController::Support.request_protocol(context.request) != :https
               {% if is_websocket %}
                 response = context.response
                 response.status_code = {{STATUS_CODES[:precondition_failed]}}
                 response.content_type = MIME_TYPES[:text]
                 response.print "WebSocket Secure (wss://) connection required"
               {% else %}
-                redirect_to_https(context)
+                ActionController::Support.redirect_to_https(context)
               {% end %}
               else
             {% end %}
@@ -264,7 +264,7 @@ abstract class ActionController::Base
               # Call the action
               {% if is_websocket %}
                 # Based on code from https://github.com/crystal-lang/crystal/blob/master/src/http/server/handlers/websocket_handler.cr
-                if websocket_upgrade_request?(context.request)
+                if ActionController::Support.websocket_upgrade_request?(context.request)
                   key = context.request.headers["Sec-Websocket-Key"]
 
                   accept_code = Base64.strict_encode(OpenSSL::SHA1.hash("#{key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
@@ -359,8 +359,25 @@ abstract class ActionController::Base
         nil
       end
 
-      def self.routes
+      # Helper methods for performing redirect_to calls
+      {% for name, details in ROUTES %}
+        def self.{{name}}(hash_parts = {} of (String | Symbol) => (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol), **tuple_parts)
+          route = "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/")
+          hash_parts.each do |key, value|
+            route = route.gsub(":#{key}", value.to_s)
+          end
+
+          # Tuple overwrites hash parts (so safe to use a user generated hash)
+          tuple_parts.each do |key, value|
+            route = route.gsub(":#{key}", value.to_s)
+          end
+          route
+        end
+      {% end %}
+
+      def self.__route_list__
         [
+          # "Class", :name, :verb, "route"
           {% for name, details in ROUTES %}
             { "{{@type.name}}", :{{name}}, :{{details[0].id}}, "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/")},
           {% end %}
@@ -483,34 +500,14 @@ abstract class ActionController::Base
     # safe_params == hash of extracted params
   end
 
-  def self.request_protocol(request)
-    return :https if request.headers["X-Forwarded-Proto"]? =~ /https/i
-    return :https if request.headers["Forwarded"]? =~ /https/i
-    :http
-  end
-
-  def self.redirect_to_https(context)
-    req = context.request
-    resp = context.response
-    resp.status_code = 302
-    resp.headers["Location"] = "https://#{req.host}#{req.resource}"
-  end
-
-  def self.websocket_upgrade_request?(request)
-    return false unless upgrade = request.headers["Upgrade"]?
-    return false unless upgrade.compare("websocket", case_insensitive: true) == 0
-
-    request.headers.includes_word?("Connection", "Upgrade")
-  end
-
   # ===============
   # Helper methods:
   # ===============
-  def protocol
-    self.class.request_protocol(@request)
+  def request_protocol
+    ActionController::Support.request_protocol(@request)
   end
 
-  def client_ip
+  def remote_endpoint_ip
     return @client_ip if @client_ip
 
     @client_ip = @request.headers["X-Forwarded-Proto"]? || @request.headers["X-Real-IP"]?

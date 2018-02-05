@@ -1,7 +1,7 @@
 require "json"
 require "random"
-require "./support/message_verifier"
-require "./support/message_encryptor"
+require "./session/message_verifier"
+require "./session/message_encryptor"
 
 class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
   # Cookies can typically store 4096 bytes.

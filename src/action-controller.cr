@@ -1,4 +1,5 @@
 require "logger"
+require "router"
 require "habitat"
 
 module ActionController

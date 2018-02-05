@@ -33,12 +33,14 @@ class Books < Application
 
   # route => "/books/"
   def index
+    book = params["book"]
+    redirect_to Books.show(id: book) if book
+
     render json: ["book1", "book2"]
   end
 
   # route => "/books/:id"
   def show
-
     # Using the Accepts header will select the appropriate response
     # If the Accepts header isn't present it defaults to the first in the block
     # None of the code is executed (string interpolation, xml builder etc)
