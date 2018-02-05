@@ -6,3 +6,6 @@ end
 
 class ActionController::InvalidSignature < ActionController::Error
 end
+
+class ActionController::InvalidRoute < ActionController::Error
+end

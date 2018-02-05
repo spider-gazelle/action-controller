@@ -18,5 +18,17 @@ describe ActionController::Base do
     HelloWorld.index.should eq("/hello/")
     HelloWorld.show(id: 23).should eq("/hello/23")
     HelloWorld.show({"id" => "23"}).should eq("/hello/23")
+
+    HelloWorld.show(
+      {"id" => "Weird%!"},
+      param1: "woot woot!",
+      param2: false
+    ).should eq("/hello/Weird%25%21?param1=woot+woot%21&param2=false")
+  end
+
+  it "should raise a BadRoute error if a route param is missing" do
+    expect_raises(ActionController::InvalidRoute, "route parameters missing :id") do
+      HelloWorld.show
+    end
   end
 end

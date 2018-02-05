@@ -363,17 +363,9 @@ abstract class ActionController::Base
 
       # Helper methods for performing redirect_to calls
       {% for name, details in ROUTES %}
-        def self.{{name}}(hash_parts = {} of (String | Symbol) => (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol), **tuple_parts)
+        def self.{{name}}(hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
           route = "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/")
-          hash_parts.each do |key, value|
-            route = route.gsub(":#{key}", value.to_s)
-          end
-
-          # Tuple overwrites hash parts (so safe to use a user generated hash)
-          tuple_parts.each do |key, value|
-            route = route.gsub(":#{key}", value.to_s)
-          end
-          route
+          ActionController::Support.build_route(route, hash_parts, **tuple_parts)
         end
       {% end %}
 

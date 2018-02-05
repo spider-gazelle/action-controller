@@ -18,4 +18,46 @@ class ActionController::Support
 
     request.headers.includes_word?("Connection", "Upgrade")
   end
+
+  def self.build_route(route, hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
+    keys = route.split("/:")[1..-1].map { |p| p.split("/")[0] }
+    params = {} of String => String
+
+    if hash_parts
+      hash_parts.each do |key, value|
+        key = key.to_s
+        value = value.to_s
+
+        if keys.includes?(key)
+          route = route.gsub(":#{key}", URI.escape(value))
+          keys.delete(key)
+        else
+          params[key] = value
+        end
+      end
+    end
+
+    # Tuple overwrites hash parts (so safe to use a user generated hash)
+    tuple_parts.each do |key, value|
+      key = key.to_s
+      value = value.to_s
+
+      if keys.includes?(key)
+        route = route.gsub(":#{key}", URI.escape(value))
+        keys.delete(key)
+      else
+        params[key] = value
+      end
+    end
+
+    # Raise error if not all parts are substituted
+    raise ActionController::InvalidRoute.new("route parameters missing :#{keys.join(", :")}") unless keys.empty?
+
+    # Add any remaining values as query params
+    if params.empty?
+      route
+    else
+      "#{route}?#{HTTP::Params.encode(params)}"
+    end
+  end
 end
