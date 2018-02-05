@@ -5,6 +5,9 @@ class ActionController::Server
   @route_handler = RouteHandler.new
 
   def initialize(@port : Int32, @host = "127.0.0.1", @before_handlers = [] of HTTP::Handler, @after_handlers = [] of HTTP::Handler)
+    {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
+      {{klass}}.__init_routes__(self)
+    {% end %}
   end
 
   getter :host
@@ -13,9 +16,6 @@ class ActionController::Server
   getter :after_handlers
 
   def run
-    {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
-      {{klass}}.__init_routes__(self)
-    {% end %}
     server = @server = HTTP::Server.new(@host, @port, @before_handlers + [route_handler] + @after_handlers)
     server.listen
   end
