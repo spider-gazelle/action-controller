@@ -8,7 +8,8 @@ describe ActionController::Base do
 
   it "should return accepted formats" do
     c = HelloWorld.new(context("GET", "/", accept: "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8"))
-    c.accepts.should eq({
+    formats = c.accepts_formats
+    ActionController::Responders::SelectResponse.accepts(formats).should eq({
       :html => "text/html",
       :xml  => "application/xml",
     })

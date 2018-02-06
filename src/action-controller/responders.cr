@@ -148,7 +148,7 @@ module ActionController::Responders
   end
 
   macro respond_with(&block)
-    resp = SelectResponse.new(@response, accepts)
+    resp = SelectResponse.new(@response, accepts_formats)
     resp.responses do
       {{block.body}}
     end
@@ -158,10 +158,12 @@ module ActionController::Responders
   end
 
   class SelectResponse
-    def initialize(@response : HTTP::Server::Response, @accepts : Hash(Symbol, String))
+    def initialize(@response : HTTP::Server::Response, formats)
+      @accepts = SelectResponse.accepts(formats)
       @options = {} of Symbol => Proc(String)
     end
 
+    @accepts : Hash(Symbol, String)
     getter options
 
     # Build a list of possible responses to the request
@@ -273,6 +275,31 @@ module ActionController::Responders
         @response.print(data)
       end
     end
+
+    ACCEPTED_FORMATS = {
+      "text/html":                :html,
+      "application/xml":          :xml,
+      "text/xml":                 :xml,
+      "application/json":         :json,
+      "text/plain":               :text,
+      "application/octet-stream": :binary,
+      "text/yaml":                :yaml,
+      "text/x-yaml":              :yaml,
+      "application/yaml":         :yaml,
+      "application/x-yaml":       :yaml,
+    }
+
+    # Creates an ordered list of supported formats with requested mime types
+    def self.accepts(accepts_formats)
+      formats = {} of Symbol => String
+      accepts_formats.each do |format|
+        data_type = ACCEPTED_FORMATS[format]?
+        if data_type && formats[data_type]?.nil?
+          formats[data_type] = format
+        end
+      end
+      formats
+    end
   end
 
   ACCEPT_SEPARATOR_REGEX = /,\s*/
@@ -285,30 +312,5 @@ module ActionController::Responders
       return accepts if !accepts.nil? && accepts.any?
     end
     return [] of String
-  end
-
-  ACCEPTED_FORMATS = {
-    "text/html"                => :html,
-    "application/xml"          => :xml,
-    "text/xml"                 => :xml,
-    "application/json"         => :json,
-    "text/plain"               => :text,
-    "application/octet-stream" => :binary,
-    "text/yaml"                => :yaml,
-    "text/x-yaml"              => :yaml,
-    "application/yaml"         => :yaml,
-    "application/x-yaml"       => :yaml,
-  }
-
-  # Creates an ordered list of supported formats with requested mime types
-  def accepts
-    formats = {} of Symbol => String
-    accepts_formats.each do |format|
-      data_type = ACCEPTED_FORMATS[format]?
-      if data_type && formats[data_type]?.nil?
-        formats[data_type] = format
-      end
-    end
-    formats
   end
 end
