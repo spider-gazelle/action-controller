@@ -29,6 +29,37 @@ module ActionController::BodyParser
 
       @body = IO::Memory.new(part.body.gets_to_end)
     end
+
+    def initialize(@name : String, headers : HTTP::Headers, io : IO)
+      @body = IO::Memory.new(io.gets_to_end)
+      @headers = headers
+
+      parts = @headers["Content-Disposition"].split(';')
+      raise HTTP::FormData::Error.new("Invalid Content-Disposition: not file") unless parts[0] == "file"
+
+      parts[1..-1].each do |part|
+        key, value = part.split('=', 2)
+
+        key = key.strip
+        value = value.strip
+        if value[0] == '"'
+          value = HTTP.dequote_string(value[1...-1])
+        end
+
+        case key
+        when "filename"
+          @filename = value
+        when "creation-date"
+          @creation_time = HTTP.parse_time value
+        when "modification-date"
+          @modification_time = HTTP.parse_time value
+        when "read-date"
+          @read_time = HTTP.parse_time value
+        when "size"
+          @size = value.to_u64
+        end
+      end
+    end
   end
 
   def self.extract_form_data(request, content_type, params : HTTP::Params)
@@ -61,15 +92,14 @@ module ActionController::BodyParser
             boundary = HTTP::Multipart.parse_boundary(data_type)
             next unless boundary
 
-            parser = HTTP::FormData::Parser.new(part.body, boundary)
             parts = files[part.name] = [] of FileUpload
-
-            while parser.has_next?
-              parser.next { |part| parts << FileUpload.new(part) }
+            HTTP::Multipart.parse(part.body, boundary) do |headers, io|
+              parts << FileUpload.new(part.name, headers, io)
             end
           else
             # This is a single file
-            files[part.name] = [FileUpload.new(part)]
+            parts = files[part.name] ||= [] of FileUpload
+            parts << FileUpload.new(part)
           end
         else
           # This is some form data, add it to params

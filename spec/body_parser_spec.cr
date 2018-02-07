@@ -47,49 +47,47 @@ describe ActionController::BodyParser do
     file.body.gets_to_end.should eq("... contents of file1.txt ...")
   end
 
-  pending "https://github.com/crystal-lang/crystal/pull/5683" do
-    it "should add form data subpart file uploads into files" do
-      headers = HTTP::Headers{"Content-Type" => "multipart/form-data; boundary=AaB03x"}
-      body = <<-BODY
-        --AaB03x
-        Content-Disposition: form-data; name="submit-name"
+  it "should add form data subpart file uploads into files" do
+    headers = HTTP::Headers{"Content-Type" => "multipart/form-data; boundary=AaB03x"}
+    body = <<-BODY
+      --AaB03x
+      Content-Disposition: form-data; name="submit-name"
 
-        Larry
-        --AaB03x
-        Content-Disposition: form-data; name="files"
-        Content-Type: multipart/mixed; boundary=BbC04y
+      Larry
+      --AaB03x
+      Content-Disposition: form-data; name="files"
+      Content-Type: multipart/mixed; boundary=BbC04y
 
-        --BbC04y
-        Content-Disposition: file; filename="file1.txt"
-        Content-Type: text/plain
+      --BbC04y
+      Content-Disposition: file; filename="file1.txt"
+      Content-Type: text/plain
 
-        ... contents of file1.txt ...
-        --BbC04y
-        Content-Disposition: file; filename="file2.gif"
-        Content-Type: image/gif
-        Content-Transfer-Encoding: binary
+      ... contents of file1.txt ...
+      --BbC04y
+      Content-Disposition: file; filename="file2.gif"
+      Content-Type: image/gif
+      Content-Transfer-Encoding: binary
 
-        ...contents of file2.gif...
-        --BbC04y--
-        --AaB03x--
-        BODY
+      ... contents of file2.gif ...
+      --BbC04y--
+      --AaB03x--
+      BODY
 
-      body = body.gsub("\n", "\r\n")
+    body = body.gsub("\n", "\r\n")
 
-      request = HTTP::Request.new("POST", "/?submit-name=test", headers, body)
-      files = ActionController::BodyParser.extract_form_data(request, "multipart/form-data", request.query_params)
+    request = HTTP::Request.new("POST", "/?submit-name=test", headers, body)
+    files = ActionController::BodyParser.extract_form_data(request, "multipart/form-data", request.query_params)
 
-      params = request.query_params
-      params["submit-name"].should eq("test")
-      params.fetch_all("submit-name").should eq(["test", "Larry"])
+    params = request.query_params
+    params["submit-name"].should eq("test")
+    params.fetch_all("submit-name").should eq(["test", "Larry"])
 
-      file = files.not_nil!["files"][0]
-      file.filename.should eq("file1.txt")
-      file.body.to_s.should eq("... contents of file1.txt ...")
+    file = files.not_nil!["files"][0]
+    file.filename.should eq("file1.txt")
+    file.body.to_s.should eq("... contents of file1.txt ...")
 
-      file = files.not_nil!["files"][1]
-      file.filename.should eq("file2.gif")
-      file.body.to_s.should eq("... contents of file2.gif ...")
-    end
+    file = files.not_nil!["files"][1]
+    file.filename.should eq("file2.gif")
+    file.body.to_s.should eq("... contents of file2.gif ...")
   end
 end
