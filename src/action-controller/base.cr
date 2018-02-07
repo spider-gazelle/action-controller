@@ -1,4 +1,5 @@
 require "openssl/sha1"
+require "./body_parser"
 require "./responders"
 require "./session"
 require "./support"
@@ -53,13 +54,15 @@ abstract class ActionController::Base
   }
 
   getter logger : Logger
-  getter render_called
   getter action_name : Symbol
+  getter render_called : Bool
   getter params : HTTP::Params
   getter cookies : HTTP::Cookies
   getter request : HTTP::Request
-  getter response : HTTP::Server::Response
   getter __session__ : Session | Nil
+  getter request_content_type : String?
+  getter response : HTTP::Server::Response
+  getter files : Hash(String, Array(ActionController::BodyParser::FileUpload))?
 
   def initialize(context : HTTP::Server::Context, params = {} of String => String, @action_name = :index)
     # Default params are provided to simplify testing
@@ -79,6 +82,10 @@ abstract class ActionController::Base
       values.unshift(value)
       @params.set_all(key, values)
     end
+
+    # Add form data to params, lowest preference
+    ctype = @request_content_type = ActionController::Support.content_type(@request.headers)
+    @files = ActionController::BodyParser.extract_form_data(@request, ctype, @params) if ctype
   end
 
   def session

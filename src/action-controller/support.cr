@@ -1,4 +1,4 @@
-class ActionController::Support
+module ActionController::Support
   def self.request_protocol(request)
     return :https if request.headers["X-Forwarded-Proto"]? =~ /https/i
     return :https if request.headers["Forwarded"]? =~ /https/i
@@ -59,5 +59,17 @@ class ActionController::Support
     else
       "#{route}?#{HTTP::Params.encode(params)}"
     end
+  end
+
+  TYPE_SEPARATOR_REGEX = /;\s*/
+
+  # Extracts the mime type from the content type header
+  def self.content_type(headers)
+    ctype = headers["Content-Type"]?
+    if ctype && !ctype.empty?
+      ctype = ctype.split(TYPE_SEPARATOR_REGEX).first?
+      return ctype if ctype && !ctype.empty?
+    end
+    return nil
   end
 end
