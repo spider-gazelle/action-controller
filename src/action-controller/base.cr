@@ -46,8 +46,10 @@ abstract class ActionController::Base
 
   CRUD_METHODS = {
     "index"   => {"get", "/"},
-    "show"    => {"get", "/:id"},
+    "new"     => {"get", "/new"},
     "create"  => {"post", "/"},
+    "show"    => {"get", "/:id"},
+    "edit"    => {"get", "/:id/edit"},
     "update"  => {"patch", "/:id"},
     "replace" => {"put", "/:id"},
     "destroy" => {"delete", "/:id"},
