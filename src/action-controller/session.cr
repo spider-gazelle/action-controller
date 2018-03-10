@@ -67,8 +67,12 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
   end
 
   def []=(key, value)
-    super(key, value)
-    @modified = true
+    if value.nil?
+      delete(key)
+    else
+      super(key, value)
+      @modified = true
+    end
     value
   end
 
