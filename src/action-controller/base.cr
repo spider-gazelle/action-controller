@@ -13,7 +13,7 @@ abstract class ActionController::Base
 
   # Base route => klass name
   CONCRETE_CONTROLLERS = {} of Nil => Nil
-  FILTER_TYPES         = %w(ROUTES BEFORE AROUND AFTER RESCUE FORCE)
+  FILTER_TYPES         = %w(ROUTES BEFORE AROUND AFTER RESCUE FORCE SKIP)
 
   {% for ftype in FILTER_TYPES %}
     # klass => {function => options}
@@ -222,6 +222,20 @@ abstract class ActionController::Base
               begin
             {% end %}
 
+            # Check if there is a skip on this method
+            {% skipping = [] of Nil %}
+            {% for method, options in SKIP %}
+              {% only = options[0] %}
+              {% except = options[1] %}
+              {% if only == nil && except == nil %}
+                {% skipping = [method] + skipping %}
+              {% elsif only != nil && only.includes?(name) %}
+                {% skipping = [method] + skipping %}
+              {% elsif except != nil && !except.includes?(name) %}
+                {% skipping = [method] + skipping %}
+              {% end %}
+            {% end %}
+
             # Execute the around filters
             {% around_actions = AROUND.keys %}
             {% for method, options in AROUND %}
@@ -235,6 +249,8 @@ abstract class ActionController::Base
                 {% end %}
               {% end %}
             {% end %}
+            {% around_actions = around_actions.reject { |act| skipping.includes?(act) } %}
+
             {% if !around_actions.empty? %}
               ActionController::Base.__yield__(instance) do
                 {% for action in around_actions %}
@@ -255,6 +271,8 @@ abstract class ActionController::Base
                 {% end %}
               {% end %}
             {% end %}
+            {% before_actions = before_actions.reject { |act| skipping.includes?(act) } %}
+
             {% if !before_actions.empty? %}
               {% if around_actions.empty? %}
                 ActionController::Base.__yield__(instance) do
@@ -330,6 +348,8 @@ abstract class ActionController::Base
                 {% end %}
               {% end %}
             {% end %}
+            {% after_actions = after_actions.reject { |act| skipping.includes?(act) } %}
+
             {% if !after_actions.empty? %}
               ActionController::Base.__yield__(instance) do
                 {% for action in after_actions %}
@@ -473,6 +493,24 @@ abstract class ActionController::Base
       {% end %}
     {% end %}
     {% LOCAL_AFTER[method.id] = {only, except} %}
+  end
+
+  macro skip_action(method, only = nil, except = nil)
+    {% if only %}
+      {% if !only.is_a?(ArrayLiteral) %}
+        {% only = [only.id] %}
+      {% else %}
+        {% only = only.map(&.id) %}
+      {% end %}
+    {% end %}
+    {% if except %}
+      {% if !except.is_a?(ArrayLiteral) %}
+        {% except = [except.id] %}
+      {% else %}
+        {% except = except.map(&.id) %}
+      {% end %}
+    {% end %}
+    {% LOCAL_SKIP[method.id] = {only, except} %}
   end
 
   macro force_ssl(only = nil, except = nil)
