@@ -3,7 +3,7 @@ require "router"
 require "habitat"
 
 module ActionController
-  VERSION = "1.0.0"
+  VERSION = "1.0.1"
 
   class Error < ::Exception
   end
