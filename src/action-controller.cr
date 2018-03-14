@@ -11,3 +11,4 @@ end
 
 require "./action-controller/errors"
 require "./action-controller/base"
+require "./action-controller/file_handler"
