@@ -1,10 +1,21 @@
 class ActionController::Server
   include Router
 
+  BEFORE_HANDLERS = [] of HTTP::Handler
+  AFTER_HANDLERS  = [] of HTTP::Handler
+
+  def self.before(*handlers)
+    BEFORE_HANDLERS.concat(handlers)
+  end
+
+  def self.after(*handlers)
+    AFTER_HANDLERS.concat(handlers)
+  end
+
   @server : HTTP::Server?
   @route_handler = RouteHandler.new
 
-  def initialize(@port : Int32, @host = "127.0.0.1", @before_handlers = [] of HTTP::Handler, @after_handlers = [] of HTTP::Handler)
+  def initialize(@port : Int32, @host = "127.0.0.1")
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       {{klass}}.__init_routes__(self)
     {% end %}
@@ -12,11 +23,9 @@ class ActionController::Server
 
   getter :host
   getter :port
-  getter :before_handlers
-  getter :after_handlers
 
   def run
-    server = @server = HTTP::Server.new(@host, @port, @before_handlers + [route_handler] + @after_handlers)
+    server = @server = HTTP::Server.new(@host, @port, BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
     server.listen
   end
 
