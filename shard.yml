@@ -4,6 +4,7 @@ version: 1.0.1
 dependencies:
   habitat:
     github: luckyframework/habitat
+    version: 0.2.1
   router:
     github: tbrand/router.cr
 
