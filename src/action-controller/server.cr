@@ -28,7 +28,9 @@ class ActionController::Server
 
   # Provides access the HTTP server for the purpose of binding
   # For example `server.socket.bind_unix "/tmp/my-socket.sock"`
-  getter :socket
+  def socket
+    @socket.not_nil!
+  end
 
   def run
     server = @socket.not_nil!
@@ -41,9 +43,24 @@ class ActionController::Server
   end
 
   def close
-    if server = @socket
-      server.close
-    end
+    socket.close
+  end
+
+  def print_addresses
+    socket.addresses.map { |socket|
+      family = socket.family
+
+      case socket.family
+      when Socket::Family::INET6, Socket::Family::INET
+        ip = Socket::IPAddress.from(socket.to_unsafe, socket.size)
+        "http://#{ip.address}:#{ip.port}"
+      when Socket::Family::UNIX
+        unix = Socket::UNIXAddress.from(socket.to_unsafe, socket.size)
+        "unix://#{unix.path}"
+      else
+        raise "Unsupported family type: #{family} (#{family.value})"
+      end
+    }.join(" , ")
   end
 
   def self.print_routes

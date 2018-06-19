@@ -1,10 +1,14 @@
 require "./spec_helper"
 
 describe "end to end requests and responses" do
-  with_server do
+  with_server do |app|
     it "#index" do
       result = curl("GET", "/bob_jane/")
       result.body.should eq("index")
+    end
+
+    it "supports printing addresses" do
+      app.print_addresses.should eq("http://127.0.0.1:6000 , unix:///tmp/spider-socket.sock")
     end
 
     it "creates and works with session data" do
