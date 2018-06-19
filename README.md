@@ -16,7 +16,7 @@ require "action-controller"
 abstract class Application < ActionController::Base
   before_action :ensure_authenticated
 
-  rescue_from DivisionByZero do |error|
+  rescue_from DivisionByZeroError do |error|
     render :bad_request, text: error.message
   end
 

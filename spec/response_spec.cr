@@ -69,7 +69,7 @@ describe "end to end requests and responses" do
 
     it "should rescue errors as required" do
       result = curl("GET", "/hello/0")
-      result.body.should eq("Division by zero")
+      result.body.should eq("Division by 0")
       result.status_code.should eq(400)
     end
 

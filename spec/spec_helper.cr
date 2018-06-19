@@ -35,7 +35,7 @@ class BobJane < ActionController::Base
 end
 
 abstract class Application < ActionController::Base
-  rescue_from DivisionByZero do |error|
+  rescue_from DivisionByZeroError do |error|
     render :bad_request, text: error.message
   end
 end
