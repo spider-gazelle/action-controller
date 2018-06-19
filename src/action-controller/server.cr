@@ -26,7 +26,7 @@ class ActionController::Server
 
   def run
     server = @server = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
-    server.bind_tcp(@host, @port)
+    server.bind_tcp(@host, @port, true)
     server.listen
   end
 
