@@ -12,22 +12,32 @@ class ActionController::Server
     AFTER_HANDLERS.concat(handlers)
   end
 
-  @server : HTTP::Server?
+  @socket : HTTP::Server?
   @route_handler = RouteHandler.new
 
-  def initialize(@port : Int32, @host = "127.0.0.1")
+  def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port = true)
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       {{klass}}.__init_routes__(self)
     {% end %}
+    
+    @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   getter :host
   getter :port
+  
+  # Provides access the HTTP server for the purpose of binding
+  # For example `server.socket.bind_unix "/tmp/my-socket.sock"`
+  getter :socket
 
   def run
-    server = @server = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
-    server.bind_tcp(@host, @port)
-    server.listen
+    server = @socket
+    if server.addresses.empty?
+      server.bind_tcp(@host, @port, @reuse_port)
+      server.listen
+    else
+      server.listen
+    end
   end
 
   def close
