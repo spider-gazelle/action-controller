@@ -25,7 +25,8 @@ class ActionController::Server
   getter :port
 
   def run
-    server = @server = HTTP::Server.new(@host, @port, BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+    server = @server = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+    server.bind_tcp(@host, @port)
     server.listen
   end
 
