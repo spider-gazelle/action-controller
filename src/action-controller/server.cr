@@ -19,19 +19,19 @@ class ActionController::Server
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       {{klass}}.__init_routes__(self)
     {% end %}
-    
+
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   getter :host
   getter :port
-  
+
   # Provides access the HTTP server for the purpose of binding
   # For example `server.socket.bind_unix "/tmp/my-socket.sock"`
   getter :socket
 
   def run
-    server = @socket
+    server = @socket.not_nil!
     if server.addresses.empty?
       server.bind_tcp(@host, @port, @reuse_port)
       server.listen
@@ -41,7 +41,7 @@ class ActionController::Server
   end
 
   def close
-    if server = @server
+    if server = @socket
       server.close
     end
   end
