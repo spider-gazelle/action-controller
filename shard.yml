@@ -8,6 +8,10 @@ dependencies:
   router:
     github: tbrand/router.cr
 
+development_dependencies:
+  ameba:
+    github: veelenga/ameba
+
 authors:
   - Stephen von Takach <steve@acaprojects.com>
 

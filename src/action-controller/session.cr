@@ -5,8 +5,8 @@ require "./session/message_encryptor"
 
 class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
   # Cookies can typically store 4096 bytes.
-  NEVER           = 622080000 # (~20 years in seconds)
-  MAX_COOKIE_SIZE =      4096
+  NEVER           = 622_080_000 # (~20 years in seconds)
+  MAX_COOKIE_SIZE =        4096
 
   Habitat.create do
     setting key : String

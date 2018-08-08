@@ -93,7 +93,7 @@ class HelloWorld < Application
     SOCKETS << socket
 
     socket.on_message do |message|
-      SOCKETS.each { |socket| socket.send "#{message} + #{@me}" }
+      SOCKETS.each { |connection| connection.send "#{message} + #{@me}" }
     end
 
     socket.on_close do
