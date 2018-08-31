@@ -72,7 +72,7 @@ module ActionController::BodyParser
     when :url_encoded_form
       # Add the form data to the request params
       form_params = HTTP::Params.parse(body.gets_to_end)
-      form_params.each do |key|
+      form_params.each do |key, _|
         values = params.fetch_all(key) || [] of String
         values.concat(form_params.fetch_all(key))
         params.set_all(key, values)

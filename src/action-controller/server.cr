@@ -35,14 +35,15 @@ class ActionController::Server
 
   def run
     server = @socket.not_nil!
-    if server.addresses.empty?
-      server.bind_tcp(@host, @port, @reuse_port)
-      yield
-      server.listen
-    else
-      yield
-      server.listen
-    end
+    server.bind_tcp(@host, @port, @reuse_port) if server.addresses.empty?
+    yield
+    server.listen
+  end
+
+  def run
+    server = @socket.not_nil!
+    server.bind_tcp(@host, @port, @reuse_port) if server.addresses.empty?
+    server.listen
   end
 
   def close
