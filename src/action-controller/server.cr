@@ -68,7 +68,7 @@ class ActionController::Server
     }.join(" , ")
   end
 
-  def cluster(count)
+  def cluster(count, short_arg, long_arg, args = ARGV.dup)
     count = count.to_i64
     count = System.cpu_count if count <= 0
     return if count <= 1
@@ -78,10 +78,9 @@ class ActionController::Server
     process_path = Process.executable_path
 
     # Clean up the arguments
-    args = ARGV.dup
-    args.reject! { |e| e.starts_with?("--cluster") }
+    args.reject! { |e| e.starts_with?(long_arg) }
     remove = [] of Int32
-    args.each_with_index { |value, index| remove << index if value == "-c" }
+    args.each_with_index { |value, index| remove << index if value == short_arg }
     remove.each { |index| args.delete_at(index, 2) }
 
     # Start the processes
@@ -94,14 +93,14 @@ class ActionController::Server
           error: Process::Redirect::Inherit
         ) do |ref|
           process = ref
-          puts " > cluster started #{process.pid}"
+          puts " > worker #{process.pid} started"
         end
         status = $?
         process = process.not_nil!
         if status.success?
-          puts " < cluster stopped #{process.pid}"
+          puts " < worker #{process.pid} stopped"
         else
-          puts " ! cluster process #{process.pid} failed with #{status.exit_status}"
+          puts " ! worker process #{process.pid} failed with #{status.exit_status}"
         end
         nil
       end
