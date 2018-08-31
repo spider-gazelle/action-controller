@@ -16,6 +16,7 @@ class ActionController::Server
   @route_handler = RouteHandler.new
 
   def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port = true)
+    @processes = [] of Concurrent::Future(Nil)
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       {{klass}}.__init_routes__(self)
     {% end %}
@@ -36,13 +37,16 @@ class ActionController::Server
     server = @socket.not_nil!
     if server.addresses.empty?
       server.bind_tcp(@host, @port, @reuse_port)
+      yield
       server.listen
     else
+      yield
       server.listen
     end
   end
 
   def close
+    @processes.each(&.get)
     socket.close
   end
 
@@ -61,6 +65,46 @@ class ActionController::Server
         raise "Unsupported family type: #{family} (#{family.value})"
       end
     }.join(" , ")
+  end
+
+  def cluster(count)
+    count = count.to_i64
+    count = System.cpu_count if count <= 0
+    return if count <= 1
+
+    # How many and what to start
+    count -= 1
+    process_path = Process.executable_path
+
+    # Clean up the arguments
+    args = ARGV.dup
+    args.reject! { |e| e.starts_with?("--cluster") }
+    remove = [] of Int32
+    args.each_with_index { |value, index| remove << index if value == "-c" }
+    remove.each { |index| args.delete_at(index, 2) }
+
+    # Start the processes
+    (0_i64...count).each do
+      @processes << future do
+        process = nil
+        Process.run(process_path.not_nil!, args,
+          input: Process::Redirect::Close,
+          output: Process::Redirect::Inherit,
+          error: Process::Redirect::Inherit
+        ) do |ref|
+          process = ref
+          puts " > cluster started #{process.pid}"
+        end
+        status = $?
+        process = process.not_nil!
+        if status.success?
+          puts " < cluster stopped #{process.pid}"
+        else
+          puts " ! cluster process #{process.pid} failed with #{status.exit_status}"
+        end
+        nil
+      end
+    end
   end
 
   def self.print_routes
