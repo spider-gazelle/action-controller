@@ -7,12 +7,15 @@ describe ActionController::BodyParser do
     request = HTTP::Request.new("POST", "/?home=test", headers, body)
 
     files, form_data = ActionController::BodyParser.extract_form_data(request, "application/x-www-form-urlencoded", request.query_params)
+    form_data = form_data.not_nil!
     params = request.query_params
 
     params["home"].should eq("test")
     params.fetch_all("home").should eq(["test", "Cosby"])
+    form_data.fetch_all("home").should eq(["Cosby"])
 
     params["favorite flavor"].should eq("flies")
+    form_data["favorite flavor"].should eq("flies")
 
     files.should be(nil)
   end
@@ -36,10 +39,12 @@ describe ActionController::BodyParser do
 
     request = HTTP::Request.new("POST", "/?submit-name=test", headers, body)
     files, form_data = ActionController::BodyParser.extract_form_data(request, "multipart/form-data", request.query_params)
+    form_data = form_data.not_nil!
 
     params = request.query_params
     params["submit-name"].should eq("test")
     params.fetch_all("submit-name").should eq(["test", "Larry"])
+    form_data.fetch_all("submit-name").should eq(["Larry"])
 
     file = files.not_nil!["files"][0]
     file.filename.should eq("file1.txt")
@@ -77,10 +82,12 @@ describe ActionController::BodyParser do
 
     request = HTTP::Request.new("POST", "/?submit-name=test", headers, body)
     files, form_data = ActionController::BodyParser.extract_form_data(request, "multipart/form-data", request.query_params)
+    form_data = form_data.not_nil!
 
     params = request.query_params
     params["submit-name"].should eq("test")
     params.fetch_all("submit-name").should eq(["test", "Larry"])
+    form_data.fetch_all("submit-name").should eq(["Larry"])
 
     file = files.not_nil!["files"][0]
     file.filename.should eq("file1.txt")
