@@ -6,7 +6,7 @@ describe ActionController::BodyParser do
     body = "home=Cosby&favorite+flavor=flies"
     request = HTTP::Request.new("POST", "/?home=test", headers, body)
 
-    files = ActionController::BodyParser.extract_form_data(request, "application/x-www-form-urlencoded", request.query_params)
+    files, form_data = ActionController::BodyParser.extract_form_data(request, "application/x-www-form-urlencoded", request.query_params)
     params = request.query_params
 
     params["home"].should eq("test")
@@ -35,7 +35,7 @@ describe ActionController::BodyParser do
     body = body.gsub("\n", "\r\n")
 
     request = HTTP::Request.new("POST", "/?submit-name=test", headers, body)
-    files = ActionController::BodyParser.extract_form_data(request, "multipart/form-data", request.query_params)
+    files, form_data = ActionController::BodyParser.extract_form_data(request, "multipart/form-data", request.query_params)
 
     params = request.query_params
     params["submit-name"].should eq("test")
@@ -76,7 +76,7 @@ describe ActionController::BodyParser do
     body = body.gsub("\n", "\r\n")
 
     request = HTTP::Request.new("POST", "/?submit-name=test", headers, body)
-    files = ActionController::BodyParser.extract_form_data(request, "multipart/form-data", request.query_params)
+    files, form_data = ActionController::BodyParser.extract_form_data(request, "multipart/form-data", request.query_params)
 
     params = request.query_params
     params["submit-name"].should eq("test")

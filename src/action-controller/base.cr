@@ -58,13 +58,12 @@ abstract class ActionController::Base
   getter logger : Logger
   getter action_name : Symbol
   getter render_called : Bool
-  getter params : HTTP::Params
   getter cookies : HTTP::Cookies
   getter request : HTTP::Request
-  getter __session__ : Session | Nil
-  getter request_content_type : String?
+  getter query_params : HTTP::Params
+  getter route_params : Hash(String, String)
+  getter __session__ : Session?
   getter response : HTTP::Server::Response
-  getter files : Hash(String, Array(ActionController::BodyParser::FileUpload))?
 
   def initialize(context : HTTP::Server::Context, params = {} of String => String, @action_name = :index)
     # Default params are provided to simplify testing
@@ -73,25 +72,53 @@ abstract class ActionController::Base
     @request = context.request
     @response = context.response
     @cookies = @request.cookies
-    @params = @request.query_params
+    @query_params = @request.query_params
+    @route_params = params
 
     @logger = settings.logger
+  end
+
+  @params : HTTP::Params?
+  def params : HTTP::Params
+    return @params.not_nil! if @params
+    @params_built = true
+    @params = params = HTTP::Params.new
 
     # Add route params to the HTTP params
     # giving preference to route params
-    params.each do |key, value|
-      values = @params.fetch_all(key) || [] of String
+    @route_params.each do |key, value|
+      values = @query_params.fetch_all(key).dup
       values.unshift(value)
-      @params.set_all(key, values)
+      params.set_all(key, values)
     end
 
     # Add form data to params, lowest preference
-    ctype = @request_content_type = ActionController::Support.content_type(@request.headers)
-    @files = ActionController::BodyParser.extract_form_data(@request, ctype, @params) if ctype
+    ctype = request_content_type
+    @files, @form_data = ActionController::BodyParser.extract_form_data(@request, ctype, params) if ctype
+    params
+  end
+
+  @form_data : HTTP::Params?
+  def form_data
+    return @form_data if @params
+    params
+    @form_data
+  end
+
+  @files : Hash(String, Array(ActionController::BodyParser::FileUpload))? = nil
+  def files : Hash(String, Array(ActionController::BodyParser::FileUpload))?
+    return @files if @params
+    params
+    @files
   end
 
   def session
     @__session__ ||= Session.from_cookies(@cookies)
+  end
+
+  @__content_type__ : String?
+  def request_content_type : String?
+    @__content_type__ ||= ActionController::Support.content_type(@request.headers)
   end
 
   macro inherited

@@ -63,10 +63,10 @@ module ActionController::BodyParser
 
   def self.extract_form_data(request, content_type, params : HTTP::Params)
     body = request.body
-    return unless body
+    return {nil, nil} unless body
 
     ctype = CONTENT_TYPES[content_type]?
-    return unless ctype
+    return {nil, nil} unless ctype
 
     case ctype
     when :url_encoded_form
@@ -77,8 +77,10 @@ module ActionController::BodyParser
         values.concat(form_params.fetch_all(key))
         params.set_all(key, values)
       end
+      {nil, form_params}
     when :multipart_form
       files = {} of String => Array(FileUpload)
+      form_params = HTTP::Params.new
 
       # Ref: https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.2
       HTTP::FormData.parse(request) do |part|
@@ -101,11 +103,19 @@ module ActionController::BodyParser
           end
         else
           # This is some form data, add it to params
-          params.add(part.name, part.body.gets_to_end)
+          form_params.add(part.name, part.body.gets_to_end)
         end
       end
 
-      return files unless files.empty?
+      form_params.each do |key, _|
+        values = params.fetch_all(key) || [] of String
+        values.concat(form_params.fetch_all(key))
+        params.set_all(key, values)
+      end
+      files = nil if files.empty?
+      {files, form_params}
+    else
+      {nil, nil}
     end
   end
 end
