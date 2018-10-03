@@ -75,7 +75,7 @@ class ActionController::Server
 
     # How many and what to start
     count -= 1
-    process_path = Process.executable_path
+    process_path = Process.executable_path.not_nil!
 
     # Clean up the arguments
     args.reject! { |e| e.starts_with?(long_arg) }
@@ -87,7 +87,7 @@ class ActionController::Server
     (0_i64...count).each do
       @processes << future do
         process = nil
-        Process.run(process_path.not_nil!, args,
+        Process.run(process_path, args,
           input: Process::Redirect::Close,
           output: Process::Redirect::Inherit,
           error: Process::Redirect::Inherit
