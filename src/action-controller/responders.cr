@@ -186,7 +186,7 @@ module ActionController::Responders
 
     macro html(obj = nil, &block)
       {% if block.is_a?(Nop) %}
-        options[:html] = ->{ {{obj}}.to_s }
+        options[:html] = ->{ {{obj}} }
       {% else %}
         options[:html] = ->{
           {{ block.body }}
@@ -196,7 +196,7 @@ module ActionController::Responders
 
     macro xml(obj = nil, &block)
       {% if block.is_a?(Nop) %}
-        options[:xml] = ->{ {{obj}}.to_s }
+        options[:xml] = ->{ {{obj}} }
       {% else %}
         options[:xml] = ->{
           {{ block.body }}
@@ -208,11 +208,11 @@ module ActionController::Responders
       {% if block.is_a?(Nop) %}
         options[:json] = ->{
           output = {{obj}}
-          if output.is_a?(String)
+          {% if obj.is_a?(String) %}
             output
-          else
+          {% else %}
             output.to_json
-          end
+          {% end %}
         }
       {% else %}
         options[:json] = ->{
@@ -225,11 +225,11 @@ module ActionController::Responders
       {% if block.is_a?(Nop) %}
         options[:yaml] = ->{
           output = {{obj}}
-          if output.is_a?(String)
+          {% if obj.is_a?(String) %}
             output
-          else
+          {% else %}
             output.to_yaml
-          end
+          {% end %}
         }
       {% else %}
         options[:yaml] = ->{
@@ -240,7 +240,7 @@ module ActionController::Responders
 
     macro text(obj = nil, &block)
       {% if block.is_a?(Nop) %}
-        options[:text] = ->{ {{obj}}.to_s }
+        options[:text] = ->{ {{obj}} }
       {% else %}
         options[:text] = ->{
           {{ block.body }}
@@ -250,7 +250,7 @@ module ActionController::Responders
 
     macro binary(obj = nil, &block)
       {% if block.is_a?(Nop) %}
-        options[:binary] = ->{ {{obj}}.to_s }
+        options[:binary] = ->{ {{obj}} }
       {% else %}
         options[:binary] = ->{
           {{ block.body }}
