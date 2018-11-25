@@ -95,41 +95,41 @@ module ActionController::Responders
     {% if json %}
       @response.content_type = MIME_TYPES[:json] unless ctype
       output = {{json}}
-      if output.is_a?(String)
+      {% if json.is_a?(String) %}
         @response.print(output)
-      else
+      {% else %}
         @response.print(output.to_json)
-      end
+      {% end %}
     {% end %}
 
     {% if xml %}
       @response.content_type = MIME_TYPES[:xml] unless ctype
-      @response.print({{xml}}.to_s)
+      @response.print({{xml}})
     {% end %}
 
     {% if html %}
       @response.content_type = MIME_TYPES[:html] unless ctype
-      @response.print({{html}}.to_s)
+      @response.print({{html}})
     {% end %}
 
     {% if yaml %}
       @response.content_type = MIME_TYPES[:yaml] unless ctype
       output = {{yaml}}
-      if output.is_a?(String)
+      {% if yaml.is_a?(String) %}
         @response.print(output)
-      else
+      {% else %}
         @response.print(output.to_yaml)
-      end
+      {% end %}
     {% end %}
 
     {% if text %}
       @response.content_type = MIME_TYPES[:text] unless ctype
-      @response.print({{text}}.to_s)
+      @response.print({{text}})
     {% end %}
 
     {% if binary %}
       @response.content_type = MIME_TYPES[:binary] unless ctype
-      @response.print({{binary}}.to_s)
+      @response.print({{binary}})
     {% end %}
 
     @render_called = true
