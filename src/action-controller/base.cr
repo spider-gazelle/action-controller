@@ -11,6 +11,56 @@ abstract class ActionController::Base
     setting logger : Logger = Logger.new(STDOUT)
   end
 
+  # Template support
+  TEMPLATE_LAYOUT = {} of Nil => Nil
+  TEMPLATE_PATH   = {} of Nil => Nil
+  {% TEMPLATE_PATH[@type.id] = "./src/views/" %}
+
+  macro layout(filename = nil)
+    {% if filename.nil? || filename.empty? %}
+      {% TEMPLATE_LAYOUT[@type.id] = nil %}
+    {% else %}
+      {% TEMPLATE_LAYOUT[@type.id] = filename %}
+    {% end %}
+  end
+
+  macro template_path(path)
+    {% if path.id.ends_with?("/") %}
+      {% TEMPLATE_PATH[@type.id] = path %}
+    {% else %}
+      {% TEMPLATE_PATH[@type.id] = path + "/" %}
+    {% end %}
+  end
+
+  macro template(template = nil, partial = nil, layout = nil)
+    {% if !(template || partial) %}
+      raise "Template or partial required!"
+    {% else %}
+      {% filename = partial || template %}
+      %content = render_template({{filename}})
+
+      {% if !partial %}
+        {% if layout || TEMPLATE_LAYOUT[@type.id] %}
+          {% layout = layout || TEMPLATE_LAYOUT[@type.id] %}
+          content = %content
+          render_template({{layout}})
+        {% else %}
+          %content
+        {% end %}
+      {% else %}
+        %content
+      {% end %}
+    {% end %}
+  end
+
+  macro partial(partial)
+    template(partial: {{partial}})
+  end
+
+  private macro render_template(filename)
+    Kilt.render({{TEMPLATE_PATH[@type.id] + filename}})
+  end
+
   # Base route => klass name
   CONCRETE_CONTROLLERS = {} of Nil => Nil
   FILTER_TYPES         = %w(ROUTES BEFORE AROUND AFTER RESCUE FORCE SKIP)
@@ -79,6 +129,7 @@ abstract class ActionController::Base
   end
 
   @params : HTTP::Params?
+
   def params : HTTP::Params
     return @params.not_nil! if @params
     @params_built = true
@@ -99,6 +150,7 @@ abstract class ActionController::Base
   end
 
   @form_data : HTTP::Params?
+
   def form_data
     return @form_data if @params
     params
@@ -106,6 +158,7 @@ abstract class ActionController::Base
   end
 
   @files : Hash(String, Array(ActionController::BodyParser::FileUpload))? = nil
+
   def files : Hash(String, Array(ActionController::BodyParser::FileUpload))?
     return @files if @params
     params
@@ -117,6 +170,7 @@ abstract class ActionController::Base
   end
 
   @__content_type__ : String?
+
   def request_content_type : String?
     @__content_type__ ||= ActionController::Support.content_type(@request.headers)
   end
@@ -130,6 +184,9 @@ abstract class ActionController::Base
       LOCAL_{{ftype.id}} = {} of Nil => Nil
       {{ftype.id}} = {} of Nil => Nil
     {% end %}
+
+    {% TEMPLATE_LAYOUT[@type.id] = TEMPLATE_LAYOUT[@type.ancestors[0].id] %}
+    {% TEMPLATE_PATH[@type.id] = TEMPLATE_PATH[@type.ancestors[0].id] %}
 
     __build_filter_inheritance_macros__
 
@@ -561,11 +618,6 @@ abstract class ActionController::Base
 
   macro force_tls(only = nil, except = nil)
     force_ssl({{only}}, {{except}})
-  end
-
-  macro param(name)
-    # TODO:: extract type and name etc
-    # safe_params == hash of extracted params
   end
 
   # ===============

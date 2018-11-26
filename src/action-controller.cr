@@ -1,3 +1,4 @@
+require "kilt"
 require "logger"
 require "router"
 require "habitat"

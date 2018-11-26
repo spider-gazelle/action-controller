@@ -1,6 +1,30 @@
 require "spec"
 require "../src/action-controller"
 
+class TemplateOne < ActionController::Base
+  template_path "./spec/views"
+  layout "layout_main.ecr"
+
+  def index
+    data = 45
+    render html: template("inner.ecr")
+  end
+
+  def show
+    data = params["id"]
+    render html: partial("inner.ecr")
+  end
+end
+
+class TemplateTwo < TemplateOne
+  layout "layout_alt.ecr"
+
+  def index
+    data = 50
+    render html: template("inner.ecr")
+  end
+end
+
 class BobJane < ActionController::Base
   # base "/bob/jane" # <== automatically configured
 

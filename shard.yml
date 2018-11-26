@@ -1,5 +1,5 @@
 name: action-controller
-version: 1.1.4
+version: 1.1.5
 
 dependencies:
   habitat:
@@ -7,6 +7,8 @@ dependencies:
     version: 0.2.1
   router:
     github: tbrand/router.cr
+  kilt:
+    github: jeromegn/kilt
 
 development_dependencies:
   ameba:
