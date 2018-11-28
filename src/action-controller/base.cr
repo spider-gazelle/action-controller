@@ -291,7 +291,7 @@ abstract class ActionController::Base
                 response = context.response
                 response.status_code = {{STATUS_CODES[:precondition_failed]}}
                 response.content_type = MIME_TYPES[:text]
-                response.print "WebSocket Secure (wss://) connection required"
+                response << "WebSocket Secure (wss://) connection required"
               {% else %}
                 ActionController::Support.redirect_to_https(context)
               {% end %}
@@ -400,7 +400,7 @@ abstract class ActionController::Base
                   response = context.response
                   response.status_code = {{STATUS_CODES[:upgrade_required]}}
                   response.content_type = MIME_TYPES[:text]
-                  response.print "This service requires use of the WebSocket protocol"
+                  response << "This service requires use of the WebSocket protocol"
                 end
               {% else %}
                 instance.{{name}}

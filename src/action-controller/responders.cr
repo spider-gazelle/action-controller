@@ -96,40 +96,40 @@ module ActionController::Responders
       @response.content_type = MIME_TYPES[:json] unless ctype
       output = {{json}}
       {% if json.is_a?(String) %}
-        @response.print(output)
+        @response << output
       {% else %}
-        @response.print(output.to_json)
+        @response << output.to_json
       {% end %}
     {% end %}
 
     {% if xml %}
       @response.content_type = MIME_TYPES[:xml] unless ctype
-      @response.print({{xml}})
+      @response << {{xml}}
     {% end %}
 
     {% if html %}
       @response.content_type = MIME_TYPES[:html] unless ctype
-      @response.print({{html}})
+      @response << {{html}}
     {% end %}
 
     {% if yaml %}
       @response.content_type = MIME_TYPES[:yaml] unless ctype
       output = {{yaml}}
       {% if yaml.is_a?(String) %}
-        @response.print(output)
+        @response << output
       {% else %}
-        @response.print(output.to_yaml)
+        @response << output.to_yaml
       {% end %}
     {% end %}
 
     {% if text %}
       @response.content_type = MIME_TYPES[:text] unless ctype
-      @response.print({{text}})
+      @response << {{text}}
     {% end %}
 
     {% if binary %}
       @response.content_type = MIME_TYPES[:binary] unless ctype
-      @response.print({{binary}})
+      @response << {{binary}}
     {% end %}
 
     @render_called = true
@@ -274,7 +274,7 @@ module ActionController::Responders
         end
 
         if found
-          @response.print(found.call)
+          @response << found.call
         else
           @response.status_code = 406 # not acceptable
         end
@@ -285,7 +285,7 @@ module ActionController::Responders
         data = opt[1].call
 
         @response.content_type = MIME_TYPES[format]
-        @response.print(data)
+        @response << data
       end
     end
 
