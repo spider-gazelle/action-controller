@@ -131,7 +131,8 @@ abstract class ActionController::Base
   @params : HTTP::Params?
 
   def params : HTTP::Params
-    return @params.not_nil! if @params
+    params = @params
+    return params if params
     @params = params = HTTP::Params.new
 
     # Add route params to the HTTP params
