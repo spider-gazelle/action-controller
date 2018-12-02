@@ -6,7 +6,7 @@ class TemplateOne < ActionController::Base
   layout "layout_main.ecr"
 
   def index
-    data = 45
+    data = client_ip
     render html: template("inner.ecr")
   end
 

@@ -626,25 +626,28 @@ abstract class ActionController::Base
     ActionController::Support.request_protocol(@request)
   end
 
-  def remote_endpoint_ip
-    return @client_ip if @client_ip
+  @client_ip : String? = nil
+  def client_ip : String
+    cip = @client_ip
+    return cip if cip
 
-    @client_ip = @request.headers["X-Forwarded-Proto"]? || @request.headers["X-Real-IP"]?
+    cip = @request.headers["X-Forwarded-Proto"]? || @request.headers["X-Real-IP"]?
 
-    if @client_ip.nil?
+    if cip.nil?
       forwarded = @request.headers["Forwarded"]?
       if forwarded
         match = forwarded.match(/for=(.+?)(;|$)/i)
         if match
           ip = match[0]
           ip = ip.split(/=|;/i)[1]
-          @client_ip = ip if ip && !["_hidden", "_secret", "unknown"].includes?(ip)
+          cip = ip if ip && !["_hidden", "_secret", "unknown"].includes?(ip)
         end
       end
 
-      @client_ip = "127.0.0.1" unless @client_ip
+      cip = "127.0.0.1" unless cip
     end
 
-    @client_ip
+    @client_ip = cip
+    cip
   end
 end

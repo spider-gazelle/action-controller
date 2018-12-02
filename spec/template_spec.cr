@@ -4,7 +4,7 @@ describe "template responses" do
   with_server do
     it "test base class" do
       result = curl("GET", "/template_one/")
-      result.body.should eq("<!DOCTYPE html>\n<html>\n<head>\n\t<title>Fortunes</title>\n</head>\n<body>\n\t<p>inner 45</p>\n\n</body>\n</html>\n")
+      result.body.should eq("<!DOCTYPE html>\n<html>\n<head>\n\t<title>Fortunes</title>\n</head>\n<body>\n\t<p>inner 127.0.0.1</p>\n\n</body>\n</html>\n")
     end
 
     it "test partials" do
