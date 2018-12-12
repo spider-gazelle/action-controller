@@ -86,50 +86,51 @@ module ActionController::Responders
   }
 
   macro render(status = :ok, json = nil, xml = nil, html = nil, yaml = nil, text = nil, binary = nil)
+    response = self.response
     {% if status != :ok || status != 200 %}
-      @response.status_code = {{STATUS_CODES[status] || status}}
+      response.status_code = {{STATUS_CODES[status] || status}}
     {% end %}
 
-    ctype = @response.headers["Content-Type"]?
+    ctype = response.headers["Content-Type"]?
 
     {% if json %}
-      @response.content_type = MIME_TYPES[:json] unless ctype
+      response.content_type = MIME_TYPES[:json] unless ctype
       output = {{json}}
       {% if json.is_a?(String) %}
-        @response << output
+        response << output
       {% else %}
-        @response << output.to_json
+        response << output.to_json
       {% end %}
     {% end %}
 
     {% if xml %}
-      @response.content_type = MIME_TYPES[:xml] unless ctype
-      @response << {{xml}}
+      response.content_type = MIME_TYPES[:xml] unless ctype
+      response << {{xml}}
     {% end %}
 
     {% if html %}
-      @response.content_type = MIME_TYPES[:html] unless ctype
-      @response << {{html}}
+      response.content_type = MIME_TYPES[:html] unless ctype
+      response << {{html}}
     {% end %}
 
     {% if yaml %}
-      @response.content_type = MIME_TYPES[:yaml] unless ctype
+      response.content_type = MIME_TYPES[:yaml] unless ctype
       output = {{yaml}}
       {% if yaml.is_a?(String) %}
-        @response << output
+        response << output
       {% else %}
-        @response << output.to_yaml
+        response << output.to_yaml
       {% end %}
     {% end %}
 
     {% if text %}
-      @response.content_type = MIME_TYPES[:text] unless ctype
-      @response << {{text}}
+      response.content_type = MIME_TYPES[:text] unless ctype
+      response << {{text}}
     {% end %}
 
     {% if binary %}
-      @response.content_type = MIME_TYPES[:binary] unless ctype
-      @response << {{binary}}
+      response.content_type = MIME_TYPES[:binary] unless ctype
+      response << {{binary}}
     {% end %}
 
     @render_called = true
@@ -141,14 +142,15 @@ module ActionController::Responders
   end
 
   macro redirect_to(path, status = :found)
-    @response.status_code = {{REDIRECTION_CODES[status] || status}}
-    @response.headers["Location"] = {{path}}
+    response = self.response
+    response.status_code = {{REDIRECTION_CODES[status] || status}}
+    response.headers["Location"] = {{path}}
     @render_called = true
     return
   end
 
   macro respond_with(&block)
-    resp = SelectResponse.new(@response, accepts_formats)
+    resp = SelectResponse.new(response, accepts_formats)
     resp.responses do
       {{block.body}}
     end
@@ -161,7 +163,7 @@ module ActionController::Responders
 
   # Extracts the mime types from the Accept header
   def accepts_formats
-    accept = @request.headers["Accept"]?
+    accept = request.headers["Accept"]?
     if accept && !accept.empty?
       accepts = accept.split(";").first?.try(&.split(ACCEPT_SEPARATOR_REGEX))
       return accepts if accepts && accepts.any?

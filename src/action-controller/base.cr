@@ -105,27 +105,40 @@ abstract class ActionController::Base
     "destroy" => {"delete", "/:id"},
   }
 
-  getter logger : Logger
+  def initialize(@context : HTTP::Server::Context, @action_name = :index)
+    @render_called = false
+  end
+
   getter action_name : Symbol
   getter render_called : Bool
-  getter cookies : HTTP::Cookies
-  getter request : HTTP::Request
-  getter query_params : HTTP::Params
-  getter route_params : Hash(String, String)
   getter __session__ : Session?
-  getter response : HTTP::Server::Response
 
-  def initialize(context : HTTP::Server::Context, params = {} of String => String, @action_name = :index)
-    # Default params are provided to simplify testing
+  def session
+    @__session__ ||= Session.from_cookies(cookies)
+  end
 
-    @render_called = false
-    @request = context.request
-    @response = context.response
-    @cookies = @request.cookies
-    @query_params = @request.query_params
-    @route_params = params
+  def request
+    @context.request
+  end
 
-    @logger = settings.logger
+  def response
+    @context.response
+  end
+
+  def route_params
+    @context.route_params
+  end
+
+  def logger
+    settings.logger
+  end
+
+  def query_params
+    @context.request.query_params
+  end
+
+  def cookies
+    @context.request.cookies
   end
 
   @params : HTTP::Params?
@@ -137,15 +150,15 @@ abstract class ActionController::Base
 
     # Add route params to the HTTP params
     # giving preference to route params
-    @route_params.each do |key, value|
-      values = @query_params.fetch_all(key).dup
+    route_params.each do |key, value|
+      values = query_params.fetch_all(key).dup
       values.unshift(value)
       params.set_all(key, values)
     end
 
     # Add form data to params, lowest preference
     ctype = request_content_type
-    @files, @form_data = ActionController::BodyParser.extract_form_data(@request, ctype, params) if ctype
+    @files, @form_data = ActionController::BodyParser.extract_form_data(request, ctype, params) if ctype
     params
   end
 
@@ -165,14 +178,10 @@ abstract class ActionController::Base
     @files
   end
 
-  def session
-    @__session__ ||= Session.from_cookies(@cookies)
-  end
-
   @__content_type__ : String?
 
   def request_content_type : String?
-    @__content_type__ ||= ActionController::Support.content_type(@request.headers)
+    @__content_type__ ||= ActionController::Support.content_type(request.headers)
   end
 
   macro inherited
@@ -268,7 +277,7 @@ abstract class ActionController::Base
 
       def self.__init_routes__(router)
         {% for name, details in ROUTES %}
-          router.{{details[0].id}} "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/") do |context, params|
+          router.{{details[0].id}} "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/") do |context|
             {% is_websocket = details[3] %}
 
             # Check if force SSL is set and redirect to HTTPS if HTTP
@@ -299,7 +308,7 @@ abstract class ActionController::Base
             {% end %}
 
             # Create an instance of the controller
-            instance = {{@type.name}}.new(context, params, :{{name}})
+            instance = {{@type.name}}.new(context, :{{name}})
 
             # Check for errors
             {% if !RESCUE.empty? %}
@@ -506,7 +515,7 @@ abstract class ActionController::Base
   end
 
   # Define each method for supported http methods
-  {% for http_method in ::Router::HTTP_METHODS %}
+  {% for http_method in ::ActionController::Router::HTTP_METHODS %}
     macro {{http_method.id}}(path, name, &block)
       \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, block, false } %}
     end
@@ -624,7 +633,7 @@ abstract class ActionController::Base
   # Helper methods:
   # ===============
   def request_protocol
-    ActionController::Support.request_protocol(@request)
+    ActionController::Support.request_protocol(request)
   end
 
   @client_ip : String? = nil
@@ -632,10 +641,11 @@ abstract class ActionController::Base
     cip = @client_ip
     return cip if cip
 
-    cip = @request.headers["X-Forwarded-Proto"]? || @request.headers["X-Real-IP"]?
+    request = self.request
+    cip = request.headers["X-Forwarded-Proto"]? || request.headers["X-Real-IP"]?
 
     if cip.nil?
-      forwarded = @request.headers["Forwarded"]?
+      forwarded = request.headers["Forwarded"]?
       if forwarded
         match = forwarded.match(/for=(.+?)(;|$)/i)
         if match

@@ -1,6 +1,5 @@
 require "kilt"
 require "logger"
-require "router"
 require "habitat"
 
 module ActionController
@@ -10,6 +9,7 @@ module ActionController
   end
 end
 
+require "./action-controller/router"
 require "./action-controller/errors"
 require "./action-controller/base"
 require "./action-controller/file_handler"

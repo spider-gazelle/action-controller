@@ -5,8 +5,8 @@ dependencies:
   habitat:
     github: luckyframework/habitat
     version: 0.2.1
-  router:
-    github: tbrand/router.cr
+  radix:
+    github: luislavena/radix
   kilt:
     github: jeromegn/kilt
 
