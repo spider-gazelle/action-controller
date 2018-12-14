@@ -18,6 +18,10 @@ def curl(method : String, path : String, headers = {} of String => String, body 
     response = client.patch path, head, body: body
   when "DELETE"
     response = client.delete path, head
+  when "HEAD"
+    response = client.head path, head
+  when "OPTIONS"
+    response = client.options path, head
   end
 
   client.close

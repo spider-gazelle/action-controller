@@ -95,42 +95,45 @@ module ActionController::Responders
 
     {% if json %}
       response.content_type = MIME_TYPES[:json] unless ctype
-      output = {{json}}
+
       {% if json.is_a?(String) %}
-        response << output
+        output = {{json}}
       {% else %}
-        response << output.to_json
+        output = ({{json}}).to_json
       {% end %}
     {% end %}
 
     {% if xml %}
       response.content_type = MIME_TYPES[:xml] unless ctype
-      response << {{xml}}
+      output = {{xml}}
     {% end %}
 
     {% if html %}
       response.content_type = MIME_TYPES[:html] unless ctype
-      response << {{html}}
+      output = {{html}}
     {% end %}
 
     {% if yaml %}
       response.content_type = MIME_TYPES[:yaml] unless ctype
-      output = {{yaml}}
       {% if yaml.is_a?(String) %}
-        response << output
+        output = {{yaml}}
       {% else %}
-        response << output.to_yaml
+        output = ({{yaml}}).to_yaml
       {% end %}
     {% end %}
 
     {% if text %}
       response.content_type = MIME_TYPES[:text] unless ctype
-      response << {{text}}
+      output = {{text}}
     {% end %}
 
     {% if binary %}
       response.content_type = MIME_TYPES[:binary] unless ctype
-      response << {{binary}}
+      output = {{binary}}
+    {% end %}
+
+    {% if json || xml || html || yaml || text || binary %}
+        response << output unless self.request.method == "HEAD"
     {% end %}
 
     @render_called = true

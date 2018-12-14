@@ -115,6 +115,12 @@ describe "end to end requests and responses" do
       result.status_code.should eq(200)
     end
 
+    it "should work with HEAD requests" do
+      result = curl("HEAD", "/hello/around")
+      result.body.empty?.should eq(true)
+      result.status_code.should eq(200)
+    end
+
     it "should reject non-websocket requests to websocket endpoints" do
       result = curl("GET", "/hello/websocket")
       result.body.should eq("This service requires use of the WebSocket protocol")
