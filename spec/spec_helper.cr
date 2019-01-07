@@ -6,12 +6,12 @@ class TemplateOne < ActionController::Base
   layout "layout_main.ecr"
 
   def index
-    data = client_ip # ameba:disable UselessAssign
+    data = client_ip # ameba:disable Lint/UselessAssign
     render html: template("inner.ecr")
   end
 
   def show
-    data = params["id"] # ameba:disable UselessAssign
+    data = params["id"] # ameba:disable Lint/UselessAssign
     render html: partial("inner.ecr")
   end
 end
@@ -20,7 +20,7 @@ class TemplateTwo < TemplateOne
   layout "layout_alt.ecr"
 
   def index
-    data = 50 # ameba:disable UselessAssign
+    data = 50 # ameba:disable Lint/UselessAssign
     render html: template("inner.ecr")
   end
 end

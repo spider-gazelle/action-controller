@@ -4,8 +4,8 @@ require "./session/message_verifier"
 require "./session/message_encryptor"
 
 class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
-  # Cookies can typically store 4096 bytes.
   NEVER           = 622_080_000 # (~20 years in seconds)
+  # Cookies can typically store 4096 bytes.
   MAX_COOKIE_SIZE =        4096
 
   Habitat.create do
@@ -17,6 +17,7 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
     setting path : String = "/"
   end
 
+  # Returns whether any key-value pair is modified.
   getter modified : Bool
   @encoder : MessageEncryptor | MessageVerifier
 
@@ -57,13 +58,21 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
     # TODO:: Add secure setting
 
     if @existing && self.empty?
-      data = "; Path=#{settings.path}; Max-Age=0; HttpOnly; SameSite=Strict"
+      data = ""
+      age = 0
     else
       data = @encoder.prepare(self.to_json)
+      age = settings.max_age
       raise CookieSizeExceeded.new("#{data.size} > #{MAX_COOKIE_SIZE}") if data.size > MAX_COOKIE_SIZE
-      data = "#{data}; Path=#{settings.path}; Max-Age=#{settings.max_age}; HttpOnly; SameSite=Strict"
     end
-    cookies[settings.key] = data
+    cookies[settings.key] = HTTP::Cookie.new(
+      settings.key,
+      data,
+      settings.path,
+      Time.now + age.seconds,
+      http_only: true,
+      extension: "SameSite=Strict"
+    )
   end
 
   def []=(key, value)
