@@ -9,15 +9,15 @@ class ActionController::Router::RouteHandler
   end
 
   def search_route(context : HTTP::Server::Context) : Action?
-    search_path = "/" + context.request.method + context.request.path
-    action = @static_routes[search_path]?
-    return action if action
-
-    route = @tree.find(search_path)
-    context.route_params = route.params
-    return route.payload if route.found?
-
-    nil
+    search_path = "/#{context.request.method}#{context.request.path}"
+    action = @static_routes.fetch(search_path) do
+      route = @tree.find(search_path)
+      if route.found?
+        context.route_params = route.params
+        route.payload
+      end
+    end
+    action
   end
 
   def call(context : HTTP::Server::Context)
