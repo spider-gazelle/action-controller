@@ -86,54 +86,54 @@ module ActionController::Responders
   }
 
   macro render(status = :ok, json = nil, xml = nil, html = nil, yaml = nil, text = nil, binary = nil)
-    response = self.response
+    %response = self.response
     {% if status != :ok || status != 200 %}
-      response.status_code = {{STATUS_CODES[status] || status}}
+      %response.status_code = {{STATUS_CODES[status] || status}}
     {% end %}
 
-    ctype = response.headers["Content-Type"]?
+    %ctype = %response.headers["Content-Type"]?
 
     {% if json %}
-      response.content_type = MIME_TYPES[:json] unless ctype
+      %response.content_type = MIME_TYPES[:json] unless %ctype
 
       {% if json.is_a?(String) %}
-        output = {{json}}
+        %output = {{json}}
       {% else %}
-        output = ({{json}}).to_json
+        %output = ({{json}}).to_json
       {% end %}
     {% end %}
 
     {% if xml %}
-      response.content_type = MIME_TYPES[:xml] unless ctype
-      output = {{xml}}
+      %response.content_type = MIME_TYPES[:xml] unless %ctype
+      %output = {{xml}}
     {% end %}
 
     {% if html %}
-      response.content_type = MIME_TYPES[:html] unless ctype
-      output = {{html}}
+      %response.content_type = MIME_TYPES[:html] unless %ctype
+      %output = {{html}}
     {% end %}
 
     {% if yaml %}
-      response.content_type = MIME_TYPES[:yaml] unless ctype
+      %response.content_type = MIME_TYPES[:yaml] unless %ctype
       {% if yaml.is_a?(String) %}
-        output = {{yaml}}
+        %output = {{yaml}}
       {% else %}
-        output = ({{yaml}}).to_yaml
+        %output = ({{yaml}}).to_yaml
       {% end %}
     {% end %}
 
     {% if text %}
-      response.content_type = MIME_TYPES[:text] unless ctype
-      output = {{text}}
+      %response.content_type = MIME_TYPES[:text] unless %ctype
+      %output = {{text}}
     {% end %}
 
     {% if binary %}
-      response.content_type = MIME_TYPES[:binary] unless ctype
-      output = {{binary}}
+      %response.content_type = MIME_TYPES[:binary] unless %ctype
+      %output = {{binary}}
     {% end %}
 
     {% if json || xml || html || yaml || text || binary %}
-        response << output unless self.request.method == "HEAD"
+        %response << %output unless self.request.method == "HEAD"
     {% end %}
 
     @render_called = true
@@ -145,19 +145,19 @@ module ActionController::Responders
   end
 
   macro redirect_to(path, status = :found)
-    response = self.response
-    response.status_code = {{REDIRECTION_CODES[status] || status}}
-    response.headers["Location"] = {{path}}
+    %response = self.response
+    %response.status_code = {{REDIRECTION_CODES[status] || status}}
+    %response.headers["Location"] = {{path}}
     @render_called = true
     return
   end
 
   macro respond_with(&block)
-    resp = SelectResponse.new(response, accepts_formats)
-    resp.responses do
+    %resp = SelectResponse.new(response, accepts_formats)
+    %resp.responses do
       {{block.body}}
     end
-    resp.build_response
+    %resp.build_response
     @render_called = true
     return
   end
