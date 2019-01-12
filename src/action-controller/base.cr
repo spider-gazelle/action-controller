@@ -635,6 +635,7 @@ abstract class ActionController::Base
   end
 
   @client_ip : String? = nil
+
   def client_ip : String
     cip = @client_ip
     return cip if cip
