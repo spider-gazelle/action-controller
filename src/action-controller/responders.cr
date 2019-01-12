@@ -171,7 +171,7 @@ module ActionController::Responders
       accepts = accept.split(";").first?.try(&.split(ACCEPT_SEPARATOR_REGEX))
       return accepts if accepts && accepts.any?
     end
-    return [] of String
+    [] of String
   end
 
   # Helper class for selecting the response to render / execute

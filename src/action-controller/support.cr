@@ -70,6 +70,6 @@ module ActionController::Support
       ctype = ctype.split(TYPE_SEPARATOR_REGEX).first?
       return ctype if ctype && !ctype.empty?
     end
-    return nil
+    nil
   end
 end
