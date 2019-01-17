@@ -4,11 +4,11 @@ class ActionController::Router::RouteHandler
   include HTTP::Handler
 
   def initialize
-    @tree = Radix::Tree(Action).new
-    @static_routes = {} of String => Action
+    @tree = Radix::Tree(Tuple(Action, Bool)).new
+    @static_routes = {} of String => Tuple(Action, Bool)
   end
 
-  def search_route(context : HTTP::Server::Context) : Action?
+  def search_route(context : HTTP::Server::Context) : Tuple(Action, Bool)?
     search_path = "/#{context.request.method}#{context.request.path}"
     action = @static_routes.fetch(search_path) do
       route = @tree.find(search_path)
@@ -22,13 +22,13 @@ class ActionController::Router::RouteHandler
 
   def call(context : HTTP::Server::Context)
     if action = search_route(context)
-      action.call(context)
+      action[0].call(context, action[1])
     else
       call_next(context)
     end
   end
 
-  def add_route(key : String, action : Action)
+  def add_route(key : String, action : Tuple(Action, Bool))
     if key.includes?(':') || key.includes?('*')
       @tree.add(key, action)
     else

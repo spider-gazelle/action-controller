@@ -133,7 +133,7 @@ module ActionController::Responders
     {% end %}
 
     {% if json || xml || html || yaml || text || binary %}
-        %response << %output unless self.request.method == "HEAD"
+        %response << %output unless @__head_request__
     {% end %}
 
     @render_called = true

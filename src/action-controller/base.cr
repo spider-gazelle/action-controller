@@ -105,10 +105,11 @@ abstract class ActionController::Base
     "destroy" => {"delete", "/:id"},
   }
 
-  def initialize(@context : HTTP::Server::Context, @action_name = :index)
+  def initialize(@context : HTTP::Server::Context, @action_name = :index, @__head_request__ = false)
     @render_called = false
   end
 
+  getter context
   getter action_name : Symbol
   getter render_called : Bool
   getter __session__ : Session?
@@ -277,7 +278,7 @@ abstract class ActionController::Base
 
       def self.__init_routes__(router)
         {% for name, details in ROUTES %}
-          router.{{details[0].id}} "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/") do |context|
+          router.{{details[0].id}} "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/") do |context, head_request|
             {% is_websocket = details[3] %}
 
             # Check if force SSL is set and redirect to HTTPS if HTTP
@@ -308,7 +309,7 @@ abstract class ActionController::Base
             {% end %}
 
             # Create an instance of the controller
-            instance = {{@type.name}}.new(context, :{{name}})
+            instance = {{@type.name}}.new(context, :{{name}}, head_request)
 
             # Check for errors
             {% if !RESCUE.empty? %}
