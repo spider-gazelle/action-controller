@@ -86,7 +86,7 @@ module ActionController::Responders
   }
 
   macro render(status = :ok, json = nil, xml = nil, html = nil, yaml = nil, text = nil, binary = nil)
-    %response = self.response
+    %response = @context.response
     {% if status != :ok || status != 200 %}
       %response.status_code = {{STATUS_CODES[status] || status}}
     {% end %}
@@ -145,7 +145,7 @@ module ActionController::Responders
   end
 
   macro redirect_to(path, status = :found)
-    %response = self.response
+    %response = @context.response
     %response.status_code = {{REDIRECTION_CODES[status] || status}}
     %response.headers["Location"] = {{path}}
     @render_called = true

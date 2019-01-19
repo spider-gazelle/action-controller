@@ -118,27 +118,27 @@ abstract class ActionController::Base
     @__session__ ||= Session.from_cookies(cookies)
   end
 
-  def request
+  macro request
     @context.request
   end
 
-  def response
+  macro response
     @context.response
   end
 
-  def route_params
+  macro route_params
     @context.route_params
   end
 
-  def logger
+  macro logger
     settings.logger
   end
 
-  def query_params
+  macro query_params
     @context.request.query_params
   end
 
-  def cookies
+  macro cookies
     @context.request.cookies
   end
 
@@ -641,7 +641,7 @@ abstract class ActionController::Base
     cip = @client_ip
     return cip if cip
 
-    request = self.request
+    request = @context.request
     cip = request.headers["X-Forwarded-Proto"]? || request.headers["X-Real-IP"]?
 
     if cip.nil?
