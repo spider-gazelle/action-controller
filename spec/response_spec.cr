@@ -149,5 +149,11 @@ describe "end to end requests and responses" do
         {"BobJane", :index, :get, "/bob_jane/"},
       ])
     end
+
+    it "should return the available params in priority order" do
+      result = curl("GET", "/template_one/params/hello?testing=123&other=and&yes=no")
+      result.body.should eq("testing other yes yes")
+      result.headers["Values"].should eq("123 and hello no")
+    end
   end
 end

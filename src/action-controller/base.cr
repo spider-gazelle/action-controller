@@ -149,10 +149,16 @@ abstract class ActionController::Base
     return params if params
     @params = params = HTTP::Params.new
 
+    # duplicate the query_params
+    qparams = query_params
+    qparams.each do |key, _|
+      params.set_all(key, qparams.fetch_all(key).dup)
+    end
+
     # Add route params to the HTTP params
     # giving preference to route params
     route_params.each do |key, value|
-      values = query_params.fetch_all(key).dup
+      values = params.fetch_all(key)
       values.unshift(value)
       params.set_all(key, values)
     end

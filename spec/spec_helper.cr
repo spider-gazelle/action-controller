@@ -14,6 +14,11 @@ class TemplateOne < ActionController::Base
     data = params["id"] # ameba:disable Lint/UselessAssign
     render html: partial("inner.ecr")
   end
+
+  get "/params/:yes", :param_check do
+    response.headers["Values"] = params.map { |_, value| value }.join(" ")
+    render text: params.map { |name, _| name }.join(" ")
+  end
 end
 
 class TemplateTwo < TemplateOne
