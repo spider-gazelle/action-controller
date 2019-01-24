@@ -85,7 +85,11 @@ module ActionController::Responders
     yaml:   "text/yaml",
   }
 
-  macro render(status = :ok, json = nil, xml = nil, html = nil, yaml = nil, text = nil, binary = nil, template = nil, partial = nil)
+  macro render(status = :ok, head = nil, json = nil, xml = nil, html = nil, yaml = nil, text = nil, binary = nil, template = nil, partial = nil, layout = nil)
+    {% if !(head || json || xml || html || yaml || text || binary || template || partial) %}
+      "Render must be called with one of json, xml, html, yaml, text, binary, template, partial".id
+    {% end %}
+
     %response = @context.response
     {% if status != :ok || status != 200 %}
       %response.status_code = {{STATUS_CODES[status] || status}}
@@ -134,7 +138,11 @@ module ActionController::Responders
 
     {% if template %}
       %response.content_type = MIME_TYPES[:html] unless %ctype
-      template({{template}}, io: %response) unless @__head_request__
+      {% if layout %}
+        template({{template}}, layout: {{layout}}, io: %response) unless @__head_request__
+      {% else %}
+        template({{template}}, io: %response) unless @__head_request__
+      {% end %}
     {% end %}
 
     {% if partial %}
@@ -151,7 +159,7 @@ module ActionController::Responders
   end
 
   macro head(status)
-    render({{status}})
+    render({{status}}, true)
   end
 
   macro redirect_to(path, status = :found)
