@@ -97,9 +97,9 @@ module ActionController::Responders
       %response.content_type = MIME_TYPES[:json] unless %ctype
 
       {% if json.is_a?(String) %}
-        %output = {{json}}
+        %response << {{json}} unless @__head_request__
       {% else %}
-        %output = ({{json}}).to_json
+        ({{json}}).to_json(%response.output) unless @__head_request__
       {% end %}
     {% end %}
 
@@ -116,9 +116,9 @@ module ActionController::Responders
     {% if yaml %}
       %response.content_type = MIME_TYPES[:yaml] unless %ctype
       {% if yaml.is_a?(String) %}
-        %output = {{yaml}}
+        %response << {{yaml}} unless @__head_request__
       {% else %}
-        %output = ({{yaml}}).to_yaml
+        ({{yaml}}).to_yaml(%response.output) unless @__head_request__
       {% end %}
     {% end %}
 
@@ -132,7 +132,7 @@ module ActionController::Responders
       %output = {{binary}}
     {% end %}
 
-    {% if json || xml || html || yaml || text || binary %}
+    {% if xml || html || text || binary %}
         %response << %output unless @__head_request__
     {% end %}
 
