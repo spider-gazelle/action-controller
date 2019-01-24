@@ -85,7 +85,7 @@ module ActionController::Responders
     yaml:   "text/yaml",
   }
 
-  macro render(status = :ok, json = nil, xml = nil, html = nil, yaml = nil, text = nil, binary = nil)
+  macro render(status = :ok, json = nil, xml = nil, html = nil, yaml = nil, text = nil, binary = nil, template = nil, partial = nil)
     %response = @context.response
     {% if status != :ok || status != 200 %}
       %response.status_code = {{STATUS_CODES[status] || status}}
@@ -99,7 +99,7 @@ module ActionController::Responders
       {% if json.is_a?(String) %}
         %response << {{json}} unless @__head_request__
       {% else %}
-        ({{json}}).to_json(%response.output) unless @__head_request__
+        ({{json}}).to_json(%response) unless @__head_request__
       {% end %}
     {% end %}
 
@@ -118,7 +118,7 @@ module ActionController::Responders
       {% if yaml.is_a?(String) %}
         %response << {{yaml}} unless @__head_request__
       {% else %}
-        ({{yaml}}).to_yaml(%response.output) unless @__head_request__
+        ({{yaml}}).to_yaml(%response) unless @__head_request__
       {% end %}
     {% end %}
 
@@ -130,6 +130,16 @@ module ActionController::Responders
     {% if binary %}
       %response.content_type = MIME_TYPES[:binary] unless %ctype
       %output = {{binary}}
+    {% end %}
+
+    {% if template %}
+      %response.content_type = MIME_TYPES[:html] unless %ctype
+      template({{template}}, io: %response) unless @__head_request__
+    {% end %}
+
+    {% if partial %}
+      %response.content_type = MIME_TYPES[:html] unless %ctype
+      template(partial: {{partial}}, io: %response) unless @__head_request__
     {% end %}
 
     {% if xml || html || text || binary %}

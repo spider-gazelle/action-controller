@@ -7,12 +7,20 @@ class TemplateOne < ActionController::Base
 
   def index
     data = client_ip # ameba:disable Lint/UselessAssign
-    render html: template("inner.ecr")
+    if params["inline"]?
+      render html: template("inner.ecr")
+    else
+      render template: "inner.ecr"
+    end
   end
 
   def show
     data = params["id"] # ameba:disable Lint/UselessAssign
-    render html: partial("inner.ecr")
+    if params["inline"]?
+      render html: partial("inner.ecr")
+    else
+      render partial: "inner.ecr"
+    end
   end
 
   get "/params/:yes", :param_check do
@@ -26,7 +34,7 @@ class TemplateTwo < TemplateOne
 
   def index
     data = 50 # ameba:disable Lint/UselessAssign
-    render html: template("inner.ecr")
+    render template: "inner.ecr"
   end
 end
 

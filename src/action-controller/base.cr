@@ -32,18 +32,28 @@ abstract class ActionController::Base
     {% end %}
   end
 
-  macro template(template = nil, partial = nil, layout = nil)
+  macro template(template = nil, partial = nil, layout = nil, io = nil)
     {% if !(template || partial) %}
       raise "Template or partial required!"
     {% else %}
       {% filename = partial || template %}
-      %content = render_template({{filename}})
+      {% layout = layout || TEMPLATE_LAYOUT[@type.id] %}
+
+      {% if (partial || !layout) && io %}
+        %content = render_template({{filename}}, {{io}})
+      {% else %}
+        %content = render_template({{filename}})
+      {% end %}
 
       {% if !partial %}
-        {% if layout || TEMPLATE_LAYOUT[@type.id] %}
-          {% layout = layout || TEMPLATE_LAYOUT[@type.id] %}
-          content = %content
-          render_template({{layout}})
+        {% if layout %}
+          {% if io %}
+            content = %content
+            render_template({{layout}}, {{io}})
+          {% else %}
+            content = %content
+            render_template({{layout}})
+          {% end %}
         {% else %}
           %content
         {% end %}
@@ -53,12 +63,20 @@ abstract class ActionController::Base
     {% end %}
   end
 
-  macro partial(partial)
-    template(partial: {{partial}})
+  macro partial(partial, io = nil)
+    {% if io %}
+      template(partial: {{partial}}, io: {{io}})
+    {% else %}
+      template(partial: {{partial}})
+    {% end %}
   end
 
-  private macro render_template(filename)
-    Kilt.render({{TEMPLATE_PATH[@type.id] + filename}})
+  private macro render_template(filename, io = nil)
+    {% if io %}
+      Kilt.embed({{TEMPLATE_PATH[@type.id] + filename}}, {{io}})
+    {% else %}
+      Kilt.render({{TEMPLATE_PATH[@type.id] + filename}})
+    {% end %}
   end
 
   # Base route => klass name
