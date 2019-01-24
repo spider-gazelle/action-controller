@@ -43,6 +43,10 @@ end
 def with_server
   app = ActionController::Server.new
   app.socket.bind_tcp("127.0.0.1", 6000, true)
+  begin
+    File.delete("/tmp/spider-socket.sock")
+  rescue
+  end
   app.socket.bind_unix "/tmp/spider-socket.sock"
   spawn do
     app.run
