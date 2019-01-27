@@ -101,7 +101,7 @@ module ActionController::Responders
       %response.content_type = MIME_TYPES[:json] unless %ctype
 
       {% if json.is_a?(String) %}
-        %response << {{json}} unless @__head_request__
+        {{json}}.to_s(%response) unless @__head_request__
       {% else %}
         ({{json}}).to_json(%response) unless @__head_request__
       {% end %}
@@ -120,7 +120,7 @@ module ActionController::Responders
     {% if yaml %}
       %response.content_type = MIME_TYPES[:yaml] unless %ctype
       {% if yaml.is_a?(String) %}
-        %response << {{yaml}} unless @__head_request__
+        {{yaml}}.to_s(%response) unless @__head_request__
       {% else %}
         ({{yaml}}).to_yaml(%response) unless @__head_request__
       {% end %}
@@ -151,7 +151,7 @@ module ActionController::Responders
     {% end %}
 
     {% if xml || html || text || binary %}
-        %response << %output unless @__head_request__
+        %output.to_s(%response) unless @__head_request__
     {% end %}
 
     @render_called = true
@@ -196,7 +196,7 @@ module ActionController::Responders
   class SelectResponse
     def initialize(@response : HTTP::Server::Response, formats)
       @accepts = SelectResponse.accepts(formats)
-      @options = {} of Symbol => Proc(String)
+      @options = {} of Symbol => Proc(IO, Nil)
     end
 
     @accepts : Hash(Symbol, String)
@@ -207,76 +207,76 @@ module ActionController::Responders
       with self yield
     end
 
-    macro html(obj = nil, &block)
+    macro html(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:html] = ->{ {{obj}} }
+        options[:html] = ->(io : IO){ ({{obj}}).to_s(io) }
       {% else %}
-        options[:html] = ->{
-          {{ block.body }}
+        options[:html] = ->(io : IO){
+          ({{ block.body }}).to_s(io)
         }
       {% end %}
     end
 
-    macro xml(obj = nil, &block)
+    macro xml(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:xml] = ->{ {{obj}} }
+        options[:xml] = ->(io : IO){ ({{obj}}).to_s(io) }
       {% else %}
-        options[:xml] = ->{
-          {{ block.body }}
+        options[:xml] = ->(io : IO){
+          ({{ block.body }}).to_s(io)
         }
       {% end %}
     end
 
-    macro json(obj = nil, &block)
+    macro json(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:json] = ->{
+        options[:json] = ->(io : IO){
           output = {{obj}}
           {% if obj.is_a?(String) %}
-            output
+            output.to_s(io)
           {% else %}
-            output.to_json
+            output.to_json(io)
           {% end %}
         }
       {% else %}
-        options[:json] = ->{
-          {{ block.body }}
+        options[:json] = ->(io : IO){
+          ({{ block.body }}).to_s(io)
         }
       {% end %}
     end
 
-    macro yaml(obj = nil, &block)
+    macro yaml(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:yaml] = ->{
+        options[:yaml] = ->(io : IO){
           output = {{obj}}
           {% if obj.is_a?(String) %}
-            output
+            output.to_s(io)
           {% else %}
-            output.to_yaml
+            output.to_yaml(io)
           {% end %}
         }
       {% else %}
-        options[:yaml] = ->{
-          {{ block.body }}
+        options[:yaml] = ->(io : IO){
+          ({{ block.body }}).to_s(io)
         }
       {% end %}
     end
 
-    macro text(obj = nil, &block)
+    macro text(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:text] = ->{ {{obj}} }
+        options[:text] = ->(io : IO){ ({{obj}}).to_s(io) }
       {% else %}
-        options[:text] = ->{
-          {{ block.body }}
+        options[:text] = ->(io : IO){
+          ({{ block.body }}).to_s(io)
         }
       {% end %}
     end
 
-    macro binary(obj = nil, &block)
+    macro binary(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:binary] = ->{ {{obj}} }
+        options[:binary] = ->(io : IO){ ({{obj}}).to_s(io) }
       {% else %}
-        options[:binary] = ->{
-          {{ block.body }}
+        options[:binary] = ->(io : IO){
+          ({{ block.body }}).to_s(io)
         }
       {% end %}
     end
@@ -297,18 +297,16 @@ module ActionController::Responders
         end
 
         if found
-          @response << found.call
+          found.call @response
         else
           @response.status_code = 406 # not acceptable
         end
       else
-        # If no format specified then default to the first format specified
+        # If no format requested then default to the first format specified
         opt = @options.first
         format = opt[0]
-        data = opt[1].call
-
         @response.content_type = MIME_TYPES[format]
-        @response << data
+        opt[1].call @response
       end
     end
 

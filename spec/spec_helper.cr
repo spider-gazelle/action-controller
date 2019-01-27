@@ -103,7 +103,7 @@ class HelloWorld < Application
       json({set_var: @me})
       xml do
         str = "<set_var>#{@me}</set_var>"
-        XML.parse(str).to_s
+        XML.parse(str)
       end
     end
   end
