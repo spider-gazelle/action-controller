@@ -95,6 +95,10 @@ describe "end to end requests and responses" do
       result = curl("GET", "/hello/", {"Accept" => "text/xml"})
       result.body.should eq("<?xml version=\"1.0\"?>\n<set_var>123</set_var>\n")
       result.status_code.should eq(200)
+
+      result = curl("HEAD", "/hello/", {"Accept" => "text/xml"})
+      result.body.should eq("")
+      result.status_code.should eq(200)
     end
 
     it "should stop callbacks if render is called in a before filter" do

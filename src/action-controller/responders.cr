@@ -171,7 +171,7 @@ module ActionController::Responders
   end
 
   macro respond_with(&block)
-    %resp = SelectResponse.new(response, accepts_formats)
+    %resp = SelectResponse.new(response, accepts_formats, @__head_request__)
     %resp.responses do
       {{block.body}}
     end
@@ -194,7 +194,7 @@ module ActionController::Responders
 
   # Helper class for selecting the response to render / execute
   class SelectResponse
-    def initialize(@response : HTTP::Server::Response, formats)
+    def initialize(@response : HTTP::Server::Response, formats, @head_request : Bool)
       @accepts = SelectResponse.accepts(formats)
       @options = {} of Symbol => Proc(IO, Nil)
     end
@@ -297,7 +297,7 @@ module ActionController::Responders
         end
 
         if found
-          found.call @response
+          found.call(@response) unless @head_request
         else
           @response.status_code = 406 # not acceptable
         end
@@ -306,7 +306,7 @@ module ActionController::Responders
         opt = @options.first
         format = opt[0]
         @response.content_type = MIME_TYPES[format]
-        opt[1].call @response
+        opt[1].call(@response) unless @head_request
       end
     end
 
