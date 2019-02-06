@@ -170,7 +170,7 @@ require "./curl_context"
 # require "random"
 # Random::Secure.hex
 
-ActionController::Session.configure do
+ActionController::Session.configure do |settings|
   settings.key = "_test_session_"
   settings.secret = "4f74c0b358d5bab4000dd3c75465dc2c"
 end

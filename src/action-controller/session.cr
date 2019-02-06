@@ -8,7 +8,7 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
   # Cookies can typically store 4096 bytes.
   MAX_COOKIE_SIZE = 4096
 
-  Habitat.create do
+  Habitat.create do |settings|
     setting key : String
     setting secret : String
     setting max_age : Int32 = NEVER
