@@ -98,7 +98,7 @@ module ActionController::Responders
     %ctype = %response.headers["Content-Type"]?
 
     {% if json %}
-      %response.content_type = MIME_TYPES[:json] unless %ctype
+      %response.content_type = {{MIME_TYPES[:json]}} unless %ctype
 
       {% if json.is_a?(String) %}
         {{json}}.to_s(%response) unless @__head_request__
@@ -108,17 +108,17 @@ module ActionController::Responders
     {% end %}
 
     {% if xml %}
-      %response.content_type = MIME_TYPES[:xml] unless %ctype
+      %response.content_type = {{MIME_TYPES[:xml]}} unless %ctype
       %output = {{xml}}
     {% end %}
 
     {% if html %}
-      %response.content_type = MIME_TYPES[:html] unless %ctype
+      %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       %output = {{html}}
     {% end %}
 
     {% if yaml %}
-      %response.content_type = MIME_TYPES[:yaml] unless %ctype
+      %response.content_type = {{MIME_TYPES[:yaml]}} unless %ctype
       {% if yaml.is_a?(String) %}
         {{yaml}}.to_s(%response) unless @__head_request__
       {% else %}
@@ -127,17 +127,17 @@ module ActionController::Responders
     {% end %}
 
     {% if text %}
-      %response.content_type = MIME_TYPES[:text] unless %ctype
+      %response.content_type = {{MIME_TYPES[:text]}} unless %ctype
       %output = {{text}}
     {% end %}
 
     {% if binary %}
-      %response.content_type = MIME_TYPES[:binary] unless %ctype
+      %response.content_type = {{MIME_TYPES[:binary]}} unless %ctype
       %output = {{binary}}
     {% end %}
 
     {% if template %}
-      %response.content_type = MIME_TYPES[:html] unless %ctype
+      %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       {% if layout %}
         template({{template}}, layout: {{layout}}, io: %response) unless @__head_request__
       {% else %}
@@ -146,7 +146,7 @@ module ActionController::Responders
     {% end %}
 
     {% if partial %}
-      %response.content_type = MIME_TYPES[:html] unless %ctype
+      %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       template(partial: {{partial}}, io: %response) unless @__head_request__
     {% end %}
 
