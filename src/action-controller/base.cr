@@ -300,207 +300,213 @@ abstract class ActionController::Base
     {% if !@type.abstract? && !ROUTES.empty? %}
       {% CONCRETE_CONTROLLERS[@type.name.id] = NAMESPACE[0] %}
 
+      # Generate functions for each route
+      {% for name, details in ROUTES %}
+        def self.{{(details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/|\-|\~|\*|\:/, "_").id}}(context, head_request)
+          {% is_websocket = details[3] %}
+
+          # Check if force SSL is set and redirect to HTTPS if HTTP
+          {% force = false %}
+          {% if FORCE[:force] %}
+            {% options = FORCE[:force] %}
+            {% only = options[0] %}
+            {% if only != nil && only.includes?(name) %} # only
+              {% force = true %}
+            {% else %}
+              {% except = options[1] %}
+              {% if except != nil && !except.includes?(name) %} # except
+                {% force = true %}
+              {% end %}
+            {% end %}
+          {% end %}
+          {% if force %}
+            if ActionController::Support.request_protocol(context.request) != :https
+            {% if is_websocket %}
+              response = context.response
+              response.status_code = {{STATUS_CODES[:precondition_failed]}}
+              response.content_type = MIME_TYPES[:text]
+              response << "WebSocket Secure (wss://) connection required"
+            {% else %}
+              ActionController::Support.redirect_to_https(context)
+            {% end %}
+            else
+          {% end %}
+
+          # Create an instance of the controller
+          instance = {{@type.name}}.new(context, :{{name}}, head_request)
+
+          # Check for errors
+          {% if !RESCUE.empty? %}
+            begin
+          {% end %}
+
+          # Check if there is a skip on this method
+          {% skipping = [] of Nil %}
+          {% for method, options in SKIP %}
+            {% only = options[0] %}
+            {% except = options[1] %}
+            {% if only == nil && except == nil %}
+              {% skipping = [method] + skipping %}
+            {% elsif only != nil && only.includes?(name) %}
+              {% skipping = [method] + skipping %}
+            {% elsif except != nil && !except.includes?(name) %}
+              {% skipping = [method] + skipping %}
+            {% end %}
+          {% end %}
+
+          # Execute the around filters
+          {% around_actions = AROUND.keys %}
+          {% for method, options in AROUND %}
+            {% only = options[0] %}
+            {% if only != nil && !only.includes?(name) %} # only
+              {% around_actions = around_actions.reject { |act| act == method } %}
+            {% else %}
+              {% except = options[1] %}
+              {% if except != nil && except.includes?(name) %} # except
+                {% around_actions = around_actions.reject { |act| act == method } %}
+              {% end %}
+            {% end %}
+          {% end %}
+          {% around_actions = around_actions.reject { |act| skipping.includes?(act) } %}
+
+          {% if !around_actions.empty? %}
+            ActionController::Base.__yield__(instance) do
+              {% for action in around_actions %}
+                  {{action}} do
+              {% end %}
+          {% end %}
+
+          # Execute the before filters
+          {% before_actions = BEFORE.keys %}
+          {% for method, options in BEFORE %}
+            {% only = options[0] %}
+            {% if only != nil && !only.includes?(name) %} # only
+              {% before_actions = before_actions.reject { |act| act == method } %}
+            {% else %}
+              {% except = options[1] %}
+              {% if except != nil && except.includes?(name) %} # except
+                {% before_actions = before_actions.reject { |act| act == method } %}
+              {% end %}
+            {% end %}
+          {% end %}
+          {% before_actions = before_actions.reject { |act| skipping.includes?(act) } %}
+
+          {% if !before_actions.empty? %}
+            {% if around_actions.empty? %}
+              ActionController::Base.__yield__(instance) do
+            {% end %}
+              {% for action in before_actions %}
+                {{action}} unless render_called
+              {% end %}
+            {% if around_actions.empty? %}
+              end
+            {% end %}
+          {% end %}
+
+          # Check if render could have been before performing the action
+          {% if !before_actions.empty? %}
+            if !instance.render_called
+          {% end %}
+
+            # Call the action
+            {% if is_websocket %}
+              # Based on code from https://github.com/crystal-lang/crystal/blob/master/src/http/server/handlers/websocket_handler.cr
+              if ActionController::Support.websocket_upgrade_request?(context.request)
+                key = context.request.headers["Sec-Websocket-Key"]
+
+                accept_code = Base64.strict_encode(OpenSSL::SHA1.hash("#{key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
+
+                response = context.response
+                response.status_code = 101
+                response.headers["Upgrade"] = "websocket"
+                response.headers["Connection"] = "Upgrade"
+                response.headers["Sec-Websocket-Accept"] = accept_code
+                response.upgrade do |io|
+                  begin
+                    ws_session = HTTP::WebSocket.new(io)
+                    instance.{{name}}(ws_session)
+                    ws_session.run
+                  ensure
+                    io.close
+                  end
+                end
+              else
+                response = context.response
+                response.status_code = {{STATUS_CODES[:upgrade_required]}}
+                response.content_type = MIME_TYPES[:text]
+                response << "This service requires use of the WebSocket protocol"
+              end
+            {% else %}
+              instance.{{name}}
+            {% end %}
+
+          {% if !before_actions.empty? %}
+            end # END before action render_called check
+          {% end %}
+
+          # END around action blocks
+          {% if !around_actions.empty? %}
+            {% for action in around_actions %}
+              nil
+              end
+            {% end %}
+            end
+          {% end %}
+
+          # Execute the after filters
+          {% after_actions = AFTER.keys %}
+          {% for method, options in AFTER %}
+            {% only = options[0] %}
+            {% if only != nil && !only.includes?(name) %} # only
+              {% after_actions = after_actions.reject { |act| act == method } %}
+            {% else %}
+              {% except = options[1] %}
+              {% if except != nil && except.includes?(name) %} # except
+                {% after_actions = after_actions.reject { |act| act == method } %}
+              {% end %}
+            {% end %}
+          {% end %}
+          {% after_actions = after_actions.reject { |act| skipping.includes?(act) } %}
+
+          {% if !after_actions.empty? %}
+            ActionController::Base.__yield__(instance) do
+              {% for action in after_actions %}
+                {{action}}
+              {% end %}
+            end
+          {% end %}
+
+          # Check if session needs to be written
+          session = instance.__session__
+          session.encode(context.response.cookies) if session && session.modified
+
+          # Implement error handling
+          {% if !RESCUE.empty? %}
+            {% for exception, details in RESCUE %}
+              rescue e : {{exception.id}}
+                if !instance.render_called
+                  instance.{{details[0]}}(e)
+                else
+                  raise e
+                end
+            {% end %}
+
+            end
+          {% end %}
+
+          {% if force %}
+            end # END force SSL check
+          {% end %}
+
+          # Always return the context
+          context
+        end
+      {% end %}
+
+      # Routes call the functions generated above
       def self.__init_routes__(router)
         {% for name, details in ROUTES %}
-          router.{{details[0].id}} "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/") do |context, head_request|
-            {% is_websocket = details[3] %}
-
-            # Check if force SSL is set and redirect to HTTPS if HTTP
-            {% force = false %}
-            {% if FORCE[:force] %}
-              {% options = FORCE[:force] %}
-              {% only = options[0] %}
-              {% if only != nil && only.includes?(name) %} # only
-                {% force = true %}
-              {% else %}
-                {% except = options[1] %}
-                {% if except != nil && !except.includes?(name) %} # except
-                  {% force = true %}
-                {% end %}
-              {% end %}
-            {% end %}
-            {% if force %}
-              if ActionController::Support.request_protocol(context.request) != :https
-              {% if is_websocket %}
-                response = context.response
-                response.status_code = {{STATUS_CODES[:precondition_failed]}}
-                response.content_type = MIME_TYPES[:text]
-                response << "WebSocket Secure (wss://) connection required"
-              {% else %}
-                ActionController::Support.redirect_to_https(context)
-              {% end %}
-              else
-            {% end %}
-
-            # Create an instance of the controller
-            instance = {{@type.name}}.new(context, :{{name}}, head_request)
-
-            # Check for errors
-            {% if !RESCUE.empty? %}
-              begin
-            {% end %}
-
-            # Check if there is a skip on this method
-            {% skipping = [] of Nil %}
-            {% for method, options in SKIP %}
-              {% only = options[0] %}
-              {% except = options[1] %}
-              {% if only == nil && except == nil %}
-                {% skipping = [method] + skipping %}
-              {% elsif only != nil && only.includes?(name) %}
-                {% skipping = [method] + skipping %}
-              {% elsif except != nil && !except.includes?(name) %}
-                {% skipping = [method] + skipping %}
-              {% end %}
-            {% end %}
-
-            # Execute the around filters
-            {% around_actions = AROUND.keys %}
-            {% for method, options in AROUND %}
-              {% only = options[0] %}
-              {% if only != nil && !only.includes?(name) %} # only
-                {% around_actions = around_actions.reject { |act| act == method } %}
-              {% else %}
-                {% except = options[1] %}
-                {% if except != nil && except.includes?(name) %} # except
-                  {% around_actions = around_actions.reject { |act| act == method } %}
-                {% end %}
-              {% end %}
-            {% end %}
-            {% around_actions = around_actions.reject { |act| skipping.includes?(act) } %}
-
-            {% if !around_actions.empty? %}
-              ActionController::Base.__yield__(instance) do
-                {% for action in around_actions %}
-                    {{action}} do
-                {% end %}
-            {% end %}
-
-            # Execute the before filters
-            {% before_actions = BEFORE.keys %}
-            {% for method, options in BEFORE %}
-              {% only = options[0] %}
-              {% if only != nil && !only.includes?(name) %} # only
-                {% before_actions = before_actions.reject { |act| act == method } %}
-              {% else %}
-                {% except = options[1] %}
-                {% if except != nil && except.includes?(name) %} # except
-                  {% before_actions = before_actions.reject { |act| act == method } %}
-                {% end %}
-              {% end %}
-            {% end %}
-            {% before_actions = before_actions.reject { |act| skipping.includes?(act) } %}
-
-            {% if !before_actions.empty? %}
-              {% if around_actions.empty? %}
-                ActionController::Base.__yield__(instance) do
-              {% end %}
-                {% for action in before_actions %}
-                  {{action}} unless render_called
-                {% end %}
-              {% if around_actions.empty? %}
-                end
-              {% end %}
-            {% end %}
-
-            # Check if render could have been before performing the action
-            {% if !before_actions.empty? %}
-              if !instance.render_called
-            {% end %}
-
-              # Call the action
-              {% if is_websocket %}
-                # Based on code from https://github.com/crystal-lang/crystal/blob/master/src/http/server/handlers/websocket_handler.cr
-                if ActionController::Support.websocket_upgrade_request?(context.request)
-                  key = context.request.headers["Sec-Websocket-Key"]
-
-                  accept_code = Base64.strict_encode(OpenSSL::SHA1.hash("#{key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
-
-                  response = context.response
-                  response.status_code = 101
-                  response.headers["Upgrade"] = "websocket"
-                  response.headers["Connection"] = "Upgrade"
-                  response.headers["Sec-Websocket-Accept"] = accept_code
-                  response.upgrade do |io|
-                    begin
-                      ws_session = HTTP::WebSocket.new(io)
-                      instance.{{name}}(ws_session)
-                      ws_session.run
-                    ensure
-                      io.close
-                    end
-                  end
-                else
-                  response = context.response
-                  response.status_code = {{STATUS_CODES[:upgrade_required]}}
-                  response.content_type = MIME_TYPES[:text]
-                  response << "This service requires use of the WebSocket protocol"
-                end
-              {% else %}
-                instance.{{name}}
-              {% end %}
-
-            {% if !before_actions.empty? %}
-              end # END before action render_called check
-            {% end %}
-
-            # END around action blocks
-            {% if !around_actions.empty? %}
-              {% for action in around_actions %}
-                nil
-                end
-              {% end %}
-              end
-            {% end %}
-
-            # Execute the after filters
-            {% after_actions = AFTER.keys %}
-            {% for method, options in AFTER %}
-              {% only = options[0] %}
-              {% if only != nil && !only.includes?(name) %} # only
-                {% after_actions = after_actions.reject { |act| act == method } %}
-              {% else %}
-                {% except = options[1] %}
-                {% if except != nil && except.includes?(name) %} # except
-                  {% after_actions = after_actions.reject { |act| act == method } %}
-                {% end %}
-              {% end %}
-            {% end %}
-            {% after_actions = after_actions.reject { |act| skipping.includes?(act) } %}
-
-            {% if !after_actions.empty? %}
-              ActionController::Base.__yield__(instance) do
-                {% for action in after_actions %}
-                  {{action}}
-                {% end %}
-              end
-            {% end %}
-
-            # Check if session needs to be written
-            session = instance.__session__
-            session.encode(context.response.cookies) if session && session.modified
-
-            # Implement error handling
-            {% if !RESCUE.empty? %}
-              {% for exception, details in RESCUE %}
-                rescue e : {{exception.id}}
-                  if !instance.render_called
-                    instance.{{details[0]}}(e)
-                  else
-                    raise e
-                  end
-              {% end %}
-
-              end
-            {% end %}
-
-            {% if force %}
-              end # END force SSL check
-            {% end %}
-
-            # Always return the context
-            context
-          end
+          router.{{details[0].id}} {{(NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/\//, "/")}}, &->{{(details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/|\-|\~|\*|\:/, "_").id}}(HTTP::Server::Context, Bool)
         {% end %}
 
         nil
