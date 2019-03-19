@@ -547,7 +547,7 @@ abstract class ActionController::Base
   {% for http_method in ::ActionController::Router::HTTP_METHODS %}
     macro {{http_method.id}}(path, name = nil, &block)
       \{% unless name %}
-        \{% name = path.gsub(/\/|\-|\~|\*|\:/, "_") %}
+        \{% name = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:/, "_") %}
       \{% end %}
       \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, block, false } %}
     end
@@ -555,7 +555,7 @@ abstract class ActionController::Base
 
   macro ws(path, name = nil, &block)
     {% unless name %}
-      {% name = path.gsub(/\/|\-|\~|\*|\:/, "_") %}
+      {% name = "ws" + path.gsub(/\/|\-|\~|\*|\:/, "_") %}
     {% end %}
     {% LOCAL_ROUTES[name.id] = {"get", path, block, true} %}
   end
