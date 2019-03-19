@@ -543,8 +543,8 @@ abstract class ActionController::Base
     {% end %}
   end
 
-  # Define each method for supported http methods
-  {% for http_method in ::ActionController::Router::HTTP_METHODS %}
+  # Define each method for supported http methods except head (which is meta)
+  {% for http_method in ::ActionController::Router::HTTP_METHODS.reject { |verb| verb == "head" } %}
     macro {{http_method.id}}(path, name = nil, &block)
       \{% unless name %}
         \{% name = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:/, "_") %}
