@@ -545,12 +545,18 @@ abstract class ActionController::Base
 
   # Define each method for supported http methods
   {% for http_method in ::ActionController::Router::HTTP_METHODS %}
-    macro {{http_method.id}}(path, name, &block)
+    macro {{http_method.id}}(path, name = nil, &block)
+      \{% unless name %}
+        \{% name = path.gsub(/\/|\-|\~|\*|\:/, "_") %}
+      \{% end %}
       \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, block, false } %}
     end
   {% end %}
 
-  macro ws(path, name, &block)
+  macro ws(path, name = nil, &block)
+    {% unless name %}
+      {% name = path.gsub(/\/|\-|\~|\*|\:/, "_") %}
+    {% end %}
     {% LOCAL_ROUTES[name.id] = {"get", path, block, true} %}
   end
 
