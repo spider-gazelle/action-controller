@@ -453,6 +453,10 @@ abstract class ActionController::Base
             end
           {% end %}
 
+          # Check if session needs to be written
+          session = instance.__session__
+          session.encode(context.response.cookies) if session && session.modified
+
           # Execute the after filters
           {% after_actions = AFTER.keys %}
           {% for method, options in AFTER %}
@@ -475,10 +479,6 @@ abstract class ActionController::Base
               {% end %}
             end
           {% end %}
-
-          # Check if session needs to be written
-          session = instance.__session__
-          session.encode(context.response.cookies) if session && session.modified
 
           # Implement error handling
           {% if !RESCUE.empty? %}

@@ -40,6 +40,7 @@ end
 
 class BobJane < ActionController::Base
   # base "/bob/jane" # <== automatically configured
+  after_action :modify_session, only: :modified_session
 
   # Test default CRUD
   def index
@@ -68,6 +69,15 @@ class BobJane < ActionController::Base
 
   put "/put_test", :update do
     render text: "ok"
+  end
+
+  get "/modified_session", :modified_session do
+    session["hello"] = "setting_session"
+    render text: "ok"
+  end
+
+  private def modify_session
+    response.cookies["_test_session_"].domain = "bobjane.com"
   end
 end
 
