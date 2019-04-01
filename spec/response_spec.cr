@@ -22,6 +22,14 @@ describe "end to end requests and responses" do
       result.headers["Location"].should eq("/other_route")
     end
 
+    it "can modify session cookie data in an after_action" do
+      result = curl("GET", "/bob_jane/modified_session")
+      result.body.should eq("ok")
+      cookie = result.headers["Set-Cookie"]
+      cookie.starts_with?("_test_session_=").should eq(true)
+      cookie.should contain "domain=bobjane.com"
+    end
+
     it "#redirect" do
       cookie = "_test_session_=CKQMLS12oJZBIh3Hlbpg19XGFAphCiRW7NMHq31epbpGTfI9N0T7WeIR1C%2FFDJ%2FW--IEb0qAXKV9DtrLdnyqzdGbBM2ww%3D"
       result = curl("GET", "/bob_jane/redirect", {"Cookie" => cookie})
@@ -150,6 +158,7 @@ describe "end to end requests and responses" do
         {"BobJane", :deep_show, :get, "/bob_jane/params/:id/test/:test_id"},
         {"BobJane", :create, :post, "/bob_jane/post_test"},
         {"BobJane", :update, :put, "/bob_jane/put_test"},
+        {"BobJane", :modified_session, :get, "/bob_jane/modified_session"},
         {"BobJane", :index, :get, "/bob_jane/"},
       ])
     end

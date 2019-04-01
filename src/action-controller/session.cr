@@ -15,10 +15,12 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
     setting secure : Bool = false
     setting encrypted : Bool = true
     setting path : String = "/"
+    setting domain : String? = nil
   end
 
   # Returns whether any key-value pair is modified.
   getter modified : Bool
+  property domain : String?
   @encoder : MessageEncryptor | MessageVerifier
 
   def initialize
@@ -26,6 +28,7 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
 
     @modified = false
     @existing = false
+    @domain = settings.domain
 
     if settings.encrypted
       @encoder = MessageEncryptor.new(settings.secret)
@@ -55,8 +58,6 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
     # If there was no existing session and
     return if !@existing && self.empty?
 
-    # TODO:: Add secure setting
-
     if @existing && self.empty?
       data = ""
       age = 0
@@ -70,8 +71,10 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
       data,
       settings.path,
       Time.now + age.seconds,
+      @domain,
+      settings.secure,
       http_only: true,
-      extension: "SameSite=Strict"
+      extension: "SameSite=Lax"
     )
   end
 
