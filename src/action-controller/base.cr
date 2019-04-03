@@ -302,7 +302,7 @@ abstract class ActionController::Base
 
       # Generate functions for each route
       {% for name, details in ROUTES %}
-        def self.{{(details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/|\-|\~|\*|\:/, "_").id}}(context, head_request)
+        def self.{{(details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(context, head_request)
           {% is_websocket = details[3] %}
 
           # Check if force SSL is set and redirect to HTTPS if HTTP
@@ -506,7 +506,7 @@ abstract class ActionController::Base
       # Routes call the functions generated above
       def self.__init_routes__(router)
         {% for name, details in ROUTES %}
-          router.{{details[0].id}} {{(NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/\//, "/")}}, &->{{(details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/|\-|\~|\*|\:/, "_").id}}(HTTP::Server::Context, Bool)
+          router.{{details[0].id}} {{(NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/\//, "/")}}, &->{{(details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(HTTP::Server::Context, Bool)
         {% end %}
 
         nil
