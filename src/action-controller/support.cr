@@ -19,6 +19,7 @@ module ActionController::Support
     request.headers.includes_word?("Connection", "Upgrade")
   end
 
+  # Used in base.cr to build routes for the redirect_to helpers
   def self.build_route(route, hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
     keys = route.split("/:")[1..-1].map { |p| p.split("/")[0] }
     params = {} of String => String

@@ -1,4 +1,5 @@
 require "./router/server_context"
+require "./router/request"
 require "./router/route_handler"
 
 module ActionController::Router
@@ -7,7 +8,7 @@ module ActionController::Router
 
   getter route_handler : RouteHandler = ::ActionController::Router::RouteHandler.new
 
-  # Define each method for supported http methods
+  # Define each method for supported http actions
   {% for http_method in HTTP_METHODS %}
     def {{http_method.id}}(path : String, &block : Action)
       @route_handler.add_route("/{{http_method.id.upcase}}" + path, {block, false})

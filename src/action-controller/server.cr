@@ -4,10 +4,12 @@ class ActionController::Server
   BEFORE_HANDLERS = [] of HTTP::Handler
   AFTER_HANDLERS  = [] of HTTP::Handler
 
+  # Adds handlers that should run before routes in this application
   def self.before(*handlers)
     BEFORE_HANDLERS.concat(handlers)
   end
 
+  # Adds handlers that should run if a route is not found
   def self.after(*handlers)
     AFTER_HANDLERS.concat(handlers)
   end
@@ -33,6 +35,7 @@ class ActionController::Server
     @socket.not_nil!
   end
 
+  # Starts the server, providing a callback once the ports are bound
   def run
     server = @socket.not_nil!
     server.bind_tcp(@host, @port, @reuse_port) if server.addresses.empty?
@@ -40,17 +43,20 @@ class ActionController::Server
     server.listen
   end
 
+  # Starts the server
   def run
     server = @socket.not_nil!
     server.bind_tcp(@host, @port, @reuse_port) if server.addresses.empty?
     server.listen
   end
 
+  # Terminates the application gracefully once any cluster processes have exited
   def close
     @processes.each(&.get)
     socket.close
   end
 
+  # Prints the addresses that the server is listening on
   def print_addresses
     socket.addresses.map { |socket|
       family = socket.family
@@ -68,6 +74,8 @@ class ActionController::Server
     }.join(" , ")
   end
 
+  # Launches additional worker processes
+  # removing the short and long arguments that trigger this method
   def cluster(count, short_arg, long_arg, args = ARGV.dup)
     count = count.to_i64
     count = System.cpu_count if count <= 0
@@ -107,6 +115,7 @@ class ActionController::Server
     end
   end
 
+  # Used to output route details to the console from a command line switch
   def self.print_routes
     # Class, name, verb, route
     routes = [] of {String, Symbol, Symbol, String}
