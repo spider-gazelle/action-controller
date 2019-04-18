@@ -8,7 +8,7 @@ end
 class ActionController::MessageEncryptor
   getter verifier : MessageVerifier
 
-  def initialize(@secret : String, @cipher_algorithm = "aes-256-cbc", @digest = :sha1)
+  def initialize(@secret : String, @cipher_algorithm = "aes-256-cbc", @digest : OpenSSL::Algorithm = :sha1)
     @verifier = MessageVerifier.new(@secret, digest: @digest)
     @block_size = 16
   end

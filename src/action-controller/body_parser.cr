@@ -89,11 +89,11 @@ module ActionController::BodyParser
         if data_type || (filename && !filename.empty?)
           # Check if this is a list of files
           if data_type && data_type.starts_with? "multipart/mixed"
-            boundary = HTTP::Multipart.parse_boundary(data_type)
+            boundary = MIME::Multipart.parse_boundary(data_type)
             next unless boundary
 
             parts = files[part.name] = [] of FileUpload
-            HTTP::Multipart.parse(part.body, boundary) do |headers, io|
+            MIME::Multipart.parse(part.body, boundary) do |headers, io|
               parts << FileUpload.new(part.name, headers, io)
             end
           else
