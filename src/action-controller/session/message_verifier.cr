@@ -5,7 +5,7 @@ module ActionController
 end
 
 class ActionController::MessageVerifier
-  def initialize(@secret : String, @digest = :sha1)
+  def initialize(@secret : String, @digest : OpenSSL::Algorithm = :sha1)
   end
 
   def prepare(value)
