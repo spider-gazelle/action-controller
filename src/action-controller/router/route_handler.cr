@@ -36,9 +36,9 @@ class ActionController::Router::RouteHandler
   # Adds a route handler to the system
   # Determines if routes are static or require decomposition and stores them appropriately
   def add_route(key : String, action : Tuple(Action, Bool))
-    if key.includes?(':') || key.includes?('*')
-      @tree.add(key, action)
-    else
+    @tree.add(key, action)
+
+    unless key.includes?(':') || key.includes?('*')
       @static_routes[key] = action
 
       # Add static routes with both trailing and non-trailing / chars
