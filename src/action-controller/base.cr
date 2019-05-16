@@ -11,6 +11,13 @@ abstract class ActionController::Base
     setting logger : Logger = Logger.new(STDOUT)
   end
 
+  # Route IDs params
+  DEFAULT_PARAM_ID = {} of Nil => Nil
+
+  macro id_param(id)
+    {% DEFAULT_PARAM_ID[@type.id] = id %}
+  end
+
   # Template support
   TEMPLATE_LAYOUT = {} of Nil => Nil
   TEMPLATE_PATH   = {} of Nil => Nil
@@ -113,14 +120,14 @@ abstract class ActionController::Base
   end
 
   CRUD_METHODS = {
-    "index"   => {"get", "/"},
-    "new"     => {"get", "/new"},
-    "create"  => {"post", "/"},
-    "show"    => {"get", "/:id"},
-    "edit"    => {"get", "/:id/edit"},
-    "update"  => {"patch", "/:id"},
-    "replace" => {"put", "/:id"},
-    "destroy" => {"delete", "/:id"},
+    "index"   => {"get", "/", false},
+    "new"     => {"get", "/new", false},
+    "create"  => {"post", "/", false},
+    "show"    => {"get", "/:id", true},
+    "edit"    => {"get", "/:id/edit", true},
+    "update"  => {"patch", "/:id", true},
+    "replace" => {"put", "/:id", true},
+    "destroy" => {"delete", "/:id", true},
   }
 
   def initialize(@context : HTTP::Server::Context, @action_name = :index, @__head_request__ = false)
@@ -256,7 +263,12 @@ abstract class ActionController::Base
       {% for name, index in @type.methods.map(&.name.stringify) %}
         {% args = CRUD_METHODS[name] %}
         {% if args %}
-          {% ROUTES[name.id] = {args[0], args[1], nil, false} %}
+          {% if args[2] && DEFAULT_PARAM_ID[@type.id] %}
+            {% new_default_param = args[1].gsub(/\:id/, ":" + DEFAULT_PARAM_ID[@type.id].id.stringify) %}
+            {% ROUTES[name.id] = {args[0], new_default_param, nil, false} %}
+          {% else %}
+            {% ROUTES[name.id] = {args[0], args[1], nil, false} %}
+          {% end %}
         {% end %}
       {% end %}
 

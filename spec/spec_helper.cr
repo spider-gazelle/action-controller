@@ -1,6 +1,24 @@
 require "spec"
 require "../src/action-controller"
 
+# Testing ID params
+class Container < ActionController::Base
+  id_param :container_id
+
+  def show
+    render text: "got: #{params["container_id"]}"
+  end
+end
+
+class ContainerObjects < ActionController::Base
+  base "/container/:container_id/objects"
+  id_param :object_id
+
+  def show
+    render text: "#{params["object_id"]} in #{params["container_id"]}"
+  end
+end
+
 class TemplateOne < ActionController::Base
   template_path "./spec/views"
   layout "layout_main.ecr"
