@@ -1,6 +1,5 @@
 require "./router/server_context"
 require "./router/route_handler"
-require "./router/http_request"
 
 module ActionController::Router
   alias Action = (HTTP::Server::Context, Bool) -> HTTP::Server::Context
