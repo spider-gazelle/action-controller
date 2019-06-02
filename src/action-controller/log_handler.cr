@@ -11,9 +11,9 @@ class ActionController::LogHandler
     elapsed = Time.measure { call_next(context) }
     elapsed_text = elapsed_text(elapsed)
     tags = @tags.call(context)
-    @io.puts "method=#{context.request.method} path=#{context.request.resource} status=#{context.response.status_code} duration=#{elapsed_text}#{tags}"
+    @io.puts "method=#{context.request.method} status=#{context.response.status_code} path=#{context.request.resource} duration=#{elapsed_text}#{tags}"
   rescue e
-    @io.puts "method=#{context.request.method} path=#{context.request.resource} status=500#{tags}"
+    @io.puts "method=#{context.request.method} status=500 path=#{context.request.resource}#{tags}"
     e.inspect_with_backtrace(@io)
     raise e
   end
