@@ -13,6 +13,13 @@ class ActionController::LogHandler
     tags = @tags.call(context)
     @io.puts "method=#{context.request.method} status=#{context.response.status_code} path=#{context.request.resource} duration=#{elapsed_text}#{tags}"
   rescue e
+    tags = begin
+      @tags.call(context)
+    rescue e
+      @io.puts "error building custom tag list"
+      e.inspect_with_backtrace(@io)
+      nil
+    end
     @io.puts "method=#{context.request.method} status=500 path=#{context.request.resource}#{tags}"
     e.inspect_with_backtrace(@io)
     raise e
