@@ -70,7 +70,7 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
       settings.key,
       data,
       settings.path,
-      Time.now + age.seconds,
+      Time.utc + age.seconds,
       @domain,
       settings.secure,
       http_only: true,

@@ -121,7 +121,7 @@ class HelloWorld < Application
 
   def show
     raise "set_var was set!" if @me
-    res = 42 / params["id"].to_i
+    res = 42 // params["id"].to_i
     render text: "42 / #{params["id"]} = #{res}"
   end
 

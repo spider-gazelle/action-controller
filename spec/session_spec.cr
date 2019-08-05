@@ -18,7 +18,7 @@ describe ActionController::Session do
         session.encode(cookies)
 
         cookies[key].value.should be_empty
-        cookies[key].expires.as(Time).should be_close(Time.now, 0.1.seconds)
+        cookies[key].expires.as(Time).should be_close(Time.utc, 0.1.seconds)
       end
     end
 
@@ -31,7 +31,7 @@ describe ActionController::Session do
         cookies = HTTP::Cookies.new
         session.encode(cookies)
 
-        cookies[key].expires.as(Time).should be_close(Time.now + age, 0.1.seconds)
+        cookies[key].expires.as(Time).should be_close(Time.utc + age, 0.1.seconds)
         encoder.extract(cookies[key].value).should eq(%({"key":"#{"a" * 3013}"}))
       end
     end

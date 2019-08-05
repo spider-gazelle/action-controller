@@ -24,7 +24,7 @@ describe ActionController::Base do
       {"id" => "Weird%!"},
       param1: "woot woot!",
       param2: false
-    ).should eq("/hello/Weird%25%21?param1=woot+woot%21&param2=false")
+    ).should eq("/hello/Weird%25!?param1=woot+woot%21&param2=false")
   end
 
   it "should raise a BadRoute error if a route param is missing" do
