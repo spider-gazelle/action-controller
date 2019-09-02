@@ -3,7 +3,7 @@ require "random"
 require "./session/message_verifier"
 require "./session/message_encryptor"
 
-class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
+class ActionController::Session
   NEVER = 622_080_000 # (~20 years in seconds)
   # Cookies can typically store 4096 bytes.
   MAX_COOKIE_SIZE = 4096
@@ -22,10 +22,11 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
   getter modified : Bool
   property domain : String?
   @encoder : MessageEncryptor | MessageVerifier
+  @store : Hash(String, String | Int64 | Float64 | Bool)
+
+  forward_missing_to @store
 
   def initialize
-    super
-
     @modified = false
     @existing = false
     @domain = settings.domain
@@ -35,6 +36,8 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
     else
       @encoder = MessageVerifier.new(settings.secret)
     end
+
+    @store = {} of String => String | Int64 | Float64 | Bool
   end
 
   def self.from_cookies(cookies)
@@ -82,7 +85,7 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
     if value.nil?
       delete(key)
     else
-      super(key, value)
+      @store[key] = value
       @modified = true
     end
     value
@@ -90,22 +93,22 @@ class ActionController::Session < Hash(String, String | Int64 | Float64 | Bool)
 
   def clear
     @modified = true if @existing
-    super
+    @store.clear
   end
 
   def delete(key)
     @modified = true
-    super(key)
+    @store.delete(key)
   end
 
   def delete(key, &block)
     @modified = true
-    super(key, &block)
+    @store.delete(key, &block)
   end
 
   def delete_if(&block)
     @modified = true
-    super(&block)
+    @store.delete_if(&block)
   end
 
   def touch
