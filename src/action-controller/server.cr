@@ -115,6 +115,36 @@ class ActionController::Server
     end
   end
 
+  # Forks additional worker processes
+  def cluster(count)
+    count = count.to_i64
+    count = System.cpu_count if count <= 0
+    return if count <= 1
+
+    # How many we actually want to start
+    count -= 1
+
+    processes = [] of Process
+    (0_i64...count).each do
+      # returns a nil process in the fork
+      process = Process.fork
+      return unless process
+      processes << process
+    end
+
+    processes.each do |process|
+      @processes << future do
+        status = process.wait
+        if status.success?
+          puts " < worker #{process.pid} stopped"
+        else
+          puts " ! worker process #{process.pid} failed with #{status.exit_status}"
+        end
+        nil
+      end
+    end
+  end
+
   # Used to output route details to the console from a command line switch
   def self.print_routes
     # Class, name, verb, route
