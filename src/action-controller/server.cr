@@ -14,51 +14,55 @@ class ActionController::Server
     AFTER_HANDLERS.concat(handlers)
   end
 
-  @socket : HTTP::Server?
   @route_handler = RouteHandler.new
 
   def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port = true)
     @processes = [] of Concurrent::Future(Nil)
-    {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
-      {{klass}}.__init_routes__(self)
-    {% end %}
-
+    init_routes
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
-  getter :host
-  getter :port
+  private def init_routes
+    {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
+      {{klass}}.__init_routes__(self)
+    {% end %}
+  end
+
+  def reload
+    return unless @socket.closed?
+    @processes.clear
+    @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+  end
+
+  getter host
+  getter port
 
   # Provides access the HTTP server for the purpose of binding
   # For example `server.socket.bind_unix "/tmp/my-socket.sock"`
-  def socket
-    @socket.not_nil!
-  end
+  getter socket : HTTP::Server
 
   # Starts the server, providing a callback once the ports are bound
   def run
-    server = @socket.not_nil!
-    server.bind_tcp(@host, @port, @reuse_port) if server.addresses.empty?
+    @socket.bind_tcp(@host, @port, @reuse_port) if @socket.addresses.empty?
     yield
-    server.listen
+    @socket.listen
   end
 
   # Starts the server
   def run
-    server = @socket.not_nil!
-    server.bind_tcp(@host, @port, @reuse_port) if server.addresses.empty?
-    server.listen
+    @socket.bind_tcp(@host, @port, @reuse_port) if @socket.addresses.empty?
+    @socket.listen
   end
 
   # Terminates the application gracefully once any cluster processes have exited
   def close
     @processes.each(&.get)
-    socket.close
+    @socket.close
   end
 
   # Prints the addresses that the server is listening on
   def print_addresses
-    socket.addresses.map { |socket|
+    @socket.addresses.map { |socket|
       family = socket.family
 
       case socket.family

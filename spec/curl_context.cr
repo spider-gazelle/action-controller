@@ -40,20 +40,39 @@ def context(method : String, path : String, headers : HTTP::Headers? = nil, body
   HTTP::Server::Context.new request, response
 end
 
-def with_server
-  app = ActionController::Server.new
-  app.socket.bind_tcp("127.0.0.1", 6000, true)
-  begin
-    File.delete("/tmp/spider-socket.sock")
-  rescue
-  end
-  app.socket.bind_unix "/tmp/spider-socket.sock"
-  spawn do
-    app.run
-  end
-  sleep 0.5
+::CURL_CONTEXT__ = [] of ActionController::Server
 
-  yield app
+macro with_server(&block)
+  if ::CURL_CONTEXT__.empty?
+    %app = ActionController::Server.new
+    ::CURL_CONTEXT__ << %app
+    %channel = Channel(Nil).new(1)
 
-  app.close
+    Spec.before_each do
+      %app.reload
+      %app.socket.bind_tcp("127.0.0.1", 6000, true)
+      begin
+        File.delete("/tmp/spider-socket.sock")
+      rescue
+      end
+      %app.socket.bind_unix "/tmp/spider-socket.sock"
+      spawn do
+        %channel.send(nil)
+        %app.run
+      end
+      %channel.receive
+    end
+
+    Spec.after_each do
+      %app.close
+    end
+  end
+
+  %app = ::CURL_CONTEXT__[0]
+
+  {% if block.args.size > 0 %}
+    {{block.args[0].id}} = %app
+  {% end %}
+
+  {{block.body}}
 end
