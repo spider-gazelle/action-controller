@@ -5,25 +5,23 @@ class ActionController::LogHandler
 
   # Initializes this handler to log to the given `IO`.
   def initialize(@io : IO, &@tags : Proc(HTTP::Server::Context, String))
+    @logger = Channel(String).new(128)
+    spawn { write_logs! }
   end
 
   def call(context)
     elapsed = Time.measure { call_next(context) }
     elapsed_text = elapsed_text(elapsed)
     tags = @tags.call(context)
-    @io.puts "method=#{context.request.method} status=#{context.response.status_code} path=#{context.request.resource} duration=#{elapsed_text}#{tags}"
-    @io.flush
+    @logger.send("method=#{context.request.method} status=#{context.response.status_code} path=#{context.request.resource} duration=#{elapsed_text}#{tags}")
   rescue e
     tags = begin
       @tags.call(context)
     rescue e
-      @io.puts "error building custom tag list"
-      e.inspect_with_backtrace(@io)
+      @logger.send "error building custom tag list\n#{e.inspect_with_backtrace}"
       nil
     end
-    @io.puts "method=#{context.request.method} status=500 path=#{context.request.resource}#{tags}"
-    e.inspect_with_backtrace(@io)
-    @io.flush
+    @logger.send "method=#{context.request.method} status=500 path=#{context.request.resource}#{tags}\n#{e.inspect_with_backtrace}"
     raise e
   end
 
@@ -38,5 +36,15 @@ class ActionController::LogHandler
     return "#{millis.round(2)}ms" if millis >= 1
 
     "#{(millis * 1000).round(2)}µs"
+  end
+
+  private def write_logs!
+    loop do
+      text = @logger.receive?
+      break unless text
+
+      @io.puts text
+      @io.flush
+    end
   end
 end
