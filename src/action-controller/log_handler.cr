@@ -43,7 +43,7 @@ class ActionController::LogHandler
 
   private def filter_path(path)
     return path if @filter.empty?
-    path.gsub(/(\?|\&)([^&;=]+)=([^&;=]+)/) do
+    path.gsub(/(\?|\&)([^&;=]+)=([^&;=]+)/) do |value|
       filter = false
       @filter.each do |key|
         if $2 == key
@@ -51,7 +51,7 @@ class ActionController::LogHandler
           break
         end
       end
-      filter ? "#{$1}#{$2}=[FILTERED]" : "#{$1}#{$2}=#{$3}"
+      filter ? "#{$1}#{$2}=[FILTERED]" : value
     end
   end
 
