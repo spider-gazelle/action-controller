@@ -12,6 +12,7 @@ class ActionController::LogHandler
     elapsed_text = elapsed_text(elapsed)
     tags = @tags.call(context)
     @io.puts "method=#{context.request.method} status=#{context.response.status_code} path=#{context.request.resource} duration=#{elapsed_text}#{tags}"
+    @io.flush
   rescue e
     tags = begin
       @tags.call(context)
@@ -22,6 +23,7 @@ class ActionController::LogHandler
     end
     @io.puts "method=#{context.request.method} status=500 path=#{context.request.resource}#{tags}"
     e.inspect_with_backtrace(@io)
+    @io.flush
     raise e
   end
 
