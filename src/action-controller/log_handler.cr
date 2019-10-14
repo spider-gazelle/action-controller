@@ -19,21 +19,23 @@ class ActionController::LogHandler
 
   def call(context)
     logger = context.logger
-    elapsed = Time.measure { call_next(context) }
+    begin
+      elapsed = Time.measure { call_next(context) }
 
-    logger.duration = elapsed_text(elapsed)
-    logger.method = context.request.method
-    logger.status = context.response.status_code
-    logger.path = filter_path context.request.resource
+      logger.duration = elapsed_text(elapsed)
+      logger.method = context.request.method
+      logger.status = context.response.status_code.to_s
+      logger.path = filter_path context.request.resource
 
-    logger.info(nil)
-  rescue e
-    logger.method = context.request.method
-    logger.status = "500"
-    logger.path = filter_path context.request.resource
+      logger.info(nil)
+    rescue e
+      logger.method = context.request.method
+      logger.status = "500"
+      logger.path = filter_path context.request.resource
 
-    logger.error e.inspect_with_backtrace
-    raise e
+      logger.error e.inspect_with_backtrace
+      raise e
+    end
   end
 
   private def elapsed_text(elapsed)

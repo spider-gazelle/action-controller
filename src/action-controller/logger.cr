@@ -3,7 +3,7 @@ require "http/server/context"
 
 class HTTP::Server::Context
   @logger : ActionController::Logger::TaggedLogger? = nil
-  def logger
+  def logger : ActionController::Logger::TaggedLogger
     @logger ||= ActionController::Logger::TaggedLogger.new(
       ActionController::Base.settings.logger
     )
@@ -18,7 +18,7 @@ class ActionController::Logger < Logger
   end
 
   class TaggedLogger
-    def initialize(@logger : Logger)
+    def initialize(@logger : ::Logger)
     end
 
     macro finished
@@ -78,7 +78,7 @@ class ActionController::Logger < Logger
         str << "level=" << label << " time="
         datetime.to_rfc3339(str)
         str << progname if progname
-        str << " message=" << message if message
+        str << " message=" << message if message && !message.empty?
       end
     end
   end
