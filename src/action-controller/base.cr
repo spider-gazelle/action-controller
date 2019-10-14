@@ -8,7 +8,7 @@ abstract class ActionController::Base
   include ActionController::Responders
 
   Habitat.create do
-    setting logger : Logger = Logger.new(STDOUT)
+    setting logger : ActionController::Logger = ActionController::Logger.new
   end
 
   # Route IDs params

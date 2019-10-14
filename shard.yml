@@ -1,5 +1,5 @@
 name: action-controller
-version: 1.8.3
+version: 2.0.0
 
 dependencies:
   habitat:
@@ -18,4 +18,4 @@ authors:
 
 license: MIT
 
-crystal: 0.31.0
+crystal: 0.31.1

@@ -1,30 +1,38 @@
+require "./logger"
+
 # A handler that logs the request method, resource, status code, and
 # the time used to execute the next handler, to the given `IO`.
 class ActionController::LogHandler
   include HTTP::Handler
 
+  Logger.add_tag duration
+  Logger.add_tag method
+  Logger.add_tag status
+  Logger.add_tag path
+
   # Initializes this handler to log to the given `IO`.
-  def initialize(@io : IO, filter = nil, &@tags : Proc(HTTP::Server::Context, String))
-    @logger = Channel(String).new(128)
+  def initialize(filter = nil)
     @filter = filter ? filter.to_a.map(&.to_s) : [] of String
-    spawn { write_logs! }
   end
 
   @filter : Array(String)
 
   def call(context)
+    logger = context.logger
     elapsed = Time.measure { call_next(context) }
-    elapsed_text = elapsed_text(elapsed)
-    tags = @tags.call(context)
-    @logger.send("method=#{context.request.method} status=#{context.response.status_code} path=#{filter_path context.request.resource} duration=#{elapsed_text}#{tags}")
+
+    logger.duration = elapsed_text(elapsed)
+    logger.method = context.request.method
+    logger.status = context.response.status_code
+    logger.path = filter_path context.request.resource
+
+    logger.info(nil)
   rescue e
-    tags = begin
-      @tags.call(context)
-    rescue e
-      @logger.send "error building custom tag list\n#{e.inspect_with_backtrace}"
-      nil
-    end
-    @logger.send "method=#{context.request.method} status=500 path=#{filter_path context.request.resource}#{tags}\n#{e.inspect_with_backtrace}"
+    logger.method = context.request.method
+    logger.status = "500"
+    logger.path = filter_path context.request.resource
+
+    logger.error e.inspect_with_backtrace
     raise e
   end
 
@@ -52,16 +60,6 @@ class ActionController::LogHandler
         end
       end
       filter ? "#{$1}#{$2}=[FILTERED]" : value
-    end
-  end
-
-  private def write_logs!
-    loop do
-      text = @logger.receive?
-      break unless text
-
-      @io.puts text
-      @io.flush
     end
   end
 end
