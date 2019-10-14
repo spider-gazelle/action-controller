@@ -156,7 +156,7 @@ abstract class ActionController::Base
   end
 
   macro logger
-    settings.logger
+    @context.logger
   end
 
   macro query_params
