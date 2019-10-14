@@ -17,8 +17,13 @@ class ActionController::Logger < Logger
     {% TAGS << name.id %}
   end
 
-  class TaggedLogger
+  class TaggedLogger < Logger
     def initialize(@logger : ::Logger)
+      super(STDOUT)
+      @level = @logger.level
+    end
+
+    def close
     end
 
     macro finished
@@ -38,19 +43,16 @@ class ActionController::Logger < Logger
     {% for name in Logger::Severity.constants %}
       def {{name.id.downcase}}(message, progname = nil)
         severity = Severity::{{name.id}}
-        return if severity < @logger.level
+        return if severity < @level
 
-        progname = build_tags(progname)
-        @logger.log(severity, message, progname)
+        @logger.log(severity, message, build_tags(progname))
       end
 
       def {{name.id.downcase}}(progname = nil)
         severity = Severity::{{name.id}}
-        return if severity < @logger.level
+        return if severity < @level
 
-        message = yield
-        progname = build_tags(progname)
-        @logger.log(severity, build_message(message), progname)
+        @logger.log(severity, yield, build_tags(progname))
       end
     {% end %}
 
@@ -63,7 +65,15 @@ class ActionController::Logger < Logger
       end
     end
 
-    forward_missing_to @logger
+    def log(severity, message, progname = nil)
+      return if severity < @level
+      @logger.log(severity, message, build_tags(progname))
+    end
+
+    def log(severity, progname = nil)
+      return if severity < @level
+      @logger.log(severity, yield, build_tags(progname))
+    end
   end
 
   def initialize(io = STDOUT)
