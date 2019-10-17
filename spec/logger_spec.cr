@@ -22,4 +22,10 @@ describe ActionController::Logger do
     tagged_logger.info "what's happening?"
     io.to_s.ends_with?("response_id=12345 user_id=user-abc message=what's happening?\n").should eq(true)
   end
+
+  it "tags supports custom tags" do
+    tagged_logger.user_id = "user-abc"
+    tagged_logger.tag "interesting details", me: "Steve", other: 567
+    io.to_s.ends_with?("response_id=12345 user_id=user-abc me=Steve other=567 message=interesting details\n").should eq(true)
+  end
 end

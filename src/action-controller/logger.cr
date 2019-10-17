@@ -74,6 +74,17 @@ class ActionController::Logger < Logger
       return if severity < @level
       @logger.log(severity, yield, build_tags(progname))
     end
+
+    def tag(message : String = "", progname = nil, severity : Logger::Severity = Logger::Severity::INFO, **tags)
+      return if severity < @level
+      standard_tags = build_tags(progname)
+      custom_tags = String.build do |str|
+        tags.each do |tag, value|
+          str << " " << tag << "=" << value if value
+        end
+      end
+      @logger.log(severity, message, "#{standard_tags}#{custom_tags}")
+    end
   end
 
   def initialize(io = STDOUT)
