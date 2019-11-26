@@ -3,6 +3,7 @@ require "http/server/context"
 
 class HTTP::Server::Context
   @logger : ActionController::Logger::TaggedLogger? = nil
+
   def logger : ActionController::Logger::TaggedLogger
     @logger ||= ActionController::Logger::TaggedLogger.new(
       ActionController::Base.settings.logger
@@ -32,11 +33,15 @@ class ActionController::Logger < Logger
       {% end %}
 
       def tags
-        {
-          {% for tag in TAGS %}
-            {{tag}}: @{{tag}},
-          {% end %}
-        }
+        {% if !TAGS.empty? %}
+          {
+            {% for tag in TAGS %}
+              {{tag}}: @{{tag}},
+            {% end %}
+          }
+        {% else %}
+          NamedTuple.new
+        {% end %}
       end
     end
 
@@ -57,7 +62,7 @@ class ActionController::Logger < Logger
     {% end %}
 
     def build_tags(progname)
-      text = String.build do |str|
+      String.build do |str|
         str << " progname=" << progname if progname
         tags.each do |tag, value|
           str << " " << tag << "=" << value if value
