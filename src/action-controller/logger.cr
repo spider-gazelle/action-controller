@@ -90,6 +90,12 @@ class ActionController::Logger < Logger
       end
       @logger.log(severity, message, "#{standard_tags}#{custom_tags}")
     end
+
+    {% for level in Logger::Severity.constants %}
+      def tag_{{level.downcase.id}}(message : String = "", progname = nil, **tags)
+        tag(message, progname, Logger::Severity::{{ level }}, **tags)
+      end
+    {% end %}
   end
 
   def initialize(io = STDOUT)

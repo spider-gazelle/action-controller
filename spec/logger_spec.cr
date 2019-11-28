@@ -28,4 +28,14 @@ describe ActionController::Logger do
     tagged_logger.tag "interesting details", me: "Steve", other: 567
     io.to_s.ends_with?("response_id=12345 user_id=user-abc me=Steve other=567 message=interesting details\n").should eq(true)
   end
+
+  {% for name in Logger::Severity.constants %}
+    {% method = name.downcase %}
+    it "#tag_#{{{ method.stringify }}} curries #{{{ method.stringify }}} severity" do
+      tagged_logger.tag_{{method.id}}(message: "wow, code", broken: false)
+      logged = io.to_s
+      logged.should start_with %(level=#{{{ name.stringify }}})
+      logged.should end_with %(broken=false message=wow, code\n)
+    end
+  {% end %}
 end
