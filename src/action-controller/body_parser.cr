@@ -65,10 +65,7 @@ module ActionController::BodyParser
     body = request.body
     return {nil, nil} unless body
 
-    ctype = CONTENT_TYPES[content_type]?
-    return {nil, nil} unless ctype
-
-    case ctype
+    case CONTENT_TYPES[content_type]?
     when :url_encoded_form
       # Add the form data to the request params
       form_params = HTTP::Params.parse(body.gets_to_end)
@@ -112,6 +109,7 @@ module ActionController::BodyParser
         values.concat(form_params.fetch_all(key))
         params.set_all(key, values)
       end
+
       files = nil if files.empty?
       {files, form_params}
     else

@@ -30,7 +30,7 @@ module ActionController::Support
         value = value.to_s
 
         if keys.includes?(key)
-          route = route.gsub(":#{key}", URI.encode(value))
+          route = route.sub(":#{key}", URI.encode(value))
           keys.delete(key)
         else
           params[key] = value
@@ -44,7 +44,7 @@ module ActionController::Support
       value = value.to_s
 
       if keys.includes?(key)
-        route = route.gsub(":#{key}", URI.encode(value))
+        route = route.sub(":#{key}", URI.encode(value))
         keys.delete(key)
       else
         params[key] = value
