@@ -1,5 +1,4 @@
 require "json"
-require "xml"
 require "yaml"
 
 module ActionController::Responders

@@ -1,4 +1,5 @@
 require "spec"
+require "xml"
 require "../src/action-controller"
 
 # Testing ID params
