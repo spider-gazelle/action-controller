@@ -29,18 +29,18 @@ describe ActionController::Logger do
     io.to_s.ends_with?("response_id=12345 user_id=user-abc me=Steve other=567 message=interesting details\n").should eq(true)
   end
 
-  {% for name in Logger::Severity.constants %}
-    {% method = name.downcase %}
-    it "#tag_#{{{ method.stringify }}} curries #{{{ method.stringify }}} severity" do
-      tagged_logger.level =  Logger::Severity::{{name}}
-      tagged_logger.tag_{{method.id}}(message: "wow, code", broken: false)
-      logged = io.to_s
-      if {{ name.stringify }} == "UNKNOWN"
-        logged.should start_with %(level=ANY)
-      else
-        logged.should start_with %(level=#{{{ name.stringify }}})
-      end
-      logged.should end_with %(broken=false message=wow, code\n)
+{% for name in Logger::Severity.constants %}
+  {% method = name.downcase %}
+  it "#tag_#{{{ method.stringify }}} curries #{{{ method.stringify }}} severity" do
+    root_logger.level =  Logger::Severity::{{name}}
+    tagged_logger.tag_{{method.id}}(message: "wow, code", broken: false)
+    logged = io.to_s
+    if {{ name.stringify }} == "UNKNOWN"
+      logged.should start_with %(level=ANY)
+    else
+      logged.should start_with %(level=#{{{ name.stringify }}})
     end
-  {% end %}
+    logged.should end_with %(broken=false message=wow, code\n)
+  end
+{% end %}
 end
