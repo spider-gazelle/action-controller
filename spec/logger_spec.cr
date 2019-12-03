@@ -29,7 +29,7 @@ describe ActionController::Logger do
     io.to_s.ends_with?("response_id=12345 user_id=user-abc me=Steve other=567 message=interesting details\n").should eq(true)
   end
 
-{% for name in Logger::Severity.constants %}
+  {% for name in Logger::Severity.constants %}
   {% method = name.downcase %}
   it "#tag_#{{{ method.stringify }}} curries #{{{ method.stringify }}} severity" do
     root_logger.level =  Logger::Severity::{{name}}

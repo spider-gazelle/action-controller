@@ -21,8 +21,10 @@ class ActionController::Logger < Logger
   class TaggedLogger < Logger
     def initialize(@logger : ::Logger)
       super(STDOUT)
-      @level = @logger.level
     end
+
+    delegate :level, to: @logger
+    delegate :level=, to: @logger
 
     def close
     end
@@ -48,14 +50,14 @@ class ActionController::Logger < Logger
     {% for name in Logger::Severity.constants %}
       def {{name.id.downcase}}(message, progname = nil)
         severity = Severity::{{name.id}}
-        return if severity < @level
+        return if severity < level
 
         @logger.log(severity, message, build_tags(progname))
       end
 
       def {{name.id.downcase}}(progname = nil)
         severity = Severity::{{name.id}}
-        return if severity < @level
+        return if severity < level
 
         @logger.log(severity, yield, build_tags(progname))
       end
@@ -71,17 +73,17 @@ class ActionController::Logger < Logger
     end
 
     def log(severity, message, progname = nil)
-      return if severity < @level
+      return if severity < level
       @logger.log(severity, message, build_tags(progname))
     end
 
     def log(severity, progname = nil)
-      return if severity < @level
+      return if severity < level
       @logger.log(severity, yield, build_tags(progname))
     end
 
     def tag(message : String = "", progname = nil, severity : Logger::Severity = Logger::Severity::INFO, **tags)
-      return if severity < @level
+      return if severity < level
       standard_tags = build_tags(progname)
       custom_tags = String.build do |str|
         tags.each do |tag, value|
