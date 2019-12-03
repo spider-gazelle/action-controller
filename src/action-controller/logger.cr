@@ -85,7 +85,8 @@ class ActionController::Logger < Logger
       standard_tags = build_tags(progname)
       custom_tags = String.build do |str|
         tags.each do |tag, value|
-          str << " " << tag << "=" << value if value
+          value = "nil" if value.nil?
+          str << " " << tag << "=" << value
         end
       end
       @logger.log(severity, message, "#{standard_tags}#{custom_tags}")
