@@ -91,7 +91,11 @@ module ActionController::Responders
 
     %response = @context.response
     {% if status != :ok || status != 200 %}
-      %response.status_code = {{STATUS_CODES[status] || status}}
+      {% if status.is_a?(SymbolLiteral) %}
+        %response.status_code = {{STATUS_CODES[status]}}
+      {% else %}
+        %response.status_code = ({{status}}).to_i
+      {% end %}
     {% end %}
 
     %ctype = %response.headers["Content-Type"]?
