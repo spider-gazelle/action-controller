@@ -1,10 +1,10 @@
-require "radix"
+require "delimiter_tree"
 
 class ActionController::Router::RouteHandler
   include HTTP::Handler
 
   def initialize
-    @tree = Radix::Tree(Tuple(Action, Bool)).new
+    @tree = Delimiter::Tree(Tuple(Action, Bool)).new
     @static_routes = {} of String => Tuple(Action, Bool)
   end
 
@@ -16,7 +16,7 @@ class ActionController::Router::RouteHandler
       route = @tree.find(search_path)
       if route.found?
         context.route_params = route.params
-        route.payload
+        route.payload.last
       end
     end
     action

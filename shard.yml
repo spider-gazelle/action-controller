@@ -1,11 +1,11 @@
 name: action-controller
-version: 2.2.1
+version: 2.3.0
 
 dependencies:
   habitat:
     github: luckyframework/habitat
-  radix:
-    github: luislavena/radix
+  delimiter_tree:
+    github: drujensen/delimiter_tree
   kilt:
     github: jeromegn/kilt
 
