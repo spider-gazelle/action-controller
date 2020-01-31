@@ -41,23 +41,21 @@ class ActionController::ErrorHandlerDevelopment
   include HTTP::Handler
 
   def call(context)
-    begin
-      call_next(context)
-    rescue ex : Exception
-      response = context.response
-      reset(response)
+    call_next(context)
+  rescue ex : Exception
+    response = context.response
+    reset(response)
 
-      if accepts_formats(context.request).includes?("application/json")
-        response.content_type = "application/json"
-        {
-          error:     ex.message,
-          backtrace: ex.backtrace?,
-        }.to_json(response)
-      else
-        response.content_type = "text/plain"
-        response.print("ERROR: ")
-        ex.inspect_with_backtrace(response)
-      end
+    if accepts_formats(context.request).includes?("application/json")
+      response.content_type = "application/json"
+      {
+        error:     ex.message,
+        backtrace: ex.backtrace?,
+      }.to_json(response)
+    else
+      response.content_type = "text/plain"
+      response.print("ERROR: ")
+      ex.inspect_with_backtrace(response)
     end
   end
 end
@@ -67,18 +65,16 @@ class ActionController::ErrorHandlerProduction
   include HTTP::Handler
 
   def call(context)
-    begin
-      call_next(context)
-    rescue ex : Exception
-      response = context.response
-      reset(response)
+    call_next(context)
+  rescue ex : Exception
+    response = context.response
+    reset(response)
 
-      if accepts_formats(context.request).includes?("application/json")
-        response.content_type = "application/json"
-        response.print("{}")
-      else
-        context.response.content_type = "text/plain"
-      end
+    if accepts_formats(context.request).includes?("application/json")
+      response.content_type = "application/json"
+      response.print("{}")
+    else
+      context.response.content_type = "text/plain"
     end
   end
 end
