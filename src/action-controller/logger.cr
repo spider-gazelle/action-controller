@@ -42,11 +42,15 @@ class ActionController::Logger < Logger
       {% end %}
 
       def tags
-        {
-          {% for tag in TAGS %}
-            {{tag[:name]}}: @{{tag[:name]}},
-          {% end %}
-        }
+        {% if !TAGS.empty? %}
+          {
+            {% for tag in TAGS %}
+              {{tag[:name]}}: @{{tag[:name]}},
+            {% end %}
+          }
+        {% else %}
+          NamedTuple.new
+        {% end %}
       end
     end
 
