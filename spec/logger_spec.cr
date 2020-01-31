@@ -3,6 +3,7 @@ require "./spec_helper"
 describe ActionController::Logger do
   ActionController::Logger.add_tag response_id
   ActionController::Logger.add_tag user_id
+  ActionController::Logger.add_tag upstream_latency, Time::Span
 
   io = IO::Memory.new
   root_logger = ActionController::Logger.new(io)
@@ -27,6 +28,12 @@ describe ActionController::Logger do
     tagged_logger.user_id = "user-abc"
     tagged_logger.tag "interesting details", me: "Steve", other: 567
     io.to_s.ends_with?("response_id=12345 user_id=user-abc me=Steve other=567 message=interesting details\n").should eq(true)
+  end
+
+  it "supports custom tag types" do
+    tagged_logger.upstream_latency = 10_000.nanoseconds
+    tagged_logger.info "what's happening?"
+    io.to_s.ends_with?("upstream_latency=00:00:00.000010000 message=what's happening?\n").should eq(true)
   end
 
   {% for name in Logger::Severity.constants %}

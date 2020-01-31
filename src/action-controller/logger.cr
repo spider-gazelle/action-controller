@@ -15,7 +15,11 @@ class ActionController::Logger < Logger
   TAGS = [] of Nil
 
   macro add_tag(name)
-    {% TAGS << name.id %}
+    {% TAGS << {name: name.id, type: String?} %}
+  end
+
+  macro add_tag(name, type)
+    {% TAGS << {name: name.id, type: type} %}
   end
 
   class TaggedLogger < Logger
@@ -31,19 +35,18 @@ class ActionController::Logger < Logger
 
     macro finished
       {% for tag in TAGS %}
-        property {{tag}} : String?
+        getter {{tag[:name]}} : String?
+        def {{tag[:name]}}=(value : {{tag[:type]}})
+          @{{tag[:name]}} = value.to_s
+        end
       {% end %}
 
       def tags
-        {% if !TAGS.empty? %}
-          {
-            {% for tag in TAGS %}
-              {{tag}}: @{{tag}},
-            {% end %}
-          }
-        {% else %}
-          NamedTuple.new
-        {% end %}
+        {
+          {% for tag in TAGS %}
+            {{tag[:name]}}: @{{tag[:name]}},
+          {% end %}
+        }
       end
     end
 
