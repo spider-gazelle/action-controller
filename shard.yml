@@ -1,5 +1,5 @@
 name: action-controller
-version: 2.3.0
+version: 2.3.1
 
 dependencies:
   habitat:
@@ -15,7 +15,9 @@ development_dependencies:
 
 authors:
   - Stephen von Takach <steve@acaprojects.com>
+  - Caspian Baska <caspian@acaprojects.com>
+  - Kim Burgess <kim@acaprojects.com>
 
 license: MIT
 
-crystal: 0.31.1
+crystal: 0.32.1
