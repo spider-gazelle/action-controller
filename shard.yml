@@ -1,5 +1,5 @@
 name: action-controller
-version: 2.3.2
+version: 2.3.3
 
 dependencies:
   habitat:
@@ -20,4 +20,4 @@ authors:
 
 license: MIT
 
-crystal: 0.32.1
+crystal: 0.33.0

@@ -291,6 +291,11 @@ abstract class ActionController::Base
           end
         {% end %}
       {% end %}
+
+      # Create a helper for obtaining the base route
+      def base_route
+        {{NAMESPACE[0]}}
+      end
     {% end %}
   end
 

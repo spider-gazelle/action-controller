@@ -6,6 +6,11 @@ describe ActionController::Base do
     c.accepts_formats.should eq(["text/html", "application/xhtml+xml", "application/xml"])
   end
 
+  it "should provide a helper for getting the current base route" do
+    c = HelloWorld.new(context("GET", "/"))
+    c.base_route.should eq("/hello")
+  end
+
   it "should return accepted formats" do
     c = HelloWorld.new(context("GET", "/", accept: "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8"))
     formats = c.accepts_formats
