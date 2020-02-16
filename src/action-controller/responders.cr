@@ -173,11 +173,19 @@ module ActionController::Responders
     return
   end
 
-  macro respond_with(&block)
+  macro respond_with(status = :ok, &block)
     %resp = SelectResponse.new(response, accepts_formats, @__head_request__)
     %resp.responses do
       {{block.body}}
     end
+    {% if status != :ok || status != 200 %}
+      %response = @context.response
+      {% if status.is_a?(SymbolLiteral) %}
+        %response.status_code = {{STATUS_CODES[status]}}
+      {% else %}
+        %response.status_code = ({{status}}).to_i
+      {% end %}
+    {% end %}
     %resp.build_response
     @render_called = true
     return
