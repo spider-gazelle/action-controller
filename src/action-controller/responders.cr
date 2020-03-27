@@ -86,7 +86,7 @@ module ActionController::Responders
 
   macro render(status = :ok, head = nil, json = nil, xml = nil, html = nil, yaml = nil, text = nil, binary = nil, template = nil, partial = nil, layout = nil)
     {% if !(head || json || xml || html || yaml || text || binary || template || partial) %}
-      "Render must be called with one of json, xml, html, yaml, text, binary, template, partial".id
+      {{ raise "Render must be called with one of json, xml, html, yaml, text, binary, template, partial" }}
     {% end %}
 
     %response = @context.response
