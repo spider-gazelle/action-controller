@@ -292,10 +292,10 @@ abstract class ActionController::Base
         {% end %}
       {% end %}
 
-      # Create a helper for obtaining the base route
-      def base_route
-        {{NAMESPACE[0]}}
-      end
+      # Helper for obtaining base route
+      getter base_route = {{NAMESPACE[0]}}
+      # :ditto:
+      class_getter base_route = {{NAMESPACE[0]}}
     {% end %}
   end
 

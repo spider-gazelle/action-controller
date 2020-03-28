@@ -9,6 +9,7 @@ describe ActionController::Base do
   it "should provide a helper for getting the current base route" do
     c = HelloWorld.new(context("GET", "/"))
     c.base_route.should eq("/hello")
+    HelloWorld.base_route.should eq("/hello")
   end
 
   it "should return accepted formats" do
