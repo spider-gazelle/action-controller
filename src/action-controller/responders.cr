@@ -101,11 +101,19 @@ module ActionController::Responders
 
     {% if json %}
       %response.content_type = {{MIME_TYPES[:json]}} unless %ctype
-
       {% if json.is_a?(String) %}
         {{json}}.to_s(%response) unless @__head_request__
       {% else %}
         ({{json}}).to_json(%response) unless @__head_request__
+      {% end %}
+    {% end %}
+
+    {% if yaml %}
+      %response.content_type = {{MIME_TYPES[:yaml]}} unless %ctype
+      {% if yaml.is_a?(String) %}
+        {{yaml}}.to_s(%response) unless @__head_request__
+      {% else %}
+        ({{yaml}}).to_yaml(%response) unless @__head_request__
       {% end %}
     {% end %}
 
@@ -119,15 +127,6 @@ module ActionController::Responders
       %output = {{html}}
     {% end %}
 
-    {% if yaml %}
-      %response.content_type = {{MIME_TYPES[:yaml]}} unless %ctype
-      {% if yaml.is_a?(String) %}
-        {{yaml}}.to_s(%response) unless @__head_request__
-      {% else %}
-        ({{yaml}}).to_yaml(%response) unless @__head_request__
-      {% end %}
-    {% end %}
-
     {% if text %}
       %response.content_type = {{MIME_TYPES[:text]}} unless %ctype
       %output = {{text}}
@@ -136,6 +135,10 @@ module ActionController::Responders
     {% if binary %}
       %response.content_type = {{MIME_TYPES[:binary]}} unless %ctype
       %output = {{binary}}
+    {% end %}
+
+    {% if xml || html || text || binary %}
+      %output.to_s(%response) unless @__head_request__
     {% end %}
 
     {% if template %}
@@ -150,10 +153,6 @@ module ActionController::Responders
     {% if partial %}
       %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       template(partial: {{partial}}, io: %response) unless @__head_request__
-    {% end %}
-
-    {% if xml || html || text || binary %}
-        %output.to_s(%response) unless @__head_request__
     {% end %}
 
     @render_called = true
