@@ -1,12 +1,11 @@
-require "kilt"
-require "logger"
 require "habitat"
+require "kilt"
+require "log"
 
 module ActionController
-  VERSION = "1.0.1"
-
-  class Error < ::Exception
-  end
+  VERSION = {{ `shards version "#{__DIR__}"`.chomp.stringify.downcase }}
+  # ameba:disable Style/ConstantNames
+  Log = ::Log.for("action-controller")
 end
 
 require "./action-controller/router"

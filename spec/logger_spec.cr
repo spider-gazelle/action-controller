@@ -1,53 +1,44 @@
 require "./spec_helper"
 
-describe ActionController::Logger do
-  ActionController::Logger.add_tag response_id
-  ActionController::Logger.add_tag user_id
-  ActionController::Logger.add_tag upstream_latency, Time::Span
+module ActionController
+  describe Log do
+    backend = ::Log::MemoryBackend.new
+    Log.setup_from_env(backend: backend)
 
-  io = IO::Memory.new
-  root_logger = ActionController::Logger.new(io)
-  tagged_logger = ActionController::Logger::TaggedLogger.new(root_logger)
+    Spec.before_each { Log.context.clear }
 
-  Spec.before_each { io.clear }
-
-  it "tags an event and ignores unused tags" do
-    tagged_logger.response_id = "12345"
-    tagged_logger.info "what's happening?"
-    io.to_s.ends_with?("response_id=12345 message=what's happening?\n").should eq(true)
-  end
-
-  it "tags in definition order" do
-    tagged_logger.user_id = "user-abc"
-    tagged_logger.response_id = "12345"
-    tagged_logger.info "what's happening?"
-    io.to_s.ends_with?("response_id=12345 user_id=user-abc message=what's happening?\n").should eq(true)
-  end
-
-  it "tags supports custom tags" do
-    tagged_logger.user_id = "user-abc"
-    tagged_logger.tag "interesting details", me: "Steve", other: 567
-    io.to_s.ends_with?("response_id=12345 user_id=user-abc me=Steve other=567 message=interesting details\n").should eq(true)
-  end
-
-  it "supports custom tag types" do
-    tagged_logger.upstream_latency = 10_000.nanoseconds
-    tagged_logger.info "what's happening?"
-    io.to_s.ends_with?("upstream_latency=00:00:00.000010000 message=what's happening?\n").should eq(true)
-  end
-
-  {% for name in Logger::Severity.constants %}
-  {% method = name.downcase %}
-  it "#tag_#{{{ method.stringify }}} curries #{{{ method.stringify }}} severity" do
-    root_logger.level =  Logger::Severity::{{name}}
-    tagged_logger.tag_{{method.id}}(message: "wow, code", broken: false)
-    logged = io.to_s
-    if {{ name.stringify }} == "UNKNOWN"
-      logged.should start_with %(level=ANY)
-    else
-      logged.should start_with %(level=#{{{ name.stringify }}})
+    it "tags an event and ignores unused tags" do
+      Log.context = {response_id: "12345"}
+      Log.info { "what's happening?" }
+      message = backend.entries.first.message
+      message.should end_with("response_id=12345 message=what's happening?\n")
     end
-    logged.should end_with %(broken=false message=wow, code\n)
+
+    it "tags in definition order" do
+      Log.context = {user_id: "user-abc", response_id: "12345"}
+      Log.info { "what's happening?" }
+      message = backend.entries.first.message
+      message.should end_with("response_id=12345 user_id=user-abc message=what's happening?\n")
+    end
+
+    it "set custom tags" do
+      Log.context = {user_id: "user-abc"}
+
+      # Temporary context
+      Log.with_context do
+        Log.context.set({me: "Steve", other: 567})
+        Log.info { "interesting details" }
+      end
+
+      message = Log.backend.entries.first
+      message.should end_with("response_id=12345 user_id=user-abc me=Steve other=567 message=interesting details\n")
+    end
+
+    it "supports custom tag types" do
+      Log.context.set({upstream_latency: 10_000.nanoseconds})
+      Log.info { "what's happening?" }
+      message = backend.entries.first
+      message.should end_with("upstream_latency=00:00:00.000010000 message=what's happening?\n")
+    end
   end
-{% end %}
 end

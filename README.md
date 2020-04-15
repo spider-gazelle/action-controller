@@ -107,7 +107,6 @@ Results in the following high performance code being generated:
 
 ```crystal
 class MyResource < ActionController::Base
-  getter logger : Logger
   getter render_called
   getter action_name : Symbol
   getter params : HTTP::Params
@@ -121,8 +120,6 @@ class MyResource < ActionController::Base
     @response = context.response
     @cookies = @request.cookies
     @params = @request.query_params
-
-    @logger = settings.logger
 
     # Add route params to the HTTP params
     # giving preference to route params

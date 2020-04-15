@@ -61,6 +61,7 @@ module ActionController::BodyParser
     end
   end
 
+  # ameba:disable Metrics/CyclomaticComplexity
   def self.extract_form_data(request, content_type, params : HTTP::Params)
     body = request.body
     return {nil, nil} unless body

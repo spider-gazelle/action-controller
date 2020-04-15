@@ -1,5 +1,6 @@
 require "spec"
 require "xml"
+require "log"
 require "../src/action-controller"
 
 # Testing ID params

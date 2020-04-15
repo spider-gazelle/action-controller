@@ -85,7 +85,7 @@ module ActionController::Responders
   }
 
   macro render(status = :ok, head = Nop, json = Nop, yaml = Nop, xml = Nop, html = Nop, text = Nop, binary = Nop, template = Nop, partial = Nop, layout = nil)
-    {% if [head, json, xml, html, yaml, text, binary, template, partial].all?  &.is_a? Path %}
+    {% if [head, json, xml, html, yaml, text, binary, template, partial].all? &.is_a? Path %}
       {{ raise "Render must be called with one of json, xml, html, yaml, text, binary, template, partial" }}
     {% end %}
 
@@ -292,8 +292,8 @@ module ActionController::Responders
 
       # Search for the first acceptable format
       if @accepts.any?
-        @accepts.each do |format, mime|
-          option = @options[format]?
+        @accepts.each do |response_format, mime|
+          option = @options[response_format]?
           if option
             @response.content_type = mime
             found = option
