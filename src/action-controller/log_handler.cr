@@ -1,4 +1,4 @@
-require "log"
+require "./logger"
 
 # A handler that logs the request method, resource, status code, and
 # the time used to execute the next handler, to the given `IO`.
@@ -18,25 +18,25 @@ module ActionController
     def call(context)
       elapsed = Time.measure { call_next(context) }
 
-      Log.with_context do
-        Log.context.set({
+      ::Log.with_context do
+        Log.context.set(
           duration: elapsed_text(elapsed),
-          method:   context.request.method,
-          path:     filter_path(context.request.resource),
-          status:   context.response.status_code,
-        })
+          method: context.request.method,
+          path: filter_path(context.request.resource),
+          status: context.response.status_code,
+        )
 
         Log.info { nil }
       end
     rescue e
-      Log.with_context do
-        Log.context.set({
-          duration: elapsed_text(elapsed),
-          method:   context.request.method,
-          path:     filter_path(context.request.resource),
-          status:   500,
-        })
+      ::Log.with_context do
+        Log.context.set(
+          method: context.request.method,
+          path: filter_path(context.request.resource),
+          status: 500,
+        )
 
+        Log.context.set(duration: elapsed_text(elapsed)) if elapsed
         Log.error(exception: e) { nil }
       end
 

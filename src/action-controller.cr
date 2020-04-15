@@ -1,11 +1,9 @@
 require "habitat"
 require "kilt"
-require "log"
+require "./action-controller/logger"
 
 module ActionController
   VERSION = {{ `shards version "#{__DIR__}"`.chomp.stringify.downcase }}
-  # ameba:disable Style/ConstantNames
-  Log = ::Log.for("action-controller")
 end
 
 require "./action-controller/router"

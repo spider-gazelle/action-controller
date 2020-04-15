@@ -1,17 +1,18 @@
 require "log"
-require "log/backend"
-require "log/io_backend"
 
 require "http/server/context"
 
 class HTTP::Server::Context
   # ameba:disable Style/ConstantNames
-  Log = Log.for("action-controller")
+  Log = ::Log.for("action-controller")
 end
 
 module ActionController
+  # ameba:disable Style/ConstantNames
+  Log = ::Log.for("action-controller")
+
   def self.default_formatter
-    Log::Formatter.new do |entry, io|
+    ::Log::Formatter.new do |entry, io|
       label = entry.severity.label.rjust(7)
       timestamp = entry.timestamp
       context = entry.context
@@ -29,13 +30,11 @@ module ActionController
     end
   end
 
-  def self.init_logger
-    backend = Log::IOBackend.new
+  def self.default_backend
+    backend = ::Log::IOBackend.new
     backend.formatter = default_formatter
-
-    builder = Log::Builder.new
-    builder.bind("action-controller", :info, backend)
+    backend
   end
 
-  init_logger
+  ::Log.setup_from_env(backend: default_backend)
 end
