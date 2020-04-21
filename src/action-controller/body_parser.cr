@@ -56,6 +56,8 @@ module ActionController::BodyParser
           @read_time = HTTP.parse_time value
         when "size"
           @size = value.to_u64
+        else
+          # Ignore
         end
       end
     end

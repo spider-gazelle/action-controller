@@ -1,5 +1,5 @@
 name: action-controller
-version: 2.4.0
+version: 3.0.0
 
 dependencies:
   habitat:
@@ -14,10 +14,8 @@ development_dependencies:
     github: veelenga/ameba
 
 authors:
-  - Stephen von Takach <steve@acaprojects.com>
-  - Caspian Baska <caspian@acaprojects.com>
-  - Kim Burgess <kim@acaprojects.com>
+  - Stephen von Takach <steve@place.tech>
+  - Caspian Baska <caspian@place.tech>
+  - Kim Burgess <kim@place.tech>
 
 license: MIT
-
-crystal: 0.33.0
