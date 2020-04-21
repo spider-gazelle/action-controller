@@ -1,12 +1,5 @@
 require "log"
 
-require "http/server/context"
-
-class HTTP::Server::Context
-  # ameba:disable Style/ConstantNames
-  Log = ::Log.for("action-controller")
-end
-
 module ActionController
   # ameba:disable Style/ConstantNames
   Log = ::Log.for("action-controller")
@@ -35,6 +28,4 @@ module ActionController
     backend.formatter = default_formatter
     backend
   end
-
-  ::Log.setup_from_env(backend: default_backend)
 end

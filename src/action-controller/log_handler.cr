@@ -5,8 +5,6 @@ require "./logger"
 module ActionController
   class LogHandler
     include HTTP::Handler
-    # ameba:disable Style/ConstantNames
-    Log = ::Log.for("action-controller")
 
     # Initializes this handler to log to the given `IO`.
     def initialize(filter = nil)
