@@ -6,7 +6,7 @@ module ActionController
 
   def self.default_formatter
     ::Log::Formatter.new do |entry, io|
-      label = entry.severity.label.lstrip
+      label = entry.severity.label
       timestamp = entry.timestamp
       context = entry.context
       io << String.build do |str|
