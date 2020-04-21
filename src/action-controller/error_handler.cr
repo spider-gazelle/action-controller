@@ -1,9 +1,9 @@
 module ActionController::ErrorHandler
-  def self.new(development : Bool = false, persist_headers = [] of String)
-    if development
-      ActionController::ErrorHandlerDevelopment.new(persist_headers)
-    else
+  def self.new(production : Bool = false, persist_headers = [] of String)
+    if production
       ActionController::ErrorHandlerProduction.new(persist_headers)
+    else
+      ActionController::ErrorHandlerDevelopment.new(persist_headers)
     end
   end
 end
