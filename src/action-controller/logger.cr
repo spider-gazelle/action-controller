@@ -1,127 +1,40 @@
-require "logger"
+require "log"
+
 require "http/server/context"
 
 class HTTP::Server::Context
-  @logger : ActionController::Logger::TaggedLogger? = nil
-
-  def logger : ActionController::Logger::TaggedLogger
-    @logger ||= ActionController::Logger::TaggedLogger.new(
-      ActionController::Base.settings.logger
-    )
-  end
+  # ameba:disable Style/ConstantNames
+  Log = ::Log.for("action-controller")
 end
 
-class ActionController::Logger < Logger
-  TAGS = [] of Nil
+module ActionController
+  # ameba:disable Style/ConstantNames
+  Log = ::Log.for("action-controller")
 
-  macro add_tag(name)
-    {% TAGS << {name: name.id, type: String?} %}
-  end
-
-  macro add_tag(name, type)
-    {% TAGS << {name: name.id, type: type} %}
-  end
-
-  class TaggedLogger < Logger
-    def initialize(@logger : ::Logger)
-      super(STDOUT)
-    end
-
-    delegate :level, to: @logger
-    delegate :level=, to: @logger
-
-    def close
-    end
-
-    macro finished
-      {% for tag in TAGS %}
-        getter {{tag[:name]}} : String?
-        def {{tag[:name]}}=(value : {{tag[:type]}})
-          @{{tag[:name]}} = value.to_s
-        end
-      {% end %}
-
-      def tags
-        {% if !TAGS.empty? %}
-          {
-            {% for tag in TAGS %}
-              {{tag[:name]}}: @{{tag[:name]}},
-            {% end %}
-          }
-        {% else %}
-          NamedTuple.new
-        {% end %}
-      end
-    end
-
-    {% for name in Logger::Severity.constants %}
-      def {{name.id.downcase}}(message, progname = nil)
-        severity = Severity::{{name.id}}
-        return if severity < level
-
-        @logger.log(severity, message, build_tags(progname))
-      end
-
-      def {{name.id.downcase}}(progname = nil)
-        severity = Severity::{{name.id}}
-        return if severity < level
-
-        @logger.log(severity, yield, build_tags(progname))
-      end
-    {% end %}
-
-    def build_tags(progname)
-      String.build do |str|
-        str << " progname=" << progname if progname
-        tags.each do |tag, value|
-          str << " " << tag << "=" << value if value
-        end
-      end
-    end
-
-    def log(severity, message, progname = nil)
-      return if severity < level
-      @logger.log(severity, message, build_tags(progname))
-    end
-
-    def log(severity, progname = nil)
-      return if severity < level
-      @logger.log(severity, yield, build_tags(progname))
-    end
-
-    def tag(message : String = "", progname = nil, severity : Logger::Severity = Logger::Severity::INFO, **tags)
-      return if severity < level
-      standard_tags = build_tags(progname)
-      custom_tags = String.build do |str|
-        tags.each do |tag, value|
-          value = "nil" if value.nil?
-          str << " " << tag << "=" << value
-        end
-      end
-      @logger.log(severity, message, "#{standard_tags}#{custom_tags}")
-    end
-
-    {% for level in Logger::Severity.constants %}
-      def tag_{{level.downcase.id}}(message : String = "", progname = nil, **tags)
-        tag(message, progname, Logger::Severity::{{ level }}, **tags)
-      end
-    {% end %}
-  end
-
-  def initialize(io = STDOUT)
-    super(io)
-    self.formatter = default_format
-  end
-
-  def default_format
-    Logger::Formatter.new do |severity, datetime, progname, message, io|
-      label = severity.unknown? ? "ANY" : severity.to_s
+  def self.default_formatter
+    ::Log::Formatter.new do |entry, io|
+      label = entry.severity.label.rjust(7)
+      timestamp = entry.timestamp
+      context = entry.context
       io << String.build do |str|
         str << "level=" << label << " time="
-        datetime.to_rfc3339(str)
-        str << progname if progname
-        str << " message=" << message if message && !message.empty?
+        timestamp.to_rfc3339(str)
+        str << " source=" << entry.source
+
+        # Add context tags
+        context.as_h?.try &.each do |k, v|
+          str << " " << k << "=" << v
+        end
+        str << " message=" << entry.message unless entry.message.empty?
       end
     end
   end
+
+  def self.default_backend
+    backend = ::Log::IOBackend.new
+    backend.formatter = default_formatter
+    backend
+  end
+
+  ::Log.setup_from_env(backend: default_backend)
 end

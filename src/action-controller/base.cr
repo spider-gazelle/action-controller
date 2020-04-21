@@ -7,10 +7,6 @@ require "./support"
 abstract class ActionController::Base
   include ActionController::Responders
 
-  Habitat.create do
-    setting logger : ::Logger = ActionController::Logger.new
-  end
-
   # Route IDs params
   DEFAULT_PARAM_ID = {} of Nil => Nil
 
@@ -153,10 +149,6 @@ abstract class ActionController::Base
 
   macro route_params
     @context.route_params
-  end
-
-  macro logger
-    @context.logger
   end
 
   macro query_params

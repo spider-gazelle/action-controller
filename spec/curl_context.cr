@@ -22,6 +22,8 @@ def curl(method : String, path : String, headers = {} of String => String, body 
     response = client.head path, head
   when "OPTIONS"
     response = client.options path, head
+  else
+    raise "unknown HTTP Verb: #{method}"
   end
 
   client.close

@@ -56,11 +56,14 @@ module ActionController::BodyParser
           @read_time = HTTP.parse_time value
         when "size"
           @size = value.to_u64
+        else
+          # Ignore
         end
       end
     end
   end
 
+  # ameba:disable Metrics/CyclomaticComplexity
   def self.extract_form_data(request, content_type, params : HTTP::Params)
     body = request.body
     return {nil, nil} unless body

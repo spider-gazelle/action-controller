@@ -1,9 +1,3 @@
-require "./logger"
-
-# This ensures that finally only runs at this point in the compiling process
-class ActionController::Logger
-end
-
 class ActionController::Server
   include Router
 
