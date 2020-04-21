@@ -14,6 +14,8 @@ module ActionController
     @filter : Array(String)
 
     def call(context)
+      ::Log.context.clear
+
       elapsed = Time.measure { call_next(context) }
 
       ::Log.with_context do
