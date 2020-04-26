@@ -1,7 +1,6 @@
 require "log"
 
 module ActionController
-  # ameba:disable Style/ConstantNames
   Log = ::Log.for("action-controller")
 
   def self.default_formatter
