@@ -32,12 +32,20 @@ def curl(method : String, path : String, headers = {} of String => String, body 
 end
 
 # Creates a context for specing controllers
-def context(method : String, path : String, headers : HTTP::Headers? = nil, body : String | Bytes | IO | Nil = nil, version = "HTTP/1.1", **header_opts)
+def context(
+  method : String,
+  path : String,
+  headers : HTTP::Headers? = nil,
+  body : String | Bytes | IO | Nil = nil,
+  version = "HTTP/1.1",
+  response_io = IO::Memory.new,
+  **header_opts
+)
   headers ||= HTTP::Headers.new
   header_opts.each do |key, value|
     headers.add(key.to_s.split(/-|_/).map(&.capitalize).join("-"), value.to_s)
   end
-  response = HTTP::Server::Response.new(IO::Memory.new, version)
+  response = HTTP::Server::Response.new(response_io, version)
   request = HTTP::Request.new(method, path, headers, body, version)
   HTTP::Server::Context.new request, response
 end
