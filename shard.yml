@@ -9,12 +9,12 @@ dependencies:
     github: luckyframework/habitat
   delimiter_tree:
     github: drujensen/delimiter_tree
-  kilt:
-    github: jeromegn/kilt
 
 development_dependencies:
   ameba:
     github: veelenga/ameba
+  kilt:
+    github: jeromegn/kilt
 
 authors:
   - Stephen von Takach <steve@place.tech>

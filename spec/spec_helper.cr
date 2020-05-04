@@ -1,3 +1,4 @@
+require "kilt"
 require "spec"
 require "xml"
 require "log"

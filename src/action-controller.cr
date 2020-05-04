@@ -1,5 +1,5 @@
 require "habitat"
-require "kilt"
+require "future"
 require "./action-controller/logger"
 
 module ActionController
