@@ -22,7 +22,7 @@ We avoid using fork as this isn't supported on all platforms.
 
 ```ruby
 
-  @processes = [] of Concurrent::Future(Nil)
+  @processes = [] of Future::Compute(Nil)
 
   def cluster(count, short_arg, long_arg, args = ARGV.dup)
     process_path = Process.executable_path.not_nil!
