@@ -17,7 +17,7 @@ class ActionController::Server
   @route_handler = RouteHandler.new
 
   def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port = true)
-    @processes = [] of Concurrent::Future(Nil)
+    @processes = [] of Future::Compute(Nil)
     init_routes
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
