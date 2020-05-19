@@ -18,6 +18,11 @@ module ActionController
           str << " " << k << "=" << v
         end
         str << " message=" << entry.message unless entry.message.empty?
+
+        if exception = entry.exception
+          str << "\n"
+          exception.inspect_with_backtrace(str)
+        end
       end
     end
   end
