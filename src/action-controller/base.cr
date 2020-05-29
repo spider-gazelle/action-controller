@@ -687,7 +687,7 @@ abstract class ActionController::Base
     return cip if cip
 
     request = @context.request
-    cip = request.headers["X-Forwarded-Proto"]? || request.headers["X-Real-IP"]?
+    cip = request.headers["X-Forwarded-For"]? || request.headers["X-Real-IP"]?
 
     if cip.nil?
       forwarded = request.headers["Forwarded"]?
