@@ -486,8 +486,10 @@ abstract class ActionController::Base
           {% end %}
 
           # Check if session needs to be written
-          session = instance.__session__
-          session.encode(context.response.cookies) if session && session.modified
+          if !instance.render_called
+            session = instance.__session__
+            session.encode(context.response.cookies) if session && session.modified
+          end
 
           # Implement error handling
           {% if !RESCUE.empty? %}

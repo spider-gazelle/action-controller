@@ -99,6 +99,9 @@ module ActionController::Responders
 
     %ctype = %response.headers["Content-Type"]?
 
+    %session = @__session__
+    %session.encode(%response.cookies) if %session && %session.modified
+
     {% if !json.is_a? Path %}
       %response.content_type = {{MIME_TYPES[:json]}} unless %ctype
       {% if json.is_a?(String) %}
@@ -172,14 +175,19 @@ module ActionController::Responders
     %resp.responses do
       {{block.body}}
     end
+
+    %response = @context.response
     {% if status != :ok || status != 200 %}
-      %response = @context.response
       {% if status.is_a?(SymbolLiteral) %}
         %response.status_code = {{STATUS_CODES[status]}}
       {% else %}
         %response.status_code = ({{status}}).to_i
       {% end %}
     {% end %}
+
+    %session = @__session__
+    %session.encode(%response.cookies) if %session && %session.modified
+
     %resp.build_response
     @render_called = true
     return

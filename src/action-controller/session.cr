@@ -69,6 +69,9 @@ class ActionController::Session
       age = settings.max_age
       raise CookieSizeExceeded.new("#{data.size} > #{MAX_COOKIE_SIZE}") if data.size > MAX_COOKIE_SIZE
     end
+
+    @modified = false
+
     cookies[settings.key] = HTTP::Cookie.new(
       settings.key,
       data,

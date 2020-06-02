@@ -61,7 +61,7 @@ end
 
 class BobJane < ActionController::Base
   # base "/bob/jane" # <== automatically configured
-  after_action :modify_session, only: :modified_session
+  before_action :modify_session, only: :modified_session
 
   # Test default CRUD
   def index

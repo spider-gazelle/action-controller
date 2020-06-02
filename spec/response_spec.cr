@@ -22,7 +22,7 @@ describe "end to end requests and responses" do
       result.headers["Location"].should eq("/other_route")
     end
 
-    it "can modify session cookie data in an after_action" do
+    it "can modify session cookie data in an before_action" do
       result = curl("GET", "/bob_jane/modified_session")
       result.body.should eq("ok")
       cookie = result.headers["Set-Cookie"]
