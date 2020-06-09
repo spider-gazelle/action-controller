@@ -702,7 +702,7 @@ abstract class ActionController::Base
         end
       end
 
-      cip = (request.remote_address || "127.0.0.1").split(":")[0] unless cip
+      cip = (request.remote_address.try(&.to_s) || "127.0.0.1").split(":")[0] unless cip
     end
 
     @client_ip = cip
