@@ -18,27 +18,19 @@ module ActionController
 
       elapsed = Time.measure { call_next(context) }
 
-      ::Log.with_context do
-        Log.context.set(
-          duration: elapsed_text(elapsed),
-          method: context.request.method,
-          path: filter_path(context.request.resource),
-          status: context.response.status_code,
-        )
-
-        Log.info { nil }
-      end
+      Log.info &.emit(
+        duration: elapsed_text(elapsed),
+        method: context.request.method,
+        path: filter_path(context.request.resource),
+        status: context.response.status_code
+      )
     rescue e
-      ::Log.with_context do
-        Log.context.set(
-          method: context.request.method,
-          path: filter_path(context.request.resource),
-          status: 500,
-        )
-
-        Log.context.set(duration: elapsed_text(elapsed)) if elapsed
-        Log.error(exception: e) { nil }
-      end
+      Log.error(exception: e, &.emit(
+        method: context.request.method,
+        path: filter_path(context.request.resource),
+        status: 500,
+        duration: elapsed_text(elapsed ? elapsed : 0.seconds),
+      ))
 
       raise e
     end
