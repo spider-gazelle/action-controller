@@ -3,6 +3,7 @@ require "./body_parser"
 require "./responders"
 require "./session"
 require "./support"
+require "uri"
 
 abstract class ActionController::Base
   include ActionController::Responders
@@ -176,7 +177,7 @@ abstract class ActionController::Base
     # giving preference to route params
     route_params.each do |key, value|
       values = params.fetch_all(key)
-      values.unshift(value)
+      values.unshift(URI.decode(value))
       params.set_all(key, values)
     end
 
