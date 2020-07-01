@@ -10,9 +10,9 @@ module ActionController::Router
   # Define each method for supported http actions
   {% for http_method in HTTP_METHODS %}
     def {{http_method.id}}(path : String, &block : Action)
-      @route_handler.add_route("/{{http_method.id.upcase}}" + path, {block, false})
+      @route_handler.add_route({{http_method.id.upcase.stringify}}, path, {block, false})
       {% if http_method == "get" %}
-        @route_handler.add_route("/HEAD" + path, {block, true})
+        @route_handler.add_route("HEAD", path, {block, true})
       {% end %}
     end
   {% end %}
