@@ -1,5 +1,5 @@
 name: action-controller
-version: 3.2.0
+version: 3.3.0
 
 dependencies:
   # Used in clustering
@@ -7,8 +7,9 @@ dependencies:
     github: crystal-community/future.cr
   habitat:
     github: luckyframework/habitat
-  delimiter_tree:
-    github: drujensen/delimiter_tree
+  lucky_router:
+    github: luckyframework/lucky_router
+    version: ~> 0.3
 
 development_dependencies:
   ameba:

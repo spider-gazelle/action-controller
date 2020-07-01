@@ -1,22 +1,22 @@
-require "delimiter_tree"
+require "lucky_router"
 
 class ActionController::Router::RouteHandler
   include HTTP::Handler
 
   def initialize
-    @tree = Delimiter::Tree(Tuple(Action, Bool)).new
+    @matcher = LuckyRouter::Matcher(Tuple(Action, Bool)).new
     @static_routes = {} of String => Tuple(Action, Bool)
   end
 
   # Builds the internal representation of a route
-  # then searches static routes before checking the radix tree
+  # then searches static routes before checking the matcher
   def search_route(context : HTTP::Server::Context) : Tuple(Action, Bool)?
-    search_path = "/#{context.request.method}#{context.request.path}"
+    search_path = "#{context.request.method}#{context.request.path}"
     action = @static_routes.fetch(search_path) do
-      route = @tree.find(search_path)
-      if route.found?
-        context.route_params = route.params
-        route.payload.last
+      match = @matcher.match(context.request.method, context.request.path)
+      if match
+        context.route_params = match.params
+        match.payload
       end
     end
     action
@@ -35,17 +35,18 @@ class ActionController::Router::RouteHandler
 
   # Adds a route handler to the system
   # Determines if routes are static or require decomposition and stores them appropriately
-  def add_route(key : String, action : Tuple(Action, Bool))
-    @tree.add(key, action)
+  def add_route(method : String, path : String, action : Tuple(Action, Bool))
+    @matcher.add(method, path, action)
 
-    unless key.includes?(':') || key.includes?('*')
-      @static_routes[key] = action
+    unless path.includes?(':') || path.includes?('*')
+      lookup_key = "#{method}#{path}"
+      @static_routes[lookup_key] = action
 
       # Add static routes with both trailing and non-trailing / chars
-      if key.ends_with? '/'
-        @static_routes[key[0..-2]] = action
+      if lookup_key.ends_with? '/'
+        @static_routes[lookup_key[0..-2]] = action
       else
-        @static_routes[key + "/"] = action
+        @static_routes["#{lookup_key}/"] = action
       end
     end
   end
