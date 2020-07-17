@@ -26,12 +26,17 @@ module ActionController
     # log. The defaults to the response (either valid or error) only, however
     # support is also provide for request entry logging for development
     # environments.
-    def initialize(@filter = [] of String, @log = Event::Response)
+    #
+    # By default, request times will include a unit. Set *ms* to instead always
+    # use milliseconds for simpler external perf monitoring.
+    def initialize(@filter = [] of String, @log = Event::Response, @ms = false)
     end
 
     private getter filter
 
     private getter log
+
+    private getter ms
 
     def call(context : HTTP::Server::Context) : Nil
       ::Log.with_context do
@@ -85,17 +90,20 @@ module ActionController
       ))
     end
 
-    private def elapsed_text(elapsed)
-      minutes = elapsed.total_minutes
-      return "#{minutes.round(2)}m" if minutes >= 1
+    # Provides a durartion string.
+    private def elapsed_text(elapsed : Time::Span) : String
+      return elapsed.total_milliseconds.round(4).to_s if ms
 
-      seconds = elapsed.total_seconds
-      return "#{seconds.round(2)}s" if seconds >= 1
-
-      millis = elapsed.total_milliseconds
-      return "#{millis.round(2)}ms" if millis >= 1
-
-      "#{(millis * 1000).round(2)}µs"
+      case elapsed
+      when .>= 1.minutes
+        "#{elapsed.total_minutes.round 2}m"
+      when .>= 1.seconds
+        "#{elapsed.total_seconds.round 2}s"
+      when .>= 1.milliseconds
+        "#{elapsed.total_milliseconds.round 2}ms"
+      else
+        "#{elapsed.total_microseconds.round 2}µs"
+      end
     end
 
     private def filter_path(path)
