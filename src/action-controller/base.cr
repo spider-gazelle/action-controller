@@ -184,6 +184,7 @@ abstract class ActionController::Base
     # Add form data to params, lowest preference
     ctype = request_content_type
     @files, @form_data = ActionController::BodyParser.extract_form_data(request, ctype, params) if ctype
+
     params
   end
 

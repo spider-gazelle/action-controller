@@ -10,6 +10,8 @@ dependencies:
   lucky_router:
     github: luckyframework/lucky_router
     version: ~> 0.3
+  raven:
+    github: Sija/raven.cr
 
 development_dependencies:
   ameba:

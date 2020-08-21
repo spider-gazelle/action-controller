@@ -73,4 +73,29 @@ module ActionController::Support
     end
     nil
   end
+
+  def self.extract_params(context : HTTP::Server::Context) : HTTP::Params
+    params = context.request.params
+
+    # duplicate the query_params
+    qparams = context.request.query_params
+    qparams.each do |key, _|
+      params.set_all(key, qparams.fetch_all(key).dup)
+    end
+
+    # Add route params to the HTTP params
+    # giving preference to route params
+    context.request.route_params.each do |key, value|
+      values = params.fetch_all(key)
+      values.unshift(URI.decode(value))
+      params.set_all(key, values)
+    end
+
+    # Add form data to params, lowest preference
+    ctype = content_type(context.request.headers)
+
+    ActionController::BodyParser.extract_form_data(context.request, ctype, params) if ctype
+
+    params
+  end
 end
