@@ -97,6 +97,11 @@ class BobJane < ActionController::Base
     render text: "ok"
   end
 
+  get "/modified_session_with_redirect", :modified_session_with_redirect do
+    session["user_id"] = 42_i64
+    redirect_to "/"
+  end
+
   private def modify_session
     session.domain = "bobjane.com"
   end
