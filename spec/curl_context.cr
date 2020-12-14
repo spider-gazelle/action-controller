@@ -132,3 +132,7 @@ module ActionController::Context
     end
   end
 end
+
+abstract class ActionController::Base
+  include ActionController::Context
+end
