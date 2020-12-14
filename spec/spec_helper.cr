@@ -108,6 +108,20 @@ abstract class Application < ActionController::Base
   end
 end
 
+class Users < ActionController::Base
+  base "/users"
+
+  def index
+    head :unauthorized if request.headers["Authorization"]? != "X"
+
+    if params["verbose"] = "true"
+      render json: [{name: "James", state: "NSW"}, {name: "Pavel", state: "VIC"}, {name: "Steve", state: "NSW"}, {name: "Gab", state: "QLD"}, {name: "Giraffe", state: "NSW"}]
+    else
+      render json: ["James", "Pavel", "Steve", "Gab", "Giraffe"]
+    end
+  end
+end
+
 class HelloWorld < Application
   base "/hello"
 
