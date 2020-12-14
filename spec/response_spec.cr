@@ -30,6 +30,11 @@ describe "end to end requests and responses" do
       cookie.should contain "domain=bobjane.com"
     end
 
+    it "encode session cookie when redirect_to" do
+      result = curl("GET", "/bob_jane/modified_session_with_redirect")
+      result.headers["Set-Cookie"].should_not be_nil
+    end
+
     it "#redirect" do
       cookie = "_test_session_=CKQMLS12oJZBIh3Hlbpg19XGFAphCiRW7NMHq31epbpGTfI9N0T7WeIR1C%2FFDJ%2FW--IEb0qAXKV9DtrLdnyqzdGbBM2ww%3D"
       result = curl("GET", "/bob_jane/redirect", {"Cookie" => cookie})
@@ -159,6 +164,7 @@ describe "end to end requests and responses" do
         {"BobJane", :create, :post, "/bob_jane/post_test"},
         {"BobJane", :update, :put, "/bob_jane/put_test"},
         {"BobJane", :modified_session, :get, "/bob_jane/modified_session"},
+        {"BobJane", :modified_session_with_redirect, :get, "/bob_jane/modified_session_with_redirect"},
         {"BobJane", :index, :get, "/bob_jane/"},
       ])
     end

@@ -164,6 +164,10 @@ module ActionController::Responders
 
   macro redirect_to(path, status = :found)
     %response = @context.response
+
+    %session = @__session__
+    %session.encode(%response.cookies) if %session && %session.modified
+
     %response.status_code = {{REDIRECTION_CODES[status] || status}}
     %response.headers["Location"] = {{path}}
     @render_called = true
