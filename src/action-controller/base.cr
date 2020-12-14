@@ -4,6 +4,7 @@ require "./responders"
 require "./session"
 require "./support"
 require "uri"
+require "../../spec/curl_context"
 
 abstract class ActionController::Base
   include ActionController::Responders
