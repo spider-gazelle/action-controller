@@ -94,12 +94,10 @@ end
 def context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
   ctx = instantiate_context(method, route, route_params, headers, body)
   yield ctx
-  res = ctx.response.not_nil!
+  ctx.response.output.rewind
 
-  ContextResponse.new(res.status_code, res.output.to_s, res)
+  ctx.response
 end
-
-record ContextResponse, status_code : Int32, body : String, object : HTTP::Server::Response
 
 # Helper to instantiate context
 def instantiate_context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil)
@@ -119,8 +117,6 @@ def instantiate_context(method : String, route : String, route_params : Hash(Str
   ctx
 end
 
-record DeserialisedContextResponse(M), status_code : Int32, body : M, object : HTTP::Server::Response
-
 # Use context by instantiating the context without specifying body, output IO::Memory, instantiating controller in each block
 module ActionController::Context
   macro included
@@ -129,30 +125,10 @@ module ActionController::Context
         ctx = instantiate_context(method, route, route_params, headers, body)
         instance = self.new(ctx)
         yield instance
-        res = ctx.response
+        ctx.response.output.rewind
 
-        ContextResponse.new(res.status_code, res.output.to_s, res)
+        ctx.response
       end
-    end
-  end
-end
-
-record DeserialisedContextResponse(M), status_code : Int32, body : M, object : HTTP::Server::Response
-
-# Use context by instantiating the context without specifying body, output IO::Memory, instantiating controller in each block, and deserialise output into defined type
-module ControllerModel(T, M)
-  def self.context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
-    ctx = instantiate_context(method, route, route_params, headers, body)
-    instance = T.new(ctx)
-    yield instance
-    res = ctx.response
-
-    if M == JSON::Any
-      body = JSON.parse(res.output.to_s)
-      DeserialisedContextResponse(JSON::Any).new(res.status_code, body, res)
-    else
-      body = M.from_json(res.output.to_s)
-      DeserialisedContextResponse(M).new(res.status_code, body, res)
     end
   end
 end

@@ -12,7 +12,8 @@ describe "Context" do
 
     # Expectation
     ctx.response.status_code.should eq 200
-    parsed = UserRes.from_json(ctx.response.output.to_s)
+    ctx.response.output.rewind
+    parsed = UserRes.from_json(ctx.response.output)
     parsed.size.should eq(5)
     parsed.should contain({name: "James", state: "NSW"})
   end
@@ -23,7 +24,7 @@ describe "Context" do
 
     # Expectation
     res.status_code.should eq 200
-    parsed = UserRes.from_json(res.body)
+    parsed = UserRes.from_json(res.output)
     parsed.size.should eq(5)
     parsed.should contain({name: "James", state: "NSW"})
   end
@@ -34,18 +35,8 @@ describe "Context" do
 
     # Expectation
     res.status_code.should eq 200
-    parsed = UserRes.from_json(res.body)
+    parsed = UserRes.from_json(res.output)
     parsed.size.should eq(5)
     parsed.should contain({name: "James", state: "NSW"})
-  end
-
-  it "should spec #index without specifying body, output IO::Memory, instantiating controller in each block, and deserialise output into defined type" do
-    # Instantiate the controller
-    res = ControllerModel(Users, UserRes).context(method: "GET", route: BASE, route_params: {"verbose" => "true"}, headers: {"Authorization" => "X"}, &.index)
-
-    # Expectation
-    res.status_code.should eq 200
-    res.body.size.should eq(5)
-    res.body.as(UserRes).should contain({name: "James", state: "NSW"})
   end
 end
