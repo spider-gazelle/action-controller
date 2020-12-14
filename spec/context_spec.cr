@@ -28,9 +28,9 @@ describe "Context" do
     parsed.should contain({name: "James", state: "NSW"})
   end
 
-  it "should spec #index without specifying body, output IO::Memory, instantiating controller in each block" do
+  it "should spec #index without specifying body, output IO::Memory, instantiating controller in each block but have Controller module included directly" do
     # Instantiate the controller
-    res = Controller(Users).context(method: "GET", route: BASE, route_params: {"verbose" => "true"}, headers: {"Authorization" => "X"}, &.index)
+    res = Users.context(method: "GET", route: BASE, route_params: {"verbose" => "true"}, headers: {"Authorization" => "X"}, &.index)
 
     # Expectation
     res.status_code.should eq 200

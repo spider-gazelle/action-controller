@@ -90,8 +90,19 @@ def context(
   HTTP::Server::Context.new request, response
 end
 
+# Use context by instantiating the context without specifying body, output IO::Memory
+def context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
+  ctx = instantiate_context(method, route, route_params, headers, body)
+  yield ctx
+  res = ctx.response.not_nil!
+
+  ContextResponse.new(res.status_code, res.output.to_s, res)
+end
+
+record ContextResponse, status_code : Int32, body : String, object : HTTP::Server::Response
+
 # Helper to instantiate context
-private def instantiate_context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil)
+def instantiate_context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil)
   headers_io = HTTP::Headers.new
 
   if !headers.nil?
@@ -108,28 +119,21 @@ private def instantiate_context(method : String, route : String, route_params : 
   ctx
 end
 
-record ContextResponse, status_code : Int32, body : String, object : HTTP::Server::Response
-
-# Use context by instantiating the context without specifying body, output IO::Memory
-def context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
-  ctx = instantiate_context(method, route, route_params, headers, body)
-  yield ctx
-  res = ctx.response.not_nil!
-
-  ContextResponse.new(res.status_code, res.output.to_s, res)
-end
+record DeserialisedContextResponse(M), status_code : Int32, body : M, object : HTTP::Server::Response
 
 # Use context by instantiating the context without specifying body, output IO::Memory, instantiating controller in each block
-module Controller(T)
-  extend self
+module ActionController::Context
+  macro included
+    macro inherited
+      def self.context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
+        ctx = instantiate_context(method, route, route_params, headers, body)
+        instance = self.new(ctx)
+        yield instance
+        res = ctx.response
 
-  def context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
-    ctx = instantiate_context(method, route, route_params, headers, body)
-    instance = T.new(ctx)
-    yield instance
-    res = ctx.response.not_nil!
-
-    ContextResponse.new(res.status_code, res.output.to_s, res)
+        ContextResponse.new(res.status_code, res.output.to_s, res)
+      end
+    end
   end
 end
 
@@ -137,21 +141,17 @@ record DeserialisedContextResponse(M), status_code : Int32, body : M, object : H
 
 # Use context by instantiating the context without specifying body, output IO::Memory, instantiating controller in each block, and deserialise output into defined type
 module ControllerModel(T, M)
-  extend self
-
-  def context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
+  def self.context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
     ctx = instantiate_context(method, route, route_params, headers, body)
     instance = T.new(ctx)
     yield instance
-    res = ctx.response.not_nil!
+    res = ctx.response
 
     if M == JSON::Any
       body = JSON.parse(res.output.to_s)
       DeserialisedContextResponse(JSON::Any).new(res.status_code, body, res)
-    elsif M == Nil
-      raise ArgumentError.new("Cannot serialise into Nil")
     else
-      body = M.from_json(res.output.to_s).not_nil!
+      body = M.from_json(res.output.to_s)
       DeserialisedContextResponse(M).new(res.status_code, body, res)
     end
   end

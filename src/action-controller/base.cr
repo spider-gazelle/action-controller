@@ -4,9 +4,11 @@ require "./responders"
 require "./session"
 require "./support"
 require "uri"
+require "../../spec/curl_context"
 
 abstract class ActionController::Base
   include ActionController::Responders
+  include ActionController::Context
 
   # Route IDs params
   DEFAULT_PARAM_ID = {} of Nil => Nil
