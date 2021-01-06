@@ -11,6 +11,7 @@ module ActionController
     enum Event
       Request
       Response
+
       def self.all
         Request | Response
       end

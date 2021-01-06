@@ -161,30 +161,31 @@ abstract class ActionController::Base
     @context.request.cookies
   end
 
-  @params : HTTP::Params?
+  getter params : HTTP::Params do
+    _params = ActionController::Base.extract_params(@context)
+    # Add form data to params, lowest preference
+    ctype = request_content_type
+    @files, @form_data = ActionController::BodyParser.extract_form_data(request, ctype, _params) if ctype
+    _params
+  end
 
-  def params : HTTP::Params
-    params = @params
-    return params if params
-    @params = params = HTTP::Params.new
-
+  # Extracts query and route params into a single `HTTP::Params` instance
+  def self.extract_params(context : HTTP::Server::Context) : HTTP::Params
+    params = HTTP::Params.new
     # duplicate the query_params
-    qparams = query_params
+    qparams = context.request.query_params
     qparams.each do |key, _|
       params.set_all(key, qparams.fetch_all(key).dup)
     end
 
     # Add route params to the HTTP params
     # giving preference to route params
-    route_params.each do |key, value|
+    context.route_params.each do |key, value|
       values = params.fetch_all(key)
       values.unshift(URI.decode(value))
       params.set_all(key, values)
     end
 
-    # Add form data to params, lowest preference
-    ctype = request_content_type
-    @files, @form_data = ActionController::BodyParser.extract_form_data(request, ctype, params) if ctype
     params
   end
 
