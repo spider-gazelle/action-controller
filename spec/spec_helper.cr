@@ -125,6 +125,10 @@ class Users < ActionController::Base
       render json: ["James", "Pavel", "Steve", "Gab", "Giraffe"]
     end
   end
+
+  get "/test" do
+    render text: request.body
+  end
 end
 
 class HelloWorld < Application
