@@ -91,7 +91,7 @@ def context(
 end
 
 # Use context by instantiating the context without specifying body, output IO::Memory
-def context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
+def context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : String | Bytes | IO | Nil = nil, &block)
   ctx = instantiate_context(method, route, route_params, headers, body)
   yield ctx
   ctx.response.output.rewind
@@ -100,7 +100,7 @@ def context(method : String, route : String, route_params : Hash(String, String)
 end
 
 # Helper to instantiate context
-def instantiate_context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil)
+def instantiate_context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : String | Bytes | IO | Nil = nil)
   headers_io = HTTP::Headers.new
 
   if !headers.nil?
@@ -109,8 +109,7 @@ def instantiate_context(method : String, route : String, route_params : Hash(Str
     end
   end
 
-  body_io = body.nil? ? IO::Memory.new : IO::Memory.new(body)
-  ctx = context(method, route, headers: headers_io, body: body_io)
+  ctx = context(method, route, headers: headers_io, body: body)
   ctx.route_params = route_params unless route_params.nil?
   ctx.response.output = IO::Memory.new
 
@@ -121,7 +120,7 @@ end
 module ActionController::Context
   macro included
     macro inherited
-      def self.context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : JSON::Any? = nil, &block)
+      def self.context(method : String, route : String, route_params : Hash(String, String)? = nil, headers : Hash(String, String)? = nil, body : String | Bytes | IO | Nil = nil, &block)
         ctx = instantiate_context(method, route, route_params, headers, body)
         instance = self.new(ctx)
         yield instance
