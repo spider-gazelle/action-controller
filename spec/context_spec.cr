@@ -29,6 +29,15 @@ describe "Context" do
     parsed.should contain({name: "James", state: "NSW"})
   end
 
+  it "should spec #index with JSON String body, without output IO::Memory, instantiating controller in each block but have Controller module included directly" do
+    body = "random_body"
+    [body, IO::Memory.new(body)].each do |body_io|
+      res = Users.context(method: "GET", route: "#{BASE}/test", body: body_io, &.get_test)
+      res.status_code.should eq 200
+      res.output.to_s.should eq(body)
+    end
+  end
+
   it "should spec #index without specifying body, output IO::Memory, instantiating controller in each block but have Controller module included directly" do
     # Instantiate the controller
     res = Users.context(method: "GET", route: BASE, route_params: {"verbose" => "true"}, headers: {"Authorization" => "X"}, &.index)
