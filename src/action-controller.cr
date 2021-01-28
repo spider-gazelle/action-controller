@@ -10,6 +10,7 @@ end
 {% if compare_versions(Crystal::VERSION, "0.36.0") < 0 %}
   require "uri"
   require "http"
+
   class URI
     alias Params = HTTP::Params
   end
