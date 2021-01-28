@@ -161,7 +161,7 @@ abstract class ActionController::Base
     @context.request.cookies
   end
 
-  getter params : HTTP::Params do
+  getter params : URI::Params do
     _params = ActionController::Base.extract_params(@context)
     # Add form data to params, lowest preference
     ctype = request_content_type
@@ -169,9 +169,9 @@ abstract class ActionController::Base
     _params
   end
 
-  # Extracts query and route params into a single `HTTP::Params` instance
-  def self.extract_params(context : HTTP::Server::Context) : HTTP::Params
-    params = HTTP::Params.new
+  # Extracts query and route params into a single `URI::Params` instance
+  def self.extract_params(context : HTTP::Server::Context) : URI::Params
+    params = URI::Params.new
     # duplicate the query_params
     qparams = context.request.query_params
     qparams.each do |key, _|
@@ -189,7 +189,7 @@ abstract class ActionController::Base
     params
   end
 
-  @form_data : HTTP::Params?
+  @form_data : URI::Params?
 
   def form_data
     return @form_data if @params

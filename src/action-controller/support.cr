@@ -9,7 +9,7 @@ module ActionController::Support
     req = context.request
     resp = context.response
     resp.status_code = 302
-    resp.headers["Location"] = "https://#{req.host}#{req.resource}"
+    resp.headers["Location"] = "https://#{req.headers["Host"]?.try(&.split(':')[0])}#{req.resource}"
   end
 
   def self.websocket_upgrade_request?(request)
@@ -58,7 +58,7 @@ module ActionController::Support
     if params.empty?
       route
     else
-      "#{route}?#{HTTP::Params.encode(params)}"
+      "#{route}?#{URI::Params.encode(params)}"
     end
   end
 
