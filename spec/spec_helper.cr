@@ -4,9 +4,45 @@ require "xml"
 require "log"
 require "../src/action-controller"
 
+abstract class FilterOrdering < ActionController::Base
+  @trusted = false
+
+  before_action :set_trust
+  before_action :check_trust
+
+  def set_trust
+    @trusted = true
+  end
+
+  def check_trust
+    render :forbidden, text: "Trust check failed" unless @trusted
+  end
+end
+
+class FilterCheck < FilterOrdering
+  base "/filtering"
+  before_action :confirm_trust
+
+  def index
+    render text: "ok"
+  end
+
+  def confirm_trust
+    render :forbidden, text: "Trust confirmation failed" unless @trusted
+  end
+end
+
 # Testing ID params
 class Container < ActionController::Base
   id_param :container_id
+
+  @trusted = false
+
+  before_action :check_trust
+
+  def check_trust
+    @trusted = true
+  end
 
   def show
     render text: "got: #{params["container_id"]}"
