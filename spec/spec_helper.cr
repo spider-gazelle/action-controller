@@ -36,14 +36,6 @@ end
 class Container < ActionController::Base
   id_param :container_id
 
-  @trusted = false
-
-  before_action :check_trust
-
-  def check_trust
-    @trusted = true
-  end
-
   def show
     render text: "got: #{params["container_id"]}"
   end
