@@ -99,7 +99,8 @@ abstract class ActionController::Base
 
       macro __inherit_{{ltype.id}}_filters__
         \{% {{ftype.id}}_MAPPINGS[@type.name.id] = LOCAL_{{ftype.id}} %}
-        \{% klasses = [@type.name.id] + @type.ancestors %}
+        \{% klasses = [@type.name.id] %}
+        \{% @type.ancestors.each { |name| klasses.unshift(name) } %}
 
         # Create a mapping of all field names and types
         \{% for name in klasses %}

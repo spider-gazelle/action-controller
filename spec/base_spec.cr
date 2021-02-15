@@ -38,4 +38,9 @@ describe ActionController::Base do
       HelloWorld.show
     end
   end
+
+  it "should execute filters in the order they were defined" do
+    result = curl("GET", "/filtering")
+    result.body.should eq("ok")
+  end
 end
