@@ -1,4 +1,5 @@
 require "./logger"
+require "uuid"
 
 module ActionController
   # A handler that logs the request method, resource, status code, and the time
