@@ -29,9 +29,39 @@ module ActionController
     end
   end
 
-  def self.default_backend
-    backend = ::Log::IOBackend.new
-    backend.formatter = default_formatter
+  def self.log_metadata_to_raw(metadata)
+    value = metadata.raw
+    case value
+    in Array(::Log::Metadata::Value)
+      value.map(&.to_s)
+    in Hash(String, ::Log::Metadata::Value)
+      value.transform_values { |entry| entry.to_s }
+    in Bool, Float32, Float64, Int32, Int64, String, Time, Nil
+      metadata.raw.as(Bool | Float32 | Float64 | Int32 | Int64 | String | Time | Nil)
+    end
+  end
+
+  def self.json_formatter
+    ::Log::Formatter.new do |entry, io|
+      # typeof doesn't execute anything
+      json = {} of String => typeof(log_metadata_to_raw(entry.data[:check]))
+      json["level"] = entry.severity.label
+      json["time"] = entry.timestamp
+      json["source"] = entry.source
+      json["message"] = entry.message unless entry.message.empty?
+
+      # Add context tags
+      {entry.context, entry.data}.each &.each { |k, v| json[k.to_s] = log_metadata_to_raw(v) }
+
+      if exception = entry.exception
+        json["exception"] = exception.inspect_with_backtrace
+      end
+      json.to_json(io)
+    end
+  end
+
+  def self.default_backend(io = STDOUT, formatter = default_formatter)
+    backend = ::Log::IOBackend.new(io, formatter: formatter)
     backend
   end
 end
