@@ -13,13 +13,12 @@ module ActionController
         str << "level=" << label << " time="
         timestamp.to_rfc3339(str)
         str << " source=" << entry.source
+        str << " message=\"" << entry.message << '"' unless entry.message.empty?
 
         # Add context tags
         {context, data}.each &.each do |k, v|
           str << " " << k << "=" << v
         end
-
-        str << " message=" << entry.message unless entry.message.empty?
 
         if exception = entry.exception
           str << "\n"
