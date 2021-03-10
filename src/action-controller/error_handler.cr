@@ -30,7 +30,7 @@ module ActionController::ErrorHandlerBase
     accept = request.headers["Accept"]?
     if accept && !accept.empty?
       accepts = accept.split(";").first?.try(&.split(ACCEPT_SEPARATOR_REGEX))
-      return accepts if accepts && accepts.any?
+      return accepts if accepts && !accepts.empty?
     end
     [] of String
   end

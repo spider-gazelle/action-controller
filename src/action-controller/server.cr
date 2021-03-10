@@ -62,7 +62,7 @@ class ActionController::Server
 
   # Prints the addresses that the server is listening on
   def print_addresses
-    @socket.addresses.map { |socket|
+    @socket.addresses.join(" , ") { |socket|
       family = socket.family
 
       case socket.family
@@ -75,7 +75,7 @@ class ActionController::Server
       else
         raise "Unsupported family type: #{family} (#{family.value})"
       end
-    }.join(" , ")
+    }
   end
 
   # Launches additional worker processes
@@ -90,7 +90,7 @@ class ActionController::Server
     process_path = Process.executable_path.not_nil!
 
     # Clean up the arguments
-    args.reject! { |e| e.starts_with?(long_arg) }
+    args.reject! &.starts_with?(long_arg)
     remove = [] of Int32
     args.each_with_index { |value, index| remove << index if value == short_arg }
     remove.each { |index| args.delete_at(index, 2) }

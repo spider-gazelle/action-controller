@@ -34,7 +34,7 @@ module ActionController
     in Array(::Log::Metadata::Value)
       value.map(&.to_s)
     in Hash(String, ::Log::Metadata::Value)
-      value.transform_values { |entry| entry.to_s }
+      value.transform_values(&.to_s)
     in Bool, Float32, Float64, Int32, Int64, String, Time, Nil
       metadata.raw.as(Bool | Float32 | Float64 | Int32 | Int64 | String | Time | Nil)
     end

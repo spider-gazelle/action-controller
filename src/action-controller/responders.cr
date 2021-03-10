@@ -85,7 +85,7 @@ module ActionController::Responders
   }
 
   macro render(status = :ok, head = Nop, json = Nop, yaml = Nop, xml = Nop, html = Nop, text = Nop, binary = Nop, template = Nop, partial = Nop, layout = nil)
-    {% if [head, json, xml, html, yaml, text, binary, template, partial].all? &.is_a? Path %}
+    {% if [head, json, xml, html, yaml, text, binary, template, partial].all?(&.is_a?(Path)) %}
       {{ raise "Render must be called with one of json, xml, html, yaml, text, binary, template, partial" }}
     {% end %}
 
@@ -175,7 +175,7 @@ module ActionController::Responders
   end
 
   macro respond_with(status = :ok, &block)
-    %resp = SelectResponse.new(response, accepts_formats, @__head_request__)
+    %resp = ::ActionController::Responders::SelectResponse.new(response, accepts_formats, @__head_request__)
     %resp.responses do
       {{block.body}}
     end
@@ -204,7 +204,7 @@ module ActionController::Responders
     accept = request.headers["Accept"]?
     if accept && !accept.empty?
       accepts = accept.split(";").first?.try(&.split(ACCEPT_SEPARATOR_REGEX))
-      return accepts if accepts && accepts.any?
+      return accepts if accepts && !accepts.empty?
     end
     [] of String
   end
@@ -303,7 +303,7 @@ module ActionController::Responders
       found = nil
 
       # Search for the first acceptable format
-      if @accepts.any?
+      if !@accepts.empty?
         @accepts.each do |response_format, mime|
           option = @options[response_format]?
           if option

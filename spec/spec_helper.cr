@@ -73,8 +73,8 @@ class TemplateOne < ActionController::Base
   end
 
   get "/params/:yes", :param_check do
-    response.headers["Values"] = params.map { |_, value| value }.join(" ")
-    render text: params.map { |name, _| name }.join(" ")
+    response.headers["Values"] = params.join(" ") { |_, value| value }
+    render text: params.join(" ") { |name, _| name }
   end
 end
 
@@ -212,7 +212,7 @@ class HelloWorld < Application
     SOCKETS << socket
 
     socket.on_message do |message|
-      SOCKETS.each { |connection| connection.send "#{message} + #{@me}" }
+      SOCKETS.each &.send("#{message} + #{@me}")
     end
 
     socket.on_close do

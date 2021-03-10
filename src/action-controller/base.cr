@@ -372,11 +372,11 @@ abstract class ActionController::Base
           {% for method, options in AROUND %}
             {% only = options[0] %}
             {% if only != nil && !only.includes?(name) %} # only
-              {% around_actions = around_actions.reject { |act| act == method } %}
+              {% around_actions = around_actions.reject(&.==(method)) %}
             {% else %}
               {% except = options[1] %}
               {% if except != nil && except.includes?(name) %} # except
-                {% around_actions = around_actions.reject { |act| act == method } %}
+                {% around_actions = around_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
           {% end %}
@@ -394,11 +394,11 @@ abstract class ActionController::Base
           {% for method, options in BEFORE %}
             {% only = options[0] %}
             {% if only != nil && !only.includes?(name) %} # only
-              {% before_actions = before_actions.reject { |act| act == method } %}
+              {% before_actions = before_actions.reject(&.==(method)) %}
             {% else %}
               {% except = options[1] %}
               {% if except != nil && except.includes?(name) %} # except
-                {% before_actions = before_actions.reject { |act| act == method } %}
+                {% before_actions = before_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
           {% end %}
@@ -471,11 +471,11 @@ abstract class ActionController::Base
           {% for method, options in AFTER %}
             {% only = options[0] %}
             {% if only != nil && !only.includes?(name) %} # only
-              {% after_actions = after_actions.reject { |act| act == method } %}
+              {% after_actions = after_actions.reject(&.==(method)) %}
             {% else %}
               {% except = options[1] %}
               {% if except != nil && except.includes?(name) %} # except
-                {% after_actions = after_actions.reject { |act| act == method } %}
+                {% after_actions = after_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
           {% end %}
@@ -559,7 +559,7 @@ abstract class ActionController::Base
   end
 
   # Define each method for supported http methods except head (which is meta)
-  {% for http_method in ::ActionController::Router::HTTP_METHODS.reject { |verb| verb == "head" } %}
+  {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
     macro {{http_method.id}}(path, name = nil, &block)
       \{% unless name %}
         \{% name = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
