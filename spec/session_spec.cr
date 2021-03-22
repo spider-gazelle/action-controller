@@ -27,12 +27,12 @@ describe ActionController::Session do
         cookies = HTTP::Cookies.new
         cookies[key] = HTTP::Cookie.new(key, encoder.prepare(%({"key": "value"})))
         session = described_class.from_cookies(cookies)
-        session["key"] = "a" * 3013
+        session["key"] = "a" * 2048
         cookies = HTTP::Cookies.new
         session.encode(cookies)
 
         cookies[key].expires.as(Time).should be_close(Time.utc + age, 0.1.seconds)
-        encoder.extract(cookies[key].value).should eq(%({"key":"#{"a" * 3013}"}))
+        encoder.extract(cookies[key].value).should eq(%({"key":"#{"a" * 2048}"}))
       end
     end
 
