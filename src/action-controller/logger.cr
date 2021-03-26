@@ -15,7 +15,7 @@ module ActionController
         label.ljust(str, 6)
         str << " time="
         timestamp.to_rfc3339(str)
-        str << " source=" << entry.source
+        str << " source=" << entry.source unless entry.source.empty?
         str << " message=\"" << entry.message << '"' unless entry.message.empty?
 
         # Add context tags
