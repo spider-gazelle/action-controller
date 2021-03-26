@@ -10,7 +10,10 @@ module ActionController
       context = entry.context
       data = entry.data
       io << String.build do |str|
-        str << "level=" << label << " time="
+        str << "level="
+        # Left justify by length of "NOTICE", the longest `Log::Severity`
+        label.ljust(str, 6)
+        str << " time="
         timestamp.to_rfc3339(str)
         str << " source=" << entry.source
         str << " message=\"" << entry.message << '"' unless entry.message.empty?
