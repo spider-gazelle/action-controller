@@ -47,7 +47,7 @@ class ActionController::Session
     begin
       session.parse(cookies)
     rescue error
-      Log.warn(exception: error) { "error parsing cookies" }
+      Log.warn(exception: error) { "error parsing session" }
     end
     session
   end

@@ -137,9 +137,17 @@ abstract class ActionController::Base
   getter action_name : Symbol
   getter render_called : Bool
   getter __session__ : Session?
+  getter __cookies__ : HTTP::Cookies?
 
-  def session
+  def session : Session
     @__session__ ||= Session.from_cookies(cookies)
+  end
+
+  def cookies : HTTP::Cookies
+    @__cookies__ ||= @context.request.cookies
+  rescue error
+    Log.warn(exception: error) { "error parsing cookies" }
+    @__cookies__ = HTTP::Cookies.new
   end
 
   macro request
@@ -156,10 +164,6 @@ abstract class ActionController::Base
 
   macro query_params
     @context.request.query_params
-  end
-
-  macro cookies
-    @context.request.cookies
   end
 
   getter params : URI::Params do
