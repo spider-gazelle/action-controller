@@ -149,16 +149,19 @@ class ActionController::Server
     end
   end
 
-  # Used to output route details to the console from a command line switch
-  def self.print_routes
+  def self.routes
     # Class, name, verb, route
     routes = [] of {String, Symbol, Symbol, String}
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       routes.concat {{klass}}.__route_list__
     {% end %}
+    routes
+  end
 
+  # Used to output route details to the console from a command line switch
+  def self.print_routes
     puts "Verb\tURI Pattern\tController#Action"
-    routes.each do |route|
+    self.routes.each do |route|
       puts "#{route[2]}\t#{route[3]}\t#{route[0]}##{route[1]}"
     end
   end
