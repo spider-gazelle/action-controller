@@ -6,6 +6,16 @@ module ActionController
   VERSION = {{ `shards version "#{__DIR__}"`.chomp.stringify.downcase }}
 end
 
+# maintain basic backwards compatibility
+{% if compare_versions(Crystal::VERSION, "0.36.0") < 0 %}
+  require "uri"
+  require "http"
+
+  class URI
+    alias Params = HTTP::Params
+  end
+{% end %}
+
 require "./action-controller/router"
 require "./action-controller/errors"
 require "./action-controller/base"

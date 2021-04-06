@@ -1,5 +1,6 @@
 name: action-controller
 version: 4.3.4
+crystal: ">= 1.0.0"
 
 dependencies:
   # Used in clustering

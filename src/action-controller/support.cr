@@ -9,7 +9,7 @@ module ActionController::Support
     req = context.request
     resp = context.response
     resp.status_code = 302
-    resp.headers["Location"] = "https://#{req.host}#{req.resource}"
+    resp.headers["Location"] = "https://#{req.headers["Host"]?.try(&.split(':')[0])}#{req.resource}"
   end
 
   def self.websocket_upgrade_request?(request)
@@ -21,7 +21,7 @@ module ActionController::Support
 
   # Used in base.cr to build routes for the redirect_to helpers
   def self.build_route(route, hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
-    keys = route.split("/:")[1..-1].map { |p| p.split("/")[0] }
+    keys = route.split("/:")[1..-1].map &.split("/")[0]
     params = {} of String => String
 
     if hash_parts
@@ -58,7 +58,7 @@ module ActionController::Support
     if params.empty?
       route
     else
-      "#{route}?#{HTTP::Params.encode(params)}"
+      "#{route}?#{URI::Params.encode(params)}"
     end
   end
 

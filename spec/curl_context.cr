@@ -83,7 +83,7 @@ def context(
 )
   headers ||= HTTP::Headers.new
   header_opts.each do |key, value|
-    headers.add(key.to_s.split(/-|_/).map(&.capitalize).join("-"), value.to_s)
+    headers.add(key.to_s.split(/-|_/).join("-", &.capitalize), value.to_s)
   end
   response = HTTP::Server::Response.new(response_io, version)
   request = HTTP::Request.new(method, path, headers, body, version)

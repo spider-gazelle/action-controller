@@ -4,6 +4,34 @@ require "xml"
 require "log"
 require "../src/action-controller"
 
+abstract class FilterOrdering < ActionController::Base
+  @trusted = false
+
+  before_action :set_trust
+  before_action :check_trust
+
+  def set_trust
+    @trusted = true
+  end
+
+  def check_trust
+    render :forbidden, text: "Trust check failed" unless @trusted
+  end
+end
+
+class FilterCheck < FilterOrdering
+  base "/filtering"
+  before_action :confirm_trust
+
+  def index
+    render text: "ok"
+  end
+
+  def confirm_trust
+    render :forbidden, text: "Trust confirmation failed" unless @trusted
+  end
+end
+
 # Testing ID params
 class Container < ActionController::Base
   id_param :container_id
@@ -45,8 +73,8 @@ class TemplateOne < ActionController::Base
   end
 
   get "/params/:yes", :param_check do
-    response.headers["Values"] = params.map { |_, value| value }.join(" ")
-    render text: params.map { |name, _| name }.join(" ")
+    response.headers["Values"] = params.join(" ") { |_, value| value }
+    render text: params.join(" ") { |name, _| name }
   end
 end
 
@@ -184,7 +212,7 @@ class HelloWorld < Application
     SOCKETS << socket
 
     socket.on_message do |message|
-      SOCKETS.each { |connection| connection.send "#{message} + #{@me}" }
+      SOCKETS.each &.send("#{message} + #{@me}")
     end
 
     socket.on_close do

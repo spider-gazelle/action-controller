@@ -4,6 +4,8 @@ require "./session/message_verifier"
 require "./session/message_encryptor"
 
 class ActionController::Session
+  Log = ::Log.for("action-controller.session")
+
   NEVER = 622_080_000 # (~20 years in seconds)
   # Cookies can typically store 4096 bytes.
   MAX_COOKIE_SIZE = 4096
@@ -42,7 +44,11 @@ class ActionController::Session
 
   def self.from_cookies(cookies)
     session = ActionController::Session.new
-    session.parse(cookies)
+    begin
+      session.parse(cookies)
+    rescue error
+      Log.warn(exception: error) { "error parsing session" }
+    end
     session
   end
 

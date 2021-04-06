@@ -99,7 +99,8 @@ abstract class ActionController::Base
 
       macro __inherit_{{ltype.id}}_filters__
         \{% {{ftype.id}}_MAPPINGS[@type.name.id] = LOCAL_{{ftype.id}} %}
-        \{% klasses = [@type.name.id] + @type.ancestors %}
+        \{% klasses = [@type.name.id] %}
+        \{% @type.ancestors.each { |name| klasses.unshift(name) } %}
 
         # Create a mapping of all field names and types
         \{% for name in klasses %}
@@ -136,9 +137,17 @@ abstract class ActionController::Base
   getter action_name : Symbol
   getter render_called : Bool
   getter __session__ : Session?
+  getter __cookies__ : HTTP::Cookies?
 
-  def session
+  def session : Session
     @__session__ ||= Session.from_cookies(cookies)
+  end
+
+  def cookies : HTTP::Cookies
+    @__cookies__ ||= @context.request.cookies
+  rescue error
+    Log.warn(exception: error) { "error parsing cookies" }
+    @__cookies__ = HTTP::Cookies.new
   end
 
   macro request
@@ -157,11 +166,7 @@ abstract class ActionController::Base
     @context.request.query_params
   end
 
-  macro cookies
-    @context.request.cookies
-  end
-
-  getter params : HTTP::Params do
+  getter params : URI::Params do
     _params = ActionController::Base.extract_params(@context)
     # Add form data to params, lowest preference
     ctype = request_content_type
@@ -169,9 +174,9 @@ abstract class ActionController::Base
     _params
   end
 
-  # Extracts query and route params into a single `HTTP::Params` instance
-  def self.extract_params(context : HTTP::Server::Context) : HTTP::Params
-    params = HTTP::Params.new
+  # Extracts query and route params into a single `URI::Params` instance
+  def self.extract_params(context : HTTP::Server::Context) : URI::Params
+    params = URI::Params.new
     # duplicate the query_params
     qparams = context.request.query_params
     qparams.each do |key, _|
@@ -189,7 +194,7 @@ abstract class ActionController::Base
     params
   end
 
-  @form_data : HTTP::Params?
+  @form_data : URI::Params?
 
   def form_data
     return @form_data if @params
@@ -371,11 +376,11 @@ abstract class ActionController::Base
           {% for method, options in AROUND %}
             {% only = options[0] %}
             {% if only != nil && !only.includes?(name) %} # only
-              {% around_actions = around_actions.reject { |act| act == method } %}
+              {% around_actions = around_actions.reject(&.==(method)) %}
             {% else %}
               {% except = options[1] %}
               {% if except != nil && except.includes?(name) %} # except
-                {% around_actions = around_actions.reject { |act| act == method } %}
+                {% around_actions = around_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
           {% end %}
@@ -393,11 +398,11 @@ abstract class ActionController::Base
           {% for method, options in BEFORE %}
             {% only = options[0] %}
             {% if only != nil && !only.includes?(name) %} # only
-              {% before_actions = before_actions.reject { |act| act == method } %}
+              {% before_actions = before_actions.reject(&.==(method)) %}
             {% else %}
               {% except = options[1] %}
               {% if except != nil && except.includes?(name) %} # except
-                {% before_actions = before_actions.reject { |act| act == method } %}
+                {% before_actions = before_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
           {% end %}
@@ -470,11 +475,11 @@ abstract class ActionController::Base
           {% for method, options in AFTER %}
             {% only = options[0] %}
             {% if only != nil && !only.includes?(name) %} # only
-              {% after_actions = after_actions.reject { |act| act == method } %}
+              {% after_actions = after_actions.reject(&.==(method)) %}
             {% else %}
               {% except = options[1] %}
               {% if except != nil && except.includes?(name) %} # except
-                {% after_actions = after_actions.reject { |act| act == method } %}
+                {% after_actions = after_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
           {% end %}
@@ -558,7 +563,7 @@ abstract class ActionController::Base
   end
 
   # Define each method for supported http methods except head (which is meta)
-  {% for http_method in ::ActionController::Router::HTTP_METHODS.reject { |verb| verb == "head" } %}
+  {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
     macro {{http_method.id}}(path, name = nil, &block)
       \{% unless name %}
         \{% name = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}

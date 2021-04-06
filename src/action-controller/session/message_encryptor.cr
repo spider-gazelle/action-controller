@@ -14,11 +14,11 @@ class ActionController::MessageEncryptor
   end
 
   def prepare(value)
-    encrypt_and_sign(value)
+    URI.encode_www_form encrypt_and_sign(value)
   end
 
   def extract(value)
-    verify_and_decrypt(value)
+    verify_and_decrypt(URI.decode_www_form value)
   end
 
   # Encrypt and sign a message. We need to sign the message in order to avoid

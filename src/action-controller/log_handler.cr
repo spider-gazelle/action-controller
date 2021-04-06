@@ -1,4 +1,5 @@
 require "./logger"
+require "uuid"
 
 module ActionController
   # A handler that logs the request method, resource, status code, and the time
@@ -30,7 +31,7 @@ module ActionController
     #
     # By default, request times will include a unit. Set *ms* to instead always
     # use milliseconds for simpler external perf monitoring.
-    def initialize(@filter = [] of String, @log = Event::Response, @ms = false)
+    def initialize(@filter = [] of String, @log = Event::Response, @ms = false, @generate_id = true)
     end
 
     private getter filter
@@ -39,9 +40,14 @@ module ActionController
 
     private getter ms
 
+    private getter generate_id
+
     def call(context : HTTP::Server::Context) : Nil
       ::Log.with_context do
-        emit_request context if log.request?
+        if log.request?
+          ::Log.context.set(request_id: UUID.random.to_s) if generate_id
+          emit_request context
+        end
 
         start = Time.monotonic
         duration = Time::Span::ZERO

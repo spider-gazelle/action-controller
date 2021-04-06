@@ -21,8 +21,8 @@ class ActionController::MessageVerifier
   end
 
   def verified(signed_message : String)
-    data, digest = signed_message.split("--")
-    if valid_message?(data, digest)
+    data, _match, digest = signed_message.rpartition("--")
+    if digest && valid_message?(data, digest)
       String.new(decode(data))
     end
   rescue argument_error : ArgumentError
@@ -35,8 +35,8 @@ class ActionController::MessageVerifier
   end
 
   def verify_raw(signed_message : String) : Bytes
-    data, digest = signed_message.split("--")
-    if valid_message?(data, digest)
+    data, _match, digest = signed_message.rpartition("--")
+    if digest && valid_message?(data, digest)
       decode(data)
     else
       raise(InvalidSignature.new)
