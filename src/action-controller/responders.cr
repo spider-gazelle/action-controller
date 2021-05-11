@@ -169,7 +169,12 @@ module ActionController::Responders
     %session = @__session__
     %session.encode(%response.cookies) if %session && %session.modified
 
-    %response.status_code = {{REDIRECTION_CODES[status] || status}}
+    {% if status.is_a?(SymbolLiteral) %}
+      %response.status_code = {{REDIRECTION_CODES[status]}}
+    {% else %}
+      %response.status_code = ({{status}}).to_i
+    {% end %}
+
     %response.headers["Location"] = {{path}}
     @render_called = true
     return
