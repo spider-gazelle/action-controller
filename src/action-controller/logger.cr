@@ -15,6 +15,7 @@ module ActionController
         label.ljust(str, 6)
         str << " time="
         timestamp.to_rfc3339(str)
+        str << " program=" << entry.progname unless entry.progname.empty?
         str << " source=" << entry.source unless entry.source.empty?
         str << " message=\"" << entry.message << '"' unless entry.message.empty?
 
@@ -47,7 +48,9 @@ module ActionController
     ::Log::Formatter.new do |entry, io|
       # typeof doesn't execute anything
       json = {} of String => typeof(log_metadata_to_raw(entry.data[:check]))
+
       json["level"] = entry.severity.label
+      json["program"] = entry.progname unless entry.progname.empty?
       json["time"] = entry.timestamp
       json["source"] = entry.source
       json["message"] = entry.message unless entry.message.empty?
