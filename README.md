@@ -1,9 +1,8 @@
 # Spider-Gazelle Action Controller
 
-[![Build Status](https://travis-ci.org/spider-gazelle/action-controller.svg?branch=master)](https://travis-ci.org/spider-gazelle/action-controller)
+[![CI](https://github.com/spider-gazelle/action-controller/actions/workflows/ci.yml/badge.svg)](https://github.com/spider-gazelle/action-controller/actions/workflows/ci.yml)
 
-Extending [router.cr](https://github.com/tbrand/router.cr) for a Rails like DSL without the overhead.
-
+Extending [lucky_router](https://github.com/luckyframework/lucky_router) for a Rails like DSL without the overhead.
 
 ## Usage
 
