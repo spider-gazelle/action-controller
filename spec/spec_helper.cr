@@ -4,6 +4,10 @@ require "xml"
 require "log"
 require "../src/action-controller"
 
+Spec.before_suite do
+  ::Log.setup "*", :debug, Log::IOBackend.new(formatter: ActionController.default_formatter)
+end
+
 abstract class FilterOrdering < ActionController::Base
   @trusted = false
 
