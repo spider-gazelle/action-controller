@@ -22,7 +22,7 @@ abstract class ActionController::Base
   {% TEMPLATE_PATH[@type.id] = "./src/views/" %}
 
   macro layout(filename = nil)
-    {% if filename.nil? || filename.empty? %}
+    {% if filename == nil || filename.empty? %}
       {% TEMPLATE_LAYOUT[@type.id] = nil %}
     {% else %}
       {% TEMPLATE_LAYOUT[@type.id] = filename %}
@@ -551,7 +551,7 @@ abstract class ActionController::Base
   end
 
   macro base(name = nil)
-    {% if name.nil? || name.empty? || name == "/" %}
+    {% if name == nil || name.empty? || name == "/" %}
       {% NAMESPACE[0] = "/" %}
     {% else %}
       {% if name.id.stringify.starts_with?("/") %}
