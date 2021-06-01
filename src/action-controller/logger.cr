@@ -5,14 +5,14 @@ module ActionController
 
   def self.default_formatter
     ::Log::Formatter.new do |entry, io|
-      label = entry.severity.label
+      label = entry.severity.label[0].upcase
       timestamp = entry.timestamp
       context = entry.context
       data = entry.data
       io << String.build do |str|
-        str << "level="
-        # Left justify by length of "NOTICE", the longest `Log::Severity`
-        label.ljust(str, 6)
+        str << "["
+        str << label
+        str << "]"
         str << " time="
         timestamp.to_rfc3339(str)
         str << " program=" << ::Log.progname unless ::Log.progname.empty?
