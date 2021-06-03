@@ -36,3 +36,4 @@ jobs:
       run: crystal spec -v --error-trace
     - name: Tests Multithreaded
       run: crystal spec -Dpreview_mt -v --error-trace
+      if: ${{ matrix.crystal != '0.36.1' }} # MT not supported for crystal v0.36.1
