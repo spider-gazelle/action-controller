@@ -43,4 +43,14 @@ describe ActionController::Base do
     result = curl("GET", "/filtering")
     result.body.should eq("ok")
   end
+
+  describe "route annotations" do
+    it "can be a single annotation" do
+      curl("GET", "/hello/annotation/single").body.should eq %([@[ActionController::TestAnnotation(detail: "single")]])
+    end
+
+    it "can be an array of annotations" do
+      curl("GET", "/hello/annotation/multi").body.should eq %([@[ActionController::TestAnnotation], @[ActionController::TestAnnotation]])
+    end
+  end
 end
