@@ -150,21 +150,9 @@ abstract class ActionController::Base
     @__cookies__ = HTTP::Cookies.new
   end
 
-  macro request
-    @context.request
-  end
+  delegate request, response, route_params, to: @context
 
-  macro response
-    @context.response
-  end
-
-  macro route_params
-    @context.route_params
-  end
-
-  macro query_params
-    @context.request.query_params
-  end
+  delegate query_params, to: @context.request
 
   getter params : URI::Params do
     _params = ActionController::Base.extract_params(@context)
@@ -293,9 +281,9 @@ abstract class ActionController::Base
       {% end %}
 
       # Helper for obtaining base route
-      getter base_route = {{NAMESPACE[0]}}
-      # :ditto:
       class_getter base_route = {{NAMESPACE[0]}}
+      # :ditto:
+      delegate base_route, to: self.class
     {% end %}
   end
 
