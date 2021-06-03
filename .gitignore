@@ -1,10 +1,7 @@
-docs
-lib
+.DS_Store
 .crystal
 .shards
 bin
-.DS_Store
-
-# Libraries don't need dependency lock
-# Dependencies will be locked in application that uses them
+docs
+lib
 shard.lock
