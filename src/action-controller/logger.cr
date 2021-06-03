@@ -10,14 +10,12 @@ module ActionController
       context = entry.context
       data = entry.data
       io << String.build do |str|
-        str << "["
-        str << label
-        str << "]"
+        str << "level=[" << label << "]"
         str << " time="
         timestamp.to_rfc3339(str)
         str << " program=" << ::Log.progname unless ::Log.progname.empty?
         str << " source=" << entry.source unless entry.source.empty?
-        str << " message=\"" << entry.message << '"' unless entry.message.empty?
+        str << %( message=") << entry.message << '"' unless entry.message.empty?
 
         # Add context tags
         {context, data}.each &.each do |k, v|
