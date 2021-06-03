@@ -163,6 +163,11 @@ class Users < ActionController::Base
   end
 end
 
+module ActionController
+  annotation TestAnnotation
+  end
+end
+
 class HelloWorld < Application
   base "/hello"
 
@@ -192,6 +197,14 @@ class HelloWorld < Application
         XML.parse(str)
       end
     end
+  end
+
+  get "/annotation/single", :single_annotation, annotations: @[ActionController::TestAnnotation(detail: "single")] do
+    render text: {{ @def.annotations(ActionController::TestAnnotation).id.stringify }}
+  end
+
+  get "/annotation/multi", :multi_annotation, annotations: [@[ActionController::TestAnnotation], @[ActionController::TestAnnotation]] do
+    render text: {{ @def.annotations(ActionController::TestAnnotation).id.stringify }}
   end
 
   get "/around", :around do

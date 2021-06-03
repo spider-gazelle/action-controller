@@ -253,17 +253,27 @@ abstract class ActionController::Base
         {% if args %}
           {% if args[2] && DEFAULT_PARAM_ID[@type.id] %}
             {% new_default_param = args[1].gsub(/\:id/, ":" + DEFAULT_PARAM_ID[@type.id].id.stringify) %}
-            {% ROUTES[name.id] = {args[0], new_default_param, nil, false} %}
+            {% ROUTES[name.id] = {args[0], new_default_param, nil, nil, false} %}
           {% else %}
-            {% ROUTES[name.id] = {args[0], args[1], nil, false} %}
+            {% ROUTES[name.id] = {args[0], args[1], nil, nil, false} %}
           {% end %}
         {% end %}
       {% end %}
 
       # Create functions for named routes
+      # Skip the CRUD verbs, as they are already defined
+      # Annotations defined via the `annotations` argument are applied here
       {% for name, details in ROUTES %}
-        {% block = details[2] %}
-        {% if block != nil %} # Skip the CRUD
+        {% block = details[3] %}
+        {% route_annotations = details[2] %}
+        {% if block != nil %}
+          {% block = details[3] %}
+          {% if route_annotations %} #
+            {% route_annotations = [route_annotations] unless route_annotations.is_a?(ArrayLiteral) %}
+            {% for ann in route_annotations %}
+              {{ ann.id }}
+            {% end %}
+          {% end %}
           def {{name}}({{*block.args}})
             {{block.body}}
           end
@@ -271,9 +281,10 @@ abstract class ActionController::Base
       {% end %}
 
       # Create functions as required for errors
+      # Skip the generating methods for existing handlers
       {% for klass, details in RESCUE %}
         {% block = details[1] %}
-        {% if block != nil %} # Skip the CRUD
+        {% if block != nil %}
           def {{details[0]}}({{*details[1].args}})
             {{details[1].body}}
           end
@@ -308,7 +319,7 @@ abstract class ActionController::Base
       # Generate functions for each route
       {% for name, details in ROUTES %}
         def self.{{(details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(context, head_request)
-          {% is_websocket = details[3] %}
+          {% is_websocket = details[4] %}
 
           # Check if force SSL is set and redirect to HTTPS if HTTP
           {% force = false %}
@@ -552,19 +563,19 @@ abstract class ActionController::Base
 
   # Define each method for supported http methods except head (which is meta)
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
-    macro {{http_method.id}}(path, name = nil, &block)
+    macro {{http_method.id}}(path, name = nil, annotations = nil, &block)
       \{% unless name %}
         \{% name = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
       \{% end %}
-      \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, block, false } %}
+      \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, annotations, block, false } %}
     end
   {% end %}
 
-  macro ws(path, name = nil, &block)
+  macro ws(path, name = nil, annotations = nil, &block)
     {% unless name %}
       {% name = "ws" + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
     {% end %}
-    {% LOCAL_ROUTES[name.id] = {"get", path, block, true} %}
+    {% LOCAL_ROUTES[name.id] = {"get", path, annotations, block, true} %}
   end
 
   macro rescue_from(error_class, method = nil, &block)
