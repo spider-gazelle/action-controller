@@ -175,7 +175,7 @@ abstract class ActionController::Base
     # giving preference to route params
     context.route_params.each do |key, value|
       values = params.fetch_all(key)
-      values.unshift(URI.decode(value))
+      values.unshift value
       params.set_all(key, values)
     end
 
