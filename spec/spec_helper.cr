@@ -207,6 +207,11 @@ class HelloWorld < Application
     render text: {{ @def.annotations(ActionController::TestAnnotation).id.stringify }}
   end
 
+  @[ActionController::TestAnnotation(test: "inline")]
+  get "/annotation/inline" do
+    render text: {{ @def.annotations(ActionController::TestAnnotation).id.stringify }}
+  end
+
   get "/around", :around do
     render text: "var is #{@me}"
   end

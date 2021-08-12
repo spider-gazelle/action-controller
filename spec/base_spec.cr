@@ -52,5 +52,9 @@ describe ActionController::Base do
     it "can be an array of annotations" do
       curl("GET", "/hello/annotation/multi").body.should eq %([@[ActionController::TestAnnotation], @[ActionController::TestAnnotation]])
     end
+
+    it "forward annotations when specified inline" do
+      curl("GET", "/hello/annotation/inline").body.should eq %([@[ActionController::TestAnnotation(test: "inline")]])
+    end
   end
 end

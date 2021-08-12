@@ -274,6 +274,9 @@ abstract class ActionController::Base
               {{ ann.id }}
             {% end %}
           {% end %}
+          \{% for ann in ANN__{{name.id}}.annotations(ActionController::TestAnnotation) %}
+            \{{ ann.id }}
+          \{% end %}
           def {{name}}({{*block.args}})
             {{block.body}}
           end
@@ -567,6 +570,7 @@ abstract class ActionController::Base
       \{% unless name %}
         \{% name = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
       \{% end %}
+      private struct ANN__\{{name.id}}; end
       \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, annotations, block, false } %}
     end
   {% end %}
@@ -575,6 +579,7 @@ abstract class ActionController::Base
     {% unless name %}
       {% name = "ws" + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
     {% end %}
+    private struct ANN__{{name.id}}; end
     {% LOCAL_ROUTES[name.id] = {"get", path, annotations, block, true} %}
   end
 
