@@ -76,7 +76,7 @@ class TemplateOne < ActionController::Base
     end
   end
 
-  get "/params/:yes", :param_check do
+  post "/params/:yes", :param_check do
     response.headers["Values"] = params.join(" ") { |_, value| value }
     render text: params.join(" ") { |name, _| name }
   end
