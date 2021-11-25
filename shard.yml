@@ -1,6 +1,6 @@
 name: action-controller
 version: 4.5.2
-crystal: ">= 1.1.1"
+crystal: ">= 1.2.2"
 
 dependencies:
   future:
