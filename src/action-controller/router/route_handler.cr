@@ -26,6 +26,8 @@ class ActionController::Router::RouteHandler
   # Called from HTTP::Server in server.cr
   def call(context : HTTP::Server::Context)
     if action = search_route(context)
+      # Set the controller name
+      ::Log.context.set(controller_method: action[1])
       action[0].call(context, action[1])
     else
       # defined in https://crystal-lang.org/api/latest/HTTP/Handler.html
