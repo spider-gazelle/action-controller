@@ -5,34 +5,41 @@ on:
   schedule:
     - cron: "0 6 * * 1"
 jobs:
-  style:
-    runs-on: ubuntu-latest
-    container:
-      image: crystallang/crystal
-    steps:
-      - uses: actions/checkout@v2
-      - name: Format
-        run: crystal tool format --check
-      - name: Lint
-        uses: crystal-ameba/github-action@v0.2.12
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  crystal-style:
+    name: Crystal Style
+    uses: PlaceOS/.github/.github/workflows/crystal-style.yml@main
+
   test:
+    name: "${{ !matrix.stable && '🚧 ' || '' }}crystal: ${{ matrix.crystal }}, MT: ${{ matrix.MT && '☑' || '☐' }}"
     strategy:
       fail-fast: false
       matrix:
+        MT: [true, false]
+        stable: [true]
         crystal:
-          - latest
-          - nightly
           - 1.2.2
+          - latest
+        include:
+          - crystal: nightly
+            MT: true
+            stable: false
+          - crystal: nightly
+            MT: false
+            stable: false
     runs-on: ubuntu-latest
-    container: crystallang/crystal:${{ matrix.crystal }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: shards install --ignore-crystal-version
-    - name: Tests
-      run: crystal spec -v --error-trace
-    - name: Tests Multithreaded
-      run: crystal spec -Dpreview_mt -v --error-trace
-      if: ${{ matrix.crystal != '0.36.1' }} # MT not supported for crystal v0.36.1
+      - uses: actions/checkout@v2
+      - name: Install crystal
+        uses: crystal-lang/install-crystal@v1.5.3
+        with:
+          crystal: ${{ matrix.crystal }}
+
+      - name: Install dependencies
+        run: shards install --ignore-crystal-version
+      - name: Test ${{ matrix.MT && 'Multithreaded' || '' }}
+        run: |
+          crystal spec \
+          --error-trace \
+          ${{ matrix.MT && '-Dpreview_mt' || '' }} \
+          --order random \
+          --verbose
