@@ -3,7 +3,11 @@ require "future"
 require "./action-controller/logger"
 
 module ActionController
-  VERSION = {{ `shards version "#{__DIR__}"`.chomp.stringify.downcase }}
+  macro set_version
+    VERSION = {{ `shards version "#{__DIR__}"`.chomp.stringify.downcase }}
+  end
+
+  set_version
 end
 
 # maintain basic backwards compatibility
