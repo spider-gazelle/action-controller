@@ -28,19 +28,17 @@ class ActionController::Router::RouteHandler
     req_path = context.request.path
     search_path = "#{method}#{req_path}"
 
-    process_request(method, req_path, search_path, context)
-  end
-
-  # We split out the processing of the request for simplified injection of telemetry
-  def process_request(method, req_path, search_path, context)
     if action = search_route(method, req_path, search_path, context)
-      # Set the controller name
-      ::Log.context.set(controller_method: action[1])
-      action[0].call(context, action[1])
+      process_request(search_path, context, action[0], action[1])
     else
       # defined in https://crystal-lang.org/api/latest/HTTP/Handler.html
       call_next(context)
     end
+  end
+
+  # We split out the processing of the request for simplified injection of telemetry
+  def process_request(search_path, context, controller_dispatch, head_request)
+    controller_dispatch.call(context, head_request)
   end
 
   # Adds a route handler to the system
