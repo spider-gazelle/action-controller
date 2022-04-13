@@ -10,10 +10,9 @@ class ActionController::Router::RouteHandler
 
   # Builds the internal representation of a route
   # then searches static routes before checking the matcher
-  def search_route(context : HTTP::Server::Context) : Tuple(Action, Bool)?
-    search_path = "#{context.request.method}#{context.request.path}"
+  def search_route(method, req_path, search_path, context : HTTP::Server::Context) : Tuple(Action, Bool)?
     action = @static_routes.fetch(search_path) do
-      match = @matcher.match(context.request.method, context.request.path)
+      match = @matcher.match(method, req_path)
       if match
         context.route_params = match.params
         match.payload
@@ -25,7 +24,16 @@ class ActionController::Router::RouteHandler
   # Routes requests to the appropriate handler
   # Called from HTTP::Server in server.cr
   def call(context : HTTP::Server::Context)
-    if action = search_route(context)
+    method = context.request.method
+    req_path = context.request.path
+    search_path = "#{method}#{req_path}"
+
+    process_request(method, req_path, search_path, context)
+  end
+
+  # We split out the processing of the request for simplified injection of telemetry
+  def process_request(method, req_path, search_path, context)
+    if action = search_route(method, req_path, search_path, context)
       # Set the controller name
       ::Log.context.set(controller_method: action[1])
       action[0].call(context, action[1])
