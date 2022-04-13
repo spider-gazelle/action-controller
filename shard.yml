@@ -1,5 +1,5 @@
 name: action-controller
-version: 4.7.0
+version: 4.7.1
 crystal: ">= 1.2.2"
 
 dependencies:
