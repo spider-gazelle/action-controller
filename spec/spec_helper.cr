@@ -174,7 +174,8 @@ class HelloWorld < Application
   force_tls only: [:destroy]
 
   around_action :around1, only: :around
-  around_action :around2, only: [:around, :show]
+  around_action :around2, only: :around
+  around_action :around2, only: [:show]
   skip_action :around2, only: :show
 
   before_action :set_var, except: :show
