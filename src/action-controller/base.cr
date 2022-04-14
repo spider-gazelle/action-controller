@@ -587,96 +587,45 @@ abstract class ActionController::Base
     {% end %}
   end
 
-  macro around_action(method, only = nil, except = nil)
-    {% if only %}
-      {% if !only.is_a?(ArrayLiteral) %}
-        {% only = [only.id] %}
-      {% else %}
-        {% only = only.map(&.id) %}
-      {% end %}
+  macro __define_filter_macro__(name, store, method = nil)
+    macro {{name.id}}({% if method.nil? %} method, {% end %} only = nil, except = nil)
+    {% if method %}
+      \{% method = {{method}} %}
+    {% else %}
+      \{% method = method.id %}
     {% end %}
-    {% if except %}
-      {% if !except.is_a?(ArrayLiteral) %}
-        {% except = [except.id] %}
-      {% else %}
-        {% except = except.map(&.id) %}
-      {% end %}
-    {% end %}
-    {% LOCAL_AROUND[method.id] = {only, except} %}
+      \{% prev_only = nil %}
+      \{% prev_except = nil %}
+      \{% if existing = {{store}}[method] %}
+        \{% prev_only = existing[0] %}
+        \{% prev_except = existing[1] %}
+      \{% end %}
+      \{% if only %}
+        \{% if !only.is_a?(ArrayLiteral) %}
+          \{% only = prev_only ? prev_only + [only.id] : [only.id] %}
+        \{% else %}
+          \{% only = prev_only ? prev_only + only.map(&.id) : only.map(&.id) %}
+        \{% end %}
+      \{% else %}
+        \{% only = prev_only %}
+      \{% end %}
+      \{% if except %}
+        \{% if !except.is_a?(ArrayLiteral) %}
+          \{% except = prev_except ? prev_except + [except.id] : [except.id] %}
+        \{% else %}
+          \{% except = prev_except ? prev_except + except.map(&.id) : except.map(&.id) %}
+        \{% end %}
+      \{% else %}
+        \{% except = prev_except %}
+      \{% end %}
+      \{% {{store}}[method] = {only, except} %}
+    end
   end
-
-  macro before_action(method, only = nil, except = nil)
-    {% if only %}
-      {% if !only.is_a?(ArrayLiteral) %}
-        {% only = [only.id] %}
-      {% else %}
-        {% only = only.map(&.id) %}
-      {% end %}
-    {% end %}
-    {% if except %}
-      {% if !except.is_a?(ArrayLiteral) %}
-        {% except = [except.id] %}
-      {% else %}
-        {% except = except.map(&.id) %}
-      {% end %}
-    {% end %}
-    {% LOCAL_BEFORE[method.id] = {only, except} %}
-  end
-
-  macro after_action(method, only = nil, except = nil)
-    {% if only %}
-      {% if !only.is_a?(ArrayLiteral) %}
-        {% only = [only.id] %}
-      {% else %}
-        {% only = only.map(&.id) %}
-      {% end %}
-    {% end %}
-    {% if except %}
-      {% if !except.is_a?(ArrayLiteral) %}
-        {% except = [except.id] %}
-      {% else %}
-        {% except = except.map(&.id) %}
-      {% end %}
-    {% end %}
-    {% LOCAL_AFTER[method.id] = {only, except} %}
-  end
-
-  macro skip_action(method, only = nil, except = nil)
-    {% if only %}
-      {% if !only.is_a?(ArrayLiteral) %}
-        {% only = [only.id] %}
-      {% else %}
-        {% only = only.map(&.id) %}
-      {% end %}
-    {% end %}
-    {% if except %}
-      {% if !except.is_a?(ArrayLiteral) %}
-        {% except = [except.id] %}
-      {% else %}
-        {% except = except.map(&.id) %}
-      {% end %}
-    {% end %}
-    {% LOCAL_SKIP[method.id] = {only, except} %}
-  end
-
-  macro force_ssl(only = nil, except = nil)
-    # TODO:: support more options like HSTS headers
-    {% if only %}
-      {% if !only.is_a?(ArrayLiteral) %}
-        {% only = [only.id] %}
-      {% else %}
-        {% only = only.map(&.id) %}
-      {% end %}
-    {% end %}
-    {% if except %}
-      {% if !except.is_a?(ArrayLiteral) %}
-        {% except = [except.id] %}
-      {% else %}
-        {% except = except.map(&.id) %}
-      {% end %}
-    {% end %}
-    {% LOCAL_FORCE[:force] = {only, except} %}
-  end
+  __define_filter_macro__(:around_action, LOCAL_AROUND)
+  __define_filter_macro__(:before_action, LOCAL_BEFORE)
+  __define_filter_macro__(:after_action, LOCAL_AFTER)
+  __define_filter_macro__(:skip_action, LOCAL_SKIP)
+  __define_filter_macro__(:force_ssl, LOCAL_FORCE, :force)
 
   macro force_tls(only = nil, except = nil)
     force_ssl({{only}}, {{except}})

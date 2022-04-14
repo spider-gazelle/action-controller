@@ -117,7 +117,12 @@ class ActionController::Session
 
   def delete_if(&block)
     @modified = true
-    @store.delete_if(&block)
+    @store.reject(&block)
+  end
+
+  def reject(&block)
+    @modified = true
+    @store.reject(&block)
   end
 
   def touch
