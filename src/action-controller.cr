@@ -3,11 +3,9 @@ require "future"
 require "./action-controller/logger"
 
 module ActionController
-  macro set_version
+  {% begin %}
     VERSION = {{ `shards version "#{__DIR__}"`.chomp.stringify.downcase }}
-  end
-
-  set_version
+  {% end %}
 end
 
 require "./action-controller/router"
