@@ -1,3 +1,5 @@
+require "exception_page"
+
 module ActionController::ErrorHandler
   def self.new(production : Bool = false, persist_headers = [] of String)
     if production
@@ -5,6 +7,15 @@ module ActionController::ErrorHandler
     else
       ActionController::ErrorHandlerDevelopment.new(persist_headers)
     end
+  end
+end
+
+class ActionController::ExceptionPage < ExceptionPage
+  def styles : Styles
+    ExceptionPage::Styles.new(
+      # Choose the HTML color value. Can be hex
+      accent: "purple",
+    )
   end
 end
 
@@ -46,17 +57,7 @@ class ActionController::ErrorHandlerDevelopment
     response = context.response
     reset(response)
 
-    if accepts_formats(context.request).includes?("application/json")
-      response.content_type = "application/json"
-      {
-        error:     ex.message,
-        backtrace: ex.backtrace?,
-      }.to_json(response)
-    else
-      response.content_type = "text/plain"
-      response.print("ERROR: ")
-      ex.inspect_with_backtrace(response)
-    end
+    ActionController::ExceptionPage.for_runtime_exception(context, ex).to_s(context.response)
   end
 end
 

@@ -621,6 +621,7 @@ abstract class ActionController::Base
       \{% {{store}}[method] = {only, except} %}
     end
   end
+
   __define_filter_macro__(:around_action, LOCAL_AROUND)
   __define_filter_macro__(:before_action, LOCAL_BEFORE)
   __define_filter_macro__(:after_action, LOCAL_AFTER)
