@@ -204,7 +204,9 @@ class HelloWorld < Application
     render text: {{ @def.annotations(ActionController::TestAnnotation).id.stringify }}
   end
 
-  get "/annotation/multi", :multi_annotation, annotations: [@[ActionController::TestAnnotation], @[ActionController::TestAnnotation]] do
+  @[ActionController::TestAnnotation]
+  @[ActionController::TestAnnotation]
+  get "/annotation/multi", :multi_annotation do
     render text: {{ @def.annotations(ActionController::TestAnnotation).id.stringify }}
   end
 

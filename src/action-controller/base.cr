@@ -250,33 +250,13 @@ abstract class ActionController::Base
       # Add CRUD routes to the map
       {% for name, index in @type.methods.map(&.name.stringify) %}
         {% args = CRUD_METHODS[name] %}
-        {% if args %}
+        {% if args && ROUTES[name.id] == nil %}
           {% if args[2] && DEFAULT_PARAM_ID[@type.id] %}
             {% new_default_param = args[1].gsub(/\:id/, ":" + DEFAULT_PARAM_ID[@type.id].id.stringify) %}
             {% ROUTES[name.id] = {args[0], new_default_param, nil, nil, false} %}
           {% else %}
             {% ROUTES[name.id] = {args[0], args[1], nil, nil, false} %}
           {% end %}
-        {% end %}
-      {% end %}
-
-      # Create functions for named routes
-      # Skip the CRUD verbs, as they are already defined
-      # Annotations defined via the `annotations` argument are applied here
-      {% for name, details in ROUTES %}
-        {% block = details[3] %}
-        {% route_annotations = details[2] %}
-        {% if block != nil %}
-          {% block = details[3] %}
-          {% if route_annotations %} #
-            {% route_annotations = [route_annotations] unless route_annotations.is_a?(ArrayLiteral) %}
-            {% for ann in route_annotations %}
-              {{ ann.id }}
-            {% end %}
-          {% end %}
-          def {{name}}({{*block.args}})
-            {{block.body}}
-          end
         {% end %}
       {% end %}
 
@@ -568,6 +548,17 @@ abstract class ActionController::Base
         \{% name = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
       \{% end %}
       \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, annotations, block, false } %}
+      \{% if annotations %} #
+        \{% annotations = [annotations] unless annotations.is_a?(ArrayLiteral) %}
+        \{% for ann in annotations %}
+          \{{ ann.id }}
+        \{% end %}
+      \{% end %}
+      \{{ ("def " + name.id.stringify + "(").id }}
+        \{{*block.args}}
+      \{{ ")".id }}
+        \{{block.body}}
+      \{{ "end".id }}
     end
   {% end %}
 
@@ -576,6 +567,15 @@ abstract class ActionController::Base
       {% name = "ws" + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
     {% end %}
     {% LOCAL_ROUTES[name.id] = {"get", path, annotations, block, true} %}
+    {% if annotations %} #
+      {% annotations = [annotations] unless annotations.is_a?(ArrayLiteral) %}
+      {% for ann in annotations %}
+        {{ ann.id }}
+      {% end %}
+    {% end %}
+    def {{name.id}}({{*block.args}})
+      {{block.body}}
+    end
   end
 
   macro rescue_from(error_class, method = nil, &block)
