@@ -4,9 +4,10 @@ require "./responders"
 require "./session"
 require "./support"
 require "uri"
-require "../../spec/curl_context"
+require "./router/builder"
 
 abstract class ActionController::Base
+  include Route::Builder
   include ActionController::Responders
 
   # Route IDs params

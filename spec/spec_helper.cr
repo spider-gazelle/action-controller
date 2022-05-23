@@ -31,6 +31,11 @@ class FilterCheck < FilterOrdering
     render text: "ok"
   end
 
+  @[Route::GET("/other_route/:id")]
+  def other_route(id : String) : String
+    id
+  end
+
   def confirm_trust
     render :forbidden, text: "Trust confirmation failed" unless @trusted
   end

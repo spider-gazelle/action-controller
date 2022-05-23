@@ -42,6 +42,9 @@ describe ActionController::Base do
   it "should execute filters in the order they were defined" do
     result = curl("GET", "/filtering")
     result.body.should eq("ok")
+
+    result = curl("GET", "/filtering/other_route/the_id")
+    result.body.should eq(%("the_id"))
   end
 
   describe "route annotations" do
