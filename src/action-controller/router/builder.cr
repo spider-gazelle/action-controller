@@ -1,6 +1,9 @@
 annotation Route::GET
 end
 
+annotation Route::POST
+end
+
 abstract struct Route::Param::Conversion
   abstract def initialize(raw : String)
   abstract def value
@@ -35,30 +38,34 @@ end
 
 module Route::Builder
   macro __parse_inferred_routes__
-    {% for method in @type.methods %}
-      {% for ann, idx in method.annotations(Route::GET) %}
-        # TODO:: use annotations to specify content type
-        # raise if there is a block
-        # if no restriction defined, default to String?
-        {% route_params = (NAMESPACE[0] + ann[0]).split("/").select { |part| part.starts_with?(":") || part.starts_with?("?:") || part.starts_with?("*:") }.map { |part| part.split(":")[1] } %}
-        get {{ann[0]}},  :__{{method.name.id}}_wrapper__ do
-          {% if method.args.empty? %}
-            result = {{method.name.id}}
-          {% else %}
-            args = {
-              {% for arg in method.args %}
-                {% string_name = arg.name.id.stringify %}
-                {% if route_params.includes? string_name %} # TODO:: check if this is optional or a splat
-                  {{arg.name.id}}: ::Route::Param::Convert{{arg.restriction}}.new(route_params[{{string_name}}]).value!
-                {% else %}
-                  {{arg.name.id}}: ::Route::Param::Convert{{arg.restriction}}.new(params[{{string_name}}]).value! # arg.default_value
+    {% route_methods = [Route::GET, Route::POST] %}
+    {% for route_method in route_methods %}
+      {% lower_route_method = route_method.stringify.split("::")[-1].downcase.id %}
+      {% for method in @type.methods %}
+        {% for ann, idx in method.annotations(route_method) %}
+          # TODO:: use annotations to specify content type
+          # raise if there is a block
+          # if no restriction defined, default to String?
+          {% route_params = (NAMESPACE[0] + ann[0]).split("/").select { |part| part.starts_with?(":") || part.starts_with?("?:") || part.starts_with?("*:") }.map { |part| part.split(":")[1] } %}
+          {{lower_route_method}} {{ann[0]}}, :__{{method.name.id}}_route__ do
+            {% if method.args.empty? %}
+              result = {{method.name.id}}
+            {% else %}
+              args = {
+                {% for arg in method.args %}
+                  {% string_name = arg.name.id.stringify %}
+                  {% if route_params.includes? string_name %} # TODO:: check if this is optional or a splat
+                    {{arg.name.id}}: ::Route::Param::Convert{{arg.restriction}}.new(route_params[{{string_name}}]).value!
+                  {% else %}
+                    {{arg.name.id}}: ::Route::Param::Convert{{arg.restriction}}.new(params[{{string_name}}]).value! # arg.default_value
+                  {% end %}
                 {% end %}
-              {% end %}
-            }
-            result = {{method.name.id}}(**args)
-          {% end %}
-          render(json: result) unless @render_called
-        end
+              }
+              result = {{method.name.id}}(**args)
+            {% end %}
+            render(json: result) unless @render_called
+          end
+        {% end %}
       {% end %}
     {% end %}
 	end

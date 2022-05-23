@@ -2,6 +2,7 @@ require "kilt"
 require "spec"
 require "xml"
 require "log"
+require "./curl_context"
 require "../src/action-controller"
 
 Spec.before_suite do
@@ -272,7 +273,6 @@ class HelloWorld < Application
 end
 
 require "../src/action-controller/server"
-require "./curl_context"
 
 # require "random"
 # Random::Secure.hex
