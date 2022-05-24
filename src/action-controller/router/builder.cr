@@ -55,12 +55,24 @@ module Route::Builder
                     # Check for custom converter arguments (assumes a single type)
                     {% elsif converter_args = ann[string_name + "_custom"] %}
                       {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
-                      {% restrictions = ["::Route::Param::Convert" + union_types[0].stringify + ".new(**" + converter_args.stringify + ").convert(param_value)"] %}
+                      {% if union_types[0] < Enum %}
+                        {% if converter_args[:from_value] %}
+                          {% restrictions = [union_types[0].stringify + ".from_value?(param_value.to_i64)"] %}
+                        {% else %}
+                          {% restrictions = [union_types[0].stringify + ".parse?(param_value)"] %}
+                        {% end %}
+                      {% else %}
+                        {% restrictions = ["::Route::Param::Convert" + union_types[0].stringify + ".new(**" + converter_args.stringify + ").convert(param_value)"] %}
+                      {% end %}
 
                     # There are a bunch of types this might be
                     {% else %}
                       {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
-                      {% restrictions = union_types.map { |type| "::Route::Param::Convert" + type.stringify + ".new.convert(param_value)" } %}
+                      {% if union_types[0] < Enum %}
+                        {% restrictions = [union_types[0].stringify + ".parse?(param_value)"] %}
+                      {% else %}
+                        {% restrictions = union_types.map { |type| "::Route::Param::Convert" + type.stringify + ".new.convert(param_value)" } %}
+                      {% end %}
                     {% end %}
                   {% else %}
                     {% nilable = true %}
