@@ -105,21 +105,26 @@ module ActionController::Responders
 
     {% if json %}
       %response.content_type = {{MIME_TYPES[:json]}} unless %ctype
-
-      {% if json.is_a?(String) %}
-        {{json}}.to_s(%response) unless @__head_request__
-      {% else %}
-        ({{json}}).to_json(%response) unless @__head_request__
-      {% end %}
+      unless @__head_request__
+        %json = ({{json}})
+        if %json.is_a?(String)
+          %json.to_s(%response)
+        else
+          %json.to_json(%response)
+        end
+      end
     {% end %}
 
     {% if yaml %}
       %response.content_type = {{MIME_TYPES[:yaml]}} unless %ctype
-      {% if yaml.is_a?(String) %}
-        {{yaml}}.to_s(%response) unless @__head_request__
-      {% else %}
-        ({{yaml}}).to_yaml(%response) unless @__head_request__
-      {% end %}
+      unless @__head_request__
+        %yaml = ({{yaml}})
+        if %yaml.is_a?(String)
+          %yaml.to_s(%response)
+        else
+          %yaml.to_yaml(%response)
+        end
+      end
     {% end %}
 
     {% if xml %}

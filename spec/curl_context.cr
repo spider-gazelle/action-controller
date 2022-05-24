@@ -7,7 +7,6 @@ def curl(method : String, path : String, headers = {} of String => String, body 
     head[key] = value
   end
 
-  response = nil
   case method
   when "GET"
     response = client.get path, head
@@ -29,7 +28,7 @@ def curl(method : String, path : String, headers = {} of String => String, body 
 
   client.close
 
-  response.not_nil!
+  response
 end
 
 ::CURL_CONTEXT__ = [] of ActionController::Server

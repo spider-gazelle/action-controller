@@ -53,7 +53,7 @@ module Route::Param
 
     def convert(raw : String)
       if format = @format
-        Time.parse raw, format
+        Time.parse_utc raw, format
       else
         Time.parse_iso8601 raw
       end
@@ -109,14 +109,14 @@ module Route::Param
     # Integer converters
     {%
       ints = {
-        to_i8: Int8,
-        to_u8: UInt8,
-        to_i16: Int16,
-        to_u16: UInt16,
-        to_i32: Int32,
-        to_u32: UInt32,
-        to_i64: Int64,
-        to_u64: UInt64,
+        to_i8:   Int8,
+        to_u8:   UInt8,
+        to_i16:  Int16,
+        to_u16:  UInt16,
+        to_i32:  Int32,
+        to_u32:  UInt32,
+        to_i64:  Int64,
+        to_u64:  UInt64,
         to_i128: Int128,
         to_u128: UInt128,
       }

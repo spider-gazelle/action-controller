@@ -29,13 +29,22 @@ module Route::Builder
           {% render_type = ann[:render] || :json %}
 
           # Grab the param parts
-          {% full_route = (NAMESPACE[0] + ann[0]).split("/") %}
+          {% full_route = (NAMESPACE[0] + ann[0]).split("/").reject(&.empty?) %}
           {% required_params = full_route.select(&.starts_with?(":")).map { |part| part.split(":")[1] } %}
           # {% optional_params = full_route.select(&.starts_with?("?:")).map { |part| part.split(":")[1] } %}
           # {% splat_params = full_route.select(&.starts_with?("*:")).map { |part| part.split(":")[1] } %}
 
-          # build the standard route definition helper (get "/route", :function_name)
-          {{lower_route_method}} {{ann[0]}}, :_{{method_name.id}}_wrapper_ do
+          # add a redirect helper (yes it will only match the last route applied)
+          {% if lower_route_method == "get" %}
+            def self.{{method_name.id}}(**tuple_parts)
+              route = {{"/" + full_route.join("/")}}
+              ActionController::Support.build_route(route, nil, **tuple_parts)
+            end
+          {% end %}
+
+          # :nodoc:
+          # build the standard route definition helper (get "/route")
+          {{lower_route_method}} {{ann[0]}} do
             {% if method.args.empty? %}
               result = {{method_name.id}}
             {% else %}

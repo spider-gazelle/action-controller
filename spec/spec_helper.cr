@@ -28,19 +28,45 @@ class FilterCheck < FilterOrdering
   base "/filtering"
   before_action :confirm_trust
 
+  # Ensure that magic methods don't interfere with our annotation routing
   @[Route::GET("/")]
   def index
     render text: "ok"
   end
 
-  @[Route::GET("/other_route/:id")]
+  @[Route::GET("/other_route/:id", render: :text)]
   def other_route(id : String) : String
     id
   end
 
+  # Test default arguments and multiple routes for a single method
   @[Route::GET("/other_route/:id/test")]
-  def other_route_test(id : String = "456") : String
-    id
+  @[Route::GET("/other_route/test")]
+  @[Route::GET("/hex_route/:id", id_custom: {base: 16})]
+  def other_route_test(id : UInt32 = 456_u32, query = "hello") : String
+    "#{id}-#{query}"
+  end
+
+  enum Colour
+    Red
+    Green
+    Blue
+  end
+
+  @[Route::GET("/enum_route/colour/:colour")]
+  @[Route::GET("/enum_route/colour_value/:colour", colour_custom: {from_value: true})]
+  def other_route_colour(colour : Colour) : String
+    colour.to_s
+  end
+
+  @[Route::GET("/time_route/:time", time_custom: {format: "%F %:z"})]
+  def other_route_time(time : Time) : Time
+    time
+  end
+
+  @[Route::DELETE("/some_entry/:float", float_custom: {strict: false}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]
+  def delete_entry(float : Float64) : Float64
+    float
   end
 
   def confirm_trust
