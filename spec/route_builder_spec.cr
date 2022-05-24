@@ -30,6 +30,8 @@ describe Route::Builder do
   it "should return custom status codes and content types" do
     result = curl("DELETE", "/filtering/some_entry/4.56-not-strict")
     result.body.should eq "4.56"
+    result.status_code.should eq 202
+    result.headers["Content-Type"].should eq "json/custom"
   end
 
   it "can spec via direct instansiation" do
