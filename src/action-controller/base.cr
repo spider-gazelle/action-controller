@@ -249,14 +249,24 @@ abstract class ActionController::Base
   macro __create_route_methods__
     {% if !@type.abstract? %}
       # Add CRUD routes to the map
-      {% for name, index in @type.methods.map(&.name.stringify) %}
+      {% for method, index in @type.methods %}
+        {% name = method.name.stringify %}
         {% args = CRUD_METHODS[name] %}
         {% if args && ROUTES[name.id] == nil %}
-          {% if args[2] && DEFAULT_PARAM_ID[@type.id] %}
-            {% new_default_param = args[1].gsub(/\:id/, ":" + DEFAULT_PARAM_ID[@type.id].id.stringify) %}
-            {% ROUTES[name.id] = {args[0], new_default_param, nil, nil, false} %}
-          {% else %}
-            {% ROUTES[name.id] = {args[0], args[1], nil, nil, false} %}
+          {% magic_method = true %}
+          {% for route_method in {Route::GET, Route::POST, Route::PUT, Route::PATCH, Route::DELETE, Route::OPTIONS} %}
+            {% for ann, idx in method.annotations(route_method) %}
+              {% magic_method = false %}
+            {% end %}
+          {% end %}
+
+          {% if magic_method %}
+            {% if args[2] && DEFAULT_PARAM_ID[@type.id] %}
+              {% new_default_param = args[1].gsub(/\:id/, ":" + DEFAULT_PARAM_ID[@type.id].id.stringify) %}
+              {% ROUTES[name.id] = {args[0], new_default_param, nil, nil, false} %}
+            {% else %}
+              {% ROUTES[name.id] = {args[0], args[1], nil, nil, false} %}
+            {% end %}
           {% end %}
         {% end %}
       {% end %}

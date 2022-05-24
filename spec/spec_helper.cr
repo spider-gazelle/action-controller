@@ -28,12 +28,18 @@ class FilterCheck < FilterOrdering
   base "/filtering"
   before_action :confirm_trust
 
+  @[Route::GET("/")]
   def index
     render text: "ok"
   end
 
   @[Route::GET("/other_route/:id")]
   def other_route(id : String) : String
+    id
+  end
+
+  @[Route::GET("/other_route/:id/test")]
+  def other_route_test(id : String = "456") : String
     id
   end
 
