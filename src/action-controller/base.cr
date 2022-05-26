@@ -252,20 +252,32 @@ abstract class ActionController::Base
       {% for method, index in @type.methods %}
         {% name = method.name.stringify %}
         {% args = CRUD_METHODS[name] %}
-        {% if args && ROUTES[name.id] == nil %}
+
+        # see if this method is already added
+        {% matching_method = false %}
+        {% for path, details in ROUTES %}
+          {% function_name = details[6] %}
+          {% if function_name == name.id %}
+            {% matching_method = true %}
+          {% end %}
+        {% end %}
+
+        {% if args && !matching_method %}
+          # check the method isn't annotated
           {% magic_method = true %}
-          {% for route_method in {Route::GET, Route::POST, Route::PUT, Route::PATCH, Route::DELETE, Route::OPTIONS} %}
+          {% for route_method in {Route::GET, Route::POST, Route::PUT, Route::PATCH, Route::DELETE, Route::OPTIONS, Route::Filter, Route::Exception} %}
             {% for ann, idx in method.annotations(route_method) %}
               {% magic_method = false %}
             {% end %}
           {% end %}
 
+          # add the magic method to the routes
           {% if magic_method %}
             {% if args[2] && DEFAULT_PARAM_ID[@type.id] %}
               {% new_default_param = args[1].gsub(/\:id/, ":" + DEFAULT_PARAM_ID[@type.id].id.stringify) %}
-              {% ROUTES[name.id] = {args[0], new_default_param, nil, nil, false} %}
+              {% ROUTES[args[0] + new_default_param] = {args[0], new_default_param, nil, nil, false, name.id, name.id} %}
             {% else %}
-              {% ROUTES[name.id] = {args[0], args[1], nil, nil, false} %}
+              {% ROUTES[args[0] + args[1]] = {args[0], args[1], nil, nil, false, name.id, name.id} %}
             {% end %}
           {% end %}
         {% end %}
@@ -308,20 +320,24 @@ abstract class ActionController::Base
       {% CONCRETE_CONTROLLERS[@type.name.id] = NAMESPACE[0] %}
 
       # Generate functions for each route
-      {% for name, details in ROUTES %}
-        def self.{{(details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(context, head_request)
-          {% is_websocket = details[4] %}
+      {% for _key, details in ROUTES %}
+        {% http_method = details[0] %}
+        {% route_path = details[1] %}
+        {% is_websocket = details[4] %}
+        {% reference_name = details[5] %}
+        {% function_name = details[6] %}
 
+        def self.{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(context, head_request)
           # Check if force SSL is set and redirect to HTTPS if HTTP
           {% force = false %}
           {% if FORCE[:force] %}
             {% options = FORCE[:force] %}
             {% only = options[0] %}
-            {% if only != nil && only.includes?(name) %} # only
+            {% if only != nil && only.includes?(reference_name) %} # only
               {% force = true %}
             {% else %}
               {% except = options[1] %}
-              {% if except != nil && !except.includes?(name) %} # except
+              {% if except != nil && !except.includes?(reference_name) %} # except
                 {% force = true %}
               {% end %}
             {% end %}
@@ -340,7 +356,7 @@ abstract class ActionController::Base
           {% end %}
 
           # Create an instance of the controller
-          instance = {{@type.name}}.new(context, :{{name}}, head_request)
+          instance = {{@type.name}}.new(context, :{{reference_name}}, head_request)
 
           # Check for errors
           {% if !RESCUE.empty? %}
@@ -354,9 +370,9 @@ abstract class ActionController::Base
             {% except = options[1] %}
             {% if only == nil && except == nil %}
               {% skipping = [method] + skipping %}
-            {% elsif only != nil && only.includes?(name) %}
+            {% elsif only != nil && only.includes?(reference_name) %}
               {% skipping = [method] + skipping %}
-            {% elsif except != nil && !except.includes?(name) %}
+            {% elsif except != nil && !except.includes?(reference_name) %}
               {% skipping = [method] + skipping %}
             {% end %}
           {% end %}
@@ -365,11 +381,11 @@ abstract class ActionController::Base
           {% around_actions = AROUND.keys %}
           {% for method, options in AROUND %}
             {% only = options[0] %}
-            {% if only != nil && !only.includes?(name) %} # only
+            {% if only != nil && !only.includes?(reference_name) %} # only
               {% around_actions = around_actions.reject(&.==(method)) %}
             {% else %}
               {% except = options[1] %}
-              {% if except != nil && except.includes?(name) %} # except
+              {% if except != nil && except.includes?(reference_name) %} # except
                 {% around_actions = around_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
@@ -387,11 +403,11 @@ abstract class ActionController::Base
           {% before_actions = BEFORE.keys %}
           {% for method, options in BEFORE %}
             {% only = options[0] %}
-            {% if only != nil && !only.includes?(name) %} # only
+            {% if only != nil && !only.includes?(reference_name) %} # only
               {% before_actions = before_actions.reject(&.==(method)) %}
             {% else %}
               {% except = options[1] %}
-              {% if except != nil && except.includes?(name) %} # except
+              {% if except != nil && except.includes?(reference_name) %} # except
                 {% before_actions = before_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
@@ -431,7 +447,7 @@ abstract class ActionController::Base
                 response.upgrade do |io|
                   begin
                     ws_session = HTTP::WebSocket.new(io)
-                    instance.{{name}}(ws_session)
+                    instance.{{function_name}}(ws_session)
                     ws_session.run
                   ensure
                     io.close
@@ -444,7 +460,7 @@ abstract class ActionController::Base
                 response << "This service requires use of the WebSocket protocol"
               end
             {% else %}
-              instance.{{name}}
+              instance.{{function_name}}
             {% end %}
 
           {% if !before_actions.empty? %}
@@ -464,11 +480,11 @@ abstract class ActionController::Base
           {% after_actions = AFTER.keys %}
           {% for method, options in AFTER %}
             {% only = options[0] %}
-            {% if only != nil && !only.includes?(name) %} # only
+            {% if only != nil && !only.includes?(reference_name) %} # only
               {% after_actions = after_actions.reject(&.==(method)) %}
             {% else %}
               {% except = options[1] %}
-              {% if except != nil && except.includes?(name) %} # except
+              {% if except != nil && except.includes?(reference_name) %} # except
                 {% after_actions = after_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
@@ -514,17 +530,21 @@ abstract class ActionController::Base
 
       # Routes call the functions generated above
       def self.__init_routes__(router)
-        {% for name, details in ROUTES %}
-          router.{{details[0].id}} {{(NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/\//, "/")}}, &->{{(details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(HTTP::Server::Context, Bool)
+        {% for _key, details in ROUTES %}
+          {% http_method = details[0] %}
+          {% route_path = details[1] %}
+          router.{{http_method.id}} {{(NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/\//, "/")}}, &->{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(HTTP::Server::Context, Bool)
         {% end %}
 
         nil
       end
 
       # Helper methods for performing redirect_to calls
-      {% for name, details in ROUTES %}
-        def self.{{name}}(hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
-          route = "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/")
+      {% for _key, details in ROUTES %}
+        {% reference_name = details[5] %}
+        {% route_path = details[1] %}
+        def self.{{reference_name}}(hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
+          route = "{{NAMESPACE[0].id}}{{route_path.id}}".gsub("//", "/")
           ActionController::Support.build_route(route, hash_parts, **tuple_parts)
         end
       {% end %}
@@ -532,8 +552,11 @@ abstract class ActionController::Base
       def self.__route_list__
         [
           # "Class", :name, :verb, "route"
-          {% for name, details in ROUTES %}
-            { "{{@type.name}}", :{{name}}, :{{details[0].id}}, "{{NAMESPACE[0].id}}{{details[1].id}}".gsub("//", "/")},
+          {% for _key, details in ROUTES %}
+            {% http_method = details[0] %}
+            {% route_path = details[1] %}
+            {% reference_name = details[5] %}
+            { "{{@type.name}}", :{{reference_name}}, :{{http_method.id}}, "{{NAMESPACE[0].id}}{{route_path.id}}".gsub("//", "/")},
           {% end %}
         ]
       end
@@ -554,18 +577,18 @@ abstract class ActionController::Base
 
   # Define each method for supported http methods except head (which is meta)
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
-    macro {{http_method.id}}(path, name = nil, annotations = nil, &block)
-      \{% unless name %}
-        \{% name = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
+    macro {{http_method.id}}(path, function = nil, annotations = nil, reference = nil, &block)
+      \{% unless function %}
+        \{% function = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
       \{% end %}
-      \{% LOCAL_ROUTES[name.id] = { {{http_method}}, path, annotations, block, false } %}
-      \{% if annotations %} #
+      \{% LOCAL_ROUTES[{{http_method}} + path] = { {{http_method}}, path, annotations, block, false, (reference || function).id, function.id } %}
+      \{% if annotations %}
         \{% annotations = [annotations] unless annotations.is_a?(ArrayLiteral) %}
         \{% for ann in annotations %}
           \{{ ann.id }}
         \{% end %}
       \{% end %}
-      \{{ ("def " + name.id.stringify + "(").id }}
+      \{{ ("def " + function.id.stringify + "(").id }}
         \{{*block.args}}
       \{{ ")".id }}
         \{{block.body}}
@@ -573,18 +596,18 @@ abstract class ActionController::Base
     end
   {% end %}
 
-  macro ws(path, name = nil, annotations = nil, &block)
-    {% unless name %}
-      {% name = "ws" + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
+  macro ws(path, function = nil, annotations = nil, reference = nil, &block)
+    {% unless function %}
+      {% function = "ws" + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
     {% end %}
-    {% LOCAL_ROUTES[name.id] = {"get", path, annotations, block, true} %}
+    {% LOCAL_ROUTES["ws" + path] = {"get", path, annotations, block, true, (reference || function).id, function.id} %}
     {% if annotations %} #
       {% annotations = [annotations] unless annotations.is_a?(ArrayLiteral) %}
       {% for ann in annotations %}
         {{ ann.id }}
       {% end %}
     {% end %}
-    def {{name.id}}({{*block.args}})
+    def {{function.id}}({{*block.args}})
       {{block.body}}
     end
   end

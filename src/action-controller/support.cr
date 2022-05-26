@@ -52,7 +52,7 @@ module ActionController::Support
     end
 
     # Raise error if not all parts are substituted
-    raise ActionController::InvalidRoute.new("route parameters missing :#{keys.join(", :")}") unless keys.empty?
+    raise ActionController::InvalidRoute.new("route parameters missing :#{keys.join(", :")} for #{route}") unless keys.empty?
 
     # Add any remaining values as query params
     if params.empty?

@@ -26,7 +26,11 @@ end
 
 class FilterCheck < FilterOrdering
   base "/filtering"
-  before_action :confirm_trust
+
+  @[Route::Filter(:before_action)]
+  def confirm_trust(id : String?)
+    render :forbidden, text: "Trust confirmation failed" unless @trusted
+  end
 
   # Ensure that magic methods don't interfere with our annotation routing
   @[Route::GET("/")]
@@ -67,10 +71,6 @@ class FilterCheck < FilterOrdering
   @[Route::DELETE("/some_entry/:float", float_custom: {strict: false}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]
   def delete_entry(float : Float64) : Float64
     float
-  end
-
-  def confirm_trust
-    render :forbidden, text: "Trust confirmation failed" unless @trusted
   end
 end
 
@@ -178,8 +178,9 @@ class BobJane < ActionController::Base
 end
 
 abstract class Application < ActionController::Base
-  rescue_from DivisionByZeroError do |error|
-    render :bad_request, text: error.message
+  @[Route::Exception(DivisionByZeroError, status_code: :bad_request, render_type: :text)]
+  def confirm_trust(error, id : String?)
+    error.message
   end
 end
 
