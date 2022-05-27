@@ -2,8 +2,6 @@ require "kilt"
 require "spec"
 require "xml"
 require "log"
-require "./curl_context"
-require "../src/action-controller"
 require "../src/action-controller/spec_helper"
 
 Spec.before_suite do

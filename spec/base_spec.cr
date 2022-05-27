@@ -2,18 +2,22 @@ require "./spec_helper"
 
 describe ActionController::Base do
   it "should return accepted mime types" do
-    c = HelloWorld.new(context("GET", "/", accept: "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8"))
+    c = HelloWorld.spec_instance(HTTP::Request.new("GET", "/", headers: HTTP::Headers{
+      "Accept" => "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
+    }))
     c.accepts_formats.should eq(["text/html", "application/xhtml+xml", "application/xml"])
   end
 
   it "should provide a helper for getting the current base route" do
-    c = HelloWorld.new(context("GET", "/"))
+    c = HelloWorld.spec_instance
     c.base_route.should eq("/hello")
     HelloWorld.base_route.should eq("/hello")
   end
 
   it "should return accepted formats" do
-    c = HelloWorld.new(context("GET", "/", accept: "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8"))
+    c = HelloWorld.spec_instance(HTTP::Request.new("GET", "/", headers: HTTP::Headers{
+      "Accept" => "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
+    }))
     formats = c.accepts_formats
     ActionController::Responders::SelectResponse.accepts(formats).should eq({
       :html => "text/html",
@@ -40,20 +44,24 @@ describe ActionController::Base do
   end
 
   it "should execute filters in the order they were defined" do
-    result = curl("GET", "/filtering")
+    client = AC::SpecHelper.client
+
+    result = client.get("/filtering")
     result.body.should eq("ok")
 
-    result = curl("GET", "/filtering/other_route/the_id")
+    result = client.get("/filtering/other_route/the_id")
     result.body.should eq "the_id"
   end
 
   describe "route annotations" do
+    client = AC::SpecHelper.client
+
     it "can be a single annotation" do
-      curl("GET", "/hello/annotation/single").body.should eq %([@[ActionController::TestAnnotation(detail: "single")]])
+      client.get("/hello/annotation/single").body.should eq %([@[ActionController::TestAnnotation(detail: "single")]])
     end
 
     it "can be an array of annotations" do
-      curl("GET", "/hello/annotation/multi").body.should eq %([@[ActionController::TestAnnotation], @[ActionController::TestAnnotation]])
+      client.get("/hello/annotation/multi").body.should eq %([@[ActionController::TestAnnotation], @[ActionController::TestAnnotation]])
     end
   end
 end
