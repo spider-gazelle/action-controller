@@ -142,23 +142,15 @@ describe "end to end requests and responses" do
   end
 
   it "should accept websockets" do
-    pending! "need a nice way to enable testing of this"
-
-    # Instantiate the controller (emulating a websocket route)
-    users_controller = HelloWorld.spec_instance HTTP::Request.new("GET", "/hello/websocket")
-    ws_protocol = HTTP::WebSocket::Protocol.new(users_controller.response.output)
-
-    # Hook up the IO
-    ws = HTTP::WebSocket.new(ws_protocol)
-    users_controller.websocket(ws, nil)
+    websocket = client.establish_ws("/hello/websocket")
 
     result = nil
-    ws.on_message do |message|
+    websocket.on_message do |message|
       result = message
-      ws.close
+      websocket.close
     end
-    ws.send "hello"
-    ws.run
+    websocket.send "hello"
+    websocket.run
     result.should eq("hello + 123")
   end
 
