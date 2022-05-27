@@ -1,6 +1,6 @@
 require "./spec_helper"
 
-describe Route::Builder do
+describe AC::Route::Builder do
   it "should work with shared routes" do
     result = curl("GET", "/filtering/other_route/1234/test?query=bye")
     result.body.should eq("1234-bye")

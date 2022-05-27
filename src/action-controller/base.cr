@@ -7,7 +7,7 @@ require "uri"
 require "./router/builder"
 
 abstract class ActionController::Base
-  include Route::Builder
+  include ActionController::Route::Builder
   include ActionController::Responders
 
   # Route IDs params
@@ -265,7 +265,7 @@ abstract class ActionController::Base
         {% if args && !matching_method %}
           # check the method isn't annotated
           {% magic_method = true %}
-          {% for route_method in {Route::GET, Route::POST, Route::PUT, Route::PATCH, Route::DELETE, Route::OPTIONS, Route::Filter, Route::Exception} %}
+          {% for route_method in {AC::Route::GET, AC::Route::POST, AC::Route::PUT, AC::Route::PATCH, AC::Route::DELETE, AC::Route::OPTIONS, AC::Route::Filter, AC::Route::Exception} %}
             {% for ann, idx in method.annotations(route_method) %}
               {% magic_method = false %}
             {% end %}

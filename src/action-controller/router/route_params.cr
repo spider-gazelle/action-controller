@@ -1,6 +1,6 @@
 require "big"
 
-module Route::Param
+module ActionController::Route::Param
   # Handle this to return a 404
   class Error < ArgumentError
     def initialize(@message, @parameter = nil, @restriction = nil)

@@ -27,26 +27,26 @@ end
 class FilterCheck < FilterOrdering
   base "/filtering"
 
-  @[Route::Filter(:before_action)]
+  @[AC::Route::Filter(:before_action)]
   def confirm_trust(id : String?)
     render :forbidden, text: "Trust confirmation failed" unless @trusted
   end
 
   # Ensure that magic methods don't interfere with our annotation routing
-  @[Route::GET("/")]
+  @[AC::Route::GET("/")]
   def index
     render text: "ok"
   end
 
-  @[Route::GET("/other_route/:id", render: :text)]
+  @[AC::Route::GET("/other_route/:id", render: :text)]
   def other_route(id : String) : String
     id
   end
 
   # Test default arguments and multiple routes for a single method
-  @[Route::GET("/other_route/:id/test")]
-  @[Route::GET("/other_route/test")]
-  @[Route::GET("/hex_route/:id", id_custom: {base: 16})]
+  @[AC::Route::GET("/other_route/:id/test")]
+  @[AC::Route::GET("/other_route/test")]
+  @[AC::Route::GET("/hex_route/:id", id_custom: {base: 16})]
   def other_route_test(id : UInt32 = 456_u32, query = "hello") : String
     "#{id}-#{query}"
   end
@@ -57,18 +57,18 @@ class FilterCheck < FilterOrdering
     Blue
   end
 
-  @[Route::GET("/enum_route/colour/:colour")]
-  @[Route::GET("/enum_route/colour_value/:colour", colour_custom: {from_value: true})]
+  @[AC::Route::GET("/enum_route/colour/:colour")]
+  @[AC::Route::GET("/enum_route/colour_value/:colour", colour_custom: {from_value: true})]
   def other_route_colour(colour : Colour) : String
     colour.to_s
   end
 
-  @[Route::GET("/time_route/:time", time_custom: {format: "%F %:z"})]
+  @[AC::Route::GET("/time_route/:time", time_custom: {format: "%F %:z"})]
   def other_route_time(time : Time) : Time
     time
   end
 
-  @[Route::DELETE("/some_entry/:float", float_custom: {strict: false}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]
+  @[AC::Route::DELETE("/some_entry/:float", float_custom: {strict: false}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]
   def delete_entry(float : Float64) : Float64
     float
   end
@@ -178,7 +178,7 @@ class BobJane < ActionController::Base
 end
 
 abstract class Application < ActionController::Base
-  @[Route::Exception(DivisionByZeroError, status_code: :bad_request, render_type: :text)]
+  @[AC::Route::Exception(DivisionByZeroError, status_code: :bad_request, render_type: :text)]
   def confirm_trust(error, id : String?)
     error.message
   end
@@ -266,7 +266,8 @@ class HelloWorld < Application
   end
 
   SOCKETS = [] of HTTP::WebSocket
-  ws "/websocket", :websocket do |socket|
+  @[AC::Route::WebSocket("/websocket")]
+  def websocket(socket, _id : String?)
     puts "Socket opened"
     SOCKETS << socket
 
