@@ -11,18 +11,23 @@ require "action-controller"
 
 # Abstract classes don't generate routes
 abstract class Application < ActionController::Base
-  before_action :ensure_authenticated
+  # A filter can raise or render to prevent a route being executed
+  @[AC::Route::Filter(:before_action)]
+  def ensure_authenticated
+    render :unauthorized unless cookies["user"]
+  end
 
-  rescue_from Route::Param::Error do |error|
-    render(HTTP::Status::NOT_FOUND, json: {
+  # You can define controller level exception handlers for consistent error messages
+  # note, the first param is always the error object
+  @[AC::Route::Exception(Route::Param::Error, status_code: :not_found)]
+  def route_param_error(error, id : Int64?)
+    # as id is nillable, it will look for a supplied id (route, query, formdata)
+    # and set it if one was found and it could be converted
+    {
       error: error.message,
       parameter: error.parameter,
       restriction: error.restriction
-    })
-  end
-
-  private def ensure_authenticated
-    render :unauthorized unless cookies["user"]
+    }
   end
 end
 
@@ -39,9 +44,11 @@ class Books < Application
     ["book1", "book2"]
   end
 
+  # Params are automatically extracted and converted to the corrent type
+  # here `id` in the route matches the `id` paramater in the function
   # route => "/books/0FF/hex"
   # route => "/books/123"
-  @[Route::GET("/:id/hex", id_custom: {base: 16})]
+  @[Route::GET("/:id/hex", config: {id: {base: 16}})]
   @[Route::GET("/:id")]
   def show(id : UInt64)
     {id: id, name: "book1"}
@@ -56,14 +63,15 @@ class Books < Application
   # route => "/books/set_color/RED"
   # route => "/books/set_color/colour_value/2"
   @[Route::GET("/set_color/:colour")]
-  @[Route::GET("/set_color/colour_value/:colour", colour_custom: {from_value: true})]
+  @[Route::GET("/set_color/colour_value/:colour", config: {colour: {from_value: true}})]
   def set_color(color : Color) : String
     colour.to_s
   end
 
-  # Websocket support
-  # route => "/books/realtime"
-  ws "/realtime", :realtime do |socket|
+  # Websocket support, the first param is always the socket object
+  # route => "/books/:id/realtime"
+  @[AC::Route::WebSocket("/:id/realtime")]
+  def realtime(socket, id : UInt64)
     SOCKETS << socket
 
     socket.on_message do |message|
@@ -80,7 +88,7 @@ end
 ```
 
 The older style usage, below, is still functional and may be preferrable.
-However this newer style, inspired by Athena is less error prone, simpler to test and easier to document. Hence we recommend using it.
+However this newer style, inspired by Athena is less error prone, simpler to test and easier for a script to generate documentation. Hence we recommend using it.
 
 ## Usage
 

@@ -84,6 +84,10 @@ module ActionController::Route::Builder
             {% end %}
           {% end %}
 
+            # grab any custom converters or customisations
+            {% converters = ann[:converters] || {} of SymbolLiteral => NilLiteral %}
+            {% config = ann[:config] || {} of SymbolLiteral => NilLiteral %}
+
             # Write the method body
             {% if method.args.empty? %}
               result = {{method_name.id}}
@@ -99,11 +103,15 @@ module ActionController::Route::Builder
                       {% nilable = arg.restriction.resolve.nilable? %}
 
                       # Check if there are any custom converters
-                      {% if custom_converter = ann[string_name + "_converter"] %}
-                        {% restrictions = [custom_converter.stringify + ".new.convert(param_value)"] %}
+                      {% if custom_converter = converters[string_name.id.symbolize] %}
+                        {% if converter_args = config[string_name.id.symbolize] %}
+                          {% restrictions = [custom_converter.stringify + ".new(**" + converter_args.stringify + ").convert(param_value)"] %}
+                        {% else %}
+                          {% restrictions = [custom_converter.stringify + ".new.convert(param_value)"] %}
+                        {% end %}
 
                       # Check for custom converter arguments (assumes a single type)
-                      {% elsif converter_args = ann[string_name + "_custom"] %}
+                      {% elsif converter_args = config[string_name.id.symbolize] %}
                         {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
                         {% if union_types[0] < Enum %}
                           {% if converter_args[:from_value] %}

@@ -44,4 +44,18 @@ describe AC::Route::Builder do
     testable_controller = FilterCheck.new(ctx)
     testable_controller.other_route("some_input").should eq "some_input"
   end
+
+  it "should work with custom converters" do
+    result = curl("GET", "/filtering/what_is_this/hotdog")
+    result.body.should eq "true"
+
+    result = curl("GET", "/filtering/what_is_this/NotHotDog")
+    result.body.should eq "false"
+
+    result = curl("GET", "/filtering/what_is_this/hotdog/strict")
+    result.body.should eq "false"
+
+    result = curl("GET", "/filtering/what_is_this/HotDog/strict")
+    result.body.should eq "true"
+  end
 end

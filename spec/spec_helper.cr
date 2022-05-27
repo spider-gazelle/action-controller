@@ -46,7 +46,7 @@ class FilterCheck < FilterOrdering
   # Test default arguments and multiple routes for a single method
   @[AC::Route::GET("/other_route/:id/test")]
   @[AC::Route::GET("/other_route/test")]
-  @[AC::Route::GET("/hex_route/:id", id_custom: {base: 16})]
+  @[AC::Route::GET("/hex_route/:id", config: {id: {base: 16}})]
   def other_route_test(id : UInt32 = 456_u32, query = "hello") : String
     "#{id}-#{query}"
   end
@@ -58,19 +58,39 @@ class FilterCheck < FilterOrdering
   end
 
   @[AC::Route::GET("/enum_route/colour/:colour")]
-  @[AC::Route::GET("/enum_route/colour_value/:colour", colour_custom: {from_value: true})]
+  @[AC::Route::GET("/enum_route/colour_value/:colour", config: {colour: {from_value: true}})]
   def other_route_colour(colour : Colour) : String
     colour.to_s
   end
 
-  @[AC::Route::GET("/time_route/:time", time_custom: {format: "%F %:z"})]
+  @[AC::Route::GET("/time_route/:time", config: {time: {format: "%F %:z"}})]
   def other_route_time(time : Time) : Time
     time
   end
 
-  @[AC::Route::DELETE("/some_entry/:float", float_custom: {strict: false}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]
+  @[AC::Route::DELETE("/some_entry/:float", config: {float: {strict: false}}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]
   def delete_entry(float : Float64) : Float64
     float
+  end
+
+  # custom converter
+  struct IsHotDog
+    def initialize(@strict : Bool = false)
+    end
+
+    def convert(raw : String)
+      if @strict
+        raw == "HotDog"
+      else
+        raw.downcase == "hotdog"
+      end
+    end
+  end
+
+  @[AC::Route::GET("/what_is_this/:thing", converters: {thing: IsHotDog})]
+  @[AC::Route::GET("/what_is_this/:thing/strict", converters: {thing: IsHotDog}, config: {thing: {strict: true}})]
+  def other_route_time(thing : Bool) : Bool
+    thing
   end
 end
 
