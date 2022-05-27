@@ -1,12 +1,14 @@
 require "./spec_helper"
 
 describe AC::Route::Builder do
-  it "should work with shared routes" do
-    result = curl("GET", "/filtering/other_route/1234/test?query=bye")
-    result.body.should eq("1234-bye")
+  client = AC::SpecHelper.client
 
-    result = curl("GET", "/filtering/other_route/test")
-    result.body.should eq "456-hello"
+  it "should work with shared routes" do
+    response = client.get("/filtering/other_route/1234/test?query=bye")
+    response.body.should eq("1234-bye")
+
+    response = client.get("/filtering/other_route/test")
+    response.body.should eq "456-hello"
   end
 
   it "should work with custom param config" do

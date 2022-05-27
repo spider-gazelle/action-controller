@@ -4,6 +4,7 @@ require "xml"
 require "log"
 require "./curl_context"
 require "../src/action-controller"
+require "../src/action-controller/spec_helper"
 
 Spec.before_suite do
   ::Log.setup "*", :debug, Log::IOBackend.new(formatter: ActionController.default_formatter)

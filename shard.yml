@@ -21,6 +21,8 @@ development_dependencies:
     github: veelenga/ameba
   kilt:
     github: jeromegn/kilt
+  hot_topic:
+    github: jgaskins/hot_topic
 
 authors:
   - Stephen von Takach <steve@place.tech>
