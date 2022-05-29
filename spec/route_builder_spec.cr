@@ -4,16 +4,20 @@ describe AC::Route::Builder do
   client = AC::SpecHelper.client
 
   it "should work with shared routes" do
-    result = client.get("/filtering/other_route/1234/test?query=bye")
+    headers = HTTP::Headers{
+      "Accept" => "text/plain",
+    }
+
+    result = client.get("/filtering/other_route/1234/test?query=bye", headers: headers)
     result.body.should eq("1234-bye")
 
-    result = client.get("/filtering/other_route/test")
+    result = client.get("/filtering/other_route/test", headers: headers)
     result.body.should eq "456-hello"
   end
 
   it "should work with custom param config" do
     result = client.get("/filtering/hex_route/ABCD")
-    result.body.should eq "43981-hello"
+    result.body.should eq %("43981-hello")
   end
 
   it "should work with enums" do

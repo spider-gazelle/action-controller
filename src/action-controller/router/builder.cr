@@ -18,7 +18,56 @@ end
 annotation ActionController::Route::Exception
 end
 
+module ActionController::Route
+  class Error < ::Exception
+  end
+
+  class NotAcceptable < Error
+    def initialize(message : String? = nil, @accepts : Array(String)? = nil)
+      super message
+    end
+
+    getter accepts : Array(String)?
+  end
+end
+
 module ActionController::Route::Builder
+  DEFAULT_RESPONDER = ["application/json"]
+  RESPONDERS        = {} of Nil => Nil
+
+  macro default_responder(content_type)
+    {% DEFAULT_RESPONDER[0] = content_type %}
+    {% raise "no responder available for default content type: #{content_type}" unless RESPONDERS[content_type] %}
+  end
+
+  macro add_responder(content_type, &block)
+    {% RESPONDERS[content_type] = block %}
+  end
+
+  macro __build_responder_functions__
+    module {{@type.name.id}}Responders
+      {% for type, block in RESPONDERS %}
+        def self.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{*block.args}})
+          {{block.body}}
+        end
+      {% end %}
+
+      RESPONDERS = [
+        {% for type, _block in RESPONDERS %}
+          {{type}},
+        {% end %}
+      ]
+
+      def self.can_respond_with?(content_type)
+        RESPONDERS.includes? content_type
+      end
+
+      def self.accepts
+        RESPONDERS
+      end
+    end
+  end
+
   macro __parse_inferred_routes__
     # Run through the various route annotations
     {% for route_method in {AC::Route::WebSocket, AC::Route::GET, AC::Route::POST, AC::Route::PUT, AC::Route::PATCH, AC::Route::DELETE, AC::Route::OPTIONS, AC::Route::Filter, AC::Route::Exception} %}
@@ -35,7 +84,6 @@ module ActionController::Route::Builder
           # Grab the response details from the annotations
           {% content_type = ann[:content_type] %}
           {% status_code = ann[:status_code] || HTTP::Status::OK %}
-          {% render_type = ann[:render] || :json %}
 
           # support annotation based filters
           {% if route_method == AC::Route::Filter %}
@@ -57,6 +105,13 @@ module ActionController::Route::Builder
 
             # :nodoc:
             def {{function_wrapper_name}}(error)
+              # Check we can satisfy the accepts header, if provided
+              {% if content_type %}
+                responds_with = {{content_type}}
+              {% else %}
+                responds_with = accepts_formats.first? || {{ DEFAULT_RESPONDER[0] }}
+                responds_with = {{ DEFAULT_RESPONDER[0] }} unless {{@type.name.id}}Responders.can_respond_with?(responds_with)
+              {% end %}
           {% else %}
             # annotation based route
 
@@ -81,9 +136,16 @@ module ActionController::Route::Builder
             {% else %}
               # :nodoc:
               {{lower_route_method}} {{ann[0]}}, reference: {{method_name}} do
+
+                # Check we can satisfy the accepts header, if provided
+                {% if content_type %}
+                  responds_with = {{content_type}}
+                {% else %}
+                  responds_with = accepts_formats.first? || {{ DEFAULT_RESPONDER[0] }}
+                  raise AC::Route::NotAcceptable.new("no renderer available for #{responds_with}", {{@type.name.id}}Responders.accepts) unless {{@type.name.id}}Responders.can_respond_with?(responds_with)
+                {% end %}
             {% end %}
           {% end %}
-
             # grab any custom converters or customisations
             {% converters = ann[:converters] || {} of SymbolLiteral => NilLiteral %}
             {% config = ann[:config] || {} of SymbolLiteral => NilLiteral %}
@@ -176,10 +238,28 @@ module ActionController::Route::Builder
 
             {% if !{AC::Route::Filter, AC::Route::WebSocket}.includes?(route_method) %}
               unless @render_called
-                {% if content_type %}
-                  @context.response.headers["Content-Type"] = {{content_type}}
-                {% end %}
-                render({{status_code}}, {{render_type.id}}: result)
+                responose = @context.response
+                response.status_code = ({{status_code}}).to_i
+                content_type = response.headers["Content-Type"]?
+                response.headers["Content-Type"] = responds_with unless content_type
+
+                session = @__session__
+                session.encode(response.cookies) if session && session.modified
+
+                unless @__head_request__
+                  puts "RESPONDS WITH: #{responds_with}"
+                  case responds_with
+                  {% for type, _block in RESPONDERS %}
+                    when {{type}}
+                      {{@type.name.id}}Responders.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result)
+                  {% end %}
+                  else
+                    # return the default, which is allowed in HTTP 1.1
+                    # we've checked the accepts header at the top of the function and this might be an error response
+                    {{@type.name.id}}Responders.{{DEFAULT_RESPONDER[0].gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result)
+                  end
+                end
+                @render_called = true
               end
             {% end %}
           end
@@ -189,8 +269,13 @@ module ActionController::Route::Builder
 	end
 
   macro included
+    add_responder("application/json") { |io, result| result.to_json(io) }
+    add_responder("application/yaml") { |io, result| result.to_yaml(io) }
+    default_responder "application/json"
+
     macro inherited
       macro finished
+        __build_responder_functions__
         __parse_inferred_routes__
       end
     end

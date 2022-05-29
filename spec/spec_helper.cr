@@ -37,7 +37,7 @@ class FilterCheck < FilterOrdering
     render text: "ok"
   end
 
-  @[AC::Route::GET("/other_route/:id", render: :text)]
+  @[AC::Route::GET("/other_route/:id", content_type: "text/plain")]
   def other_route(id : String) : String
     id
   end
@@ -56,8 +56,8 @@ class FilterCheck < FilterOrdering
     Blue
   end
 
-  @[AC::Route::GET("/enum_route/colour/:colour")]
-  @[AC::Route::GET("/enum_route/colour_value/:colour", config: {colour: {from_value: true}})]
+  @[AC::Route::GET("/enum_route/colour/:colour", content_type: "text/plain")]
+  @[AC::Route::GET("/enum_route/colour_value/:colour", config: {colour: {from_value: true}}, content_type: "text/plain")]
   def other_route_colour(colour : Colour) : String
     colour.to_s
   end
@@ -151,6 +151,7 @@ end
 class BobJane < ActionController::Base
   # base "/bob/jane" # <== automatically configured
   before_action :modify_session, only: :modified_session
+  add_responder "text/plain" { |io, result| result.to_s(io) }
 
   # Test default CRUD
   def index
@@ -197,7 +198,7 @@ class BobJane < ActionController::Base
 end
 
 abstract class Application < ActionController::Base
-  @[AC::Route::Exception(DivisionByZeroError, status_code: :bad_request, render_type: :text)]
+  @[AC::Route::Exception(DivisionByZeroError, status_code: HTTP::Status::BAD_REQUEST, content_type: "text/plain")]
   def confirm_trust(error, id : String?)
     error.message
   end
