@@ -20,10 +20,6 @@ end
 
 module ActionController::Route
   class Error < ::Exception
-  end
-
-  # we don't support any of the accepted response content types
-  class NotAcceptable < Error
     def initialize(message : String? = nil, @accepts : Array(String)? = nil)
       super message
     end
@@ -31,8 +27,12 @@ module ActionController::Route
     getter accepts : Array(String)?
   end
 
+  # we don't support any of the accepted response content types
+  class NotAcceptable < Error
+  end
+
   # we don't support the posted media type
-  class UnsupportedMediaType < NotAcceptable
+  class UnsupportedMediaType < Error
   end
 end
 
@@ -127,6 +127,7 @@ module ActionController::Route::Builder
 
           # Grab the response details from the annotations
           {% content_type = ann[:content_type] %}
+          {% param_mapping = ann[:map] || {} of SymbolLiteral => SymbolLiteral %} # function argument name => param name
           {% status_code = ann[:status_code] || HTTP::Status::OK %}
           {% body_argument = (ann[:body] || "%").id.stringify %} # % is an invalid argument name
 
@@ -211,6 +212,7 @@ module ActionController::Route::Builder
                 {% for arg, arg_index in method.args %}
                   {% unless arg_index == 0 && {AC::Route::Exception, AC::Route::WebSocket}.includes?(route_method) %}
                     {% string_name = arg.name.id.stringify %}
+                    {% query_param_name = (param_mapping[string_name.id.symbolize] || string_name).id.stringify %}
 
                     # Calculate the conversions required to meet the desired restrictions
                     {% if arg.restriction %}
@@ -270,7 +272,7 @@ module ActionController::Route::Builder
 
                       # Required route param, so we ensure it
                       {% elsif required_params.includes? string_name %}
-                        if param_value = route_params[{{string_name}}]?
+                        if param_value = route_params[{{query_param_name}}]?
                           {{restrictions.join(" || ").id}}
                         else
                           raise ::AC::Route::Param::MissingError.new("missing required parameter", {{string_name}}, {{arg.restriction.resolve.stringify}})
@@ -278,7 +280,7 @@ module ActionController::Route::Builder
 
                       # An optional route param, might be passed as an query param
                       {% else %}
-                        if param_value = params[{{string_name}}]?
+                        if param_value = params[{{query_param_name}}]?
                           {{restrictions.join(" || ").id}}
                         {% if arg.default_value %}
                         else

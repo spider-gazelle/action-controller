@@ -67,9 +67,9 @@ class FilterCheck < FilterOrdering
     time
   end
 
-  @[AC::Route::DELETE("/some_entry/:float", config: {float: {strict: false}}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]
-  def delete_entry(float : Float64) : Float64
-    float
+  @[AC::Route::DELETE("/some_entry/:float", map: {value: :float}, config: {value: {strict: false}}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]
+  def delete_entry(value : Float64) : Float64
+    value
   end
 
   @[AC::Route::POST("/some_entry/", status_code: HTTP::Status::ACCEPTED, body: :float)]
