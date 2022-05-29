@@ -72,6 +72,11 @@ class FilterCheck < FilterOrdering
     float
   end
 
+  @[AC::Route::POST("/some_entry/", status_code: HTTP::Status::ACCEPTED, body: :float)]
+  def create_entry(float : Float64) : Float64
+    float
+  end
+
   # custom converter
   struct IsHotDog
     def initialize(@strict : Bool = false)

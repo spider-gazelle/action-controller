@@ -53,4 +53,9 @@ describe AC::Route::Builder do
     result = client.get("/filtering/what_is_this/HotDog/strict")
     result.body.should eq "true"
   end
+
+  it "should work with a body param" do
+    result = client.post("/filtering/some_entry", body: "34.5")
+    result.body.should eq %(34.5)
+  end
 end

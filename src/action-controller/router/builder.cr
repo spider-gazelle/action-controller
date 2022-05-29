@@ -22,12 +22,17 @@ module ActionController::Route
   class Error < ::Exception
   end
 
+  # we don't support any of the accepted response content types
   class NotAcceptable < Error
     def initialize(message : String? = nil, @accepts : Array(String)? = nil)
       super message
     end
 
     getter accepts : Array(String)?
+  end
+
+  # we don't support the posted media type
+  class UnsupportedMediaType < NotAcceptable
   end
 end
 
@@ -44,9 +49,23 @@ module ActionController::Route::Builder
     {% RESPONDERS[content_type] = block %}
   end
 
-  macro __build_responder_functions__
-    module {{@type.name.id}}Responders
+  DEFAULT_PARSER = ["application/json"]
+  PARSERS        = {} of Nil => Nil
+
+  macro default_parser(content_type)
+    {% DEFAULT_PARSER[0] = content_type %}
+    {% raise "no responder available for default content type: #{content_type}" unless PARSERS[content_type] %}
+  end
+
+  macro add_parser(content_type, &block)
+    {% PARSERS[content_type] = block %}
+  end
+
+  macro __build_transformer_functions__
+    # :nodoc:
+    module {{@type.name.id}}Transformers
       {% for type, block in RESPONDERS %}
+        # :nodoc:
         def self.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{*block.args}})
           {{block.body}}
         end
@@ -58,12 +77,37 @@ module ActionController::Route::Builder
         {% end %}
       ]
 
+      # :nodoc:
       def self.can_respond_with?(content_type)
         RESPONDERS.includes? content_type
       end
 
+      # :nodoc:
       def self.accepts
         RESPONDERS
+      end
+
+      {% for type, block in PARSERS %}
+        # :nodoc:
+        def self.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{*block.args}})
+          {{block.body}}
+        end
+      {% end %}
+
+      PARSERS = [
+        {% for type, _block in PARSERS %}
+          {{type}},
+        {% end %}
+      ]
+
+      # :nodoc:
+      def self.can_parse?(content_type)
+        PARSERS.includes? content_type
+      end
+
+      # :nodoc:
+      def self.parsable
+        PARSERS
       end
     end
   end
@@ -84,6 +128,7 @@ module ActionController::Route::Builder
           # Grab the response details from the annotations
           {% content_type = ann[:content_type] %}
           {% status_code = ann[:status_code] || HTTP::Status::OK %}
+          {% body_argument = (ann[:body] || "%").id.stringify %} # % is an invalid argument name
 
           # support annotation based filters
           {% if route_method == AC::Route::Filter %}
@@ -110,7 +155,7 @@ module ActionController::Route::Builder
                 responds_with = {{content_type}}
               {% else %}
                 responds_with = accepts_formats.first? || {{ DEFAULT_RESPONDER[0] }}
-                responds_with = {{ DEFAULT_RESPONDER[0] }} unless {{@type.name.id}}Responders.can_respond_with?(responds_with)
+                responds_with = {{ DEFAULT_RESPONDER[0] }} unless {{@type.name.id}}Transformers.can_respond_with?(responds_with)
               {% end %}
           {% else %}
             # annotation based route
@@ -142,7 +187,7 @@ module ActionController::Route::Builder
                   responds_with = {{content_type}}
                 {% else %}
                   responds_with = accepts_formats.first? || {{ DEFAULT_RESPONDER[0] }}
-                  raise AC::Route::NotAcceptable.new("no renderer available for #{responds_with}", {{@type.name.id}}Responders.accepts) unless {{@type.name.id}}Responders.can_respond_with?(responds_with)
+                  raise AC::Route::NotAcceptable.new("no renderer available for #{responds_with}", {{@type.name.id}}Transformers.accepts) unless {{@type.name.id}}Transformers.can_respond_with?(responds_with)
                 {% end %}
             {% end %}
           {% end %}
@@ -154,6 +199,14 @@ module ActionController::Route::Builder
             {% if method.args.empty? %}
               result = {{method_name.id}}
             {% else %}
+              # check we can parse the body if a content type is provided
+              {% if body_argument != "%" %}
+                body_type = @context.request.headers["Content-Type"]? || {{ DEFAULT_PARSER[0] }}
+                unless {{@type.name.id}}Transformers.can_parse?(body_type)
+                  raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{@type.name.id}}Transformers.parsable)
+                end
+              {% end %}
+
               args = {
                 {% for arg, arg_index in method.args %}
                   {% unless arg_index == 0 && {AC::Route::Exception, AC::Route::WebSocket}.includes?(route_method) %}
@@ -185,6 +238,10 @@ module ActionController::Route::Builder
                           {% restrictions = ["::AC::Route::Param::Convert" + union_types[0].stringify + ".new(**" + converter_args.stringify + ").convert(param_value)"] %}
                         {% end %}
 
+                      # do we want to parse the request body
+                      {% elsif body_argument == string_name %}
+                        # ignore this arg here
+
                       # There are a bunch of types this might be
                       {% else %}
                         {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
@@ -201,9 +258,18 @@ module ActionController::Route::Builder
 
                     # Build the argument named tuple with the correct types
                     {{arg.name.id}}: (
+                      {% if body_argument == string_name %}
+                        if body_io = @context.request.body
+                          case body_type
+                          {% for type, _block in PARSERS %}
+                            when {{type}}
+                              {{@type.name.id}}Transformers.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{ arg.restriction }}, body_io)
+                          {% end %}
+                          end
+                        end
 
                       # Required route param, so we ensure it
-                      {% if required_params.includes? string_name %}
+                      {% elsif required_params.includes? string_name %}
                         if param_value = route_params[{{string_name}}]?
                           {{restrictions.join(" || ").id}}
                         else
@@ -247,16 +313,15 @@ module ActionController::Route::Builder
                 session.encode(response.cookies) if session && session.modified
 
                 unless @__head_request__
-                  puts "RESPONDS WITH: #{responds_with}"
                   case responds_with
                   {% for type, _block in RESPONDERS %}
                     when {{type}}
-                      {{@type.name.id}}Responders.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result)
+                      {{@type.name.id}}Transformers.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result)
                   {% end %}
                   else
                     # return the default, which is allowed in HTTP 1.1
                     # we've checked the accepts header at the top of the function and this might be an error response
-                    {{@type.name.id}}Responders.{{DEFAULT_RESPONDER[0].gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result)
+                    {{@type.name.id}}Transformers.{{DEFAULT_RESPONDER[0].gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result)
                   end
                 end
                 @render_called = true
@@ -273,9 +338,13 @@ module ActionController::Route::Builder
     add_responder("application/yaml") { |io, result| result.to_yaml(io) }
     default_responder "application/json"
 
+    add_parser("application/json") { |klass, body_io| klass.from_json(body_io.gets_to_end) }
+    add_parser("application/yaml") { |klass, body_io| klass.from_yaml(body_io.gets_to_end) }
+    default_parser "application/json"
+
     macro inherited
       macro finished
-        __build_responder_functions__
+        __build_transformer_functions__
         __parse_inferred_routes__
       end
     end
