@@ -26,6 +26,9 @@ end
 class FilterCheck < FilterOrdering
   base "/filtering"
 
+  add_responder("application/yaml") { |io, result| result.to_yaml(io) }
+  add_parser("application/yaml") { |klass, body_io| klass.from_yaml(body_io.gets_to_end) }
+
   @[AC::Route::Filter(:before_action)]
   def confirm_trust(id : String?)
     render :forbidden, text: "Trust confirmation failed" unless @trusted
@@ -65,6 +68,11 @@ class FilterCheck < FilterOrdering
   @[AC::Route::GET("/time_route/:time", config: {time: {format: "%F %:z"}})]
   def other_route_time(time : Time) : Time
     time
+  end
+
+  @[AC::Route::GET("/multistatus/:id", status: {Int32 => 201, String => 202})]
+  def multistatus_test(id : Int32 | String)
+    id
   end
 
   @[AC::Route::DELETE("/some_entry/:float", map: {value: :float}, config: {value: {strict: false}}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]

@@ -58,4 +58,12 @@ describe AC::Route::Builder do
     result = client.post("/filtering/some_entry", body: "34.5")
     result.body.should eq %(34.5)
   end
+
+  it "should work with different status types" do
+    result = client.get("/filtering/multistatus/45")
+    result.status_code.should eq 201
+
+    result = client.get("/filtering/multistatus/hello")
+    result.status_code.should eq 202
+  end
 end

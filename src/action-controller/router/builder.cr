@@ -129,6 +129,7 @@ module ActionController::Route::Builder
           {% content_type = ann[:content_type] %}
           {% param_mapping = ann[:map] || {} of SymbolLiteral => SymbolLiteral %} # function argument name => param name
           {% status_code = ann[:status_code] || HTTP::Status::OK %}
+          {% status_code_map = ann[:status] || {} of TypeNode => Path %}
           {% body_argument = (ann[:body] || "%").id.stringify %} # % is an invalid argument name
 
           # support annotation based filters
@@ -307,7 +308,18 @@ module ActionController::Route::Builder
             {% if !{AC::Route::Filter, AC::Route::WebSocket}.includes?(route_method) %}
               unless @render_called
                 responose = @context.response
-                response.status_code = ({{status_code}}).to_i
+                {% if status_code_map.empty? %}
+                  response.status_code = ({{status_code}}).to_i
+                {% else %}
+                  case result
+                    {% for result_klass, status_mapped in status_code_map %}
+                  when {{result_klass}}
+                      response.status_code = ({{status_mapped}}).to_i
+                    {% end %}
+                  else
+                    response.status_code = ({{status_code}}).to_i
+                  end
+                {% end %}
                 content_type = response.headers["Content-Type"]?
                 response.headers["Content-Type"] = responds_with unless content_type
 
@@ -336,12 +348,11 @@ module ActionController::Route::Builder
 	end
 
   macro included
+    # JSON APIs by default
     add_responder("application/json") { |io, result| result.to_json(io) }
-    add_responder("application/yaml") { |io, result| result.to_yaml(io) }
     default_responder "application/json"
 
     add_parser("application/json") { |klass, body_io| klass.from_json(body_io.gets_to_end) }
-    add_parser("application/yaml") { |klass, body_io| klass.from_yaml(body_io.gets_to_end) }
     default_parser "application/json"
 
     macro inherited
