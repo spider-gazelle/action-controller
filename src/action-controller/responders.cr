@@ -84,12 +84,13 @@ module ActionController::Responders
     yaml:   "text/yaml",
   }
 
-  macro render(status = :ok, head = Nop, json = Nop, yaml = Nop, xml = Nop, html = Nop, text = Nop, binary = Nop, template = Nop, partial = Nop, layout = nil)
+  macro render(status = :ok, head = nil, json = nil, yaml = nil, xml = nil, html = nil, text = nil, binary = nil, template = nil, partial = nil, layout = nil)
     {% if [head, json, xml, html, yaml, text, binary, template, partial].all?(&.is_a?(Path)) %}
       {{ raise "Render must be called with one of json, xml, html, yaml, text, binary, template, partial" }}
     {% end %}
 
     %response = @context.response
+    %ret_val = {{ json || yaml || xml || html || text || binary || template || partial }}
 
     {% if status.is_a?(SymbolLiteral) %}
       %response.status_code = {{STATUS_CODES[status]}}
@@ -102,45 +103,51 @@ module ActionController::Responders
     %session = @__session__
     %session.encode(%response.cookies) if %session && %session.modified
 
-    {% if !json.is_a? Path %}
+    {% if json %}
       %response.content_type = {{MIME_TYPES[:json]}} unless %ctype
-      {% if json.is_a?(String) %}
-        {{json}}.to_s(%response) unless @__head_request__
-      {% else %}
-        ({{json}}).to_json(%response) unless @__head_request__
-      {% end %}
+      unless @__head_request__
+        %json = ({{json}})
+        if %json.is_a?(String)
+          %json.to_s(%response)
+        else
+          %json.to_json(%response)
+        end
+      end
     {% end %}
 
-    {% if !yaml.is_a? Path %}
+    {% if yaml %}
       %response.content_type = {{MIME_TYPES[:yaml]}} unless %ctype
-      {% if yaml.is_a?(String) %}
-        {{yaml}}.to_s(%response) unless @__head_request__
-      {% else %}
-        ({{yaml}}).to_yaml(%response) unless @__head_request__
-      {% end %}
+      unless @__head_request__
+        %yaml = ({{yaml}})
+        if %yaml.is_a?(String)
+          %yaml.to_s(%response)
+        else
+          %yaml.to_yaml(%response)
+        end
+      end
     {% end %}
 
-    {% if !xml.is_a? Path %}
+    {% if xml %}
       %response.content_type = {{MIME_TYPES[:xml]}} unless %ctype
       {{xml}}.to_s(%response) unless @__head_request__
     {% end %}
 
-    {% if !html.is_a? Path %}
+    {% if html %}
       %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       {{html}}.to_s(%response) unless @__head_request__
     {% end %}
 
-    {% if !text.is_a? Path %}
+    {% if text %}
       %response.content_type = {{MIME_TYPES[:text]}} unless %ctype
       {{text}}.to_s(%response) unless @__head_request__
     {% end %}
 
-    {% if !binary.is_a? Path %}
+    {% if binary %}
       %response.content_type = {{MIME_TYPES[:binary]}} unless %ctype
       {{binary}}.to_s(%response) unless @__head_request__
     {% end %}
 
-    {% if !template.is_a? Path %}
+    {% if template %}
       %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       {% if layout %}
         template({{template}}, layout: {{layout}}, io: %response) unless @__head_request__
@@ -149,13 +156,13 @@ module ActionController::Responders
       {% end %}
     {% end %}
 
-    {% if !partial.is_a? Path %}
+    {% if partial %}
       %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       template(partial: {{partial}}, io: %response) unless @__head_request__
     {% end %}
 
     @render_called = true
-    return
+    return %ret_val
   end
 
   macro head(status)

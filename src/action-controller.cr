@@ -8,6 +8,8 @@ module ActionController
   {% end %}
 end
 
+alias AC = ActionController
+
 require "./action-controller/router"
 require "./action-controller/errors"
 require "./action-controller/base"

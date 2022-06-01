@@ -2,7 +2,7 @@ require "kilt"
 require "spec"
 require "xml"
 require "log"
-require "../src/action-controller"
+require "../src/action-controller/spec_helper"
 
 Spec.before_suite do
   ::Log.setup "*", :debug, Log::IOBackend.new(formatter: ActionController.default_formatter)
@@ -25,14 +25,84 @@ end
 
 class FilterCheck < FilterOrdering
   base "/filtering"
-  before_action :confirm_trust
 
+  add_responder("application/yaml") { |io, result| result.to_yaml(io) }
+  add_parser("application/yaml") { |klass, body_io| klass.from_yaml(body_io.gets_to_end) }
+
+  @[AC::Route::Filter(:before_action)]
+  def confirm_trust(id : String?)
+    render :forbidden, text: "Trust confirmation failed" unless @trusted
+  end
+
+  # Ensure that magic methods don't interfere with our annotation routing
+  @[AC::Route::GET("/")]
   def index
     render text: "ok"
   end
 
-  def confirm_trust
-    render :forbidden, text: "Trust confirmation failed" unless @trusted
+  @[AC::Route::GET("/other_route/:id", content_type: "text/plain")]
+  def other_route(id : String) : String
+    id
+  end
+
+  # Test default arguments and multiple routes for a single method
+  @[AC::Route::GET("/other_route/:id/test")]
+  @[AC::Route::GET("/other_route/test")]
+  @[AC::Route::GET("/hex_route/:id", config: {id: {base: 16}})]
+  def other_route_test(id : UInt32 = 456_u32, query = "hello") : String
+    "#{id}-#{query}"
+  end
+
+  enum Colour
+    Red
+    Green
+    Blue
+  end
+
+  @[AC::Route::GET("/enum_route/colour/:colour", content_type: "text/plain")]
+  @[AC::Route::GET("/enum_route/colour_value/:colour", config: {colour: {from_value: true}}, content_type: "text/plain")]
+  def other_route_colour(colour : Colour) : String
+    colour.to_s
+  end
+
+  @[AC::Route::GET("/time_route/:time", config: {time: {format: "%F %:z"}})]
+  def other_route_time(time : Time) : Time
+    time
+  end
+
+  @[AC::Route::GET("/multistatus/:id", status: {Int32 => 201, String => 202})]
+  def multistatus_test(id : Int32 | String)
+    id
+  end
+
+  @[AC::Route::DELETE("/some_entry/:float", map: {value: :float}, config: {value: {strict: false}}, status_code: HTTP::Status::ACCEPTED, content_type: "json/custom")]
+  def delete_entry(value : Float64) : Float64
+    value
+  end
+
+  @[AC::Route::POST("/some_entry/", status_code: HTTP::Status::ACCEPTED, body: :float)]
+  def create_entry(float : Float64) : Float64
+    float
+  end
+
+  # custom converter
+  struct IsHotDog
+    def initialize(@strict : Bool = false)
+    end
+
+    def convert(raw : String)
+      if @strict
+        raw == "HotDog"
+      else
+        raw.downcase == "hotdog"
+      end
+    end
+  end
+
+  @[AC::Route::GET("/what_is_this/:thing", converters: {thing: IsHotDog})]
+  @[AC::Route::GET("/what_is_this/:thing/strict", converters: {thing: IsHotDog}, config: {thing: {strict: true}})]
+  def other_route_time(thing : Bool) : Bool
+    thing
   end
 end
 
@@ -94,6 +164,7 @@ end
 class BobJane < ActionController::Base
   # base "/bob/jane" # <== automatically configured
   before_action :modify_session, only: :modified_session
+  add_responder "text/plain" { |io, result| result.to_s(io) }
 
   # Test default CRUD
   def index
@@ -140,8 +211,9 @@ class BobJane < ActionController::Base
 end
 
 abstract class Application < ActionController::Base
-  rescue_from DivisionByZeroError do |error|
-    render :bad_request, text: error.message
+  @[AC::Route::Exception(DivisionByZeroError, status_code: HTTP::Status::BAD_REQUEST, content_type: "text/plain")]
+  def confirm_trust(error, id : String?)
+    error.message
   end
 end
 
@@ -227,7 +299,8 @@ class HelloWorld < Application
   end
 
   SOCKETS = [] of HTTP::WebSocket
-  ws "/websocket", :websocket do |socket|
+  @[AC::Route::WebSocket("/websocket")]
+  def websocket(socket, _id : String?)
     puts "Socket opened"
     SOCKETS << socket
 
@@ -267,7 +340,6 @@ class HelloWorld < Application
 end
 
 require "../src/action-controller/server"
-require "./curl_context"
 
 # require "random"
 # Random::Secure.hex
