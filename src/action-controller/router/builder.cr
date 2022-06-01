@@ -66,7 +66,7 @@ module ActionController::Route::Builder
     module {{@type.name.id}}Transformers
       {% for type, block in RESPONDERS %}
         # :nodoc:
-        def self.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{*block.args}})
+        def self.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{*block.args}}, *_args)
           {{block.body}}
         end
       {% end %}
@@ -330,12 +330,12 @@ module ActionController::Route::Builder
                   case responds_with
                   {% for type, _block in RESPONDERS %}
                     when {{type}}
-                      {{@type.name.id}}Transformers.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result)
+                      {{@type.name.id}}Transformers.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
                   {% end %}
                   else
                     # return the default, which is allowed in HTTP 1.1
                     # we've checked the accepts header at the top of the function and this might be an error response
-                    {{@type.name.id}}Transformers.{{DEFAULT_RESPONDER[0].gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result)
+                    {{@type.name.id}}Transformers.{{DEFAULT_RESPONDER[0].gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
                   end
                 end
                 @render_called = true
