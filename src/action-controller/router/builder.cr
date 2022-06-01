@@ -135,7 +135,7 @@ module ActionController::Route::Builder
           {% if route_method == AC::Route::Filter %}
             {% required_params = [] of StringLiteral %}
             {% filter_type = ann[0].id %}
-            {% function_wrapper_name = "_#{filter_type}_#{method_name}_wrapper_".id %}
+            {% function_wrapper_name = "_#{filter_type.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
 
             {{filter_type}}({{function_wrapper_name.symbolize}}, only: {{ann[:only]}}, except: {{ann[:except]}})
 
@@ -145,9 +145,9 @@ module ActionController::Route::Builder
             # annotation based exception handlers
             {% required_params = [] of StringLiteral %}
             {% exception_class = ann[0] %}
-            {% function_wrapper_name = "_#{exception_class.stringify.downcase.id}_#{method_name}_wrapper_".id %}
+            {% function_wrapper_name = "_#{exception_class.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
 
-            rescue_from DivisionByZeroError, {{function_wrapper_name.symbolize}}
+            rescue_from {{exception_class}}, {{function_wrapper_name.symbolize}}
 
             # :nodoc:
             def {{function_wrapper_name}}(error)
@@ -197,8 +197,14 @@ module ActionController::Route::Builder
             {% config = ann[:config] || {} of SymbolLiteral => NilLiteral %}
 
             # Write the method body
-            {% if method.args.empty? %}
-              result = {{method_name.id}}
+            {% if method.args.empty? || ({AC::Route::Exception, AC::Route::WebSocket}.includes?(route_method) && method.args.size == 1) %}
+              {% if route_method == AC::Route::WebSocket %}
+                {{method_name.id}}(socket)
+              {% elsif route_method == AC::Route::Exception %}
+                result = {{method_name.id}}(error)
+              {% else %}
+                result = {{method_name.id}}
+              {% end %}
             {% else %}
               # check we can parse the body if a content type is provided
               {% if body_argument != "%" %}
