@@ -59,6 +59,13 @@ describe AC::Route::Builder do
     result.body.should eq %(34.5)
   end
 
+  it "should pass the klass and function name to responders" do
+    result = client.post("/filtering/some_entry", body: "34.5", headers: HTTP::Headers{
+      "Accept" => "text/html",
+    })
+    result.body.should eq %(filter_check == create_entry)
+  end
+
   it "should work with different status types" do
     result = client.get("/filtering/multistatus/45")
     result.status_code.should eq 201

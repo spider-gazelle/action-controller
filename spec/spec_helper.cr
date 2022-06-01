@@ -29,6 +29,8 @@ class FilterCheck < FilterOrdering
   add_responder("application/yaml") { |io, result| result.to_yaml(io) }
   add_parser("application/yaml") { |klass, body_io| klass.from_yaml(body_io.gets_to_end) }
 
+  add_responder("text/html") { |io, _result, klass, function| "#{klass} == #{function}".to_s(io) }
+
   @[AC::Route::Filter(:before_action)]
   def confirm_trust(id : String?)
     render :forbidden, text: "Trust confirmation failed" unless @trusted
