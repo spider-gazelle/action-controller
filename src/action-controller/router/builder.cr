@@ -62,16 +62,16 @@ module ActionController::Route::Builder
   end
 
   macro __build_transformer_functions__
-    # :nodoc:
-    module {{@type.name.id}}Transformers
       {% for type, block in RESPONDERS %}
         # :nodoc:
-        def self.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{*block.args}}, *_args)
-          {{block.body}}
+        def self.transform_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(%instance, {{*block.args}}, *_args)
+          __yield__(%instance) do
+            {{block.body}}
+          end
         end
       {% end %}
 
-      RESPONDERS = [
+      RESPONDER_LIST = [
         {% for type, _block in RESPONDERS %}
           {{type}},
         {% end %}
@@ -79,12 +79,12 @@ module ActionController::Route::Builder
 
       # :nodoc:
       def self.can_respond_with?(content_type)
-        RESPONDERS.includes? content_type
+        RESPONDER_LIST.includes? content_type
       end
 
       # :nodoc:
       def self.accepts
-        RESPONDERS
+        RESPONDER_LIST
       end
 
       {% for type, block in PARSERS %}
@@ -94,7 +94,7 @@ module ActionController::Route::Builder
         end
       {% end %}
 
-      PARSERS = [
+      PARSER_LIST = [
         {% for type, _block in PARSERS %}
           {{type}},
         {% end %}
@@ -102,14 +102,13 @@ module ActionController::Route::Builder
 
       # :nodoc:
       def self.can_parse?(content_type)
-        PARSERS.includes? content_type
+        PARSER_LIST.includes? content_type
       end
 
       # :nodoc:
       def self.parsable
-        PARSERS
+        PARSER_LIST
       end
-    end
   end
 
   macro __parse_inferred_routes__
@@ -157,7 +156,7 @@ module ActionController::Route::Builder
                 responds_with = {{content_type}}
               {% else %}
                 responds_with = accepts_formats.first? || {{ DEFAULT_RESPONDER[0] }}
-                responds_with = {{ DEFAULT_RESPONDER[0] }} unless {{@type.name.id}}Transformers.can_respond_with?(responds_with)
+                responds_with = {{ DEFAULT_RESPONDER[0] }} unless {{@type.name.id}}.can_respond_with?(responds_with)
               {% end %}
           {% else %}
             # annotation based route
@@ -189,7 +188,7 @@ module ActionController::Route::Builder
                   responds_with = {{content_type}}
                 {% else %}
                   responds_with = accepts_formats.first? || {{ DEFAULT_RESPONDER[0] }}
-                  raise AC::Route::NotAcceptable.new("no renderer available for #{responds_with}", {{@type.name.id}}Transformers.accepts) unless {{@type.name.id}}Transformers.can_respond_with?(responds_with)
+                  raise AC::Route::NotAcceptable.new("no renderer available for #{responds_with}", {{@type.name.id}}.accepts) unless {{@type.name.id}}.can_respond_with?(responds_with)
                 {% end %}
             {% end %}
           {% end %}
@@ -204,8 +203,8 @@ module ActionController::Route::Builder
               # check we can parse the body if a content type is provided
               {% if body_argument != "%" %}
                 body_type = @context.request.headers["Content-Type"]? || {{ DEFAULT_PARSER[0] }}
-                unless {{@type.name.id}}Transformers.can_parse?(body_type)
-                  raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{@type.name.id}}Transformers.parsable)
+                unless {{@type.name.id}}.can_parse?(body_type)
+                  raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{@type.name.id}}.parsable)
                 end
               {% end %}
 
@@ -266,7 +265,7 @@ module ActionController::Route::Builder
                           case body_type
                           {% for type, _block in PARSERS %}
                             when {{type}}
-                              {{@type.name.id}}Transformers.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{ arg.restriction }}, body_io)
+                              {{@type.name.id}}.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{ arg.restriction }}, body_io)
                           {% end %}
                           end
                         end
@@ -330,12 +329,12 @@ module ActionController::Route::Builder
                   case responds_with
                   {% for type, _block in RESPONDERS %}
                     when {{type}}
-                      {{@type.name.id}}Transformers.{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
+                      {{@type.name.id}}.transform_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
                   {% end %}
                   else
                     # return the default, which is allowed in HTTP 1.1
                     # we've checked the accepts header at the top of the function and this might be an error response
-                    {{@type.name.id}}Transformers.{{DEFAULT_RESPONDER[0].gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
+                    {{@type.name.id}}.transform_{{DEFAULT_RESPONDER[0].gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
                   end
                 end
                 @render_called = true

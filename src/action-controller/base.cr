@@ -40,7 +40,7 @@ abstract class ActionController::Base
 
   macro template(template = nil, partial = nil, layout = nil, io = nil)
     {% if !(template || partial) %}
-      raise "Template or partial required!"
+      {% raise "template or partial required!" %}
     {% else %}
       {% filename = partial || template %}
       {% layout = layout || TEMPLATE_LAYOUT[@type.id] %}
