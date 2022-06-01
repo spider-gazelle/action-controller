@@ -37,6 +37,7 @@ module ActionController::Route
 end
 
 module ActionController::Route::Builder
+  ROUTE_FUNCTIONS   = {} of Nil => Nil
   DEFAULT_RESPONDER = ["application/json"]
   RESPONDERS        = {} of Nil => Nil
 
@@ -112,17 +113,19 @@ module ActionController::Route::Builder
   end
 
   macro __parse_inferred_routes__
-    # Run through the various route annotations
-    {% for route_method in {AC::Route::WebSocket, AC::Route::GET, AC::Route::POST, AC::Route::PUT, AC::Route::PATCH, AC::Route::DELETE, AC::Route::OPTIONS, AC::Route::Filter, AC::Route::Exception} %}
-      {% lower_route_method = route_method.stringify.split("::")[-1].downcase.id %}
+    # Check if they have been applied to any of the methods
+    {% for method in @type.methods %}
+      {% method_name = method.name %}
+      {% annotation_found = false %}
 
-      # Check if they have been applied to any of the methods
-      {% for method in @type.methods %}
+      # Run through the various route annotations
+      {% for route_method in {AC::Route::WebSocket, AC::Route::GET, AC::Route::POST, AC::Route::PUT, AC::Route::PATCH, AC::Route::DELETE, AC::Route::OPTIONS, AC::Route::Filter, AC::Route::Exception} %}
+        {% lower_route_method = route_method.stringify.split("::")[-1].downcase.id %}
 
         # Multiple routes can be applied to a single method
         {% for ann, idx in method.annotations(route_method) %}
-          {% method_name = method.name %}
-          {% raise "#{@type}##{method_name} accepts a block which is incompatible with the router" if method.accepts_block? %}
+          {% annotation_found = true %}
+          {% raise "#{@type.name}##{method_name} accepts a block, this is incompatible with the router" if method.accepts_block? %}
 
           # Grab the response details from the annotations
           {% content_type = ann[:content_type] %}
@@ -348,6 +351,20 @@ module ActionController::Route::Builder
             {% end %}
           end
         {% end %}
+      {% end %}
+
+      {% if annotation_found %}
+        # ensure this method hasn't already been used (overloading is undesirable)
+        {% klasses = [@type.name.id] %}
+        {% @type.ancestors.each { |name| klasses.unshift(name) } %}
+
+        {% for klass in klasses %}
+          {% if ROUTE_FUNCTIONS["#{klass}##{method_name}"] %}
+            {% raise "#{@type.name.id}##{method_name} already exists in #{klass}, duplicate annotated function names are not allowed" %}
+          {% end %}
+        {% end %}
+
+        {% ROUTE_FUNCTIONS["#{@type.name.id}##{method_name}"] = true %}
       {% end %}
     {% end %}
 	end

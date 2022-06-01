@@ -103,7 +103,7 @@ class FilterCheck < FilterOrdering
 
   @[AC::Route::GET("/what_is_this/:thing", converters: {thing: IsHotDog})]
   @[AC::Route::GET("/what_is_this/:thing/strict", converters: {thing: IsHotDog}, config: {thing: {strict: true}})]
-  def other_route_time(thing : Bool) : Bool
+  def other_route_thing(thing : Bool) : Bool
     thing
   end
 end
