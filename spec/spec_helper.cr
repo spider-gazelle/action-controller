@@ -10,6 +10,7 @@ end
 
 abstract class FilterOrdering < ActionController::Base
   @trusted = false
+  @in_around = false
 
   before_action :set_trust
   before_action :check_trust
@@ -39,8 +40,16 @@ class FilterCheck < FilterOrdering
   @[AC::Route::Filter(:around_action)]
   def wrap_action_here(id : String?)
     render :forbidden, text: "Around actions wrap the request" if @trusted
+    @in_around = true
     yield
     # perform post checks here
+    raise "should be trusted now" unless @trusted
+  end
+
+  @[AC::Route::Filter(:around_action)]
+  def wrap_next_action_here(id : String?)
+    render :forbidden, text: "should already be in an around filter" unless @in_around
+    yield
     raise "should be trusted now" unless @trusted
   end
 

@@ -395,6 +395,7 @@ abstract class ActionController::Base
           {% if !around_actions.empty? %}
             ActionController::Base.__yield__(instance) do
               {% for action in around_actions %}
+                  break if render_called
                   {{action}} do
               {% end %}
           {% end %}
@@ -419,7 +420,8 @@ abstract class ActionController::Base
               ActionController::Base.__yield__(instance) do
             {% end %}
               {% for action in before_actions %}
-                {{action}} unless render_called
+                break if render_called
+                {{action}}
               {% end %}
             {% if around_actions.empty? %}
               end
