@@ -51,6 +51,7 @@ class ActionController::Server
   # Starts the server
   def run
     @socket.bind_tcp(@host, @port, @reuse_port) if @socket.addresses.empty?
+    "Listening on #{print_addresses}"
     @socket.listen
   end
 

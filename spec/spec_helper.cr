@@ -36,6 +36,14 @@ class FilterCheck < FilterOrdering
     render :forbidden, text: "Trust confirmation failed" unless @trusted
   end
 
+  @[AC::Route::Filter(:around_action)]
+  def wrap_action_here(id : String?)
+    render :forbidden, text: "Around actions wrap the request" if @trusted
+    yield
+    # perform post checks here
+    raise "should be trusted now" unless @trusted
+  end
+
   # Ensure that magic methods don't interfere with our annotation routing
   @[AC::Route::GET("/")]
   def index

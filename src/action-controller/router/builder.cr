@@ -125,7 +125,12 @@ module ActionController::Route::Builder
         # Multiple routes can be applied to a single method
         {% for ann, idx in method.annotations(route_method) %}
           {% annotation_found = true %}
-          {% raise "#{@type.name}##{method_name} accepts a block, this is incompatible with the router" if method.accepts_block? %}
+
+          {% if route_method == AC::Route::Filter && ann[0] == :around_action %}
+            {% raise "#{@type.name}##{method_name} method must yield" unless method.accepts_block? %}
+          {% else %}
+            {% raise "#{@type.name}##{method_name} accepts a block, this is incompatible with the router" if method.accepts_block? %}
+          {% end %}
 
           # Grab the response details from the annotations
           {% content_type = ann[:content_type] %}
@@ -309,7 +314,7 @@ module ActionController::Route::Builder
               {% elsif route_method == AC::Route::Exception %}
                 result = {{method_name.id}}(error, **args)
               {% else %}
-                result = {{method_name.id}}(**args)
+                result = {{method_name.id}}(**args){% if route_method == AC::Route::Filter && ann[0] == :around_action %} { yield } {% end %}
               {% end %}
             {% end %}
 
