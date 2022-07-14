@@ -103,7 +103,7 @@ module ActionController::Responders
     %session = @__session__
     %session.encode(%response.cookies) if %session && %session.modified
 
-    {% if json %}
+    {% unless json.nil? %}
       %response.content_type = {{MIME_TYPES[:json]}} unless %ctype
       unless @__head_request__
         %json = ({{json}})
@@ -115,7 +115,7 @@ module ActionController::Responders
       end
     {% end %}
 
-    {% if yaml %}
+    {% unless yaml.nil? %}
       %response.content_type = {{MIME_TYPES[:yaml]}} unless %ctype
       unless @__head_request__
         %yaml = ({{yaml}})
@@ -127,27 +127,27 @@ module ActionController::Responders
       end
     {% end %}
 
-    {% if xml %}
+    {% unless xml.nil? %}
       %response.content_type = {{MIME_TYPES[:xml]}} unless %ctype
       {{xml}}.to_s(%response) unless @__head_request__
     {% end %}
 
-    {% if html %}
+    {% unless html.nil? %}
       %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       {{html}}.to_s(%response) unless @__head_request__
     {% end %}
 
-    {% if text %}
+    {% unless text.nil? %}
       %response.content_type = {{MIME_TYPES[:text]}} unless %ctype
       {{text}}.to_s(%response) unless @__head_request__
     {% end %}
 
-    {% if binary %}
+    {% unless binary.nil? %}
       %response.content_type = {{MIME_TYPES[:binary]}} unless %ctype
       {{binary}}.to_s(%response) unless @__head_request__
     {% end %}
 
-    {% if template %}
+    {% unless template.nil? %}
       %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       {% if layout %}
         template({{template}}, layout: {{layout}}, io: %response) unless @__head_request__
@@ -156,7 +156,7 @@ module ActionController::Responders
       {% end %}
     {% end %}
 
-    {% if partial %}
+    {% unless partial.nil? %}
       %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
       template(partial: {{partial}}, io: %response) unless @__head_request__
     {% end %}
