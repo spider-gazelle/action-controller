@@ -4,7 +4,7 @@ alias UserRes = Array(NamedTuple(name: String, state: String))
 
 describe "Context" do
   it "can spec via direct instansiation" do
-    testable_controller = FilterCheck.spec_instance
+    testable_controller = Filtering.spec_instance
     testable_controller.other_route("some_input").should eq "some_input"
   end
 

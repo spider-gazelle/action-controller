@@ -63,7 +63,7 @@ describe AC::Route::Builder do
     result = client.post("/filtering/some_entry", body: "34.5", headers: HTTP::Headers{
       "Accept" => "text/html",
     })
-    result.body.should eq %(filter_check == create_entry)
+    result.body.should eq %(filtering == create_entry)
   end
 
   it "should work with different status types" do

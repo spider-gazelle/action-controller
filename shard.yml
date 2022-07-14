@@ -1,5 +1,5 @@
 name: action-controller
-version: 5.1.4
+version: 5.1.5
 crystal: ">= 1.2.2"
 
 dependencies:
@@ -28,7 +28,7 @@ development_dependencies:
 
 authors:
   - Stephen von Takach <steve@place.tech>
-  - Caspian Baska <email@caspian.computer>
+  - Caspian Baska <caspian@place.tech>
   - Kim Burgess <kim@place.tech>
   - Duke Nguyen <duke@place.tech>
 

@@ -11,14 +11,12 @@ class ActionController::Router::RouteHandler
   # Builds the internal representation of a route
   # then searches static routes before checking the matcher
   def search_route(method, req_path, search_path, context : HTTP::Server::Context) : Tuple(Action, Bool)?
-    action = @static_routes.fetch(search_path) do
-      match = @matcher.match(method, req_path)
-      if match
+    @static_routes.fetch(search_path) do
+      if match = @matcher.match(method, req_path)
         context.route_params = match.params
         match.payload
       end
     end
-    action
   end
 
   # Routes requests to the appropriate handler
