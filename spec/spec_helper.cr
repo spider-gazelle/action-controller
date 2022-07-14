@@ -24,8 +24,8 @@ abstract class FilterOrdering < ActionController::Base
   end
 end
 
-class FilterCheck < FilterOrdering
-  base "/filtering"
+class Filtering < FilterOrdering
+  # `base "/filtering"` configured automatically
 
   add_responder("application/yaml") { |io, result| result.to_yaml(io) }
   add_parser("application/yaml") { |klass, body_io| klass.from_yaml(body_io.gets_to_end) }
@@ -181,7 +181,8 @@ class TemplateTwo < TemplateOne
 end
 
 class BobJane < ActionController::Base
-  # base "/bob/jane" # <== automatically configured
+  base "/bob_jane/" # Automatically configured, if excluded, as `base "/bob_jane"`
+
   before_action :modify_session, only: :modified_session
   add_responder "text/plain" { |io, result| result.to_s(io) }
 

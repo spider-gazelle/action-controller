@@ -535,7 +535,15 @@ abstract class ActionController::Base
         {% for _key, details in ROUTES %}
           {% http_method = details[0] %}
           {% route_path = details[1] %}
-          router.{{http_method.id}} {{(NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/\//, "/")}}, &->{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(HTTP::Server::Context, Bool)
+
+          router.{{http_method.id}}(
+            {{
+              (NAMESPACE[0].id.stringify + route_path.id.stringify)
+                .gsub(/\/$/, "")   # Remove trailing slash
+                .gsub(/\/\//, "/") # Convert double slashes to single slashes
+            }},
+            &->{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(HTTP::Server::Context, Bool)
+          )
         {% end %}
 
         nil
