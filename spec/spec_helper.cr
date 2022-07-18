@@ -138,6 +138,15 @@ class ContainerObjects < ActionController::Base
   base "/container/:container_id/objects"
   id_param :object_id
 
+  def index
+    respond_with do
+      json do
+        data = {"id" => 1}
+        data
+      end
+    end
+  end
+
   def show
     render text: "#{params["object_id"]} in #{params["container_id"]}"
   end

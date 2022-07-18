@@ -12,4 +12,11 @@ describe "template responses" do
     result = client.get("/container/42/objects/8")
     result.body.should eq("8 in 42")
   end
+
+  it "should work with respond_with" do
+    result = client.get("/container/42/objects", headers: HTTP::Headers{
+      "Accept" => "application/json",
+    })
+    result.body.should eq(%({"id":1}))
+  end
 end

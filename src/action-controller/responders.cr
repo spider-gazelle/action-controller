@@ -268,7 +268,12 @@ module ActionController::Responders
         }
       {% else %}
         options[:json] = ->(io : IO){
-          ({{ block.body }}).to_s(io)
+          output = ({{ block.body }})
+          if output.is_a?(String)
+            output.to_s(io)
+          else
+            output.to_json(io)
+          end
         }
       {% end %}
     end
@@ -284,9 +289,12 @@ module ActionController::Responders
           {% end %}
         }
       {% else %}
-        options[:yaml] = ->(io : IO){
-          ({{ block.body }}).to_s(io)
-        }
+        output = ({{ block.body }})
+        if output.is_a?(String)
+          output.to_s(io)
+        else
+          output.to_yaml(io)
+        end
       {% end %}
     end
 
