@@ -17,7 +17,6 @@ jobs:
         MT: [true, false]
         stable: [true]
         crystal:
-          - 1.2.2
           - latest
         include:
           - crystal: nightly
