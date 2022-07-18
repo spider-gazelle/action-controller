@@ -196,7 +196,7 @@ module ActionController::Route::Builder
                   responds_with = {{content_type}}
                 {% else %}
                   responds_with = accepts_formats.first? || {{ DEFAULT_RESPONDER[0] }}
-                  raise AC::Route::NotAcceptable.new("no renderer available for #{responds_with}, have #{accepts_formats}", {{@type.name.id}}.accepts) unless {{@type.name.id}}.can_respond_with?(responds_with)
+                  raise AC::Route::NotAcceptable.new("no renderer available for #{RESPONDER_LIST}, have #{accepts_formats}", {{@type.name.id}}.accepts) unless {{@type.name.id}}.can_respond_with?(responds_with)
                 {% end %}
             {% end %}
           {% end %}
