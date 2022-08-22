@@ -161,9 +161,35 @@ class ActionController::Server
 
   # Used to output route details to the console from a command line switch
   def self.print_routes
-    puts "Verb\tURI Pattern\tController#Action"
+    headers = {"Controller", :Action, :Verb, "URI Pattern"}
+    sizes = component_sizes(*headers)
     self.routes.each do |route|
-      puts "#{route[2]}\t#{route[3]}\t#{route[0]}##{route[1]}"
+      route_size = component_sizes(*route)
+      sizes = max_size(sizes, route_size)
     end
+
+    print_route(sizes, headers)
+    self.routes.each { |route| print_route(sizes, route) }
+  end
+
+  protected def self.component_sizes(*args) : Array(Int32)
+    sizes = Array(Int32).new(args.size)
+    args.each { |part| sizes << part.to_s.size }
+    sizes
+  end
+
+  protected def self.max_size(current : Array(Int32), other : Array(Int32)) : Array(Int32)
+    max = Array(Int32).new(current.size)
+    current.each_with_index do |item, index|
+      comp = other[index]
+      max << (item >= comp ? item : comp)
+    end
+    max
+  end
+
+  protected def self.print_route(sizes, details)
+    sizes = {sizes[0] + sizes[1], sizes[2]}
+    details = {"#{details[0]}##{details[1]}", details[2], details[3]}
+    printf("%-#{sizes[0]}s %-#{sizes[1]}s %s\n", details)
   end
 end
