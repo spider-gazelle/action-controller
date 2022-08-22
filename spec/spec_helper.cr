@@ -123,6 +123,15 @@ class Filtering < FilterOrdering
   def other_route_thing(thing : Bool) : Bool
     thing
   end
+
+  @[AC::Route::GET("/param_annotation/:thing")]
+  @[AC::Route::GET("/param_annotation/:thing/flexible", config: {thing: {strict: false}})]
+  def test_param_annotation(
+    @[AC::Param::Converter(class: IsHotDog, config: {strict: true})]
+    thing : Bool
+  ) : Bool
+    thing
+  end
 end
 
 # Testing ID params

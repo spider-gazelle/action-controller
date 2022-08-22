@@ -54,6 +54,23 @@ describe AC::Route::Builder do
     result.body.should eq "true"
   end
 
+  it "should work with param converter annotations" do
+    result = client.get("/filtering/param_annotation/HotDog")
+    result.body.should eq "true"
+
+    result = client.get("/filtering/param_annotation/hotdog")
+    result.body.should eq "false"
+
+    result = client.get("/filtering/param_annotation/NotHotDog")
+    result.body.should eq "false"
+
+    result = client.get("/filtering/param_annotation/hotdog/flexible")
+    result.body.should eq "true"
+
+    result = client.get("/filtering/param_annotation/HotDog/flexible")
+    result.body.should eq "true"
+  end
+
   it "should work with a body param" do
     result = client.post("/filtering/some_entry", body: "34.5")
     result.body.should eq %(34.5)

@@ -18,6 +18,9 @@ end
 annotation ActionController::Route::Exception
 end
 
+annotation ActionController::Param::Converter
+end
+
 module ActionController::Route
   class Error < ::Exception
     def initialize(message : String? = nil, @accepts : Array(String)? = nil)
@@ -228,21 +231,29 @@ module ActionController::Route::Builder
                     {% string_name = arg.name.id.stringify %}
                     {% query_param_name = (param_mapping[string_name.id.symbolize] || string_name).id.stringify %}
 
+                    {% if ann_converter = arg.annotation(::ActionController::Param::Converter) %}
+                      {% custom_converter = converters[string_name.id.symbolize] || ann_converter[:class] %}
+                      {% converter_args = config[string_name.id.symbolize] || ann_converter[:config] %}
+                    {% else %}
+                      {% custom_converter = converters[string_name.id.symbolize] %}
+                      {% converter_args = config[string_name.id.symbolize] %}
+                    {% end %}
+
                     # Calculate the conversions required to meet the desired restrictions
                     {% if arg.restriction %}
                       # Check if restriction is optional
                       {% nilable = arg.restriction.resolve.nilable? %}
 
                       # Check if there are any custom converters
-                      {% if custom_converter = converters[string_name.id.symbolize] %}
-                        {% if converter_args = config[string_name.id.symbolize] %}
+                      {% if custom_converter %}
+                        {% if converter_args %}
                           {% restrictions = [custom_converter.stringify + ".new(**" + converter_args.stringify + ").convert(param_value)"] %}
                         {% else %}
                           {% restrictions = [custom_converter.stringify + ".new.convert(param_value)"] %}
                         {% end %}
 
                       # Check for custom converter arguments (assumes a single type)
-                      {% elsif converter_args = config[string_name.id.symbolize] %}
+                      {% elsif converter_args %}
                         {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
                         {% if union_types[0] < Enum %}
                           {% if converter_args[:from_value] %}
