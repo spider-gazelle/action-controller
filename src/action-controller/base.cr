@@ -98,6 +98,7 @@ abstract class ActionController::Base
     {% for ftype in FILTER_TYPES %}
       {% ltype = ftype.downcase %}
 
+      # :nodoc:
       macro __inherit_{{ltype.id}}_filters__
         \{% {{ftype.id}}_MAPPINGS[@type.name.id] = LOCAL_{{ftype.id}} %}
         \{% klasses = [@type.name.id] %}
@@ -211,7 +212,9 @@ abstract class ActionController::Base
 
     {% for ftype in FILTER_TYPES %}
       # function => options
+      # :nodoc:
       LOCAL_{{ftype.id}} = {} of Nil => Nil
+      # :nodoc:
       {{ftype.id}} = {} of Nil => Nil
     {% end %}
 
@@ -220,6 +223,7 @@ abstract class ActionController::Base
 
     __build_filter_inheritance_macros__
 
+    # :nodoc:
     macro finished
       __build_filter_mappings__
       __create_route_methods__
@@ -235,6 +239,7 @@ abstract class ActionController::Base
       # inline the action
       # inline the after filters
       # rescue exception handlers
+      # :nodoc:
       __draw_routes__
     end
   end
@@ -327,6 +332,7 @@ abstract class ActionController::Base
         {% reference_name = details[5] %}
         {% function_name = details[6] %}
 
+        # :nodoc:
         def self.{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(context, head_request)
           # Check if force SSL is set and redirect to HTTPS if HTTP
           {% force = false %}
@@ -531,6 +537,7 @@ abstract class ActionController::Base
       {% end %}
 
       # Routes call the functions generated above
+      # :nodoc:
       def self.__init_routes__(router)
         {% for _key, details in ROUTES %}
           {% http_method = details[0] %}
@@ -559,6 +566,7 @@ abstract class ActionController::Base
         end
       {% end %}
 
+      # :nodoc:
       def self.__route_list__
         [
           # "Class", :name, :verb, "route"
