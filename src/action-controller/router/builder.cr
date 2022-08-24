@@ -41,9 +41,10 @@ end
 
 module ActionController::Route::Builder
   # OpenAPI tracking
-  OPENAPI_ROUTERS = {} of Nil => Nil
-  OPENAPI_FILTERS = {} of Nil => Nil
-  OPENAPI_SCHEMAS = {} of Nil => Nil
+  OPENAPI_ROUTERS = {} of Nil => Nil # verb+route  => controller_name, route_name, params (path, query), request body schema, response object name => response code
+  OPENAPI_FILTERS = {} of Nil => Nil # filter name => Params used
+  OPENAPI_SCHEMAS = {} of Nil => Nil # class name  => Request and response bodies
+  OPENAPI_ERRORS  = {} of Nil => Nil # error klass => response object name => response code
 
   # Routing related
   ROUTE_FUNCTIONS   = {} of Nil => Nil
@@ -235,16 +236,13 @@ module ActionController::Route::Builder
               args = {
                 {% for arg, arg_index in method.args %}
                   {% unless arg_index == 0 && {AC::Route::Exception, AC::Route::WebSocket}.includes?(route_method) %}
+                    # Check for converters, route level config takes precedence over param level
+                    {% ann_converter = arg.annotation(::ActionController::Param::Converter) %}
                     {% string_name = arg.name.id.stringify %}
-                    {% query_param_name = (param_mapping[string_name.id.symbolize] || string_name).id.stringify %}
+                    {% query_param_name = (param_mapping[string_name.id.symbolize] || (ann_converter && ann_converter[:name]) || string_name).id.stringify %}
 
-                    {% if ann_converter = arg.annotation(::ActionController::Param::Converter) %}
-                      {% custom_converter = converters[string_name.id.symbolize] || ann_converter[:class] %}
-                      {% converter_args = config[string_name.id.symbolize] || ann_converter[:config] %}
-                    {% else %}
-                      {% custom_converter = converters[string_name.id.symbolize] %}
-                      {% converter_args = config[string_name.id.symbolize] %}
-                    {% end %}
+                    {% custom_converter = converters[string_name.id.symbolize] || (ann_converter && ann_converter[:class]) %}
+                    {% converter_args = config[string_name.id.symbolize] || (ann_converter && ann_converter[:config]) %}
 
                     # Calculate the conversions required to meet the desired restrictions
                     {% if arg.restriction %}
