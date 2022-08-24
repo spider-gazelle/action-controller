@@ -58,6 +58,21 @@ module ActionController::OpenAPI
 
   def generate_open_api_docs
     descriptions = extract_route_descriptions
-    descriptions.to_yaml
+
+    routes = [
+      {% for route, details in ActionController::Route::Builder::OPENAPI_ROUTERS %}
+        {
+          verb: {{ details[:verb] }},
+          route: {{ details[:route] }},
+          method: {{ details[:method] }},
+          controller: {{ details[:controller] }},
+        }
+      {% end %}
+    ]
+
+    {
+      descriptions: descriptions,
+      routes: routes
+    }.to_yaml
   end
 end

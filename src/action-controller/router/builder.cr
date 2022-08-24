@@ -136,6 +136,9 @@ module ActionController::Route::Builder
         {% for ann, idx in method.annotations(route_method) %}
           {% annotation_found = true %}
 
+          # OpenAPI route lookup
+          {% verb_route = lower_route_method.stringify + (NAMESPACE[0] + ann[0].id.stringify) %}
+
           {% if route_method == AC::Route::Filter && ann[0] == :around_action %}
             {% raise "#{@type.name}##{method_name} method must yield" unless method.accepts_block? %}
           {% else %}
@@ -185,8 +188,17 @@ module ActionController::Route::Builder
             # {% optional_params = full_route.select(&.starts_with?("?:")).map { |part| part.split(":")[1] } %}
             # {% splat_params = full_route.select(&.starts_with?("*:")).map { |part| part.split(":")[1] } %}
 
+            {% OPENAPI_ROUTERS[verb_route] = {} of Nil => Nil %}
+            {% OPENAPI_ROUTERS[verb_route][:query_params] = {} of Nil => Nil %}
+            {% OPENAPI_ROUTERS[verb_route][:path_params] = {} of Nil => Nil %}
+            {% OPENAPI_ROUTERS[verb_route][:controller] = @type.name.stringify %}
+            {% OPENAPI_ROUTERS[verb_route][:responses] = {} of Nil => Nil %}
+            {% OPENAPI_ROUTERS[verb_route][:method] = method_name.stringify %}
+            {% OPENAPI_ROUTERS[verb_route][:route] = "/" + full_route.join("/") %}
+            {% OPENAPI_ROUTERS[verb_route][:verb] = lower_route_method.stringify %}
+
             # add a redirect helper (yes, it will only match the last route applied)
-            {% if lower_route_method == "get" %}
+            {% if lower_route_method.stringify == "get" %}
               def self.{{method_name.id}}(**tuple_parts)
                 route = {{"/" + full_route.join("/")}}
                 ActionController::Support.build_route(route, nil, **tuple_parts)

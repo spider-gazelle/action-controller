@@ -378,6 +378,7 @@ class HelloWorld < Application
 end
 
 require "../src/action-controller/server"
+require "../src/action-controller/open_api"
 
 # require "random"
 # Random::Secure.hex
