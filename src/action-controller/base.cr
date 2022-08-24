@@ -211,8 +211,8 @@ abstract class ActionController::Base
     NAMESPACE = [{{"/" + @type.name.stringify.underscore.gsub(/\:\:/, "/")}}]
 
     {% for ftype in FILTER_TYPES %}
-      # function => options
       # :nodoc:
+      # function => options
       LOCAL_{{ftype.id}} = {} of Nil => Nil
       # :nodoc:
       {{ftype.id}} = {} of Nil => Nil
@@ -228,6 +228,7 @@ abstract class ActionController::Base
       __build_filter_mappings__
       __create_route_methods__
 
+      # :nodoc:
       # Create draw_routes function
       #
       # Create instance of controller class init with context, params and logger
@@ -239,7 +240,6 @@ abstract class ActionController::Base
       # inline the action
       # inline the after filters
       # rescue exception handlers
-      # :nodoc:
       __draw_routes__
     end
   end
@@ -536,8 +536,8 @@ abstract class ActionController::Base
         end
       {% end %}
 
-      # Routes call the functions generated above
       # :nodoc:
+      # Routes call the functions generated above
       def self.__init_routes__(router)
         {% for _key, details in ROUTES %}
           {% http_method = details[0] %}

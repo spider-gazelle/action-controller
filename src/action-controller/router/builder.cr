@@ -40,6 +40,12 @@ module ActionController::Route
 end
 
 module ActionController::Route::Builder
+  # OpenAPI tracking
+  OPENAPI_ROUTERS = {} of Nil => Nil
+  OPENAPI_FILTERS = {} of Nil => Nil
+  OPENAPI_SCHEMAS = {} of Nil => Nil
+
+  # Routing related
   ROUTE_FUNCTIONS   = {} of Nil => Nil
   DEFAULT_RESPONDER = ["application/json"]
   RESPONDERS        = {} of Nil => Nil
@@ -186,6 +192,7 @@ module ActionController::Route::Builder
               end
             {% end %}
 
+            # :nodoc:
             # build the standard route definition helper (get "/route")
             {% if route_method == AC::Route::WebSocket %}
               # :nodoc:
