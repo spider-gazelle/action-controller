@@ -56,23 +56,25 @@ module ActionController::OpenAPI
     docs
   end
 
-  def generate_open_api_docs
-    descriptions = extract_route_descriptions
+  macro finished
+    def generate_open_api_docs
+      descriptions = extract_route_descriptions
 
-    routes = [
-      {% for route, details in ActionController::Route::Builder::OPENAPI_ROUTERS %}
-        {
-          verb: {{ details[:verb] }},
-          route: {{ details[:route] }},
-          method: {{ details[:method] }},
-          controller: {{ details[:controller] }},
-        }
-      {% end %}
-    ]
+      routes = [
+        {% for route, details in ActionController::Route::Builder::OPENAPI_ROUTERS %}
+          {
+            verb: {{ details[:verb] }},
+            route: {{ details[:route] }},
+            method: {{ details[:method] }},
+            controller: {{ details[:controller] }},
+          },
+        {% end %}
+      ]{% if ActionController::Route::Builder::OPENAPI_ROUTERS.empty? %} of Nil{% end %}
 
-    {
-      descriptions: descriptions,
-      routes: routes
-    }.to_yaml
+      {
+        descriptions: descriptions,
+        routes: routes,
+      }.to_yaml
+    end
   end
 end

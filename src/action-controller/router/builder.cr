@@ -188,14 +188,15 @@ module ActionController::Route::Builder
             # {% optional_params = full_route.select(&.starts_with?("?:")).map { |part| part.split(":")[1] } %}
             # {% splat_params = full_route.select(&.starts_with?("*:")).map { |part| part.split(":")[1] } %}
 
-            {% OPENAPI_ROUTERS[verb_route] = {} of Nil => Nil %}
-            {% OPENAPI_ROUTERS[verb_route][:query_params] = {} of Nil => Nil %}
-            {% OPENAPI_ROUTERS[verb_route][:path_params] = {} of Nil => Nil %}
-            {% OPENAPI_ROUTERS[verb_route][:controller] = @type.name.stringify %}
-            {% OPENAPI_ROUTERS[verb_route][:responses] = {} of Nil => Nil %}
-            {% OPENAPI_ROUTERS[verb_route][:method] = method_name.stringify %}
-            {% OPENAPI_ROUTERS[verb_route][:route] = "/" + full_route.join("/") %}
-            {% OPENAPI_ROUTERS[verb_route][:verb] = lower_route_method.stringify %}
+            {% open_api_route = {} of Nil => Nil %}
+            {% open_api_route[:query_params] = {} of Nil => Nil %}
+            {% open_api_route[:path_params] = {} of Nil => Nil %}
+            {% open_api_route[:controller] = @type.name.stringify %}
+            {% open_api_route[:responses] = {} of Nil => Nil %}
+            {% open_api_route[:method] = method_name.stringify %}
+            {% open_api_route[:route] = "/" + full_route.join("/") %}
+            {% open_api_route[:verb] = lower_route_method.stringify %}
+            {% OPENAPI_ROUTERS[verb_route] = open_api_route %}
 
             # add a redirect helper (yes, it will only match the last route applied)
             {% if lower_route_method.stringify == "get" %}
