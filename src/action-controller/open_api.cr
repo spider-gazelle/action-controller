@@ -47,7 +47,7 @@ module ActionController::OpenAPI
 
       # save the instance method docs
       type["instance_methods"]?.try &.as_a.each do |method|
-        if doc = type["doc"]?
+        if doc = method["doc"]?
           klass_docs.methods[method["name"].as_s] = doc.as_s
         end
       end
