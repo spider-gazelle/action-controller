@@ -1,10 +1,12 @@
 require "json"
+require "yaml"
 
 module ActionController::OpenAPI
   extend self
 
   struct KlassDoc
     include JSON::Serializable
+    include YAML::Serializable
 
     def initialize(@name, docs : String?)
       @docs = docs || ""
@@ -46,7 +48,9 @@ module ActionController::OpenAPI
 
       # save the instance method docs
       type["instance_methods"]?.try &.as_a.each do |method|
-        klass_docs.methods[method["name"].as_s] = type["doc"].as_s
+        if doc = type["doc"]?
+          klass_docs.methods[method["name"].as_s] = doc.as_s
+        end
       end
     end
 
@@ -55,6 +59,6 @@ module ActionController::OpenAPI
 
   def generate_open_api_docs
     descriptions = extract_route_descriptions
-    descriptions.to_json
+    descriptions.to_yaml
   end
 end
