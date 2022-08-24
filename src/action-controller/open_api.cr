@@ -8,12 +8,11 @@ module ActionController::OpenAPI
     include JSON::Serializable
     include YAML::Serializable
 
-    def initialize(@name, docs : String?)
-      @docs = docs || ""
+    def initialize(@name, @docs : String?)
     end
 
     getter name : String
-    getter docs : String
+    getter docs : String?
 
     getter methods : Hash(String, String) = {} of String => String
   end
