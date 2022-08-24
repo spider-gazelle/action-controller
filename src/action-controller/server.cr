@@ -188,7 +188,7 @@ class ActionController::Server
   end
 
   protected def self.print_route(sizes, details)
-    sizes = {sizes[0] + sizes[1], sizes[2]}
+    sizes = {sizes[0] + sizes[1] + 1, sizes[2]}
     details = {"#{details[0]}##{details[1]}", details[2], details[3]}
     printf("%-#{sizes[0]}s %-#{sizes[1]}s %s\n", details)
   end
