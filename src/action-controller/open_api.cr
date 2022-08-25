@@ -173,8 +173,6 @@ module ActionController::OpenAPI
         routes: routes,
         exceptions: exceptions,
         filters: filters,
-        filter_maps: {{Base::OPENAPI_FILTER_MAP.keys}}{% if Base::OPENAPI_FILTER_MAP.empty? %} of Nil{% end %},
-        error_maps: {{Base::OPENAPI_ERRORS_MAP.keys}}{% if Base::OPENAPI_ERRORS_MAP.empty? %} of Nil{% end %},
       }.to_yaml
     end
   end
