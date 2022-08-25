@@ -109,10 +109,26 @@ module ActionController::OpenAPI
         {% end %}
       ]{% if ActionController::Route::Builder::OPENAPI_ERRORS.empty? %} of Nil{% end %}
 
+      filters = {
+        {% for filter_name, params in ActionController::Route::Builder::OPENAPI_FILTERS %}
+          {{filter_name}} => [
+            {% for param_name, param in params %}
+              {
+                name: {{ param_name }},
+                in: {{ param[:in] }},
+                required: {{ param[:required] }},
+                schema: ::JSON::Schema.introspect({{ param[:schema] }})
+              },
+            {% end %}
+          ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
+        {% end %}
+      }{% if ActionController::Route::Builder::OPENAPI_FILTERS.empty? %} of Nil => Nil{% end %}
+
       {
         descriptions: descriptions,
         routes: routes,
-        exceptions: exceptions
+        exceptions: exceptions,
+        filters: filters
       }.to_yaml
     end
   end
