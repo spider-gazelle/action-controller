@@ -163,6 +163,7 @@ module ActionController::Route::Builder
 
             {% open_api_route[:controller] = @type.name.stringify %}
             {% open_api_route[:method] = method_name.stringify %}
+            {% open_api_route[:wrapper_method] = function_wrapper_name.stringify %}
             {% open_api_route[:params] = open_api_params %}
             {% OPENAPI_FILTERS[@type.name.stringify + "#" + method_name.stringify] = open_api_route %}
 
