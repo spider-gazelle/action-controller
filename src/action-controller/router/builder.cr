@@ -171,7 +171,9 @@ module ActionController::Route::Builder
             {% function_wrapper_name = "_#{exception_class.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
 
             {% open_api_route = {} of Nil => Nil %}
+            {% open_api_route[:controller] = @type.name.stringify %}
             {% open_api_route[:responses] = {} of Nil => Nil %}
+            {% open_api_route[:method] = method_name.stringify %}
             {% OPENAPI_ERRORS[exception_class] = open_api_route %}
 
             rescue_from {{exception_class}}, {{function_wrapper_name.symbolize}}

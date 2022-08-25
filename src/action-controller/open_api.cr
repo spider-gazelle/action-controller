@@ -95,6 +95,8 @@ module ActionController::OpenAPI
       exceptions = [
         {% for exception, details in ActionController::Route::Builder::OPENAPI_ERRORS %}
           {
+            method: {{ details[:method] }},
+            controller: {{ details[:controller] }},
             exception_name: {{ exception.stringify }},
             default_response: {
               {{ details[:default_response][0] }},
