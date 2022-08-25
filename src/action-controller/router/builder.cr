@@ -135,8 +135,9 @@ module ActionController::Route::Builder
         {% for ann, idx in method.annotations(route_method) %}
           {% annotation_found = true %}
 
-          # OpenAPI route lookup
-          {% verb_route = lower_route_method.stringify + (NAMESPACE[0] + ann[0].id.stringify) %}
+          # OpenAPI route lookup (note full route here is not valid for exceptions and filters)
+          {% full_route = (NAMESPACE[0] + ann[0].id.stringify).split("/").reject(&.empty?) %}
+          {% verb_route = lower_route_method.stringify.upcase + "/" + full_route.join("/") %}
 
           {% if route_method == AC::Route::Filter && ann[0] == :around_action %}
             {% raise "#{@type.name}##{method_name} method must yield" unless method.accepts_block? %}
@@ -191,7 +192,6 @@ module ActionController::Route::Builder
             # annotation based route
 
             # Grab the param parts
-            {% full_route = (NAMESPACE[0] + ann[0]).split("/").reject(&.empty?) %}
             {% required_params = full_route.select(&.starts_with?(":")).map { |part| part.split(":")[1] } %}
             {% optional_params = full_route.select(&.starts_with?("?:")).map { |part| part.split(":")[1] } %}
             # {% splat_params = full_route.select(&.starts_with?("*:")).map { |part| part.split(":")[1] } %}
