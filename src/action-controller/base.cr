@@ -337,7 +337,7 @@ abstract class ActionController::Base
 
         # OpenAPI route lookup
         {% full_route = (NAMESPACE[0].id.stringify + route_path.id.stringify).split("/").reject(&.empty?) %}
-        {% verb_route = http_method.stringify.upcase + "/" + full_route.join("/") %}
+        {% verb_route = http_method.id.stringify.upcase + "/" + full_route.join("/") %}
 
         {% OPENAPI_FILTER_MAP[verb_route] = [] of Nil %}
         {% OPENAPI_ERRORS_MAP[verb_route] = [] of Nil %}
