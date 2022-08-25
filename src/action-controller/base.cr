@@ -12,6 +12,7 @@ abstract class ActionController::Base
 
   # Route IDs params
   DEFAULT_PARAM_ID = {} of Nil => Nil
+  OPENAPI_FILTER_MAP = {} of Nil => Nil # route => [] of filter names
 
   macro id_param(id)
     {% DEFAULT_PARAM_ID[@type.id] = id %}

@@ -41,9 +41,9 @@ end
 
 module ActionController::Route::Builder
   # OpenAPI tracking
-  OPENAPI_ROUTERS = {} of Nil => Nil # verb+route  => controller_name, route_name, params (path, query), request body schema, response object name => response code
   OPENAPI_FILTERS = {} of Nil => Nil # filter name => Params used
   OPENAPI_ERRORS  = {} of Nil => Nil # error klass => response object name => response code
+  OPENAPI_ROUTES  = {} of Nil => Nil # verb+route  => controller_name, route_name, params (path, query), request body schema, response object name => response code
 
   # Routing related
   ROUTE_FUNCTIONS   = {} of Nil => Nil
@@ -152,6 +152,7 @@ module ActionController::Route::Builder
           {% status_code_map = ann[:status] || {} of TypeNode => Path %}
           {% body_argument = (ann[:body] || "%").id.stringify %} # % is an invalid argument name
 
+          {% open_api_route = {} of Nil => Nil %}
           {% open_api_params = {} of Nil => Nil %}
 
           # support annotation based filters
@@ -159,7 +160,11 @@ module ActionController::Route::Builder
             {% required_params = [] of StringLiteral %}
             {% filter_type = ann[0].id %}
             {% function_wrapper_name = "_#{filter_type.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
-            {% OPENAPI_FILTERS[method_name.stringify] = open_api_params %}
+
+            {% open_api_route[:controller] = @type.name.stringify %}
+            {% open_api_route[:method] = method_name.stringify %}
+            {% open_api_route[:params] = open_api_params %}
+            {% OPENAPI_FILTERS[@type.name.stringify + "#" + method_name.stringify] = open_api_route %}
 
             {{filter_type}}({{function_wrapper_name.symbolize}}, only: {{ann[:only]}}, except: {{ann[:except]}})
 
@@ -168,19 +173,19 @@ module ActionController::Route::Builder
           {% elsif route_method == AC::Route::Exception %}
             # annotation based exception handlers
             {% required_params = [] of StringLiteral %}
-            {% exception_class = ann[0] %}
-            {% function_wrapper_name = "_#{exception_class.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
+            {% exception_class = ann[0].stringify %}
+            {% function_wrapper_name = "_#{exception_class.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
 
-            {% open_api_route = {} of Nil => Nil %}
             {% open_api_route[:controller] = @type.name.stringify %}
+            {% open_api_route[:exception] = exception_class %}
             {% open_api_route[:responses] = {} of Nil => Nil %}
             {% open_api_route[:method] = method_name.stringify %}
-            {% OPENAPI_ERRORS[exception_class] = open_api_route %}
+            {% OPENAPI_ERRORS[@type.name.stringify + "#" + exception_class] = open_api_route %}
 
-            rescue_from {{exception_class}}, {{function_wrapper_name.symbolize}}
+            rescue_from {{exception_class.id}}, {{function_wrapper_name.symbolize}}
 
             # :nodoc:
-            def {{function_wrapper_name}}(error)
+            def {{function_wrapper_name}}(error : {{exception_class.id}})
               # Check we can satisfy the accepts header, if provided
               {% if content_type %}
                 responds_with = {{content_type}}
@@ -196,14 +201,13 @@ module ActionController::Route::Builder
             {% optional_params = full_route.select(&.starts_with?("?:")).map { |part| part.split(":")[1] } %}
             # {% splat_params = full_route.select(&.starts_with?("*:")).map { |part| part.split(":")[1] } %}
 
-            {% open_api_route = {} of Nil => Nil %}
             {% open_api_route[:request_body] = "Nil".id %}
             {% open_api_route[:controller] = @type.name.stringify %}
             {% open_api_route[:responses] = {} of Nil => Nil %}
             {% open_api_route[:method] = method_name.stringify %}
             {% open_api_route[:route] = "/" + full_route.join("/") %}
             {% open_api_route[:verb] = lower_route_method.stringify %}
-            {% OPENAPI_ROUTERS[verb_route] = open_api_route %}
+            {% OPENAPI_ROUTES[verb_route] = open_api_route %}
 
             # initial recording of path params
             {% for path_param in required_params %}

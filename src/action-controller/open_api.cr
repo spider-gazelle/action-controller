@@ -61,7 +61,7 @@ module ActionController::OpenAPI
       descriptions = extract_route_descriptions
 
       routes = [
-        {% for route_key, details in ActionController::Route::Builder::OPENAPI_ROUTERS %}
+        {% for route_key, details in ActionController::Route::Builder::OPENAPI_ROUTES %}
           {% params = details[:params] %}
           {
             route_lookup: {{route_key}},
@@ -91,14 +91,14 @@ module ActionController::OpenAPI
             }{% if details[:responses].empty? %} of String => Int32 {% end %},
           },
         {% end %}
-      ]{% if ActionController::Route::Builder::OPENAPI_ROUTERS.empty? %} of Nil{% end %}
+      ]{% if ActionController::Route::Builder::OPENAPI_ROUTES.empty? %} of Nil{% end %}
 
       exceptions = [
-        {% for exception, details in ActionController::Route::Builder::OPENAPI_ERRORS %}
+        {% for exception_key, details in ActionController::Route::Builder::OPENAPI_ERRORS %}
           {
             method: {{ details[:method] }},
             controller: {{ details[:controller] }},
-            exception_name: {{ exception.stringify }},
+            exception_name: {{ details[:exception] }},
             default_response: {
               {{ details[:default_response][0] }},
               ( {{ details[:default_response][1] }} ).to_i
@@ -113,17 +113,22 @@ module ActionController::OpenAPI
       ]{% if ActionController::Route::Builder::OPENAPI_ERRORS.empty? %} of Nil{% end %}
 
       filters = {
-        {% for filter_name, params in ActionController::Route::Builder::OPENAPI_FILTERS %}
-          {{filter_name}} => [
-            {% for param_name, param in params %}
-              {
-                name: {{ param_name }},
-                in: {{ param[:in] }},
-                required: {{ param[:required] }},
-                schema: ::JSON::Schema.introspect({{ param[:schema] }})
-              },
-            {% end %}
-          ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
+        {% for filter_name, details in ActionController::Route::Builder::OPENAPI_FILTERS %}
+          {% params = details[:params] %}
+          {{filter_name}} => {
+            controller: {{ details[:controller] }},
+            method: {{ details[:method] }},
+            params: [
+              {% for param_name, param in params %}
+                {
+                  name: {{ param_name }},
+                  in: {{ param[:in] }},
+                  required: {{ param[:required] }},
+                  schema: ::JSON::Schema.introspect({{ param[:schema] }})
+                },
+              {% end %}
+            ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
+          },
         {% end %}
       }{% if ActionController::Route::Builder::OPENAPI_FILTERS.empty? %} of Nil => Nil{% end %}
 
