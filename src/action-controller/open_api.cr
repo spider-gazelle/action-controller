@@ -61,9 +61,10 @@ module ActionController::OpenAPI
       descriptions = extract_route_descriptions
 
       routes = [
-        {% for route, details in ActionController::Route::Builder::OPENAPI_ROUTERS %}
+        {% for route_key, details in ActionController::Route::Builder::OPENAPI_ROUTERS %}
           {% params = details[:params] %}
           {
+            route_lookup: {{route_key}},
             verb: {{ details[:verb] }},
             route: {{ details[:route] }},
             params: [
