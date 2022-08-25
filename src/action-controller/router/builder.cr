@@ -331,7 +331,7 @@ module ActionController::Route::Builder
                       {% open_api_param[:schema] = "String?".id %}
                     {% end %}
 
-                    {% open_api_param[:required] = open_api_param[:required] || false %}
+                    {% open_api_param[:required] = open_api_param[:required] || !nilable %}
 
                     # Build the argument named tuple with the correct types
                     {{arg.name.id}}: (
