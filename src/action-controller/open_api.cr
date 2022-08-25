@@ -78,13 +78,41 @@ module ActionController::OpenAPI
             ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
             method: {{ details[:method] }},
             controller: {{ details[:controller] }},
+            request_body: {{ details[:request_body] && details[:request_body].stringify || "Nil" }},
+            default_response: {
+              {{ details[:default_response][0] }},
+              ( {{ details[:default_response][1] }} ).to_i
+            },
+            responses: {
+              {% for klass, response_code in details[:responses] %}
+                {{ klass }} => ({{response_code}}).to_i,
+              {% end %}
+            }{% if details[:responses].empty? %} of String => Int32 {% end %},
           },
         {% end %}
       ]{% if ActionController::Route::Builder::OPENAPI_ROUTERS.empty? %} of Nil{% end %}
 
+      exceptions = [
+        {% for exception, details in ActionController::Route::Builder::OPENAPI_ERRORS %}
+          {
+            exception_name: {{ exception.stringify }},
+            default_response: {
+              {{ details[:default_response][0] }},
+              ( {{ details[:default_response][1] }} ).to_i
+            },
+            responses: {
+              {% for klass, response_code in details[:responses] %}
+                {{ klass }} => ({{response_code}}).to_i,
+              {% end %}
+            }{% if details[:responses].empty? %} of String => Int32 {% end %},
+          },
+        {% end %}
+      ]{% if ActionController::Route::Builder::OPENAPI_ERRORS.empty? %} of Nil{% end %}
+
       {
         descriptions: descriptions,
         routes: routes,
+        exceptions: exceptions
       }.to_yaml
     end
   end

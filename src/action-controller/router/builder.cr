@@ -43,7 +43,6 @@ module ActionController::Route::Builder
   # OpenAPI tracking
   OPENAPI_ROUTERS = {} of Nil => Nil # verb+route  => controller_name, route_name, params (path, query), request body schema, response object name => response code
   OPENAPI_FILTERS = {} of Nil => Nil # filter name => Params used
-  OPENAPI_SCHEMAS = {} of Nil => Nil # class name  => Request and response bodies
   OPENAPI_ERRORS  = {} of Nil => Nil # error klass => response object name => response code
 
   # Routing related
@@ -171,6 +170,10 @@ module ActionController::Route::Builder
             {% exception_class = ann[0] %}
             {% function_wrapper_name = "_#{exception_class.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
 
+            {% open_api_route = {} of Nil => Nil %}
+            {% open_api_route[:responses] = {} of Nil => Nil %}
+            {% OPENAPI_ERRORS[exception_class] = open_api_route %}
+
             rescue_from {{exception_class}}, {{function_wrapper_name.symbolize}}
 
             # :nodoc:
@@ -192,6 +195,7 @@ module ActionController::Route::Builder
             # {% splat_params = full_route.select(&.starts_with?("*:")).map { |part| part.split(":")[1] } %}
 
             {% open_api_route = {} of Nil => Nil %}
+            {% open_api_route[:request_body] = "Nil".id %}
             {% open_api_route[:controller] = @type.name.stringify %}
             {% open_api_route[:responses] = {} of Nil => Nil %}
             {% open_api_route[:method] = method_name.stringify %}
@@ -271,9 +275,13 @@ module ActionController::Route::Builder
                     {% custom_converter = converters[string_name.id.symbolize] || (ann_converter && ann_converter[:class]) %}
                     {% converter_args = config[string_name.id.symbolize] || (ann_converter && ann_converter[:config]) %}
 
-                    {% open_api_param = open_api_params[query_param_name] || {} of Nil => Nil %}
-                    {% open_api_param[:in] = open_api_param[:in] || :query %}
-                    {% open_api_params[query_param_name] = open_api_param %}
+                    {% if body_argument == string_name %}
+                      {% open_api_param = {} of Nil => Nil %}
+                    {% else %}
+                      {% open_api_param = open_api_params[query_param_name] || {} of Nil => Nil %}
+                      {% open_api_param[:in] = open_api_param[:in] || :query %}
+                      {% open_api_params[query_param_name] = open_api_param %}
+                    {% end %}
 
                     # Calculate the conversions required to meet the desired restrictions
                     {% if arg.restriction %}
@@ -328,6 +336,10 @@ module ActionController::Route::Builder
                     # Build the argument named tuple with the correct types
                     {{arg.name.id}}: (
                       {% if body_argument == string_name %}
+                        {% if open_api_route %}
+                          {% open_api_route[:request_body] = arg.restriction %}
+                        {% end %}
+
                         if body_io = @context.request.body
                           case body_type
                           {% for type, _block in PARSERS %}
@@ -371,7 +383,17 @@ module ActionController::Route::Builder
               {% end %}
             {% end %}
 
+            {% if route_method == AC::Route::WebSocket %}
+              {% open_api_route[:default_response] = {"unknown", 101} %}
+            {% end %}
+
             {% if !{AC::Route::Filter, AC::Route::WebSocket}.includes?(route_method) %}
+              {% if method.return_type %}
+                {% open_api_route[:default_response] = {method.return_type.stringify, status_code} %}
+              {% else %}
+                {% open_api_route[:default_response] = {"unknown", status_code} %}
+              {% end %}
+
               unless @render_called
                 responose = @context.response
                 {% if status_code_map.empty? %}
@@ -380,6 +402,7 @@ module ActionController::Route::Builder
                   case result
                     {% for result_klass, status_mapped in status_code_map %}
                   when {{result_klass}}
+                      {% open_api_route[:responses][result_klass.stringify] = status_mapped %}
                       response.status_code = ({{status_mapped}}).to_i
                     {% end %}
                   else
