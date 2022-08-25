@@ -10,9 +10,11 @@ abstract class ActionController::Base
   include ActionController::Route::Builder
   include ActionController::Responders
 
+  OPENAPI_FILTER_MAP = {} of Nil => Nil # route to filter names
+  OPENAPI_ERRORS_MAP = {} of Nil => Nil # route to exception classes
+
   # Route IDs params
   DEFAULT_PARAM_ID = {} of Nil => Nil
-  OPENAPI_FILTER_MAP = {} of Nil => Nil # route => [] of filter names
 
   macro id_param(id)
     {% DEFAULT_PARAM_ID[@type.id] = id %}
@@ -333,6 +335,13 @@ abstract class ActionController::Base
         {% reference_name = details[5] %}
         {% function_name = details[6] %}
 
+        # OpenAPI route lookup
+        {% full_route = (NAMESPACE[0].id.stringify + route_path.id.stringify).split("/").reject(&.empty?) %}
+        {% verb_route = http_method.stringify.upcase + "/" + full_route.join("/") %}
+
+        {% OPENAPI_FILTER_MAP[verb_route] = [] of Nil %}
+        {% OPENAPI_ERRORS_MAP[verb_route] = [] of Nil %}
+
         # :nodoc:
         def self.{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(context, head_request)
           # Check if force SSL is set and redirect to HTTPS if HTTP
@@ -400,6 +409,7 @@ abstract class ActionController::Base
           {% around_actions = around_actions.reject { |act| skipping.includes?(act) } %}
 
           {% if !around_actions.empty? %}
+            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + around_actions %}
             ActionController::Base.__yield__(instance) do
               {% for action in around_actions %}
                   break if render_called
@@ -423,6 +433,7 @@ abstract class ActionController::Base
           {% before_actions = before_actions.reject { |act| skipping.includes?(act) } %}
 
           {% if !before_actions.empty? %}
+            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + before_actions %}
             {% if around_actions.empty? %}
               ActionController::Base.__yield__(instance) do
             {% end %}
@@ -501,6 +512,7 @@ abstract class ActionController::Base
           {% after_actions = after_actions.reject { |act| skipping.includes?(act) } %}
 
           {% if !after_actions.empty? %}
+            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + after_actions %}
             ActionController::Base.__yield__(instance) do
               {% for action in after_actions %}
                 {{action}}
@@ -517,6 +529,7 @@ abstract class ActionController::Base
           # Implement error handling
           {% if !RESCUE.empty? %}
             {% for exception, details in RESCUE %}
+              {% OPENAPI_ERRORS_MAP[verb_route] = OPENAPI_ERRORS_MAP[verb_route] + [exception.id.stringify] %}
               rescue e : {{exception.id}}
                 if !instance.render_called
                   instance.{{details[0]}}(e)

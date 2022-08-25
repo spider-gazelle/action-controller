@@ -15,6 +15,7 @@ module ActionController::OpenAPI
     getter docs : String?
 
     getter methods : Hash(String, String) = {} of String => String
+    getter ancestors : Array(String) = [] of String
   end
 
   def extract_route_descriptions
@@ -37,13 +38,37 @@ module ActionController::OpenAPI
 
       # check if we want the method docs of this class
       save_methods = false
+      modules = [] of String
+      ancestors = [] of String
       type["ancestors"]?.try &.as_a.each do |klass|
-        if klass["full_name"].as_s == "ActionController::Base"
+        full_name = klass["full_name"].as_s
+        if full_name == "ActionController::Base"
           save_methods = true
           break
+        elsif klass["kind"].as_s == "module"
+          modules << full_name
+        else
+          ancestors << full_name
         end
       end
       next unless save_methods
+
+      # We save the ancestors so we can find the first filter or exception match
+      klass_docs.ancestors.concat ancestors
+
+      # grab method docs from modules (local class methods will take override as required)
+      modules.each do |module_name|
+        program_types.each do |mod_type|
+          next unless mod_type["full_name"].as_s == module_name
+
+          # save the instance method docs
+          mod_type["instance_methods"]?.try &.as_a.each do |method|
+            if doc = method["doc"]?
+              klass_docs.methods[method["name"].as_s] = doc.as_s
+            end
+          end
+        end
+      end
 
       # save the instance method docs
       type["instance_methods"]?.try &.as_a.each do |method|
@@ -53,12 +78,16 @@ module ActionController::OpenAPI
       end
     end
 
+    # ClassName => details
     docs
   end
 
   macro finished
     def generate_open_api_docs
       descriptions = extract_route_descriptions
+
+      # NOTE:: for exceptions and filters we will need to run down the class ancestors
+      # to check for any matches
 
       routes = [
         {% for route_key, details in ActionController::Route::Builder::OPENAPI_ROUTES %}
@@ -93,9 +122,9 @@ module ActionController::OpenAPI
         {% end %}
       ]{% if ActionController::Route::Builder::OPENAPI_ROUTES.empty? %} of Nil{% end %}
 
-      exceptions = [
+      exceptions = {
         {% for exception_key, details in ActionController::Route::Builder::OPENAPI_ERRORS %}
-          {
+        {{exception_key}} => {
             method: {{ details[:method] }},
             controller: {{ details[:controller] }},
             exception_name: {{ details[:exception] }},
@@ -110,12 +139,12 @@ module ActionController::OpenAPI
             }{% if details[:responses].empty? %} of String => Int32 {% end %},
           },
         {% end %}
-      ]{% if ActionController::Route::Builder::OPENAPI_ERRORS.empty? %} of Nil{% end %}
+      }{% if ActionController::Route::Builder::OPENAPI_ERRORS.empty? %} of Nil => Nil{% end %}
 
       filters = {
-        {% for filter_name, details in ActionController::Route::Builder::OPENAPI_FILTERS %}
+        {% for filter_key, details in ActionController::Route::Builder::OPENAPI_FILTERS %}
           {% params = details[:params] %}
-          {{filter_name}} => {
+          {{filter_key}} => {
             controller: {{ details[:controller] }},
             method: {{ details[:method] }},
             params: [
@@ -136,7 +165,9 @@ module ActionController::OpenAPI
         descriptions: descriptions,
         routes: routes,
         exceptions: exceptions,
-        filters: filters
+        filters: filters,
+        filter_maps: {{Base::OPENAPI_FILTER_MAP.keys}}{% if Base::OPENAPI_FILTER_MAP.empty? %} of Nil{% end %},
+        error_maps: {{Base::OPENAPI_ERRORS_MAP.keys}}{% if Base::OPENAPI_ERRORS_MAP.empty? %} of Nil{% end %},
       }.to_yaml
     end
   end
