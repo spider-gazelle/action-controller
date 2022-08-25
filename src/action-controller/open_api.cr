@@ -153,6 +153,7 @@ module ActionController::OpenAPI
           {{filter_key}} => {
             controller: {{ details[:controller] }},
             method: {{ details[:method] }},
+            wrapper_method: {{ details[:wrapper_method] }},
             params: [
               {% for param_name, param in params %}
                 {
