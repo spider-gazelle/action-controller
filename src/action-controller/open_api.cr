@@ -90,7 +90,11 @@ module ActionController::OpenAPI
       # to check for any matches
 
       routes = [
-        {% for route_key, details in ActionController::Route::Builder::OPENAPI_ROUTES %}
+        {% for route_key, details in Route::Builder::OPENAPI_ROUTES %}
+          # the filters applied to this route
+          {% filters = Base::OPENAPI_FILTER_MAP[route_key] %}
+          {% errors = Base::OPENAPI_ERRORS_MAP[route_key] %}
+
           {% params = details[:params] %}
           {
             route_lookup: {{route_key}},
@@ -107,6 +111,8 @@ module ActionController::OpenAPI
               {% end %}
             ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
             method: {{ details[:method] }},
+            filters: {{filters}}{% if filters.empty? %} of String{% end %},
+            error_handlers: {{errors}}{% if errors.empty? %} of String{% end %},
             controller: {{ details[:controller] }},
             request_body: {{ details[:request_body] && details[:request_body].stringify || "Nil" }},
             default_response: {
@@ -120,10 +126,10 @@ module ActionController::OpenAPI
             }{% if details[:responses].empty? %} of String => Int32 {% end %},
           },
         {% end %}
-      ]{% if ActionController::Route::Builder::OPENAPI_ROUTES.empty? %} of Nil{% end %}
+      ]{% if Route::Builder::OPENAPI_ROUTES.empty? %} of Nil{% end %}
 
       exceptions = {
-        {% for exception_key, details in ActionController::Route::Builder::OPENAPI_ERRORS %}
+        {% for exception_key, details in Route::Builder::OPENAPI_ERRORS %}
         {{exception_key}} => {
             method: {{ details[:method] }},
             controller: {{ details[:controller] }},
@@ -139,10 +145,10 @@ module ActionController::OpenAPI
             }{% if details[:responses].empty? %} of String => Int32 {% end %},
           },
         {% end %}
-      }{% if ActionController::Route::Builder::OPENAPI_ERRORS.empty? %} of Nil => Nil{% end %}
+      }{% if Route::Builder::OPENAPI_ERRORS.empty? %} of Nil => Nil{% end %}
 
       filters = {
-        {% for filter_key, details in ActionController::Route::Builder::OPENAPI_FILTERS %}
+        {% for filter_key, details in Route::Builder::OPENAPI_FILTERS %}
           {% params = details[:params] %}
           {{filter_key}} => {
             controller: {{ details[:controller] }},
@@ -159,7 +165,7 @@ module ActionController::OpenAPI
             ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
           },
         {% end %}
-      }{% if ActionController::Route::Builder::OPENAPI_FILTERS.empty? %} of Nil => Nil{% end %}
+      }{% if Route::Builder::OPENAPI_FILTERS.empty? %} of Nil => Nil{% end %}
 
       {
         descriptions: descriptions,

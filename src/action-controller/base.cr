@@ -337,7 +337,11 @@ abstract class ActionController::Base
 
         # OpenAPI route lookup
         {% full_route = (NAMESPACE[0].id.stringify + route_path.id.stringify).split("/").reject(&.empty?) %}
-        {% verb_route = http_method.id.stringify.upcase + "/" + full_route.join("/") %}
+        {% if is_websocket %}
+          {% verb_route = "WEBSOCKET/" + full_route.join("/") %}
+        {% else %}
+          {% verb_route = http_method.id.stringify.upcase + "/" + full_route.join("/") %}
+        {% end %}
 
         {% OPENAPI_FILTER_MAP[verb_route] = [] of Nil %}
         {% OPENAPI_ERRORS_MAP[verb_route] = [] of Nil %}
@@ -409,7 +413,7 @@ abstract class ActionController::Base
           {% around_actions = around_actions.reject { |act| skipping.includes?(act) } %}
 
           {% if !around_actions.empty? %}
-            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + around_actions %}
+            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + around_actions.map(&.stringify) %}
             ActionController::Base.__yield__(instance) do
               {% for action in around_actions %}
                   break if render_called
@@ -433,7 +437,7 @@ abstract class ActionController::Base
           {% before_actions = before_actions.reject { |act| skipping.includes?(act) } %}
 
           {% if !before_actions.empty? %}
-            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + before_actions %}
+            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + before_actions.map(&.stringify) %}
             {% if around_actions.empty? %}
               ActionController::Base.__yield__(instance) do
             {% end %}
@@ -512,7 +516,7 @@ abstract class ActionController::Base
           {% after_actions = after_actions.reject { |act| skipping.includes?(act) } %}
 
           {% if !after_actions.empty? %}
-            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + after_actions %}
+            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + after_actions.map(&.stringify) %}
             ActionController::Base.__yield__(instance) do
               {% for action in after_actions %}
                 {{action}}
