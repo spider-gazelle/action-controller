@@ -1,4 +1,4 @@
-require "json"
+require "json-schema"
 require "yaml"
 
 module ActionController::OpenAPI
