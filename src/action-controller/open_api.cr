@@ -62,9 +62,20 @@ module ActionController::OpenAPI
 
       routes = [
         {% for route, details in ActionController::Route::Builder::OPENAPI_ROUTERS %}
+          {% params = details[:params] %}
           {
             verb: {{ details[:verb] }},
             route: {{ details[:route] }},
+            params: [
+              {% for param_name, param in params %}
+                {
+                  name: {{ param_name }},
+                  in: {{ param[:in] }},
+                  required: {{ param[:required] }},
+                  schema: ::JSON::Schema.introspect({{ param[:schema] }})
+                },
+              {% end %}
+            ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
             method: {{ details[:method] }},
             controller: {{ details[:controller] }},
           },

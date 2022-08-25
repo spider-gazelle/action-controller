@@ -152,11 +152,14 @@ module ActionController::Route::Builder
           {% status_code_map = ann[:status] || {} of TypeNode => Path %}
           {% body_argument = (ann[:body] || "%").id.stringify %} # % is an invalid argument name
 
+          {% open_api_params = {} of Nil => Nil %}
+
           # support annotation based filters
           {% if route_method == AC::Route::Filter %}
             {% required_params = [] of StringLiteral %}
             {% filter_type = ann[0].id %}
             {% function_wrapper_name = "_#{filter_type.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
+            {% OPENAPI_FILTERS[method_name.stringify] = open_api_params %}
 
             {{filter_type}}({{function_wrapper_name.symbolize}}, only: {{ann[:only]}}, except: {{ann[:except]}})
 
@@ -185,18 +188,29 @@ module ActionController::Route::Builder
             # Grab the param parts
             {% full_route = (NAMESPACE[0] + ann[0]).split("/").reject(&.empty?) %}
             {% required_params = full_route.select(&.starts_with?(":")).map { |part| part.split(":")[1] } %}
-            # {% optional_params = full_route.select(&.starts_with?("?:")).map { |part| part.split(":")[1] } %}
+            {% optional_params = full_route.select(&.starts_with?("?:")).map { |part| part.split(":")[1] } %}
             # {% splat_params = full_route.select(&.starts_with?("*:")).map { |part| part.split(":")[1] } %}
 
             {% open_api_route = {} of Nil => Nil %}
-            {% open_api_route[:query_params] = {} of Nil => Nil %}
-            {% open_api_route[:path_params] = {} of Nil => Nil %}
             {% open_api_route[:controller] = @type.name.stringify %}
             {% open_api_route[:responses] = {} of Nil => Nil %}
             {% open_api_route[:method] = method_name.stringify %}
             {% open_api_route[:route] = "/" + full_route.join("/") %}
             {% open_api_route[:verb] = lower_route_method.stringify %}
             {% OPENAPI_ROUTERS[verb_route] = open_api_route %}
+
+            # initial recording of path params
+            {% for path_param in required_params %}
+              {% open_api_params[path_param] = {} of Nil => Nil %}
+              {% open_api_params[path_param][:in] = :path %}
+              {% open_api_params[path_param][:required] = true %}
+            {% end %}
+            {% for path_param in optional_params %}
+              {% open_api_params[path_param] = {} of Nil => Nil %}
+              {% open_api_params[path_param][:in] = :path %}
+              {% open_api_params[path_param][:required] = false %}
+            {% end %}
+            {% open_api_route[:params] = open_api_params %}
 
             # add a redirect helper (yes, it will only match the last route applied)
             {% if lower_route_method.stringify == "get" %}
@@ -257,8 +271,14 @@ module ActionController::Route::Builder
                     {% custom_converter = converters[string_name.id.symbolize] || (ann_converter && ann_converter[:class]) %}
                     {% converter_args = config[string_name.id.symbolize] || (ann_converter && ann_converter[:config]) %}
 
+                    {% open_api_param = open_api_params[query_param_name] || {} of Nil => Nil %}
+                    {% open_api_param[:in] = open_api_param[:in] || :query %}
+                    {% open_api_params[query_param_name] = open_api_param %}
+
                     # Calculate the conversions required to meet the desired restrictions
                     {% if arg.restriction %}
+                      {% open_api_param[:schema] = arg.restriction %}
+
                       # Check if restriction is optional
                       {% nilable = arg.restriction.resolve.nilable? %}
 
@@ -299,7 +319,11 @@ module ActionController::Route::Builder
                     {% else %}
                       {% nilable = true %}
                       {% restrictions = ["::AC::Route::Param::ConvertString.new.convert(param_value)"] %}
+
+                      {% open_api_param[:schema] = "String?".id %}
                     {% end %}
+
+                    {% open_api_param[:required] = open_api_param[:required] || false %}
 
                     # Build the argument named tuple with the correct types
                     {{arg.name.id}}: (
