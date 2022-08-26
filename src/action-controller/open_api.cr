@@ -122,17 +122,17 @@ module ActionController::OpenAPI
             filters: {{filters}}{% if filters.empty? %} of String{% end %},
             error_handlers: {{errors}}{% if errors.empty? %} of String{% end %},
             controller: {{ details[:controller] }},
-            request_body: {{ (details[:request_body] && details[:request_body].stringify || "Nil").id }},
+            request_body: {{ details[:request_body] && details[:request_body].stringify || "Nil" }},
             default_response: {
-              {{ details[:default_response][0] }},          # response type
+              {{ details[:default_response][0].stringify }},# response type
               ( {{ details[:default_response][1] }} ).to_i, # response code
               {{ details[:default_response][2] }},          # was the return type specified
             },
             responses: {
               {% for klass, response_code in details[:responses] %}
-                {{ klass.id }} => ({{response_code}}).to_i,
+                {{ klass.id.stringify }} => ({{response_code}}).to_i,
               {% end %}
-            }{% if details[:responses].empty? %} of Class => Int32 {% end %},
+            }{% if details[:responses].empty? %} of String => Int32 {% end %},
           },
         {% end %}
       ]{% if Route::Builder::OPENAPI_ROUTES.empty? %} of Nil{% end %}
@@ -177,7 +177,11 @@ module ActionController::OpenAPI
               {% is_array = true %}
               {% resolved_klass = resolved_klass.type_vars[0] %}
             {% end %}
-            route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass}}.json_schema}] = ({{response_code}}).to_i
+
+            {% if resolved_klass != Nil %}
+              response_types[{{resolved_klass.stringify}}] = {{resolved_klass}}.json_schema.to_json
+            {% end %}
+            route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
           {% end %}
         {% end %}
       {% end %}
@@ -189,12 +193,12 @@ module ActionController::OpenAPI
             controller: {{ details[:controller] }},
             exception_name: {{ details[:exception] }},
             default_response: {
-              {{ details[:default_response][0] }},
+              {{ details[:default_response][0].stringify }},
               ( {{ details[:default_response][1] }} ).to_i
             },
             responses: {
               {% for klass, response_code in details[:responses] %}
-                {{ klass }} => ({{response_code}}).to_i,
+                {{ klass.stringify }} => ({{response_code}}).to_i,
               {% end %}
             }{% if details[:responses].empty? %} of String => Int32 {% end %},
           },
@@ -228,6 +232,7 @@ module ActionController::OpenAPI
         exceptions: exceptions,
         filters: filters,
         route_responses: route_response,
+        response_types: response_types,
       }.to_yaml
     end
   end
