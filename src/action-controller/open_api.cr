@@ -192,7 +192,7 @@ module ActionController::OpenAPI
 
         {% request_body = details[:request_body].id %}
         {% if request_body.stringify != "Nil" %}
-          response_types[{{request_body.stringify}}] = {{request_body}}.json_schema.to_json
+          response_types[{{request_body.stringify}}] = ::JSON::Schema.introspect({{ request_body }}).to_json
         {% end %}
 
         {% responses = {} of Nil => Nil %}
@@ -224,7 +224,7 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            response_types[{{resolved_klass.stringify}}] = {{resolved_klass}}.json_schema.to_json
+            response_types[{{resolved_klass.stringify}}] = ::JSON::Schema.introspect({{ resolved_klass }}).to_json
           {% end %}
           route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
         {% end %}
@@ -275,7 +275,7 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            response_types[{{resolved_klass.stringify}}] = {{resolved_klass}}.json_schema.to_json
+            response_types[{{resolved_klass.stringify}}] = ::JSON::Schema.introspect({{ resolved_klass }}).to_json
           {% end %}
           route_response[{{exception_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
         {% end %}
@@ -349,7 +349,6 @@ module ActionController::OpenAPI
         routes: routes,
         exceptions: exceptions,
         filters: filters,
-        # route_responses: route_response,
         response_types: response_types,
       }.to_yaml
     end
