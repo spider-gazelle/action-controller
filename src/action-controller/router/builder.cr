@@ -202,7 +202,7 @@ module ActionController::Route::Builder
             {% optional_params = full_route.select(&.starts_with?("?:")).map { |part| part.split(":")[1] } %}
             # {% splat_params = full_route.select(&.starts_with?("*:")).map { |part| part.split(":")[1] } %}
 
-            {% open_api_route[:request_body] = "Nil".id %}
+            {% open_api_route[:request_body] = Nil %}
             {% open_api_route[:controller] = @type.name.stringify %}
             {% open_api_route[:responses] = {} of Nil => Nil %}
             {% open_api_route[:method] = method_name.stringify %}
