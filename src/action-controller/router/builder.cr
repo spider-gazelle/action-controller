@@ -343,9 +343,7 @@ module ActionController::Route::Builder
                     # Build the argument named tuple with the correct types
                     {{arg.name.id}}: (
                       {% if body_argument == string_name %}
-                        {% if open_api_route %}
-                          {% open_api_route[:request_body] = arg.restriction %}
-                        {% end %}
+                        {% open_api_route[:request_body] = arg.restriction %}
 
                         if body_io = @context.request.body
                           case body_type
@@ -391,14 +389,14 @@ module ActionController::Route::Builder
             {% end %}
 
             {% if route_method == AC::Route::WebSocket %}
-              {% open_api_route[:default_response] = {"unknown", 101} %}
+              {% open_api_route[:default_response] = {Nil, 101, false} %}
             {% end %}
 
             {% if !{AC::Route::Filter, AC::Route::WebSocket}.includes?(route_method) %}
               {% if method.return_type %}
-                {% open_api_route[:default_response] = {method.return_type.stringify, status_code} %}
+                {% open_api_route[:default_response] = {method.return_type, status_code, true} %}
               {% else %}
-                {% open_api_route[:default_response] = {"unknown", status_code} %}
+                {% open_api_route[:default_response] = {Nil, status_code, false} %}
               {% end %}
 
               unless @render_called
@@ -409,7 +407,7 @@ module ActionController::Route::Builder
                   case result
                     {% for result_klass, status_mapped in status_code_map %}
                   when {{result_klass}}
-                      {% open_api_route[:responses][result_klass.stringify] = status_mapped %}
+                      {% open_api_route[:responses][result_klass] = status_mapped %}
                       response.status_code = ({{status_mapped}}).to_i
                     {% end %}
                   else

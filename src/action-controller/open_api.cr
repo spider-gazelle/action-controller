@@ -86,8 +86,16 @@ module ActionController::OpenAPI
     def generate_open_api_docs
       descriptions = extract_route_descriptions
 
-      # NOTE:: for exceptions and filters we will need to run down the class ancestors
-      # to check for any matches
+      # TODO:: convert all the response types into JSON schema (compile time)
+      # * default response will include all the other responses types (split up and differentiate)
+      # * ignore array types (need to reference the internal type [if possible])
+
+      # TODO:: for exceptions and filters we will need to:
+      # * collect all the matching methods / exceptions
+      # * run down the class ancestors to find the matching class
+      # * this gives us Class+method match as might be multiple filters with the same function name
+      
+      # build the OpenAPI document
 
       routes = [
         {% for route_key, details in Route::Builder::OPENAPI_ROUTES %}
@@ -114,19 +122,65 @@ module ActionController::OpenAPI
             filters: {{filters}}{% if filters.empty? %} of String{% end %},
             error_handlers: {{errors}}{% if errors.empty? %} of String{% end %},
             controller: {{ details[:controller] }},
-            request_body: {{ details[:request_body] && details[:request_body].stringify || "Nil" }},
+            request_body: {{ (details[:request_body] && details[:request_body].stringify || "Nil").id }},
             default_response: {
-              {{ details[:default_response][0] }},
-              ( {{ details[:default_response][1] }} ).to_i
+              {{ details[:default_response][0] }},          # response type
+              ( {{ details[:default_response][1] }} ).to_i, # response code
+              {{ details[:default_response][2] }},          # was the return type specified
             },
             responses: {
               {% for klass, response_code in details[:responses] %}
-                {{ klass }} => ({{response_code}}).to_i,
+                {{ klass.id }} => ({{response_code}}).to_i,
               {% end %}
-            }{% if details[:responses].empty? %} of String => Int32 {% end %},
+            }{% if details[:responses].empty? %} of Class => Int32 {% end %},
           },
         {% end %}
       ]{% if Route::Builder::OPENAPI_ROUTES.empty? %} of Nil{% end %}
+
+      # Class => Schema
+      response_types = {} of String => String
+      # Route => {array?, Class} => Response code
+      route_response = Hash(String, Hash(Tuple(Bool, String), Int32)).new do |hash, key|
+        hash[key] = {} of Tuple(Bool, String) => Int32
+      end
+
+      {% if !Route::Builder::OPENAPI_ROUTES.empty? %}
+        {% for route_key, details in Route::Builder::OPENAPI_ROUTES %}
+          {% default_type = details[:default_response][0].resolve %}
+          {% default_code = details[:default_response][1] %}
+          {% default_specified = details[:default_response][2] %}
+
+          {% responses = {} of Nil => Nil %}
+
+          # we need to work out what types are default responses versus the specified ones
+          {% if default_specified && default_type.union? && !details[:responses].empty? %}
+            {% default_types = default_type.union_types %}
+            {% for klass, response_code in details[:responses] %}
+              {% default_types = default_types - [klass.resolve] %}
+              {% responses[klass] = response_code %}
+            {% end %}
+            {% for klass in default_types %}
+              {% responses[klass] = default_code %}
+            {% end %}
+          {% elsif !details[:responses].empty? %}
+            {% responses = details[:responses] %}
+          {% elsif default_specified %}
+            {% responses[default_type] = default_code %}
+          {% else %}
+            {% responses[Nil] = default_code %}
+          {% end %}
+
+          {% for klass, response_code in responses %}
+            {% resolved_klass = klass.resolve %}
+            {% is_array = false %}
+            {% if !resolved_klass.union? && resolved_klass.stringify.starts_with?("Array(") %}
+              {% is_array = true %}
+              {% resolved_klass = resolved_klass.type_vars[0] %}
+            {% end %}
+            route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass}}.json_schema}] = ({{response_code}}).to_i
+          {% end %}
+        {% end %}
+      {% end %}
 
       exceptions = {
         {% for exception_key, details in Route::Builder::OPENAPI_ERRORS %}
@@ -173,6 +227,7 @@ module ActionController::OpenAPI
         routes: routes,
         exceptions: exceptions,
         filters: filters,
+        route_responses: route_response,
       }.to_yaml
     end
   end
