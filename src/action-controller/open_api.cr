@@ -16,7 +16,47 @@ module ActionController::OpenAPI
 
     getter methods : Hash(String, String) = {} of String => String
     getter ancestors : Array(String) = [] of String
+
+    def implements?(filter)
+      filter_klass = filter[:controller]
+      filter_klass == name || ancestors.includes?(filter_klass)
+    end
   end
+
+  alias Params = NamedTuple(
+    name: String,
+    in: Symbol,
+    required: Bool,
+    schema: String
+  )
+
+  alias Filter = NamedTuple(
+    controller: String,
+    method: String,
+    wrapper_method: String,
+    filter_key: String,
+    params: Array(Params)
+  )
+
+  alias ExceptionHandler = NamedTuple(
+    method: String,
+    controller: String,
+    exception_name: String,
+    exception_key: String,
+  )
+
+  alias RouteDetails = NamedTuple(
+    route_lookup: String,
+    verb: String,
+    route: String,
+    params: Array(Params),
+    method: String,
+    filters: Array(String),
+    error_handlers: Array(String),
+    controller: String,
+    request_body: String,
+    route_responses: Hash(Tuple(Bool, String), Int32)
+  )
 
   def extract_route_descriptions
     output = IO::Memory.new
@@ -82,51 +122,58 @@ module ActionController::OpenAPI
     docs
   end
 
+  def find_matching(
+    klass_descriptions : Hash(String, KlassDoc),
+    controller : String,
+    all_filters,
+    all_exceptions,
+    route_filters : Array(String),
+    route_errors : Array(String)
+  ) : Tuple(KlassDoc?, Array(String), Array(String))
+    if description = klass_descriptions[controller]?
+      matched_filters = route_filters.compact_map do |filter_name|
+        matched = all_filters.select { |_key, filter| filter[:wrapper_method] == filter_name }.values
+        found = matched.first?.try &.[](:filter_key)
+        matched.each do |filter|
+          if description.implements?(filter)
+            found = filter[:filter_key]
+            break
+          end
+        end
+        found
+      end
+
+      matched_errors = route_errors.compact_map do |error_name|
+        matched = all_exceptions.select { |_key, error| error[:exception_name] == error_name }.values
+        found = matched.first?.try &.[](:exception_key)
+        matched.each do |error|
+          if description.implements?(error)
+            found = error[:exception_key]
+            break
+          end
+        end
+        found
+      end
+    else
+      # we pick the first match (best guess)
+      matched_filters = route_filters.compact_map do |filter_name|
+        matched = all_filters.select { |_key, filter| filter[:wrapper_method] == filter_name }.values
+        matched.first?.try &.[](:filter_key)
+      end
+
+      matched_errors = route_errors.compact_map do |error_name|
+        matched = all_exceptions.select { |_key, error| error[:exception_name] == error_name }.values
+        matched.first?.try &.[](:exception_key)
+      end
+    end
+    {description, matched_filters, matched_errors}
+  end
+
   macro finished
     def generate_open_api_docs
       descriptions = extract_route_descriptions
 
       # build the OpenAPI document
-
-      routes = [
-        {% for route_key, details in Route::Builder::OPENAPI_ROUTES %}
-          # the filters applied to this route
-          {% filters = Base::OPENAPI_FILTER_MAP[route_key] %}
-          {% errors = Base::OPENAPI_ERRORS_MAP[route_key] %}
-
-          {% params = details[:params] %}
-          {
-            route_lookup: {{route_key}},
-            verb: {{ details[:verb] }},
-            route: {{ details[:route] }},
-            params: [
-              {% for param_name, param in params %}
-                {
-                  name: {{ param_name }},
-                  in: {{ param[:in] }},
-                  required: {{ param[:required] }},
-                  schema: ::JSON::Schema.introspect({{ param[:schema] }})
-                },
-              {% end %}
-            ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
-            method: {{ details[:method] }},
-            filters: {{filters}}{% if filters.empty? %} of String{% end %},
-            error_handlers: {{errors}}{% if errors.empty? %} of String{% end %},
-            controller: {{ details[:controller] }},
-            request_body: {{ details[:request_body].id.stringify }},
-            default_response: {
-              {{ details[:default_response][0].stringify }},# response type
-              ( {{ details[:default_response][1] }} ).to_i, # response code
-              {{ details[:default_response][2] }},          # was the return type specified
-            },
-            responses: {
-              {% for klass, response_code in details[:responses] %}
-                {{ klass.id.stringify }} => ({{response_code}}).to_i,
-              {% end %}
-            }{% if details[:responses].empty? %} of String => Int32 {% end %},
-          },
-        {% end %}
-      ]{% if Route::Builder::OPENAPI_ROUTES.empty? %} of Nil{% end %}
 
       # Class => Schema (and request types)
       response_types = {} of String => String
@@ -189,18 +236,10 @@ module ActionController::OpenAPI
             method: {{ details[:method] }},
             controller: {{ details[:controller] }},
             exception_name: {{ details[:exception] }},
-            default_response: {
-              {{ details[:default_response][0].stringify }},
-              ( {{ details[:default_response][1] }} ).to_i
-            },
-            responses: {
-              {% for klass, response_code in details[:responses] %}
-                {{ klass.stringify }} => ({{response_code}}).to_i,
-              {% end %}
-            }{% if details[:responses].empty? %} of String => Int32 {% end %},
+            exception_key: {{ exception_key }},
           },
         {% end %}
-      }{% if Route::Builder::OPENAPI_ERRORS.empty? %} of Nil => Nil{% end %}
+      }{% if Route::Builder::OPENAPI_ERRORS.empty? %} of String => ExceptionHandler{% end %}
 
       {% for exception_key, details in Route::Builder::OPENAPI_ERRORS %}
         {% default_type = details[:default_response][0].resolve %}
@@ -249,31 +288,68 @@ module ActionController::OpenAPI
             controller: {{ details[:controller] }},
             method: {{ details[:method] }},
             wrapper_method: {{ details[:wrapper_method] }},
+            filter_key: {{ filter_key }},
             params: [
               {% for param_name, param in params %}
                 {
                   name: {{ param_name }},
                   in: {{ param[:in] }},
                   required: {{ param[:required] }},
-                  schema: ::JSON::Schema.introspect({{ param[:schema] }})
+                  schema: ::JSON::Schema.introspect({{ param[:schema] }}).to_json
                 },
               {% end %}
-            ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
+            ]{% if params.empty? %} of Param{% end %},
           },
         {% end %}
-      }{% if Route::Builder::OPENAPI_FILTERS.empty? %} of Nil => Nil{% end %}
+      }{% if Route::Builder::OPENAPI_FILTERS.empty? %} of String => Filter{% end %}
 
       # for exceptions and filters we will need to:
       # * collect all the matching methods / exceptions
       # * run down the class ancestors to find the matching class
       # * this gives us Class+method match as might be multiple filters with the same function name
 
+      routes = {} of String => RouteDetails
+      {% for route_key, details in Route::Builder::OPENAPI_ROUTES %}
+        # the filters applied to this route
+        {% filters = Base::OPENAPI_FILTER_MAP[route_key] %}
+        {% errors = Base::OPENAPI_ERRORS_MAP[route_key] %}
+
+        route_filters = {{filters}}{% if filters.empty? %} of String{% end %}
+        route_errors = {{errors}}{% if errors.empty? %} of String{% end %}
+        route_class = {{ details[:controller] }}
+        class_description, filter_keys, error_keys = find_matching(descriptions, route_class, filters, exceptions, route_filters, route_errors)
+
+        {% params = details[:params] %}
+
+        routes[{{route_key}}] = {
+          route_lookup: {{route_key}},
+          verb: {{ details[:verb] }},
+          route: {{ details[:route] }},
+          params: [
+            {% for param_name, param in params %}
+              {
+                name: {{ param_name }},
+                in: {{ param[:in] }},
+                required: {{ param[:required] }},
+                schema: ::JSON::Schema.introspect({{ param[:schema] }}).to_json
+              },
+            {% end %}
+          ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
+          method: {{ details[:method] }},
+          filters: filter_keys,
+          error_handlers: error_keys,
+          controller: {{ details[:controller] }},
+          request_body: {{ details[:request_body].id.stringify }},
+          route_responses: route_response[{{route_key}}]
+        }
+      {% end %}
+
       {
         descriptions: descriptions,
         routes: routes,
         exceptions: exceptions,
         filters: filters,
-        route_responses: route_response,
+        # route_responses: route_response,
         response_types: response_types,
       }.to_yaml
     end
