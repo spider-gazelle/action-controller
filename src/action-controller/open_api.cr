@@ -230,17 +230,6 @@ module ActionController::OpenAPI
         {% end %}
       {% end %}
 
-      exceptions = {
-        {% for exception_key, details in Route::Builder::OPENAPI_ERRORS %}
-          {{exception_key}} => {
-            method: {{ details[:method] }},
-            controller: {{ details[:controller] }},
-            exception_name: {{ details[:exception] }},
-            exception_key: {{ exception_key }},
-          },
-        {% end %}
-      }{% if Route::Builder::OPENAPI_ERRORS.empty? %} of String => ExceptionHandler{% end %}
-
       {% for exception_key, details in Route::Builder::OPENAPI_ERRORS %}
         {% default_type = details[:default_response][0].resolve %}
         {% default_code = details[:default_response][1] %}
@@ -302,6 +291,18 @@ module ActionController::OpenAPI
           },
         {% end %}
       }{% if Route::Builder::OPENAPI_FILTERS.empty? %} of String => Filter{% end %}
+
+      exceptions = {
+        {% for exception_key, details in Route::Builder::OPENAPI_ERRORS %}
+          {{exception_key}} => {
+            method: {{ details[:method] }},
+            controller: {{ details[:controller] }},
+            exception_name: {{ details[:exception] }},
+            exception_key: {{ exception_key }},
+            responses: route_response[{{exception_key}}]
+          },
+        {% end %}
+      }{% if Route::Builder::OPENAPI_ERRORS.empty? %} of String => ExceptionHandler{% end %}
 
       # for exceptions and filters we will need to:
       # * collect all the matching methods / exceptions
