@@ -394,7 +394,7 @@ module ActionController::Route::Builder
 
             {% if !{AC::Route::Filter, AC::Route::WebSocket}.includes?(route_method) %}
               {% if method.return_type %}
-                {% open_api_route[:default_response] = {method.return_type, status_code, true} %}
+                {% open_api_route[:default_response] = {method.return_type.resolve, status_code, true} %}
               {% else %}
                 {% open_api_route[:default_response] = {Nil, status_code, false} %}
               {% end %}

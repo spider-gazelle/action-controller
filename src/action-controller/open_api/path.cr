@@ -43,7 +43,7 @@ class ActionController::OpenAPI::Operation
   @[YAML::Field(key: "requestBody")]
   property request_body : Response? = nil
   property parameters : Array(Parameter)? = nil
-  property responses : Hash(String, Response) = {} of String => Response
+  property responses : Hash(Int32, Response) = {} of Int32 => Response
 
   def initialize
   end

@@ -461,7 +461,35 @@ module ActionController::OpenAPI
           "application/json" => schema
         }
 
-        operation.responses[response_code.to_s] = response
+        operation.responses[response_code] = response
+      end
+
+      route[:error_handlers].each do |error_handler|
+        handler = exceptions[error_handler]
+        handler[:responses].each do |(is_array, klass_name), response_code|
+          # Hash(Tuple(Bool, String), Int32))
+          response = Response.new
+
+          # check for any documentation
+          controller_docs = descriptions[handler[:controller]]?
+          if docs = controller_docs.try &.methods[handler[:method]]?
+            response.description = docs
+          end
+
+          schema = if is_array
+            Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{klass_name}"}}))
+          elsif klass_name == "Nil"
+            Schema.new(%({"type":"null"}))
+          else
+            Schema.new(Reference.new("#/components/schemas/#{klass_name}").to_json)
+          end
+          response.content = {
+            # TODO:: extract accepted content types from the router
+            "application/json" => schema
+          }
+
+          operation.responses[response_code] = response
+        end
       end
 
       case verb
