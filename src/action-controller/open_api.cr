@@ -1,5 +1,6 @@
 require "json-schema"
 require "yaml"
+require "./open_api/*"
 
 module ActionController::OpenAPI
   extend self
@@ -345,13 +346,128 @@ module ActionController::OpenAPI
         }
       {% end %}
 
-      {
-        descriptions: descriptions,
-        routes: routes,
-        exceptions: exceptions,
-        filters: filters,
-        response_types: response_types,
-      }.to_yaml
+      #{
+      #  descriptions: descriptions,
+      #  routes: routes,
+      #  exceptions: exceptions,
+      #  filters: filters,
+      #  response_types: response_types,
+      #}.to_yaml
+
+      generate_openapi_doc(descriptions, routes, exceptions, filters, response_types)
     end
+  end
+
+  def generate_openapi_doc(descriptions, routes, exceptions, filters, response_types)
+    version = "3.1.0"
+    info = {
+      title: "Spider Gazelle",
+      version: ActionController::VERSION
+    }
+    components = Components.new
+    schemas = components.schemas
+
+    # add all the schemas
+    response_types.each do |klass, schema|
+      schemas[klass] = Schema.new(schema)
+    end
+
+    paths = Hash(String, Path).new { |hash, key| hash[key] = Path.new }
+
+    routes.each do |route_key, route|
+      path_key = route[:route]
+      verb = route[:verb]
+
+      # ensure the path is in OpenAPI format
+      path_key = path_key.chomp('/').split('/').join('/') do |i|
+        if i.starts_with?(':')
+          "{#{i.lstrip(':')}}"
+        else
+          i
+        end
+      end
+
+      # grab the path object
+      path = paths[path_key]
+
+      # see if we have some documentation for the controller
+      controller_docs = descriptions[route[:controller]]?
+      if docs = controller_docs.try &.docs
+        doc_lines = docs.split("\n", 2)
+        path.summary = doc_lines[0]
+        path.description = docs if doc_lines.size > 1
+      end
+
+      # grab the documentation for the route
+      operation = Operation.new
+      if docs = controller_docs.try &.methods[route[:method]]?
+        doc_lines = docs.split("\n", 2)
+        operation.summary = doc_lines[0]
+        operation.description = docs if doc_lines.size > 1
+      end
+      operation.operation_id = "#{route[:controller]}##{route[:method]}"
+
+      # see if there is any requirement for a request body
+      if schema = response_types[route[:request_body]]
+        operation.request_body = Response.new
+        operation.request_body.required = true
+        operation.request_body.content = {
+          # TODO:: extract accepted content types from the router
+          "application/json" => Schema.new(schema)
+        }
+      end
+
+      # assemble the list of params
+      params = route[:params].map do |raw_param|
+        param = Parameter.new
+        param.name = raw_param[:name]
+        param.in = raw_param[:in]
+        param.required = raw_param[:required]
+        param.schema = Schema.new(raw_param[:schema])
+        param
+      end
+
+      route[:filters].each do |filter_key|
+        filter = filters[filter_key]?
+        next unless filter
+
+        filter[:params].each do |raw_param|
+          param_name = raw_param[:name]
+          next if params.find { |existing| existing.name == param_name }
+
+          param = Parameter.new
+          param.name = param_name
+          param.in = raw_param[:in]
+          param.required = raw_param[:required]
+          param.schema = Schema.new(raw_param[:schema])
+          params << param
+        end
+      end
+      operation.parameters = params
+
+      # assemble the list of responses
+      route[:route_responses].each do |(is_array, klass_name), response_code|
+        # Hash(Tuple(Bool, String), Int32))
+        response = Response.new
+        schema = if is_array
+          Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{klass_name}"}}))
+        else
+          Schema.new(Reference.new("#/components/schemas/#{klass_name}").to_json)
+        end
+        response.content = {
+          # TODO:: extract accepted content types from the router
+          "application/json" => schema
+        }
+
+        operation.responses[response_code.to_s] = response
+      end
+    end
+
+    {
+      version: version,
+      info: info,
+      paths: paths,
+      components: components
+    }.to_yaml
   end
 end
