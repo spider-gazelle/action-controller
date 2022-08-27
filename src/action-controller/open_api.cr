@@ -1,4 +1,3 @@
-require "json-schema"
 require "yaml"
 require "./open_api/*"
 

@@ -1,3 +1,4 @@
+require "json-schema"
 require "habitat"
 require "future"
 require "./action-controller/logger"
