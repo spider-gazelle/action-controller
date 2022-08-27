@@ -3,6 +3,9 @@ class ActionController::OpenAPI::Components
   include YAML::Serializable
 
   property schemas : Hash(String, Schema) = {} of String => Schema
+
+  def initialize
+  end
 end
 
 class ActionController::OpenAPI::Path
@@ -19,6 +22,9 @@ class ActionController::OpenAPI::Path
   property options : Operation? = nil
   property head : Operation? = nil
   property patch : Operation? = nil
+
+  def initialize
+  end
 end
 
 class ActionController::OpenAPI::Operation
@@ -38,6 +44,9 @@ class ActionController::OpenAPI::Operation
   property request_body : Response? = nil
   property parameters : Array(Parameter)? = nil
   property responses : Hash(String, Response) = {} of String => Response
+
+  def initialize
+  end
 end
 
 class ActionController::OpenAPI::Reference
@@ -60,6 +69,9 @@ class ActionController::OpenAPI::Response
   property headers : Hash(String, Parameter)? = nil
   property content : Hash(String, Schema)? = nil
   property required : Bool? = nil
+
+  def initialize
+  end
 end
 
 class ActionController::OpenAPI::Schema
@@ -87,4 +99,7 @@ class ActionController::OpenAPI::Parameter
   property required : Bool? = nil
 
   property schema : Schema? = nil
+
+  def initialize
+  end
 end

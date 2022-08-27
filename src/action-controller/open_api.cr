@@ -379,7 +379,7 @@ module ActionController::OpenAPI
       verb = route[:verb]
 
       # ensure the path is in OpenAPI format
-      path_key = path_key.chomp('/').split('/').join('/') do |i|
+      path_key = path_key.split('/').join('/') do |i|
         if i.starts_with?(':')
           "{#{i.lstrip(':')}}"
         else
@@ -408,10 +408,10 @@ module ActionController::OpenAPI
       operation.operation_id = "#{route[:controller]}##{route[:method]}"
 
       # see if there is any requirement for a request body
-      if schema = response_types[route[:request_body]]
-        operation.request_body = Response.new
-        operation.request_body.required = true
-        operation.request_body.content = {
+      if schema = response_types[route[:request_body]]?
+        operation.request_body = request_body = Response.new
+        request_body.required = true
+        request_body.content = {
           # TODO:: extract accepted content types from the router
           "application/json" => Schema.new(schema)
         }
@@ -421,7 +421,7 @@ module ActionController::OpenAPI
       params = route[:params].map do |raw_param|
         param = Parameter.new
         param.name = raw_param[:name]
-        param.in = raw_param[:in]
+        param.in = raw_param[:in].to_s
         param.required = raw_param[:required]
         param.schema = Schema.new(raw_param[:schema])
         param
@@ -437,7 +437,7 @@ module ActionController::OpenAPI
 
           param = Parameter.new
           param.name = param_name
-          param.in = raw_param[:in]
+          param.in = raw_param[:in].to_s
           param.required = raw_param[:required]
           param.schema = Schema.new(raw_param[:schema])
           params << param
@@ -451,6 +451,8 @@ module ActionController::OpenAPI
         response = Response.new
         schema = if is_array
           Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{klass_name}"}}))
+        elsif klass_name == "Nil"
+          Schema.new(%({"type":"null"}))
         else
           Schema.new(Reference.new("#/components/schemas/#{klass_name}").to_json)
         end
@@ -460,6 +462,21 @@ module ActionController::OpenAPI
         }
 
         operation.responses[response_code.to_s] = response
+      end
+
+      case verb
+      when "get"
+        path.get = operation
+      when "put"
+        path.put = operation
+      when "post"
+        path.post = operation
+      when "patch"
+        path.patch = operation
+      when "delete"
+        path.delete = operation
+      when "websocket"
+        path.get = operation
       end
     end
 
