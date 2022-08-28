@@ -377,7 +377,7 @@ module ActionController::OpenAPI
 
     # add all the schemas
     response_types.each do |klass, schema|
-      schemas[normalise_schema_reference(klass)] = Schema.new(schema)
+      schemas[normalise_schema_reference(klass)] = JSON.parse(schema)
     end
 
     paths = Hash(String, Path).new { |hash, key| hash[key] = Path.new }
@@ -485,8 +485,6 @@ module ActionController::OpenAPI
     {
       openapi: version,
       info: info,
-      consumes: accepts,
-      produces: responders,
       paths: paths,
       components: components
     }.to_yaml
