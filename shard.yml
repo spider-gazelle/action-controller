@@ -23,6 +23,7 @@ dependencies:
   # Used for generating OpenAPI
   json-schema:
     github: spider-gazelle/json-schema
+    version: ">= 1.2"
 
 development_dependencies:
   ameba:

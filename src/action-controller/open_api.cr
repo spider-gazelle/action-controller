@@ -193,7 +193,7 @@ module ActionController::OpenAPI
 
         {% request_body = details[:request_body].id %}
         {% if request_body.stringify != "Nil" %}
-          response_types[{{request_body.stringify}}] = ::JSON::Schema.introspect({{ request_body }}).to_json
+          response_types[{{request_body.stringify}}] = ::JSON::Schema.introspect({{ request_body }}, openapi: true).to_json
         {% end %}
 
         {% responses = {} of Nil => Nil %}
@@ -225,7 +225,7 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            response_types[{{resolved_klass.stringify}}] = ::JSON::Schema.introspect({{ resolved_klass }}).to_json
+            response_types[{{resolved_klass.stringify}}] = ::JSON::Schema.introspect({{ resolved_klass }}, openapi: true).to_json
           {% end %}
           route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
         {% end %}
@@ -265,7 +265,7 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            response_types[{{resolved_klass.stringify}}] = ::JSON::Schema.introspect({{ resolved_klass }}).to_json
+            response_types[{{resolved_klass.stringify}}] = ::JSON::Schema.introspect({{ resolved_klass }}, openapi: true).to_json
           {% end %}
           route_response[{{exception_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
         {% end %}
@@ -333,7 +333,7 @@ module ActionController::OpenAPI
                 name: {{ param_name }},
                 in: {{ param[:in] }},
                 required: {{ param[:required] }},
-                schema: ::JSON::Schema.introspect({{ param[:schema] }}).to_json
+                schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json
               },
             {% end %}
           ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
