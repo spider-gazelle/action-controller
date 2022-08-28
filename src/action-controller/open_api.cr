@@ -360,8 +360,12 @@ module ActionController::OpenAPI
     end
   end
 
+  def normalise_schema_reference(class_name)
+    class_name.gsub(' ', '.').gsub(/[^0-9a-zA-Z_]/, '_')
+  end
+
   def generate_openapi_doc(descriptions, routes, exceptions, filters, response_types, accepts, responders)
-    version = "3.1.0"
+    version = "3.0.1"
     info = {
       title: "Spider Gazelle",
       version: ActionController::VERSION
@@ -369,9 +373,11 @@ module ActionController::OpenAPI
     components = Components.new
     schemas = components.schemas
 
+    operation_id = Hash(String, Int32).new { |hash, key| hash[key] = 0 }
+
     # add all the schemas
     response_types.each do |klass, schema|
-      schemas[klass] = Schema.new(schema)
+      schemas[normalise_schema_reference(klass)] = Schema.new(schema)
     end
 
     paths = Hash(String, Path).new { |hash, key| hash[key] = Path.new }
@@ -407,7 +413,12 @@ module ActionController::OpenAPI
         operation.summary = doc_lines[0]
         operation.description = docs if doc_lines.size > 1
       end
-      operation.operation_id = "#{route[:controller]}##{route[:method]}"
+
+      # ensure we have a unique operation id
+      op_id = "#{route[:controller]}##{route[:method]}"
+      index = operation_id[op_id] + 1
+      operation.operation_id = index > 1 ? "#{op_id}{#{index}}" : op_id
+      operation_id[op_id] = index
 
       # see if there is any requirement for a request body
       if route[:request_body] != "Nil"
@@ -490,7 +501,7 @@ module ActionController::OpenAPI
     end
 
     if klass_name != "Nil"
-      ref_klass = URI.encode_path_segment(klass_name)
+      ref_klass = normalise_schema_reference(klass_name)
       schema = if is_array
         Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{ref_klass}"}}))
       else
