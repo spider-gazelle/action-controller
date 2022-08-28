@@ -343,7 +343,7 @@ module ActionController::Route::Builder
                     # Build the argument named tuple with the correct types
                     {{arg.name.id}}: (
                       {% if body_argument == string_name %}
-                        {% open_api_route[:request_body] = arg.restriction %}
+                        {% open_api_route[:request_body] = arg.restriction.resolve %}
 
                         if body_io = @context.request.body
                           case body_type

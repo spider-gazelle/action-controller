@@ -352,12 +352,14 @@ module ActionController::OpenAPI
       #  filters: filters,
       #  response_types: response_types,
       #}.to_yaml
+      accepts = {{ ActionController::Route::Builder::PARSERS.keys }}
+      responders = {{ ActionController::Route::Builder::RESPONDERS.keys }}
 
-      generate_openapi_doc(descriptions, routes, exceptions, filters, response_types)
+      generate_openapi_doc(descriptions, routes, exceptions, filters, response_types, accepts, responders)
     end
   end
 
-  def generate_openapi_doc(descriptions, routes, exceptions, filters, response_types)
+  def generate_openapi_doc(descriptions, routes, exceptions, filters, response_types, accepts, responders)
     version = "3.1.0"
     info = {
       title: "Spider Gazelle",
@@ -407,13 +409,26 @@ module ActionController::OpenAPI
       operation.operation_id = "#{route[:controller]}##{route[:method]}"
 
       # see if there is any requirement for a request body
-      if schema = response_types[route[:request_body]]?
+      if route[:request_body] != "Nil"
         operation.request_body = request_body = Response.new
         request_body.required = true
-        request_body.content = {
-          # TODO:: extract accepted content types from the router
-          "application/json" => Schema.new(schema)
-        }
+        schema = Schema.new(Reference.new("#/components/schemas/#{route[:request_body]}").to_json)
+
+        accept_schemas = {} of String => Schema
+        accepts.each do |acceptable|
+          case acceptable
+          when "application/json"
+            accept_schemas[acceptable] = schema
+          when "application/yaml"
+            accept_schemas[acceptable] = schema
+          when .starts_with?("text/")
+            accept_schemas[acceptable] = Schema.new(%({"type":"string"}))
+          else
+            accept_schemas[acceptable] = Schema.new(%({"type":"string","format":"binary"}))
+          end
+        end
+
+        request_body.content = accept_schemas
       end
 
       # assemble the list of params
@@ -448,17 +463,32 @@ module ActionController::OpenAPI
       route[:route_responses].each do |(is_array, klass_name), response_code|
         # Hash(Tuple(Bool, String), Int32))
         response = Response.new
-        schema = if is_array
-          Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{klass_name}"}}))
-        elsif klass_name == "Nil"
-          Schema.new(%({"type":"null"}))
-        else
-          Schema.new(Reference.new("#/components/schemas/#{klass_name}").to_json)
+        status_code = HTTP::Status.from_value(response_code)
+        response.description = status_code.description || status_code.to_s
+
+        if klass_name != "Nil"
+          schema = if is_array
+            Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{klass_name}"}}))
+          else
+            Schema.new(Reference.new("#/components/schemas/#{klass_name}").to_json)
+          end
+
+          accept_schemas = {} of String => Schema
+          accepts.each do |acceptable|
+            case acceptable
+            when "application/json"
+              accept_schemas[acceptable] = schema
+            when "application/yaml"
+              accept_schemas[acceptable] = schema
+            when .starts_with?("text/")
+              accept_schemas[acceptable] = Schema.new(%({"type":"string"}))
+            else
+              accept_schemas[acceptable] = Schema.new(%({"type":"string","format":"binary"}))
+            end
+          end
+
+          request_body.content = accept_schemas
         end
-        response.content = {
-          # TODO:: extract accepted content types from the router
-          "application/json" => schema
-        }
 
         operation.responses[response_code] = response
       end
