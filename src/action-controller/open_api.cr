@@ -5,39 +5,18 @@ require "./open_api/*"
 module ActionController::OpenAPI
   extend self
 
-  struct KlassDoc
-    include JSON::Serializable
-    include YAML::Serializable
-
-    def initialize(@name, @docs : String?)
-    end
-
-    getter name : String
-    getter docs : String?
-
-    getter methods : Hash(String, String) = {} of String => String
-    getter ancestors : Array(String) = [] of String
-
-    def implements?(filter)
-      filter_klass = filter[:controller]
-      filter_klass == name || ancestors.includes?(filter_klass)
-    end
-  end
-
   alias Params = NamedTuple(
     name: String,
     in: Symbol,
     required: Bool,
-    schema: String
-  )
+    schema: String)
 
   alias Filter = NamedTuple(
     controller: String,
     method: String,
     wrapper_method: String,
     filter_key: String,
-    params: Array(Params)
-  )
+    params: Array(Params))
 
   alias ExceptionHandler = NamedTuple(
     method: String,
@@ -56,8 +35,7 @@ module ActionController::OpenAPI
     error_handlers: Array(String),
     controller: String,
     request_body: String,
-    route_responses: Hash(Tuple(Bool, String), Int32)
-  )
+    route_responses: Hash(Tuple(Bool, String), Int32))
 
   def extract_route_descriptions
     output = IO::Memory.new
@@ -367,8 +345,8 @@ module ActionController::OpenAPI
   def generate_openapi_doc(descriptions, routes, exceptions, filters, response_types, accepts, responders)
     version = "3.0.3"
     info = {
-      title: "Spider Gazelle",
-      version: ActionController::VERSION
+      title:   "Spider Gazelle",
+      version: ActionController::VERSION,
     }
     components = Components.new
     schemas = components.schemas
@@ -484,10 +462,10 @@ module ActionController::OpenAPI
     end
 
     {
-      openapi: version,
-      info: info,
-      paths: paths,
-      components: components
+      openapi:    version,
+      info:       info,
+      paths:      paths,
+      components: components,
     }.to_yaml
   end
 
@@ -502,10 +480,10 @@ module ActionController::OpenAPI
     if klass_name != "Nil"
       ref_klass = normalise_schema_reference(klass_name)
       schema = if is_array
-        Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{ref_klass}"}}))
-      else
-        Schema.new(Reference.new("#/components/schemas/#{ref_klass}").to_json)
-      end
+                 Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{ref_klass}"}}))
+               else
+                 Schema.new(Reference.new("#/components/schemas/#{ref_klass}").to_json)
+               end
 
       accept_schemas = {} of String => Schema
       responders.each do |acceptable|
