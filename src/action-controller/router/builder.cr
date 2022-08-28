@@ -292,7 +292,7 @@ module ActionController::Route::Builder
 
                     # Calculate the conversions required to meet the desired restrictions
                     {% if arg.restriction %}
-                      {% open_api_param[:schema] = arg.restriction %}
+                      {% open_api_param[:schema] = arg.restriction.resolve %}
 
                       # Check if restriction is optional
                       {% nilable = arg.restriction.resolve.nilable? %}

@@ -149,7 +149,7 @@ module ActionController::OpenAPI
   end
 
   macro finished
-    def generate_open_api_docs
+    def generate_open_api_docs(title : String, version : String, **info)
       descriptions = extract_route_descriptions
 
       # build the OpenAPI document
@@ -334,7 +334,7 @@ module ActionController::OpenAPI
       accepts = {{ ActionController::Route::Builder::PARSERS.keys }}
       responders = {{ ActionController::Route::Builder::RESPONDERS.keys }}
 
-      generate_openapi_doc(descriptions, routes, exceptions, filters, response_types, accepts, responders)
+      generate_openapi_doc(title, version, info, descriptions, routes, exceptions, filters, response_types, accepts, responders)
     end
   end
 
@@ -342,12 +342,12 @@ module ActionController::OpenAPI
     class_name.gsub(' ', '.').gsub(/[^0-9a-zA-Z_]/, '_')
   end
 
-  def generate_openapi_doc(descriptions, routes, exceptions, filters, response_types, accepts, responders)
+  def generate_openapi_doc(title : String, version : String, info, descriptions, routes, exceptions, filters, response_types, accepts, responders)
     version = "3.0.3"
-    info = {
-      title:   "Spider Gazelle",
-      version: ActionController::VERSION,
-    }
+    info = info.merge({
+      title:   title,
+      version: version,
+    })
     components = Components.new
     schemas = components.schemas
 
@@ -466,7 +466,7 @@ module ActionController::OpenAPI
       info:       info,
       paths:      paths,
       components: components,
-    }.to_yaml
+    }
   end
 
   def build_response(responders, is_array, klass_name, response_code)
