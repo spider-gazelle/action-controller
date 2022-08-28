@@ -365,7 +365,7 @@ module ActionController::OpenAPI
   end
 
   def generate_openapi_doc(descriptions, routes, exceptions, filters, response_types, accepts, responders)
-    version = "3.0.1"
+    version = "3.0.3"
     info = {
       title: "Spider Gazelle",
       version: ActionController::VERSION
@@ -419,6 +419,7 @@ module ActionController::OpenAPI
       index = operation_id[op_id] + 1
       operation.operation_id = index > 1 ? "#{op_id}{#{index}}" : op_id
       operation_id[op_id] = index
+      operation.tags << route[:controller].split("::")[-1]
 
       # see if there is any requirement for a request body
       if route[:request_body] != "Nil"

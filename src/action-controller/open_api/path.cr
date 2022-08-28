@@ -34,6 +34,8 @@ class ActionController::OpenAPI::Operation
   property summary : String? = nil
   property description : String? = nil
 
+  property tags : Array(String) = [] of String
+
   # Class#function_name
   @[JSON::Field(key: "operationId")]
   @[YAML::Field(key: "operationId")]
