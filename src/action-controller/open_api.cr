@@ -374,21 +374,32 @@ module ActionController::OpenAPI
 
       # grab the path object
       path = paths[path_key]
+      operation = Operation.new
 
       # see if we have some documentation for the controller
-      controller_docs = descriptions[route[:controller]]?
-      if docs = controller_docs.try &.docs
-        doc_lines = docs.split("\n", 2)
-        path.summary = doc_lines[0]
-        path.description = docs if doc_lines.size > 1
-      end
+      if controller_docs = descriptions[route[:controller]]?
+        if docs = controller_docs.docs
+          doc_lines = docs.split("\n", 2)
+          path.summary = doc_lines[0]
+          path.description = docs if doc_lines.size > 1
+        end
 
-      # grab the documentation for the route
-      operation = Operation.new
-      if docs = controller_docs.try &.methods[route[:method]]?
-        doc_lines = docs.split("\n", 2)
-        operation.summary = doc_lines[0]
-        operation.description = docs if doc_lines.size > 1
+        # grab the documentation for the route
+        docs = controller_docs.methods[route[:method]]?
+
+        # might have to check for docs in the ancestor classes
+        unless docs
+          controller_docs.ancestors.each do |ancestor_klass|
+            docs = descriptions[ancestor_klass]?.try(&.methods[route[:method]]?)
+            break if docs
+          end
+        end
+
+        if docs
+          doc_lines = docs.split("\n", 2)
+          operation.summary = doc_lines[0]
+          operation.description = docs if doc_lines.size > 1
+        end
       end
 
       # ensure we have a unique operation id
