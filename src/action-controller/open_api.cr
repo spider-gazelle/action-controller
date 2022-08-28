@@ -410,25 +410,8 @@ module ActionController::OpenAPI
 
       # see if there is any requirement for a request body
       if route[:request_body] != "Nil"
-        operation.request_body = request_body = Response.new
-        request_body.required = true
-        schema = Schema.new(Reference.new("#/components/schemas/#{route[:request_body]}").to_json)
-
-        accept_schemas = {} of String => Schema
-        accepts.each do |acceptable|
-          case acceptable
-          when "application/json"
-            accept_schemas[acceptable] = schema
-          when "application/yaml"
-            accept_schemas[acceptable] = schema
-          when .starts_with?("text/")
-            accept_schemas[acceptable] = Schema.new(%({"type":"string"}))
-          else
-            accept_schemas[acceptable] = Schema.new(%({"type":"string","format":"binary"}))
-          end
-        end
-
-        request_body.content = accept_schemas
+        operation.request_body = build_response(accepts, false, route[:request_body], nil)
+        operation.request_body.not_nil!.required = true
       end
 
       # assemble the list of params
@@ -461,63 +444,13 @@ module ActionController::OpenAPI
 
       # assemble the list of responses
       route[:route_responses].each do |(is_array, klass_name), response_code|
-        # Hash(Tuple(Bool, String), Int32))
-        response = Response.new
-        status_code = HTTP::Status.from_value(response_code)
-        response.description = status_code.description || status_code.to_s
-
-        if klass_name != "Nil"
-          schema = if is_array
-            Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{klass_name}"}}))
-          else
-            Schema.new(Reference.new("#/components/schemas/#{klass_name}").to_json)
-          end
-
-          accept_schemas = {} of String => Schema
-          accepts.each do |acceptable|
-            case acceptable
-            when "application/json"
-              accept_schemas[acceptable] = schema
-            when "application/yaml"
-              accept_schemas[acceptable] = schema
-            when .starts_with?("text/")
-              accept_schemas[acceptable] = Schema.new(%({"type":"string"}))
-            else
-              accept_schemas[acceptable] = Schema.new(%({"type":"string","format":"binary"}))
-            end
-          end
-
-          request_body.content = accept_schemas
-        end
-
-        operation.responses[response_code] = response
+        operation.responses[response_code] = build_response(responders, operation, is_array, klass_name, response_code)
       end
 
       route[:error_handlers].each do |error_handler|
         handler = exceptions[error_handler]
         handler[:responses].each do |(is_array, klass_name), response_code|
-          # Hash(Tuple(Bool, String), Int32))
-          response = Response.new
-
-          # check for any documentation
-          controller_docs = descriptions[handler[:controller]]?
-          if docs = controller_docs.try &.methods[handler[:method]]?
-            response.description = docs
-          end
-
-          schema = if is_array
-            Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{klass_name}"}}))
-          elsif klass_name == "Nil"
-            Schema.new(%({"type":"null"}))
-          else
-            Schema.new(Reference.new("#/components/schemas/#{klass_name}").to_json)
-          end
-          response.content = {
-            # TODO:: extract accepted content types from the router
-            "application/json" => schema
-          }
-
-          operation.responses[response_code] = response
+          operation.responses[response_code] = build_response(responders, operation, is_array, klass_name, response_code)
         end
       end
 
@@ -543,5 +476,40 @@ module ActionController::OpenAPI
       paths: paths,
       components: components
     }.to_yaml
+  end
+
+  def build_response(responders, is_array, klass_name, response_code)
+    response = Response.new
+
+    if response_code
+      status_code = HTTP::Status.from_value(response_code)
+      response.description = status_code.description || status_code.to_s
+    end
+
+    if klass_name != "Nil"
+      schema = if is_array
+        Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{klass_name}"}}))
+      else
+        Schema.new(Reference.new("#/components/schemas/#{klass_name}").to_json)
+      end
+
+      accept_schemas = {} of String => Schema
+      responders.each do |acceptable|
+        case acceptable
+        when "application/json"
+          accept_schemas[acceptable] = schema
+        when "application/yaml"
+          accept_schemas[acceptable] = schema
+        when .starts_with?("text/")
+          accept_schemas[acceptable] = Schema.new(%({"type":"string"}))
+        else
+          accept_schemas[acceptable] = Schema.new(%({"type":"string","format":"binary"}))
+        end
+      end
+
+      response.content = accept_schemas
+    end
+
+    response
   end
 end
