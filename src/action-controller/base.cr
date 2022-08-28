@@ -10,6 +10,9 @@ abstract class ActionController::Base
   include ActionController::Route::Builder
   include ActionController::Responders
 
+  OPENAPI_FILTER_MAP = {} of Nil => Nil # route to filter names
+  OPENAPI_ERRORS_MAP = {} of Nil => Nil # route to exception classes
+
   # Route IDs params
   DEFAULT_PARAM_ID = {} of Nil => Nil
 
@@ -98,6 +101,7 @@ abstract class ActionController::Base
     {% for ftype in FILTER_TYPES %}
       {% ltype = ftype.downcase %}
 
+      # :nodoc:
       macro __inherit_{{ltype.id}}_filters__
         \{% {{ftype.id}}_MAPPINGS[@type.name.id] = LOCAL_{{ftype.id}} %}
         \{% klasses = [@type.name.id] %}
@@ -210,8 +214,10 @@ abstract class ActionController::Base
     NAMESPACE = [{{"/" + @type.name.stringify.underscore.gsub(/\:\:/, "/")}}]
 
     {% for ftype in FILTER_TYPES %}
+      # :nodoc:
       # function => options
       LOCAL_{{ftype.id}} = {} of Nil => Nil
+      # :nodoc:
       {{ftype.id}} = {} of Nil => Nil
     {% end %}
 
@@ -220,10 +226,12 @@ abstract class ActionController::Base
 
     __build_filter_inheritance_macros__
 
+    # :nodoc:
     macro finished
       __build_filter_mappings__
       __create_route_methods__
 
+      # :nodoc:
       # Create draw_routes function
       #
       # Create instance of controller class init with context, params and logger
@@ -327,6 +335,18 @@ abstract class ActionController::Base
         {% reference_name = details[5] %}
         {% function_name = details[6] %}
 
+        # OpenAPI route lookup
+        {% full_route = (NAMESPACE[0].id.stringify + route_path.id.stringify).split("/").reject(&.empty?) %}
+        {% if is_websocket %}
+          {% verb_route = "WEBSOCKET/" + full_route.join("/") %}
+        {% else %}
+          {% verb_route = http_method.id.stringify.upcase + "/" + full_route.join("/") %}
+        {% end %}
+
+        {% OPENAPI_FILTER_MAP[verb_route] = [] of Nil %}
+        {% OPENAPI_ERRORS_MAP[verb_route] = [] of Nil %}
+
+        # :nodoc:
         def self.{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(context, head_request)
           # Check if force SSL is set and redirect to HTTPS if HTTP
           {% force = false %}
@@ -393,6 +413,7 @@ abstract class ActionController::Base
           {% around_actions = around_actions.reject { |act| skipping.includes?(act) } %}
 
           {% if !around_actions.empty? %}
+            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + around_actions.map(&.stringify) %}
             ActionController::Base.__yield__(instance) do
               {% for action in around_actions %}
                   break if render_called
@@ -416,6 +437,7 @@ abstract class ActionController::Base
           {% before_actions = before_actions.reject { |act| skipping.includes?(act) } %}
 
           {% if !before_actions.empty? %}
+            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + before_actions.map(&.stringify) %}
             {% if around_actions.empty? %}
               ActionController::Base.__yield__(instance) do
             {% end %}
@@ -494,6 +516,7 @@ abstract class ActionController::Base
           {% after_actions = after_actions.reject { |act| skipping.includes?(act) } %}
 
           {% if !after_actions.empty? %}
+            {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + after_actions.map(&.stringify) %}
             ActionController::Base.__yield__(instance) do
               {% for action in after_actions %}
                 {{action}}
@@ -510,6 +533,7 @@ abstract class ActionController::Base
           # Implement error handling
           {% if !RESCUE.empty? %}
             {% for exception, details in RESCUE %}
+              {% OPENAPI_ERRORS_MAP[verb_route] = OPENAPI_ERRORS_MAP[verb_route] + [exception.id.stringify] %}
               rescue e : {{exception.id}}
                 if !instance.render_called
                   instance.{{details[0]}}(e)
@@ -530,6 +554,7 @@ abstract class ActionController::Base
         end
       {% end %}
 
+      # :nodoc:
       # Routes call the functions generated above
       def self.__init_routes__(router)
         {% for _key, details in ROUTES %}
@@ -559,6 +584,7 @@ abstract class ActionController::Base
         end
       {% end %}
 
+      # :nodoc:
       def self.__route_list__
         [
           # "Class", :name, :verb, "route"
