@@ -343,7 +343,6 @@ module ActionController::OpenAPI
   end
 
   def generate_openapi_doc(title : String, version : String, info, descriptions, routes, exceptions, filters, response_types, accepts, responders)
-    version = "3.0.3"
     info = info.merge({
       title:   title,
       version: version,
@@ -462,7 +461,7 @@ module ActionController::OpenAPI
     end
 
     {
-      openapi:    version,
+      openapi:    "3.0.3",
       info:       info,
       paths:      paths,
       components: components,
