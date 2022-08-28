@@ -98,7 +98,7 @@ class ActionController::OpenAPI::Parameter
   property description : String? = nil
   property required : Bool? = nil
 
-  property schema : Schema? = nil
+  property schema : JSON::Any? = nil
 
   def initialize
   end

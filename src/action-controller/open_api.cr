@@ -1,3 +1,4 @@
+require "uri"
 require "yaml"
 require "./open_api/*"
 
@@ -420,7 +421,7 @@ module ActionController::OpenAPI
         param.name = raw_param[:name]
         param.in = raw_param[:in].to_s
         param.required = raw_param[:required]
-        param.schema = Schema.new(raw_param[:schema])
+        param.schema = JSON.parse(raw_param[:schema])
         param
       end
 
@@ -436,7 +437,7 @@ module ActionController::OpenAPI
           param.name = param_name
           param.in = raw_param[:in].to_s
           param.required = raw_param[:required]
-          param.schema = Schema.new(raw_param[:schema])
+          param.schema = JSON.parse(raw_param[:schema])
           params << param
         end
       end
@@ -471,8 +472,10 @@ module ActionController::OpenAPI
     end
 
     {
-      version: version,
+      openapi: version,
       info: info,
+      consumes: accepts,
+      produces: responders,
       paths: paths,
       components: components
     }.to_yaml
@@ -487,10 +490,11 @@ module ActionController::OpenAPI
     end
 
     if klass_name != "Nil"
+      ref_klass = URI.encode_path_segment(klass_name)
       schema = if is_array
-        Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{klass_name}"}}))
+        Schema.new(%({"type":"array","items":{"$ref":"#/components/schemas/#{ref_klass}"}}))
       else
-        Schema.new(Reference.new("#/components/schemas/#{klass_name}").to_json)
+        Schema.new(Reference.new("#/components/schemas/#{ref_klass}").to_json)
       end
 
       accept_schemas = {} of String => Schema
