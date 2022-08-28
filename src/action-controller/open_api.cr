@@ -37,6 +37,17 @@ module ActionController::OpenAPI
     request_body: String,
     route_responses: Hash(Tuple(Bool, String), Int32))
 
+  SAVE_DESCRIPTIONS_OF = {"ActionController::Base", "JSON::Serializable", "YAML::Serializable"}
+
+  def extract_all_types(type_collection, current_list)
+    type_collection.concat current_list
+    current_list.each do |current_type|
+      if next_list = current_type["types"]?.try &.as_a
+        extract_all_types(type_collection, next_list)
+      end
+    end
+  end
+
   def extract_route_descriptions
     output = IO::Memory.new
 
@@ -48,11 +59,14 @@ module ActionController::OpenAPI
 
     raise "failed to obtain route descriptions via 'crystal docs'" unless status.success?
 
-    program_types = JSON.parse(output.to_s)["program"]["types"].as_a
+    # flatten the program type tree
+    program_types = [] of JSON::Any
+    extract_all_types(program_types, JSON.parse(output.to_s)["program"]["types"].as_a)
+
     docs = {} of String => KlassDoc
 
     program_types.each do |type|
-      klass_docs = KlassDoc.new(type["name"].as_s, type["doc"]?.try &.as_s)
+      klass_docs = KlassDoc.new(type["full_name"].as_s, type["doc"]?.try &.as_s)
       docs[klass_docs.name] = klass_docs
 
       # check if we want the method docs of this class
@@ -61,7 +75,7 @@ module ActionController::OpenAPI
       ancestors = [] of String
       type["ancestors"]?.try &.as_a.each do |klass|
         full_name = klass["full_name"].as_s
-        if full_name == "ActionController::Base"
+        if SAVE_DESCRIPTIONS_OF.includes?(full_name)
           save_methods = true
           break
         elsif klass["kind"].as_s == "module"
