@@ -354,6 +354,9 @@ module ActionController::OpenAPI
 
     # add all the schemas
     response_types.each do |klass, schema|
+      if schema_docs = descriptions[klass]?.try(&.docs)
+        schema = %(#{schema[0..-2]},"description":#{schema_docs.to_json}})
+      end
       schemas[normalise_schema_reference(klass)] = JSON.parse(schema)
     end
 
