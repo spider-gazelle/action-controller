@@ -125,7 +125,7 @@ module ActionController::Route::Builder
 
   macro __parse_inferred_routes__
     # Check if they have been applied to any of the methods
-    {% for method in @type.methods %}
+    {% for method in @type.methods.sort_by { |m| m.line_number } %}
       {% method_name = method.name %}
       {% annotation_found = false %}
 
