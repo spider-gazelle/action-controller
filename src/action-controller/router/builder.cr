@@ -217,11 +217,13 @@ module ActionController::Route::Builder
               {% open_api_params[path_param] = {} of Nil => Nil %}
               {% open_api_params[path_param][:in] = :path %}
               {% open_api_params[path_param][:required] = true %}
+              {% open_api_params[path_param][:schema] = Nil %}
             {% end %}
             {% for path_param in optional_params %}
               {% open_api_params[path_param] = {} of Nil => Nil %}
               {% open_api_params[path_param][:in] = :path %}
               {% open_api_params[path_param][:required] = false %}
+              {% open_api_params[path_param][:schema] = Nil %}
             {% end %}
             {% open_api_route[:params] = open_api_params %}
 

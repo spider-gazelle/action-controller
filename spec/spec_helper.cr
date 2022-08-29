@@ -59,6 +59,11 @@ class Filtering < FilterOrdering
     render text: "ok"
   end
 
+  @[AC::Route::GET("/:id")]
+  def show
+    render text: "ok"
+  end
+
   @[AC::Route::GET("/other_route/:id", content_type: "text/plain")]
   def other_route(id : String) : String
     id
