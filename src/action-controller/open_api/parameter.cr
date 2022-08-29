@@ -6,6 +6,7 @@ class ActionController::OpenAPI::Parameter
   property name : String? = nil
   property in : String? = nil
   property description : String? = nil
+  property example : String? = nil
   property required : Bool? = nil
 
   property schema : JSON::Any? = nil

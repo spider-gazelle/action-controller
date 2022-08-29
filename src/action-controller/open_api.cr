@@ -10,7 +10,8 @@ module ActionController::OpenAPI
     in: Symbol,
     required: Bool,
     schema: String,
-    docs: String?)
+    docs: String?,
+    example: String?)
 
   alias Filter = NamedTuple(
     controller: String,
@@ -279,7 +280,8 @@ module ActionController::OpenAPI
                   in: {{ param[:in] }},
                   required: {{ param[:required] }},
                   schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json,
-                  docs: {{ param[:docs] }}.as(String?)
+                  docs: {{ param[:docs] }}.as(String?),
+                  example: {{ param[:example] }}.as(String?),
                 },
               {% end %}
             ]{% if params.empty? %} of Params{% end %},
@@ -328,7 +330,8 @@ module ActionController::OpenAPI
                 in: {{ param[:in] }},
                 required: {{ param[:required] }},
                 schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json,
-                docs: {{ param[:docs] }}.as(String?)
+                docs: {{ param[:docs] }}.as(String?),
+                example: {{ param[:example] }}.as(String?),
               },
             {% end %}
           ]{% if params.empty? %} of Params{% end %},
