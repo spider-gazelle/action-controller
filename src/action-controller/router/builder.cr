@@ -21,6 +21,8 @@ end
 annotation ActionController::Param::Converter
 end
 
+alias ActionController::Param::Info = ActionController::Param::Converter
+
 module ActionController::Route
   class Error < ::Exception
     def initialize(message : String? = nil, @accepts : Array(String)? = nil)
