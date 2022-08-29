@@ -446,6 +446,7 @@ module ActionController::OpenAPI
         param.required = raw_param[:required]
         param.schema = JSON.parse(raw_param[:schema])
         param.description = raw_param[:docs]
+        param.example = raw_param[:example]
         param
       end
 
@@ -463,6 +464,7 @@ module ActionController::OpenAPI
           param.required = raw_param[:required]
           param.schema = JSON.parse(raw_param[:schema])
           param.description = raw_param[:docs]
+          param.example = raw_param[:example]
           params << param
         end
       end
