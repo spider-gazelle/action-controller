@@ -9,7 +9,8 @@ module ActionController::OpenAPI
     name: String,
     in: Symbol,
     required: Bool,
-    schema: String)
+    schema: String,
+    docs: String?)
 
   alias Filter = NamedTuple(
     controller: String,
@@ -277,10 +278,11 @@ module ActionController::OpenAPI
                   name: {{ param_name }},
                   in: {{ param[:in] }},
                   required: {{ param[:required] }},
-                  schema: ::JSON::Schema.introspect({{ param[:schema] }}).to_json
+                  schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json,
+                  docs: {{ param[:docs] }}.as(String?)
                 },
               {% end %}
-            ]{% if params.empty? %} of Param{% end %},
+            ]{% if params.empty? %} of Params{% end %},
           },
         {% end %}
       }{% if Route::Builder::OPENAPI_FILTERS.empty? %} of String => Filter{% end %}
@@ -325,10 +327,11 @@ module ActionController::OpenAPI
                 name: {{ param_name }},
                 in: {{ param[:in] }},
                 required: {{ param[:required] }},
-                schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json
+                schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json,
+                docs: {{ param[:docs] }}.as(String?)
               },
             {% end %}
-          ]{% if params.empty? %} of NamedTuple(name: String, in: Symbol, required: Bool, schema: String){% end %},
+          ]{% if params.empty? %} of Params{% end %},
           method: {{ details[:method] }},
           filters: filter_keys,
           error_handlers: error_keys,
@@ -439,6 +442,7 @@ module ActionController::OpenAPI
         param.in = raw_param[:in].to_s
         param.required = raw_param[:required]
         param.schema = JSON.parse(raw_param[:schema])
+        param.description = raw_param[:docs]
         param
       end
 
@@ -455,6 +459,7 @@ module ActionController::OpenAPI
           param.in = raw_param[:in].to_s
           param.required = raw_param[:required]
           param.schema = JSON.parse(raw_param[:schema])
+          param.description = raw_param[:docs]
           params << param
         end
       end
