@@ -342,7 +342,7 @@ module ActionController::Route::Builder
                       {% open_api_param[:schema] = "String?".id %}
                     {% end %}
 
-                    {% open_api_param[:required] = open_api_param[:required] || !nilable %}
+                    {% open_api_param[:required] = open_api_param[:required] || (!nilable && arg.default_value.stringify == "") %}
 
                     # Build the argument named tuple with the correct types
                     {{arg.name.id}}: (
@@ -370,7 +370,7 @@ module ActionController::Route::Builder
                       {% else %}
                         if param_value = params[{{query_param_name}}]?
                           {{restrictions.join(" || ").id}}
-                        {% if arg.default_value %}
+                        {% if arg.default_value.stringify != "" %}
                         else
                           {{arg.default_value}}
                         {% end %}
