@@ -466,7 +466,7 @@ module ActionController::Route::Builder
     add_responder("application/json") { |io, result| result.to_json(io) }
     default_responder "application/json"
 
-    add_parser("application/json") { |klass, body_io| klass.from_json(body_io.gets_to_end) }
+    add_parser("application/json") { |klass, body_io| klass.from_json(body_io) }
     default_parser "application/json"
 
     macro inherited

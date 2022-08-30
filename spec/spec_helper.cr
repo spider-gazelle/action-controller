@@ -28,7 +28,7 @@ class Filtering < FilterOrdering
   # `base "/filtering"` configured automatically
 
   add_responder("application/yaml") { |io, result| result.to_yaml(io) }
-  add_parser("application/yaml") { |klass, body_io| klass.from_yaml(body_io.gets_to_end) }
+  add_parser("application/yaml") { |klass, body_io| klass.from_yaml(body_io) }
 
   add_responder("text/html") { |io, _result, klass, function| "#{klass} == #{function}".to_s(io) }
 
