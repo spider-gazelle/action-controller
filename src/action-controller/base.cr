@@ -615,7 +615,7 @@ abstract class ActionController::Base
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
     macro {{http_method.id}}(path, function = nil, annotations = nil, reference = nil, &block)
       \{% unless function %}
-        \{% function = {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
+        \{% function = "_route_" + {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
       \{% end %}
       \{% LOCAL_ROUTES[{{http_method}} + path] = { {{http_method}}, path, annotations, block, false, (reference || function).id, function.id } %}
       \{% if annotations %}
