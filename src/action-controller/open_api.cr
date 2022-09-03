@@ -485,7 +485,7 @@ module ActionController::OpenAPI
 
       route[:error_handlers].each do |error_handler|
         handler = exceptions[error_handler]
-        handler[:responses].each do |(is_array, klass_name), response_code|
+        handler[:responses]?.try &.each do |(is_array, klass_name), response_code|
           operation.responses[response_code] = build_response(responders, is_array, klass_name, response_code)
         end
       end
