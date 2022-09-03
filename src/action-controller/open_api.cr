@@ -196,8 +196,12 @@ module ActionController::OpenAPI
         {% if default_specified && default_type.union? && !details[:responses].empty? %}
           {% default_types = default_type.union_types %}
           {% for klass, response_code in details[:responses] %}
-            {% default_types = default_types - [klass.resolve] %}
-            {% responses[klass] = response_code %}
+            {% klass = klass.resolve %}
+            {% configure_types = klass.union? ? klass.union_types : [klass] %}
+            {% for response_klass in configure_types %}
+              {% default_types = default_types.reject { |type| type == response_klass } %}
+              {% responses[response_klass] = response_code %}
+            {% end %}
           {% end %}
           {% for klass in default_types %}
             {% responses[klass] = default_code %}
