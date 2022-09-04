@@ -63,7 +63,9 @@ module ActionController::OpenAPI
 
     # flatten the program type tree
     program_types = [] of JSON::Any
-    extract_all_types(program_types, JSON.parse(output.to_s)["program"]["types"].as_a)
+    if extracted_types = JSON.parse(output.to_s)["program"]["types"]?.try &.as_a
+      extract_all_types(program_types, extracted_types)
+    end
 
     docs = {} of String => KlassDoc
 
