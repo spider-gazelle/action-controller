@@ -176,7 +176,7 @@ module ActionController::Route::Builder
           {% elsif route_method == AC::Route::Exception %}
             # annotation based exception handlers
             {% required_params = [] of StringLiteral %}
-            {% exception_class = ann[0].stringify %}
+            {% exception_class = ann[0].resolve.stringify %}
             {% function_wrapper_name = "_#{exception_class.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
 
             {% open_api_route[:controller] = @type.name.stringify %}
