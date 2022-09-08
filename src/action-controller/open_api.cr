@@ -462,7 +462,7 @@ module ActionController::OpenAPI
 
         filter[:params].each do |raw_param|
           param_name = raw_param[:name]
-          existing = params.find { |existing| existing.name == param_name }
+          existing = params.find { |current_param| current_param.name == param_name }
           if existing
             if existing.schema.try(&.[]?("type")) == "null"
               existing.schema = JSON.parse(raw_param[:schema])

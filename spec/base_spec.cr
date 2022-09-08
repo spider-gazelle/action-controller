@@ -5,7 +5,7 @@ describe ActionController::Base do
     c = HelloWorld.spec_instance(HTTP::Request.new("GET", "/", headers: HTTP::Headers{
       "Accept" => "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
     }))
-    c.accepts_formats.should eq(["text/html", "application/xhtml+xml", "application/xml"])
+    c.accepts_formats.should eq(["text/html", "application/xhtml+xml", "application/xml", "*/*"])
   end
 
   it "should provide a helper for getting the current base route" do

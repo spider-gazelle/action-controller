@@ -90,8 +90,12 @@ module ActionController::Route::Builder
       ]
 
       # :nodoc:
-      def self.can_respond_with?(content_type)
-        RESPONDER_LIST.includes? content_type
+      def self.can_respond_with?(content_type : Array(String)) : String?
+        return DEFAULT_RESPONDER[0] if content_type.empty?
+        common = content_type & RESPONDER_LIST
+        return common.first if common.size > 0
+        return DEFAULT_RESPONDER[0] if content_type.includes? "*/*"
+        nil
       end
 
       # :nodoc:
@@ -125,7 +129,7 @@ module ActionController::Route::Builder
 
   macro __parse_inferred_routes__
     # Check if they have been applied to any of the methods
-    {% for method in @type.methods.sort_by { |m| m.line_number } %}
+    {% for method in @type.methods.sort_by(&.line_number) %}
       {% method_name = method.name %}
       {% annotation_found = false %}
 
@@ -193,8 +197,7 @@ module ActionController::Route::Builder
               {% if content_type %}
                 responds_with = {{content_type}}
               {% else %}
-                responds_with = accepts_formats.first? || {{ DEFAULT_RESPONDER[0] }}
-                responds_with = {{ DEFAULT_RESPONDER[0] }} unless {{@type.name.id}}.can_respond_with?(responds_with)
+                responds_with = {{@type.name.id}}.can_respond_with?(accepts_formats) || DEFAULT_RESPONDER[0]
               {% end %}
           {% else %}
             # annotation based route
@@ -248,8 +251,8 @@ module ActionController::Route::Builder
                 {% if content_type %}
                   responds_with = {{content_type}}
                 {% else %}
-                  responds_with = accepts_formats.first? || {{ DEFAULT_RESPONDER[0] }}
-                  raise AC::Route::NotAcceptable.new("no renderer available for #{RESPONDER_LIST}, have #{accepts_formats}", {{@type.name.id}}.accepts) unless {{@type.name.id}}.can_respond_with?(responds_with)
+                  responds_with = {{@type.name.id}}.can_respond_with?(accepts_formats)
+                  raise AC::Route::NotAcceptable.new("no renderer available for #{accepts_formats.join(" or ")}, accepts #{RESPONDER_LIST.join(" or ")}", {{@type.name.id}}.accepts) unless responds_with
                 {% end %}
             {% end %}
           {% end %}

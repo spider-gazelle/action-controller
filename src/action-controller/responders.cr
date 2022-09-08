@@ -212,13 +212,9 @@ module ActionController::Responders
   ACCEPT_SEPARATOR_REGEX = /,\s*/
 
   # Extracts the mime types from the Accept header
-  def accepts_formats
-    accept = request.headers["Accept"]?
-    if accept && !accept.empty?
-      accepts = accept.split(";").first?.try(&.split(ACCEPT_SEPARATOR_REGEX))
-      return accepts if accepts && !accepts.empty?
-    end
-    [] of String
+  def accepts_formats : Array(String)
+    accept = request.headers["Accept"]? || ""
+    accept.split(";").flat_map(&.split(ACCEPT_SEPARATOR_REGEX).select(&.includes?('/')))
   end
 
   # Helper class for selecting the response to render / execute

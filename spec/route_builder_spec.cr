@@ -90,4 +90,28 @@ describe AC::Route::Builder do
     result = client.get("/filtering/multistatus/hello")
     result.status_code.should eq 202
   end
+
+  it "should work with custom accepts types" do
+    headers = HTTP::Headers{
+      "Accept" => "*/*",
+    }
+    result = client.get("/filtering/other_route/1/test", headers: headers)
+    result.status_code.should eq 200
+    result.content_type.should eq "application/json"
+    result.body.should eq %("1-hello")
+
+    headers = HTTP::Headers{
+      "Accept" => "application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
+    }
+    result = client.get("/filtering/other_route/2/test", headers: headers)
+    result.status_code.should eq 200
+    result.content_type.should eq "application/json"
+
+    headers = HTTP::Headers{
+      "Accept" => "application/xhtml+xml, application/yaml;q=0.9, */*;q=0.8",
+    }
+    result = client.get("/filtering/other_route/3/test", headers: headers)
+    result.status_code.should eq 200
+    result.content_type.should eq "application/yaml"
+  end
 end
