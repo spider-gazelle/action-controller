@@ -383,7 +383,11 @@ module ActionController::OpenAPI
       if schema_docs = descriptions[klass]?.try(&.docs)
         schema = %(#{schema[0..-2]},"description":#{schema_docs.to_json}})
       end
-      schemas[normalise_schema_reference(klass)] = JSON.parse(schema)
+      begin
+        schemas[normalise_schema_reference(klass)] = JSON.parse(schema)
+      rescue JSON::ParseException
+        puts "WARN: failed to parse class schema '#{schema}'"
+      end
     end
 
     paths = Hash(String, Path).new { |hash, key| hash[key] = Path.new }
