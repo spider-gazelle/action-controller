@@ -189,8 +189,7 @@ module ActionController::OpenAPI
 
         {% request_body = details[:request_body].id %}
         {% if request_body.stringify != "Nil" %}
-          schema = ::JSON::Schema.introspect({{ request_body }}, openapi: true)
-          response_types[{{request_body.stringify}}] = schema.to_json
+          response_types[{{request_body.stringify}}] = ::JSON::Schema.introspect({{ request_body }}, openapi: true).to_json
         {% end %}
 
         {% responses = {} of Nil => Nil %}
