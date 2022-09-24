@@ -105,7 +105,7 @@ module ActionController::Route::Builder
 
       {% for type, block in PARSERS %}
         # :nodoc:
-        def self.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{*block.args}})
+        def self.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{*block.args}}, **_ignore)
           {{block.body}}
         end
       {% end %}
@@ -358,7 +358,7 @@ module ActionController::Route::Builder
                           case body_type
                           {% for type, _block in PARSERS %}
                             when {{type}}
-                              {{@type.name.id}}.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{ arg.restriction }}, body_io)
+                              {{@type.name.id}}.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{ arg.restriction }}, body_io, request: @context.request)
                           {% end %}
                           end
                         end
@@ -466,10 +466,14 @@ module ActionController::Route::Builder
 
   macro included
     # JSON APIs by default
+
+    # Responders are executed in the context of the controller so can access all controller instance methods
     add_responder("application/json") { |io, result| result.to_json(io) }
     default_responder "application/json"
 
-    add_parser("application/json") { |klass, body_io| klass.from_json(body_io) }
+    # parsers have access to the request so they can modify how they parse the body
+    # for example there might be a difference between PUT and PATCH semantics
+    add_parser("application/json") { |klass, body_io, request| klass.from_json(body_io) }
     default_parser "application/json"
 
     macro inherited
