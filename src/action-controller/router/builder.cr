@@ -321,7 +321,7 @@ module ActionController::Route::Builder
                           {% if converter_args[:from_value] %}
                             {% restrictions = [union_types[0].stringify + ".from_value?(param_value.to_i64)"] %}
                           {% else %}
-                            {% restrictions = [union_types[0].stringify + ".parse?(param_value)"] %}
+                            {% restrictions = ["::AC::Route::Param::ConvertEnum(" + union_types[0].stringify + ").convert(param_value)"] %}
                           {% end %}
                         {% else %}
                           {% restrictions = ["::AC::Route::Param::Convert" + union_types[0].stringify + ".new(**" + converter_args.stringify + ").convert(param_value)"] %}
@@ -334,11 +334,13 @@ module ActionController::Route::Builder
                       # There are a bunch of types this might be
                       {% else %}
                         {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
-                        {% if union_types[0] < Enum %}
-                          {% restrictions = [union_types[0].stringify + ".parse?(param_value)"] %}
-                        {% else %}
-                          {% restrictions = union_types.map { |type| "::AC::Route::Param::Convert" + type.stringify + ".new.convert(param_value)" } %}
-                        {% end %}
+                        {% restrictions = union_types.map do |type|
+                             if type.resolve < Enum
+                               ("::AC::Route::Param::ConvertEnum(" + type.stringify + ").convert(param_value)")
+                             else
+                               ("::AC::Route::Param::Convert" + type.stringify + ".new.convert(param_value)")
+                             end
+                           end %}
                       {% end %}
                     {% else %}
                       {% nilable = true %}

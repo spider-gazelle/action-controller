@@ -24,6 +24,9 @@ describe AC::Route::Builder do
     result = client.get("/filtering/enum_route/colour/RED")
     result.body.should eq "Red"
 
+    result = client.get("/filtering/enum_route/colour/1")
+    result.body.should eq "Green"
+
     result = client.get("/filtering/enum_route/colour_value/1")
     result.body.should eq "Green"
   end

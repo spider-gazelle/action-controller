@@ -47,6 +47,18 @@ module ActionController::Route::Param
     end
   end
 
+  struct ConvertEnum(T)
+    def self.convert(raw : String)
+      value = raw.to_i64? || raw
+      case value
+      in Int64
+        T.from_value? value
+      in String
+        T.parse? value
+      end
+    end
+  end
+
   struct ConvertTime < Conversion
     def initialize(@format : String? = nil)
     end
