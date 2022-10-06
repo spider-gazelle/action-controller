@@ -106,9 +106,9 @@ module ActionController::BodyParser
         end
       end
 
-      form_params.each do |key, _|
+      form_params.each do |key, value|
         values = params.fetch_all(key) || [] of String
-        values.concat(form_params.fetch_all(key))
+        values << value
         params.set_all(key, values)
       end
 

@@ -3,7 +3,7 @@ require "./spec_helper"
 describe ActionController::BodyParser do
   it "should add url encoded data into params" do
     headers = HTTP::Headers{"Content-Type" => "application/x-www-form-urlencoded"}
-    body = "home=Cosby&favorite+flavor=flies"
+    body = "home=Cosby&home=what&favorite+flavor=flies"
     request = HTTP::Request.new("POST", "/?home=test", headers, body)
 
     files, form_data = ActionController::BodyParser.extract_form_data(request, "application/x-www-form-urlencoded", request.query_params)
@@ -11,8 +11,8 @@ describe ActionController::BodyParser do
     params = request.query_params
 
     params["home"].should eq("test")
-    params.fetch_all("home").should eq(["test", "Cosby"])
-    form_data.fetch_all("home").should eq(["Cosby"])
+    params.fetch_all("home").should eq(["test", "Cosby", "what"])
+    form_data.fetch_all("home").should eq(["Cosby", "what"])
 
     params["favorite flavor"].should eq("flies")
     form_data["favorite flavor"].should eq("flies")
