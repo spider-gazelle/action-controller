@@ -484,5 +484,5 @@ module ActionController::Route::Builder
         __parse_inferred_routes__
       end
     end
-	end
+  end
 end
