@@ -215,6 +215,11 @@ class BobJane < ActionController::Base
     render text: "index"
   end
 
+  @[AC::Route::GET("/urlencoded", content_type: "application/x-www-form-urlencoded", config: {strict: {name: false}})]
+  def urlencoded(name : String) : String
+    render text: name
+  end
+
   get "/redirect", :redirect do
     redirect_to "/#{session["hello"]}"
   end

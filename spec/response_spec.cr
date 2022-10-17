@@ -32,6 +32,13 @@ describe "end to end requests and responses" do
     result.headers["Set-Cookie"].should_not be_nil
   end
 
+  it "encode body as application/x-www-form-urlencoded" do
+    headers = HTTP::Headers{"Content-Type" => "application/x-www-form-urlencoded"}
+    body = "name=Jane"
+    result = client.get("/bob_jane/urlencoded", headers: headers, body: body)
+    result.body.should eq("Jane")
+  end
+
   it "#redirect" do
     cookie = "_test_session_=CKQMLS12oJZBIh3Hlbpg19XGFAphCiRW7NMHq31epbpGTfI9N0T7WeIR1C%2FFDJ%2FW--IEb0qAXKV9DtrLdnyqzdGbBM2ww%3D"
     result = client.get("/bob_jane/redirect", headers: HTTP::Headers{"Cookie" => cookie})
@@ -163,6 +170,7 @@ describe "end to end requests and responses" do
       {"BobJane", :update, :put, "/bob_jane/put_test"},
       {"BobJane", :modified_session, :get, "/bob_jane/modified_session"},
       {"BobJane", :modified_session_with_redirect, :get, "/bob_jane/modified_session_with_redirect"},
+      {"BobJane", :urlencoded, :get, "/bob_jane/urlencoded"},
       {"BobJane", :index, :get, "/bob_jane/"},
     ])
   end
