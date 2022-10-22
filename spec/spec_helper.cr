@@ -109,6 +109,11 @@ class Filtering < FilterOrdering
     float
   end
 
+  @[AC::Route::POST("/some_other_entry/", status_code: HTTP::Status::ACCEPTED)]
+  def create_form_encoded_entry(float : Float64) : Float64
+    float
+  end
+
   # custom converter
   struct IsHotDog
     def initialize(@strict : Bool = false)
