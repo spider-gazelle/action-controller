@@ -109,6 +109,11 @@ class Filtering < FilterOrdering
     float
   end
 
+  @[AC::Route::POST("/some_other_entry/", status_code: HTTP::Status::ACCEPTED)]
+  def create_form_encoded_entry(float : Float64) : Float64
+    float
+  end
+
   # custom converter
   struct IsHotDog
     def initialize(@strict : Bool = false)
@@ -213,6 +218,11 @@ class BobJane < ActionController::Base
   def index
     session["hello"] = "other_route"
     render text: "index"
+  end
+
+  @[AC::Route::GET("/urlencoded", content_type: "application/x-www-form-urlencoded", config: {strict: {name: false}})]
+  def urlencoded(name : String) : String
+    render text: name
   end
 
   get "/redirect", :redirect do

@@ -117,4 +117,11 @@ describe AC::Route::Builder do
     result.status_code.should eq 200
     result.content_type.should eq "application/yaml"
   end
+
+  it "where no body is expected, accept application/x-www-form-urlencoded data as params" do
+    headers = HTTP::Headers{"Content-Type" => "application/x-www-form-urlencoded"}
+    body = "float=3.14"
+    result = client.post("/filtering/some_other_entry/", headers: headers, body: body)
+    result.body.should eq("3.14")
+  end
 end
