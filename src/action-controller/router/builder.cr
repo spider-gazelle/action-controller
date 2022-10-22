@@ -370,7 +370,7 @@ module ActionController::Route::Builder
                         if param_value = route_params[{{query_param_name}}]?
                           {{restrictions.join(" || ").id}}
                         else
-                          raise ::AC::Route::Param::MissingError.new("missing required parameter", {{string_name}}, {{arg.restriction.resolve.stringify}})
+                          raise ::AC::Route::Param::MissingError.new("missing required parameter", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
                         end
 
                       # An optional route param, might be passed as an query param
@@ -385,7 +385,7 @@ module ActionController::Route::Builder
                       {% end %}
 
                     # Use tap to ensure a good error message if the function param isn't nilable
-                    ){% if !nilable %}.tap { |result| raise AC::Route::Param::ValueError.new("invalid parameter value", {{string_name}}, {{arg.restriction.resolve.stringify}}) if result.nil? }.not_nil!{% end %},
+                    ){% if !nilable %}.tap { |result| raise AC::Route::Param::ValueError.new("invalid parameter value", {{query_param_name}}, {{arg.restriction.resolve.stringify}}) if result.nil? }.not_nil!{% end %},
                   {% end %}
                 {% end %}
               }
