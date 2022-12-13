@@ -415,6 +415,11 @@ abstract class ActionController::Base
                 {% around_actions = around_actions.reject(&.==(method)) %}
               {% end %}
             {% end %}
+
+            {% filter_name = options[2] %}
+            {% if skipping.includes?(filter_name.id) %}
+              {% around_actions = around_actions.reject(&.==(method)) %}
+            {% end %}
           {% end %}
           {% around_actions = around_actions.reject { |act| skipping.includes?(act) } %}
 
@@ -438,6 +443,11 @@ abstract class ActionController::Base
               {% if except != nil && except.includes?(reference_name) %} # except
                 {% before_actions = before_actions.reject(&.==(method)) %}
               {% end %}
+            {% end %}
+
+            {% filter_name = options[2] %}
+            {% if skipping.includes?(filter_name.id) %}
+              {% before_actions = before_actions.reject(&.==(method)) %}
             {% end %}
           {% end %}
           {% before_actions = before_actions.reject { |act| skipping.includes?(act) } %}
@@ -517,6 +527,11 @@ abstract class ActionController::Base
               {% if except != nil && except.includes?(reference_name) %} # except
                 {% after_actions = after_actions.reject(&.==(method)) %}
               {% end %}
+            {% end %}
+
+            {% filter_name = options[2] %}
+            {% if skipping.includes?(filter_name.id) %}
+              {% after_actions = after_actions.reject(&.==(method)) %}
             {% end %}
           {% end %}
           {% after_actions = after_actions.reject { |act| skipping.includes?(act) } %}
@@ -664,7 +679,7 @@ abstract class ActionController::Base
   end
 
   macro __define_filter_macro__(name, store, method = nil)
-    macro {{name.id}}({% if method.nil? %} method, {% end %} only = nil, except = nil)
+    macro {{name.id}}({% if method.nil? %} method, {% end %} only = nil, except = nil, filter_name = nil)
     {% if method %}
       \{% method = {{method}} %}
     {% else %}
@@ -694,7 +709,11 @@ abstract class ActionController::Base
       \{% else %}
         \{% except = prev_except %}
       \{% end %}
-      \{% {{store}}[method] = {only, except} %}
+      \{% if filter_name %}
+      \{% else %}
+        \{% filter_name = method %}
+      \{% end %}
+      \{% {{store}}[method] = {only, except, filter_name} %}
     end
   end
 

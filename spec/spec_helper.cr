@@ -13,14 +13,37 @@ abstract class FilterOrdering < ActionController::Base
   @in_around = false
 
   before_action :set_trust
-  before_action :check_trust
 
   def set_trust
     @trusted = true
   end
 
+  @[AC::Route::Filter(:before_action)]
   def check_trust
     render :forbidden, text: "Trust check failed" unless @trusted
+  end
+end
+
+class SkippingAnnotation < FilterOrdering
+  # `base "/skipping_annotation"` configured automatically
+
+  skip_action :set_trust
+  skip_action :check_trust
+
+  @[AC::Route::GET("/")]
+  def index
+    render text: "ok #{@trusted}"
+  end
+end
+
+class SkippingSymbol < FilterOrdering
+  # `base "/skipping_symbol"` configured automatically
+
+  skip_action :set_trust
+
+  @[AC::Route::GET("/")]
+  def index
+    render text: "ok #{@trusted}"
   end
 end
 

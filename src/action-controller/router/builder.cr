@@ -173,7 +173,7 @@ module ActionController::Route::Builder
             {% open_api_route[:params] = open_api_params %}
             {% OPENAPI_FILTERS[@type.name.stringify + "#" + method_name.stringify] = open_api_route %}
 
-            {{filter_type}}({{function_wrapper_name.symbolize}}, only: {{ann[:only]}}, except: {{ann[:except]}})
+            {{filter_type}}({{function_wrapper_name.symbolize}}, only: {{ann[:only]}}, except: {{ann[:except]}}, filter_name: {{method_name}})
 
             # :nodoc:
             def {{function_wrapper_name}}

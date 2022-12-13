@@ -148,4 +148,12 @@ describe AC::Route::Builder do
     result = client.post("/filtering/some_other_entry/", headers: headers, body: body)
     result.body.should eq("3.14")
   end
+
+  it "should skip filters as expected" do
+    result = client.get("/skipping_symbol")
+    result.status_code.should eq 403
+
+    result = client.get("/skipping_annotation")
+    result.status_code.should eq 200
+  end
 end
