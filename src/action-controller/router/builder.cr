@@ -477,7 +477,7 @@ module ActionController::Route::Builder
     # for example there might be a difference between PUT and PATCH semantics
     add_parser("application/json") do |klass, body_io, request|
       request_charset = ActionController::Support.charset(request.headers)
-      body_io.set_encoding(request_charset) unless request_charset.in?({"utf-8", "us-ascii"})
+      body_io.set_encoding(request_charset) if request_charset
       klass.from_json(body_io)
     end
     default_parser "application/json"

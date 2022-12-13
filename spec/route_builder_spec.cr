@@ -96,6 +96,11 @@ describe AC::Route::Builder do
       "Content-Type" => "application/json; charset=UTF-16",
     }, body: body_text)
     result.body.should eq %(34.8)
+
+    result = client.post("/filtering/some_entry", headers: HTTP::Headers{
+      "Content-Type" => "application/json; charset=us-ascii",
+    }, body: "34.7")
+    result.body.should eq %(34.7)
   end
 
   it "should pass the klass and function name to responders" do
