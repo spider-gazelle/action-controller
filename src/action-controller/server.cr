@@ -101,7 +101,7 @@ class ActionController::Server
     # Start the processes
     (0_i64...count).each do
       @processes << future do
-        process = uninitialized Process::Status
+        process = uninitialized Process
         Process.run(process_path, args,
           input: Process::Redirect::Close,
           output: Process::Redirect::Inherit,
