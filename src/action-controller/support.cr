@@ -1,3 +1,5 @@
+require "mime/media_type"
+
 module ActionController::Support
   def self.request_protocol(request)
     return :https if request.headers["X-Forwarded-Proto"]? =~ /https/i
@@ -62,15 +64,24 @@ module ActionController::Support
     end
   end
 
-  TYPE_SEPARATOR_REGEX = /;\s*/
-
   # Extracts the mime type from the content type header
   def self.content_type(headers)
-    ctype = headers["Content-Type"]?
-    if ctype && !ctype.empty?
-      ctype = ctype.split(TYPE_SEPARATOR_REGEX).first?
-      return ctype if ctype && !ctype.empty?
-    end
+    ctype = headers["Content-Type"]?.presence
+    return MIME::MediaType.parse(ctype).media_type if ctype
     nil
+  rescue
+    nil
+  end
+
+  def self.media_type(headers)
+    ctype = headers["Content-Type"]?.presence
+    return MIME::MediaType.parse(ctype) if ctype
+    nil
+  rescue
+    nil
+  end
+
+  def self.charset(headers)
+    media_type(headers).try(&.[]?("charset").try(&.downcase)) || "utf-8"
   end
 end

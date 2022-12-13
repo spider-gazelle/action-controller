@@ -77,6 +77,25 @@ describe AC::Route::Builder do
   it "should work with a body param" do
     result = client.post("/filtering/some_entry", body: "34.5")
     result.body.should eq %(34.5)
+
+    result = client.post("/filtering/some_entry", headers: HTTP::Headers{
+      "Content-Type" => "application/json",
+    }, body: "34.6")
+    result.body.should eq %(34.6)
+
+    result = client.post("/filtering/some_entry", headers: HTTP::Headers{
+      "Content-Type" => "application/json; charset=utf-8",
+    }, body: "34.7")
+    result.body.should eq %(34.7)
+  end
+
+  it "should work with other charsets" do
+    body_text = "34.8".encode("UTF-16")
+    body_text.bytesize.should eq 10
+    result = client.post("/filtering/some_entry", headers: HTTP::Headers{
+      "Content-Type" => "application/json; charset=UTF-16",
+    }, body: body_text)
+    result.body.should eq %(34.8)
   end
 
   it "should pass the klass and function name to responders" do

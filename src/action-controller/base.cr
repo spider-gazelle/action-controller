@@ -203,10 +203,16 @@ abstract class ActionController::Base
     @files
   end
 
-  @__content_type__ : String?
+  getter request_media_type : MIME::MediaType? do
+    ActionController::Support.media_type(request.headers)
+  end
 
-  def request_content_type : String?
-    @__content_type__ ||= ActionController::Support.content_type(request.headers)
+  def request_content_type
+    request_media_type.try &.media_type
+  end
+
+  getter request_charset : String do
+    request_media_type.try(&.[]?("charset").try(&.downcase)) || "utf-8"
   end
 
   macro inherited

@@ -90,7 +90,7 @@ class ActionController::Server
 
     # How many and what to start
     count -= 1
-    process_path = Process.executable_path.not_nil!
+    process_path = Process.executable_path.as(String)
 
     # Clean up the arguments
     args.reject! &.starts_with?(long_arg)
@@ -101,7 +101,7 @@ class ActionController::Server
     # Start the processes
     (0_i64...count).each do
       @processes << future do
-        process = nil
+        process = uninitialized Process::Status
         Process.run(process_path, args,
           input: Process::Redirect::Close,
           output: Process::Redirect::Inherit,
@@ -111,7 +111,6 @@ class ActionController::Server
           puts " > worker #{process.pid} started"
         end
         status = $?
-        process = process.not_nil!
         if status.success?
           puts " < worker #{process.pid} stopped"
         else

@@ -444,8 +444,9 @@ module ActionController::OpenAPI
 
       # see if there is any requirement for a request body
       if route[:request_body] != "Nil"
-        operation.request_body = build_response(accepts, false, route[:request_body], nil)
-        operation.request_body.not_nil!.required = true
+        req_body = build_response(accepts, false, route[:request_body], nil)
+        req_body.required = true
+        operation.request_body = req_body
       end
 
       # assemble the list of params

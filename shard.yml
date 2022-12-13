@@ -1,5 +1,5 @@
 name: action-controller
-version: 5.4.3
+version: 5.5.0
 crystal: ">= 1.5.0"
 
 dependencies:
@@ -19,7 +19,7 @@ dependencies:
   # Required for running specs in client apps
   hot_topic:
     github: jgaskins/hot_topic
-  
+
   # Used for generating OpenAPI
   json-schema:
     github: spider-gazelle/json-schema

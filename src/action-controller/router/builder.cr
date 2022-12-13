@@ -272,7 +272,7 @@ module ActionController::Route::Builder
             {% else %}
               # check we can parse the body if a content type is provided
               {% if body_argument != "%" %}
-                body_type = @context.request.headers["Content-Type"]? || {{ DEFAULT_PARSER[0] }}
+                body_type = request_content_type || {{ DEFAULT_PARSER[0] }}
                 unless {{@type.name.id}}.can_parse?(body_type)
                   raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{@type.name.id}}.parsable)
                 end
@@ -475,7 +475,11 @@ module ActionController::Route::Builder
 
     # parsers have access to the request so they can modify how they parse the body
     # for example there might be a difference between PUT and PATCH semantics
-    add_parser("application/json") { |klass, body_io, request| klass.from_json(body_io) }
+    add_parser("application/json") do |klass, body_io, request|
+      request_charset = ActionController::Support.charset(request.headers)
+      body_io.set_encoding(request_charset) unless request_charset.in?({"utf-8", "us-ascii"})
+      klass.from_json(body_io)
+    end
     default_parser "application/json"
 
     macro inherited
