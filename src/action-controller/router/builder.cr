@@ -267,7 +267,7 @@ module ActionController::Route::Builder
               {% elsif route_method == AC::Route::Exception %}
                 result = {{method_name.id}}(error)
               {% else %}
-                result = {{method_name.id}}
+                result = {{method_name.id}} {% if route_method == AC::Route::Filter && ann[0] == :around_action %} { yield } {% end %}
               {% end %}
             {% else %}
               # check we can parse the body if a content type is provided
