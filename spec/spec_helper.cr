@@ -117,8 +117,9 @@ class Filtering < FilterOrdering
     time
   end
 
-  @[AC::Route::GET("/multistatus/:id", status: {Int32 => 201, String => 202})]
-  def multistatus_test(id : Int32 | String)
+  # also tests for optional route params
+  @[AC::Route::GET("/multistatus/?:id", status: {Int32 => 201, String => 202})]
+  def multistatus_test(id : Int32 | String | Nil)
     id
   end
 

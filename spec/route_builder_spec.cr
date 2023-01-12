@@ -118,6 +118,11 @@ describe AC::Route::Builder do
     result.status_code.should eq 202
   end
 
+  it "should work with optional route params" do
+    result = client.get("/filtering/multistatus/")
+    result.status_code.should eq 200
+  end
+
   it "should work with custom accepts types" do
     headers = HTTP::Headers{
       "Accept" => "*/*",

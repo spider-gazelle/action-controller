@@ -76,7 +76,7 @@ module ActionController::Route::Builder
   macro __build_transformer_functions__
       {% for type, block in RESPONDERS %}
         # :nodoc:
-        def self.transform_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(%instance, {{*block.args}}, *_args)
+        def self.transform_{{type.gsub(/\W/, "_").id}}(%instance, {{*block.args}}, *_args)
           __yield__(%instance) do
             {{block.body}}
           end
@@ -105,7 +105,7 @@ module ActionController::Route::Builder
 
       {% for type, block in PARSERS %}
         # :nodoc:
-        def self.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{*block.args}}, **_ignore)
+        def self.parse_{{type.gsub(/\W/, "_").id}}({{*block.args}}, **_ignore)
           {{block.body}}
         end
       {% end %}
@@ -360,7 +360,7 @@ module ActionController::Route::Builder
                           case body_type
                           {% for type, _block in PARSERS %}
                             when {{type}}
-                              {{@type.name.id}}.parse_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}({{ arg.restriction }}, body_io, request: @context.request)
+                              {{@type.name.id}}.parse_{{type.gsub(/\W/, "_").id}}({{ arg.restriction }}, body_io, request: @context.request)
                           {% end %}
                           end
                         end
@@ -435,12 +435,12 @@ module ActionController::Route::Builder
                   case responds_with
                   {% for type, _block in RESPONDERS %}
                     when {{type}}
-                      {{@type.name.id}}.transform_{{type.gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
+                      {{@type.name.id}}.transform_{{type.gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
                   {% end %}
                   else
                     # return the default, which is allowed in HTTP 1.1
                     # we've checked the accepts header at the top of the function and this might be an error response
-                    {{@type.name.id}}.transform_{{DEFAULT_RESPONDER[0].gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
+                    {{@type.name.id}}.transform_{{DEFAULT_RESPONDER[0].gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
                   end
                 end
                 @render_called = true

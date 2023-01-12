@@ -353,7 +353,7 @@ abstract class ActionController::Base
         {% OPENAPI_ERRORS_MAP[verb_route] = [] of Nil %}
 
         # :nodoc:
-        def self.{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(context, head_request)
+        def self.{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\W/, "_").id}}(context, head_request)
           # Check if force SSL is set and redirect to HTTPS if HTTP
           {% force = false %}
           {% if FORCE[:force] %}
@@ -588,7 +588,7 @@ abstract class ActionController::Base
                 .gsub(/\/$/, "")   # Remove trailing slash
                 .gsub(/\/\//, "/") # Convert double slashes to single slashes
             }},
-            &->{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/|\-|\~|\*|\:|\./, "_").id}}(HTTP::Server::Context, Bool)
+            &->{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\W/, "_").id}}(HTTP::Server::Context, Bool)
           )
         {% end %}
 
@@ -636,7 +636,7 @@ abstract class ActionController::Base
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
     macro {{http_method.id}}(path, function = nil, annotations = nil, reference = nil, &block)
       \{% unless function %}
-        \{% function = "_route_" + {{http_method}} + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
+        \{% function = "_route_" + {{http_method}} + path.gsub(/\W/, "_") %}
       \{% end %}
       \{% LOCAL_ROUTES[{{http_method}} + path] = { {{http_method}}, path, annotations, block, false, (reference || function).id, function.id } %}
       \{% if annotations %}
@@ -655,7 +655,7 @@ abstract class ActionController::Base
 
   macro ws(path, function = nil, annotations = nil, reference = nil, &block)
     {% unless function %}
-      {% function = "ws" + path.gsub(/\/|\-|\~|\*|\:|\./, "_") %}
+      {% function = "ws" + path.gsub(/\W/, "_") %}
     {% end %}
     {% LOCAL_ROUTES["ws" + path] = {"get", path, annotations, block, true, (reference || function).id, function.id} %}
     {% if annotations %} #
