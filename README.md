@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/spider-gazelle/action-controller/actions/workflows/ci.yml/badge.svg)](https://github.com/spider-gazelle/action-controller/actions/workflows/ci.yml)
 
-Extending [lucky_router](https://github.com/luckyframework/lucky_router) for a Rails like DSL without the overhead.
+Extending [lucky_router](https://github.com/luckyframework/lucky_router) for a Rails like DSL without the overhead. See the [docs site](https://spider-gazelle.net/) for usage details
 
 ## Strong Parameter Usage
 
