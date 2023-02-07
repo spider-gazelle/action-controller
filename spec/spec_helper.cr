@@ -61,7 +61,7 @@ class Filtering < FilterOrdering
   end
 
   @[AC::Route::Filter(:around_action)]
-  def wrap_action_here(id : String?)
+  def wrap_action_here(id : String?, &)
     render :forbidden, text: "Around actions wrap the request" if @trusted
     @in_around = true
     yield
@@ -70,7 +70,7 @@ class Filtering < FilterOrdering
   end
 
   @[AC::Route::Filter(:around_action)]
-  def wrap_next_action_here(id : String?)
+  def wrap_next_action_here(id : String?, &)
     render :forbidden, text: "should already be in an around filter" unless @in_around
     yield
     raise "should be trusted now" unless @trusted
@@ -402,12 +402,12 @@ class HelloWorld < Application
     puts "after #{action_name}"
   end
 
-  private def around1
+  private def around1(&)
     @me = 7
     yield
   end
 
-  private def around2
+  private def around2(&)
     me = @me
     me ||= 0
     me += 3

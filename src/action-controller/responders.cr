@@ -101,7 +101,7 @@ module ActionController::Responders
     %ctype = %response.headers["Content-Type"]?
 
     %session = @__session__
-    %session.encode(%response.cookies) if %session && %session.modified
+    %session.encode(%response.cookies) if %session && %session.modified?
 
     {% unless json.nil? %}
       %response.content_type = {{MIME_TYPES[:json]}} unless %ctype
@@ -173,7 +173,7 @@ module ActionController::Responders
     %response = @context.response
 
     %session = @__session__
-    %session.encode(%response.cookies) if %session && %session.modified
+    %session.encode(%response.cookies) if %session && %session.modified?
 
     {% if status.is_a?(SymbolLiteral) %}
       %response.status_code = {{REDIRECTION_CODES[status]}}
@@ -202,7 +202,7 @@ module ActionController::Responders
     {% end %}
 
     %session = @__session__
-    %session.encode(%response.cookies) if %session && %session.modified
+    %session.encode(%response.cookies) if %session && %session.modified?
 
     %resp.build_response
     @render_called = true
@@ -228,7 +228,7 @@ module ActionController::Responders
     getter options
 
     # Build a list of possible responses to the request
-    def responses
+    def responses(&)
       with self yield
     end
 

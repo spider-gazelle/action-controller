@@ -140,9 +140,13 @@ abstract class ActionController::Base
 
   getter context
   getter action_name : Symbol
-  getter render_called : Bool
   getter __session__ : Session?
   getter __cookies__ : HTTP::Cookies?
+  getter? render_called : Bool
+
+  def render_called
+    @render_called
+  end
 
   def session : Session
     @__session__ ||= Session.from_cookies(cookies)
@@ -325,8 +329,13 @@ abstract class ActionController::Base
     [] of {String, Symbol, Symbol, String}
   end
 
-  def self.__yield__(inst)
+  def self.__yield__(inst, &)
     with inst yield
+  end
+
+  # allow the request details to be cleaned up as the socket runs
+  protected def self.__spawn_ws__(websocket, raw_io)
+    spawn { websocket.run ensure raw_io.close }
   end
 
   macro __draw_routes__
@@ -427,7 +436,7 @@ abstract class ActionController::Base
             {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + around_actions.map(&.stringify) %}
             ActionController::Base.__yield__(instance) do
               {% for action in around_actions %}
-                  break if render_called
+                  break if render_called?
                   {{action}} do
               {% end %}
           {% end %}
@@ -458,7 +467,7 @@ abstract class ActionController::Base
               ActionController::Base.__yield__(instance) do
             {% end %}
               {% for action in before_actions %}
-                break if render_called
+                break if render_called?
                 {{action}}
               {% end %}
             {% if around_actions.empty? %}
@@ -468,7 +477,7 @@ abstract class ActionController::Base
 
           # Check if render could have been before performing the action
           {% if !before_actions.empty? %}
-            if !instance.render_called
+            if !instance.render_called?
           {% end %}
 
             # Call the action
@@ -488,9 +497,10 @@ abstract class ActionController::Base
                   begin
                     ws_session = HTTP::WebSocket.new(io)
                     instance.{{function_name}}(ws_session)
-                    ws_session.run
-                  ensure
+                    ActionController::Base.__spawn_ws__(ws_session, io)
+                  rescue ws_err
                     io.close
+                    raise ws_err
                   end
                 end
               else
@@ -545,18 +555,20 @@ abstract class ActionController::Base
             end
           {% end %}
 
-          # Check if session needs to be written
-          if !instance.render_called
-            session = instance.__session__
-            session.encode(context.response.cookies) if session && session.modified
-          end
+          {% if !is_websocket %}
+            # Check if session needs to be written
+            if !instance.render_called?
+              session = instance.__session__
+              session.encode(context.response.cookies) if session && session.modified?
+            end
+          {% end %}
 
           # Implement error handling
           {% if !RESCUE.empty? %}
             {% for exception, details in RESCUE %}
               {% OPENAPI_ERRORS_MAP[verb_route] = OPENAPI_ERRORS_MAP[verb_route] + [exception.id.stringify] %}
               rescue e : {{exception.id}}
-                if !instance.render_called
+                if !instance.render_called?
                   instance.{{details[0]}}(e)
                 else
                   raise e

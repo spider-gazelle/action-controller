@@ -21,7 +21,12 @@ class ActionController::Session
   end
 
   # Returns whether any key-value pair is modified.
-  getter modified : Bool
+  getter? modified : Bool
+
+  def modified
+    @modified
+  end
+
   property domain : String?
   @encoder : MessageEncryptor | MessageVerifier
   @store : Hash(String, String | Int64 | Float64 | Bool)

@@ -44,7 +44,7 @@ class ActionController::Server
   getter socket : HTTP::Server
 
   # Starts the server, providing a callback once the ports are bound
-  def run
+  def run(&)
     @socket.bind_tcp(@host, @port, @reuse_port) if @socket.addresses.empty?
     yield
     @socket.listen

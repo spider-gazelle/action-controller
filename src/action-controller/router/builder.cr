@@ -429,7 +429,7 @@ module ActionController::Route::Builder
                 response.headers["Content-Type"] = responds_with unless content_type
 
                 session = @__session__
-                session.encode(response.cookies) if session && session.modified
+                session.encode(response.cookies) if session && session.modified?
 
                 unless @__head_request__ || result.nil?
                   case responds_with
