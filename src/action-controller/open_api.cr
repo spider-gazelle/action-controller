@@ -398,8 +398,13 @@ module ActionController::OpenAPI
 
       # ensure the path is in OpenAPI format
       path_key = path_key.split('/').join('/') do |i|
-        if i.starts_with?(':')
+        case i
+        when .starts_with?(':')
           "{#{i.lstrip(':')}}"
+        when .starts_with?("?:")
+          "{#{i.lstrip("?:")}}"
+        when .starts_with?("*:")
+          "{#{i.lstrip("*:")}}"
         else
           i
         end
