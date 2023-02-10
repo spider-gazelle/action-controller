@@ -333,11 +333,6 @@ abstract class ActionController::Base
     with inst yield
   end
 
-  # allow the request details to be cleaned up as the socket runs
-  protected def self.__spawn_ws__(websocket, raw_io)
-    Fiber.new { websocket.run ensure raw_io.close }
-  end
-
   macro __draw_routes__
     {% if !@type.abstract? && !ROUTES.empty? %}
       {% CONCRETE_CONTROLLERS[@type.name.id] = NAMESPACE[0] %}
@@ -494,16 +489,9 @@ abstract class ActionController::Base
                 response.headers["Connection"] = "Upgrade"
                 response.headers["Sec-Websocket-Accept"] = accept_code
                 response.upgrade do |io|
-                  begin
-                    ws_session = HTTP::WebSocket.new(io)
-                    instance.{{function_name}}(ws_session)
-                    fiber = ActionController::Base.__spawn_ws__(ws_session, io)
-                    Fiber.current.enqueue
-                    fiber.resume
-                  rescue ws_err
-                    io.close
-                    raise ws_err
-                  end
+                  ws_session = HTTP::WebSocket.new(io)
+                  instance.{{function_name}}(ws_session)
+                  ws_session.run
                 end
               else
                 response = context.response
