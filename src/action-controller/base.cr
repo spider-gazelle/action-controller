@@ -335,7 +335,7 @@ abstract class ActionController::Base
 
   # allow the request details to be cleaned up as the socket runs
   protected def self.__spawn_ws__(websocket, raw_io)
-    spawn { websocket.run ensure raw_io.close }
+    Fiber.new { websocket.run ensure raw_io.close }
   end
 
   macro __draw_routes__
@@ -497,7 +497,9 @@ abstract class ActionController::Base
                   begin
                     ws_session = HTTP::WebSocket.new(io)
                     instance.{{function_name}}(ws_session)
-                    ActionController::Base.__spawn_ws__(ws_session, io)
+                    fiber = ActionController::Base.__spawn_ws__(ws_session, io)
+                    Fiber.current.enqueue
+                    fiber.resume
                   rescue ws_err
                     io.close
                     raise ws_err
