@@ -74,6 +74,27 @@ describe AC::Route::Builder do
     result.body.should eq "true"
   end
 
+  it "should handle custom param names" do
+    result = client.get("/filtering/is_this_bool?thing=true")
+    result.body.should eq "true"
+
+    result = client.get("/filtering/is_this_bool?thing=false")
+    result.body.should eq "false"
+
+    # ensure expected errors are raised
+    begin
+      client.get("/filtering/is_this_bool")
+    rescue error : AC::Route::Param::MissingError
+      error.parameter.should eq "thing"
+    end
+
+    begin
+      client.get("/filtering/is_this_bool?thing=whatever")
+    rescue error : AC::Route::Param::ValueError
+      error.parameter.should eq "thing"
+    end
+  end
+
   it "should work with a body param" do
     result = client.post("/filtering/some_entry", body: "34.5")
     result.body.should eq %(34.5)

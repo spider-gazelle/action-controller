@@ -166,6 +166,14 @@ class Filtering < FilterOrdering
   ) : Bool
     thing
   end
+
+  @[AC::Route::GET("/is_this_bool/")]
+  def test_param_name_error(
+    @[AC::Param::Info(name: "thing", description: "param name doesn't match variable name", example: "true")]
+    is_a_bool : Bool
+  ) : Bool?
+    is_a_bool
+  end
 end
 
 # Testing ID params
