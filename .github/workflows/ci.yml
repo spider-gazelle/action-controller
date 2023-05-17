@@ -34,7 +34,7 @@ jobs:
           crystal: ${{ matrix.crystal }}
 
       - name: Install dependencies
-        run: shards install --ignore-crystal-version
+        run: shards install --ignore-crystal-version --skip-postinstall --skip-executables
       - name: Test ${{ matrix.MT && 'Multithreaded' || '' }}
         run: |
           crystal spec \
