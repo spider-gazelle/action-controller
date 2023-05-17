@@ -177,7 +177,7 @@ module ActionController::OpenAPI
   macro finished
     # returns a NamedTuple that represents the OpenAPI docs for the current application.
     #
-    # the info hash splat accepts any of the keys from the [info object](https://swagger.io/specification/#info-object) 
+    # the info hash splat accepts any of the keys from the [info object](https://swagger.io/specification/#info-object)
     def generate_open_api_docs(title : String, version : String, **info)
       descriptions = extract_route_descriptions
 
