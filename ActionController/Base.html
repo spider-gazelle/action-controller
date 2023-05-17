@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Crystal Docs 1.7.3">
+<meta name="crystal_docs.project_version" content="master">
+<meta name="crystal_docs.project_name" content="action-controller">
+
+
+
+<link href="../css/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/doc.js"></script>
+
+  <meta name="repository-name" content="action-controller">
+  <title>ActionController::Base - action-controller master</title>
+  <script type="text/javascript">
+    CrystalDocs.base_path = "../";
+  </script>
+</head>
+<body>
+
+<svg class="hidden">
+  <symbol id="octicon-link" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+  </symbol>
+</svg>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="search-box">
+      <input type="search" class="search-input" placeholder="Search..." spellcheck="false" aria-label="Search">
+    </div>
+
+    <div class="project-summary">
+      <h1 class="project-name">
+        <a href="../index.html">
+          action-controller
+        </a>
+      </h1>
+
+      <span class="project-version">
+        master
+      </span>
+    </div>
+  </div>
+
+  <div class="search-results hidden">
+    <ul class="search-list"></ul>
+  </div>
+
+  <div class="types-list">
+    <ul>
+  
+  <li class=" " data-id="action-controller/AC" data-name="ac">
+      <a href="../AC.html">AC</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="action-controller/ActionController" data-name="actioncontroller">
+      <a href="../ActionController.html">ActionController</a>
+      
+        <ul>
+  
+  <li class=" current" data-id="action-controller/ActionController/Base" data-name="actioncontroller::base">
+      <a href="../ActionController/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/CookieSizeExceeded" data-name="actioncontroller::cookiesizeexceeded">
+      <a href="../ActionController/CookieSizeExceeded.html">CookieSizeExceeded</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Error" data-name="actioncontroller::error">
+      <a href="../ActionController/Error.html">Error</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/CommonResponse" data-name="actioncontroller::error::commonresponse">
+      <a href="../ActionController/Error/CommonResponse.html">CommonResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Conflict" data-name="actioncontroller::error::conflict">
+      <a href="../ActionController/Error/Conflict.html">Conflict</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ContentResponse" data-name="actioncontroller::error::contentresponse">
+      <a href="../ActionController/Error/ContentResponse.html">ContentResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Forbidden" data-name="actioncontroller::error::forbidden">
+      <a href="../ActionController/Error/Forbidden.html">Forbidden</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/NotFound" data-name="actioncontroller::error::notfound">
+      <a href="../ActionController/Error/NotFound.html">NotFound</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ParameterResponse" data-name="actioncontroller::error::parameterresponse">
+      <a href="../ActionController/Error/ParameterResponse.html">ParameterResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Unauthorized" data-name="actioncontroller::error::unauthorized">
+      <a href="../ActionController/Error/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidRoute" data-name="actioncontroller::invalidroute">
+      <a href="../ActionController/InvalidRoute.html">InvalidRoute</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidSignature" data-name="actioncontroller::invalidsignature">
+      <a href="../ActionController/InvalidSignature.html">InvalidSignature</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/OpenAPI" data-name="actioncontroller::openapi">
+      <a href="../ActionController/OpenAPI.html">OpenAPI</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Param" data-name="actioncontroller::param">
+      <a href="../ActionController/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Converter" data-name="actioncontroller::param::converter">
+      <a href="../ActionController/Param/Converter.html">Converter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Info" data-name="actioncontroller::param::info">
+      <a href="../ActionController/Param/Info.html">Info</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Responders" data-name="actioncontroller::responders">
+      <a href="../ActionController/Responders.html">Responders</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Route" data-name="actioncontroller::route">
+      <a href="../ActionController/Route.html">Route</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Builder" data-name="actioncontroller::route::builder">
+      <a href="../ActionController/Route/Builder.html">Builder</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/DELETE" data-name="actioncontroller::route::delete">
+      <a href="../ActionController/Route/DELETE.html">DELETE</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Error" data-name="actioncontroller::route::error">
+      <a href="../ActionController/Route/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Exception" data-name="actioncontroller::route::exception">
+      <a href="../ActionController/Route/Exception.html">Exception</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Filter" data-name="actioncontroller::route::filter">
+      <a href="../ActionController/Route/Filter.html">Filter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/GET" data-name="actioncontroller::route::get">
+      <a href="../ActionController/Route/GET.html">GET</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/NotAcceptable" data-name="actioncontroller::route::notacceptable">
+      <a href="../ActionController/Route/NotAcceptable.html">NotAcceptable</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/OPTIONS" data-name="actioncontroller::route::options">
+      <a href="../ActionController/Route/OPTIONS.html">OPTIONS</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Route/Param" data-name="actioncontroller::route::param">
+      <a href="../ActionController/Route/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Conversion" data-name="actioncontroller::route::param::conversion">
+      <a href="../ActionController/Route/Param/Conversion.html">Conversion</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Error" data-name="actioncontroller::route::param::error">
+      <a href="../ActionController/Route/Param/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/MissingError" data-name="actioncontroller::route::param::missingerror">
+      <a href="../ActionController/Route/Param/MissingError.html">MissingError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/ValueError" data-name="actioncontroller::route::param::valueerror">
+      <a href="../ActionController/Route/Param/ValueError.html">ValueError</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PATCH" data-name="actioncontroller::route::patch">
+      <a href="../ActionController/Route/PATCH.html">PATCH</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/POST" data-name="actioncontroller::route::post">
+      <a href="../ActionController/Route/POST.html">POST</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PUT" data-name="actioncontroller::route::put">
+      <a href="../ActionController/Route/PUT.html">PUT</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/UnsupportedMediaType" data-name="actioncontroller::route::unsupportedmediatype">
+      <a href="../ActionController/Route/UnsupportedMediaType.html">UnsupportedMediaType</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/WebSocket" data-name="actioncontroller::route::websocket">
+      <a href="../ActionController/Route/WebSocket.html">WebSocket</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Server" data-name="actioncontroller::server">
+      <a href="../ActionController/Server.html">Server</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Session" data-name="actioncontroller::session">
+      <a href="../ActionController/Session.html">Session</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Session/HabitatSettings" data-name="actioncontroller::session::habitatsettings">
+      <a href="../ActionController/Session/HabitatSettings.html">HabitatSettings</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/SpecHelper" data-name="actioncontroller::spechelper">
+      <a href="../ActionController/SpecHelper.html">SpecHelper</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+  </div>
+</div>
+
+
+<div class="main-content">
+<h1 class="type-name">
+
+  <span class="kind">abstract class</span> ActionController::Base
+
+</h1>
+
+
+  <ul class="superclass-hierarchy"><li class="superclass"><a href="../ActionController/Base.html">ActionController::Base</a></li><li class="superclass">Reference</li><li class="superclass">Object</li></ul>
+
+
+
+
+  <h2>
+    <a id="overview" class="anchor" href="#overview">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Overview
+  </h2>
+
+  <p>the base class of all controllers</p>
+
+
+
+
+
+  <h2>
+    <a id="included-modules" class="anchor" href="#included-modules">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Included Modules
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type"><a href="../ActionController/Responders.html">ActionController::Responders</a></li>
+    
+      <li class="other-type"><a href="../ActionController/Route/Builder.html">ActionController::Route::Builder</a></li>
+    
+      <li class="other-type">ActionController::SpecHelper::ContextHelper</li>
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="defined-in" class="anchor" href="#defined-in">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Defined in:
+  </h2>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L10" target="_blank">
+        action-controller/base.cr
+      </a>
+    
+    <br/>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/spec_helper.cr#L50" target="_blank">
+        action-controller/spec_helper.cr
+      </a>
+    
+    <br/>
+  
+
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#action_name%3ASymbol-instance-method" class="signature"><strong>#action_name</strong> : Symbol</a>
+        
+          <div class="summary"><p>the action name being executed (typically the function name)</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#client_ip%3AString-instance-method" class="signature"><strong>#client_ip</strong> : String</a>
+        
+          <div class="summary"><p>attempts to find the clients IP address using proxy headers or the remote_address</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#context%3AHTTP%3A%3AServer%3A%3AContext-instance-method" class="signature"><strong>#context</strong> : HTTP::Server::Context</a>
+        
+          <div class="summary"><p>the <a href="https://crystal-lang.org/api/latest/HTTP/Server/Context.html">request context</a></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#cookies%3AHTTP%3A%3ACookies-instance-method" class="signature"><strong>#cookies</strong> : HTTP::Cookies</a>
+        
+          <div class="summary"><p>parses the cookies sent with the request</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#files%3AHash%28String%2CArray%28ActionController%3A%3ABodyParser%3A%3AFileUpload%29%29%7CNil-instance-method" class="signature"><strong>#files</strong> : Hash(String, Array(ActionController::BodyParser::FileUpload)) | Nil</a>
+        
+          <div class="summary"><p>returns any file provided in a multipart post</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#form_data-instance-method" class="signature"><strong>#form_data</strong></a>
+        
+          <div class="summary"><p>returns any data that could be parsed from the request body.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#params%3AURI%3A%3AParams-instance-method" class="signature"><strong>#params</strong> : URI::Params</a>
+        
+          <div class="summary"><p>parses all the params (query + route + body form data) and makes them available in one place</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#query_params%28%2Aargs%2C%2A%2Aoptions%29-instance-method" class="signature"><strong>#query_params</strong>(*args, **options)</a>
+        
+          <div class="summary"><p>parses the query params that were sent with the request</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#query_params%28%2Aargs%2C%2A%2Aoptions%2C%26%29-instance-method" class="signature"><strong>#query_params</strong>(*args, **options, &)</a>
+        
+          <div class="summary"><p>parses the query params that were sent with the request</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#render_called%3ABool-instance-method" class="signature"><strong>#render_called</strong> : Bool</a>
+        
+          <div class="summary"><p>has the response already been sent?</p>
+<p><span class="flag red">DEPRECATED</span>  use <code><a href="../ActionController/Base.html#render_called%3F%3ABool-instance-method">#render_called?</a></code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#render_called%3F%3ABool-instance-method" class="signature"><strong>#render_called?</strong> : Bool</a>
+        
+          <div class="summary"><p>has the response already been sent?</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#request%28%2Aargs%2C%2A%2Aoptions%29-instance-method" class="signature"><strong>#request</strong>(*args, **options)</a>
+        
+          <div class="summary"><p>shortcuts to methods available on the context</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#request%28%2Aargs%2C%2A%2Aoptions%2C%26%29-instance-method" class="signature"><strong>#request</strong>(*args, **options, &)</a>
+        
+          <div class="summary"><p>shortcuts to methods available on the context</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#request_charset%3AString-instance-method" class="signature"><strong>#request_charset</strong> : String</a>
+        
+          <div class="summary"><p>looks at the content type header to see if the charset was defined</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#request_content_type%3AString%7CNil-instance-method" class="signature"><strong>#request_content_type</strong> : String | Nil</a>
+        
+          <div class="summary"><p>looks at the content type header for the media type and returns the text representation of it</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#request_media_type%3AMIME%3A%3AMediaType%7CNil-instance-method" class="signature"><strong>#request_media_type</strong> : MIME::MediaType | Nil</a>
+        
+          <div class="summary"><p>looks at the content type header for the media type</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#request_protocol-instance-method" class="signature"><strong>#request_protocol</strong></a>
+        
+          <div class="summary"><p>returns either <code>:http</code> or <code>:https</code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#response%28%2Aargs%2C%2A%2Aoptions%29-instance-method" class="signature"><strong>#response</strong>(*args, **options)</a>
+        
+          <div class="summary"><p>shortcuts to methods available on the context</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#response%28%2Aargs%2C%2A%2Aoptions%2C%26%29-instance-method" class="signature"><strong>#response</strong>(*args, **options, &)</a>
+        
+          <div class="summary"><p>shortcuts to methods available on the context</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#route_params%28%2Aargs%2C%2A%2Aoptions%29-instance-method" class="signature"><strong>#route_params</strong>(*args, **options)</a>
+        
+          <div class="summary"><p>shortcuts to methods available on the context</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#route_params%28%2Aargs%2C%2A%2Aoptions%2C%26%29-instance-method" class="signature"><strong>#route_params</strong>(*args, **options, &)</a>
+        
+          <div class="summary"><p>shortcuts to methods available on the context</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#session%3ASession-instance-method" class="signature"><strong>#session</strong> : Session</a>
+        
+          <div class="summary"><p>loads the session from the cookies if it exists</p></div>
+        
+      </li>
+    
+  </ul>
+
+
+
+  <h2>
+    <a id="macro-summary" class="anchor" href="#macro-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Macro Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#after_action%28method%2Conly%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro" class="signature"><strong>after_action</strong>(method, only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)</a>
+        
+          <div class="summary"><p>runs code after an action is executed and the response has been sent.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#around_action%28method%2Conly%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro" class="signature"><strong>around_action</strong>(method, only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)</a>
+        
+          <div class="summary"><p>wraps actions in the code provided, must <code>yield</code> to the action</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#base%28name%3Dnil%29-macro" class="signature"><strong>base</strong>(name = <span class="n">nil</span>)</a>
+        
+          <div class="summary"><p>this route is appended to any routes defined in the controller</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#before_action%28method%2Conly%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro" class="signature"><strong>before_action</strong>(method, only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)</a>
+        
+          <div class="summary"><p>runs code before an action is executed</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#delete%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro" class="signature"><strong>delete</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)</a>
+        
+          <div class="summary"><p>define a new route that responds to DELETE requests</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#force_ssl%28only%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro" class="signature"><strong>force_ssl</strong>(only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)</a>
+        
+          <div class="summary"><p>ensures certain routes can only be accessed over TLS</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#force_tls%28only%3Dnil%2Cexcept%3Dnil%29-macro" class="signature"><strong>force_tls</strong>(only = <span class="n">nil</span>, except = <span class="n">nil</span>)</a>
+        
+          <div class="summary"><p>ensures certain routes can only be accessed over TLS</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#get%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro" class="signature"><strong>get</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)</a>
+        
+          <div class="summary"><p>define a new route that responds to GET requests</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#layout%28filename%3Dnil%29-macro" class="signature"><strong>layout</strong>(filename = <span class="n">nil</span>)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#options%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro" class="signature"><strong>options</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)</a>
+        
+          <div class="summary"><p>define a new route that responds to OPTIONS requests</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#partial%28partial%2Cio%3Dnil%29-macro" class="signature"><strong>partial</strong>(partial, io = <span class="n">nil</span>)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#patch%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro" class="signature"><strong>patch</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)</a>
+        
+          <div class="summary"><p>define a new route that responds to PATCH requests</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#post%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro" class="signature"><strong>post</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)</a>
+        
+          <div class="summary"><p>define a new route that responds to POST requests</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#put%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro" class="signature"><strong>put</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)</a>
+        
+          <div class="summary"><p>define a new route that responds to PUT requests</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#rescue_from%28error_class%2Cmethod%3Dnil%2C%26block%29-macro" class="signature"><strong>rescue_from</strong>(error_class, method = <span class="n">nil</span>, &block)</a>
+        
+          <div class="summary"><p>provide custom responses for certain types of errors that might occur in multiple routes</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#skip_action%28method%2Conly%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro" class="signature"><strong>skip_action</strong>(method, only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)</a>
+        
+          <div class="summary"><p>provides a method for skipping filters that were defined in parent classes.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#template%28template%3Dnil%2Cpartial%3Dnil%2Clayout%3Dnil%2Cio%3Dnil%29-macro" class="signature"><strong>template</strong>(template = <span class="n">nil</span>, partial = <span class="n">nil</span>, layout = <span class="n">nil</span>, io = <span class="n">nil</span>)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#template_path%28path%29-macro" class="signature"><strong>template_path</strong>(path)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#ws%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro" class="signature"><strong>ws</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)</a>
+        
+          <div class="summary"><p>used to define a websocket route</p></div>
+        
+      </li>
+    
+  </ul>
+
+
+
+<div class="methods-inherited">
+  
+    
+
+
+    
+
+
+    
+
+
+  
+    
+
+  <h3>Instance methods inherited from module <code><a href="../ActionController/Responders.html">ActionController::Responders</a></code></h3>
+  
+  
+    <a href="../ActionController/Responders.html#accepts_formats%3AArray%28String%29-instance-method" class="tooltip">
+      <span>accepts_formats : Array(String)</span>
+    accepts_formats</a>
+    
+  
+
+
+    
+
+
+    
+
+
+  
+    
+
+
+    
+
+
+    
+
+
+  
+    
+
+
+    
+
+
+    
+
+
+  
+    
+
+
+    
+
+
+    
+
+
+  
+</div>
+
+
+
+
+
+
+  <h2>
+    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="action_name:Symbol-instance-method">
+      <div class="signature">
+        
+        def <strong>action_name</strong> : Symbol
+
+        <a class="method-permalink" href="#action_name%3ASymbol-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the action name being executed (typically the function name)</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L144" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="client_ip:String-instance-method">
+      <div class="signature">
+        
+        def <strong>client_ip</strong> : String
+
+        <a class="method-permalink" href="#client_ip%3AString-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>attempts to find the clients IP address using proxy headers or the remote_address</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L800" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="context:HTTP::Server::Context-instance-method">
+      <div class="signature">
+        
+        def <strong>context</strong> : <a href="../HTTP/Server/Context.html">HTTP::Server::Context</a>
+
+        <a class="method-permalink" href="#context%3AHTTP%3A%3AServer%3A%3AContext-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the <a href="https://crystal-lang.org/api/latest/HTTP/Server/Context.html">request context</a></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L139" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="cookies:HTTP::Cookies-instance-method">
+      <div class="signature">
+        
+        def <strong>cookies</strong> : HTTP::Cookies
+
+        <a class="method-permalink" href="#cookies%3AHTTP%3A%3ACookies-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>parses the cookies sent with the request</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L171" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="files:Hash(String,Array(ActionController::BodyParser::FileUpload))|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>files</strong> : Hash(String, Array(ActionController::BodyParser::FileUpload)) | Nil
+
+        <a class="method-permalink" href="#files%3AHash%28String%2CArray%28ActionController%3A%3ABodyParser%3A%3AFileUpload%29%29%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>returns any file provided in a multipart post</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L235" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="form_data-instance-method">
+      <div class="signature">
+        
+        def <strong>form_data</strong>
+
+        <a class="method-permalink" href="#form_data-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>returns any data that could be parsed from the request body.</p>
+<p>It will only attempt to parse the data if the appropriate content-type header is set</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L226" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="params:URI::Params-instance-method">
+      <div class="signature">
+        
+        def <strong>params</strong> : URI::Params
+
+        <a class="method-permalink" href="#params%3AURI%3A%3AParams-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>parses all the params (query + route + body form data) and
+makes them available in one place</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L188" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="query_params(*args,**options)-instance-method">
+      <div class="signature">
+        
+        def <strong>query_params</strong>(*args, **options)
+
+        <a class="method-permalink" href="#query_params%28%2Aargs%2C%2A%2Aoptions%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>parses the query params that were sent with the request</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L182" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="query_params(*args,**options,&amp;)-instance-method">
+      <div class="signature">
+        
+        def <strong>query_params</strong>(*args, **options, &)
+
+        <a class="method-permalink" href="#query_params%28%2Aargs%2C%2A%2Aoptions%2C%26%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>parses the query params that were sent with the request</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L182" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="render_called:Bool-instance-method">
+      <div class="signature">
+        
+        def <strong>render_called</strong> : Bool
+
+        <a class="method-permalink" href="#render_called%3ABool-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>has the response already been sent?</p>
+<p><span class="flag red">DEPRECATED</span>  use <code><a href="../ActionController/Base.html#render_called%3F%3ABool-instance-method">#render_called?</a></code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L161" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="render_called?:Bool-instance-method">
+      <div class="signature">
+        
+        def <strong>render_called?</strong> : Bool
+
+        <a class="method-permalink" href="#render_called%3F%3ABool-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>has the response already been sent?</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L155" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="request(*args,**options)-instance-method">
+      <div class="signature">
+        
+        def <strong>request</strong>(*args, **options)
+
+        <a class="method-permalink" href="#request%28%2Aargs%2C%2A%2Aoptions%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>shortcuts to methods available on the context</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L179" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="request(*args,**options,&amp;)-instance-method">
+      <div class="signature">
+        
+        def <strong>request</strong>(*args, **options, &)
+
+        <a class="method-permalink" href="#request%28%2Aargs%2C%2A%2Aoptions%2C%26%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>shortcuts to methods available on the context</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L179" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="request_charset:String-instance-method">
+      <div class="signature">
+        
+        def <strong>request_charset</strong> : String
+
+        <a class="method-permalink" href="#request_charset%3AString-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>looks at the content type header to see if the charset was defined</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L252" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="request_content_type:String|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>request_content_type</strong> : String | Nil
+
+        <a class="method-permalink" href="#request_content_type%3AString%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>looks at the content type header for the media type and returns the text representation of it</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L247" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="request_media_type:MIME::MediaType|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>request_media_type</strong> : MIME::MediaType | Nil
+
+        <a class="method-permalink" href="#request_media_type%3AMIME%3A%3AMediaType%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>looks at the content type header for the media type</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L242" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="request_protocol-instance-method">
+      <div class="signature">
+        
+        def <strong>request_protocol</strong>
+
+        <a class="method-permalink" href="#request_protocol-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>returns either <code>:http</code> or <code>:https</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L793" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="response(*args,**options)-instance-method">
+      <div class="signature">
+        
+        def <strong>response</strong>(*args, **options)
+
+        <a class="method-permalink" href="#response%28%2Aargs%2C%2A%2Aoptions%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>shortcuts to methods available on the context</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L179" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="response(*args,**options,&amp;)-instance-method">
+      <div class="signature">
+        
+        def <strong>response</strong>(*args, **options, &)
+
+        <a class="method-permalink" href="#response%28%2Aargs%2C%2A%2Aoptions%2C%26%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>shortcuts to methods available on the context</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L179" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="route_params(*args,**options)-instance-method">
+      <div class="signature">
+        
+        def <strong>route_params</strong>(*args, **options)
+
+        <a class="method-permalink" href="#route_params%28%2Aargs%2C%2A%2Aoptions%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>shortcuts to methods available on the context</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L179" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="route_params(*args,**options,&amp;)-instance-method">
+      <div class="signature">
+        
+        def <strong>route_params</strong>(*args, **options, &)
+
+        <a class="method-permalink" href="#route_params%28%2Aargs%2C%2A%2Aoptions%2C%26%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>shortcuts to methods available on the context</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L179" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="session:Session-instance-method">
+      <div class="signature">
+        
+        def <strong>session</strong> : <a href="../ActionController/Session.html">Session</a>
+
+        <a class="method-permalink" href="#session%3ASession-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>loads the session from the cookies if it exists</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L166" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+
+  <h2>
+    <a id="macro-detail" class="anchor" href="#macro-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Macro Detail
+  </h2>
+  
+    <div class="entry-detail" id="after_action(method,only=nil,except=nil,filter_name=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>after_action</strong>(method, only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#after_action%28method%2Conly%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>runs code after an action is executed and the response has been sent.</p>
+<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Filter</span>(<span class="n">:after_action</span>)]
+<span class="k">def</span> <span class="m">audit_user_activity</span>
+  log_activity(session[<span class="s">&quot;user&quot;</span>], request_protocol, action_name)
+<span class="k">end</span></code></pre>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L768" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="around_action(method,only=nil,except=nil,filter_name=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>around_action</strong>(method, only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#around_action%28method%2Conly%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>wraps actions in the code provided, must <code>yield</code> to the action</p>
+<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Filter</span>(<span class="n">:around_action</span>, only: [<span class="n">:create</span>, <span class="n">:update</span>])]
+<span class="k">def</span> <span class="m">wrap_in_transaction</span>
+  <span class="t">PgORM</span><span class="t">::</span><span class="t">Database</span>.transaction <span class="k">do</span>
+    <span class="k">yield</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L748" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="base(name=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>base</strong>(name = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#base%28name%3Dnil%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>this route is appended to any routes defined in the controller</p>
+<p>defaults to <code>/</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L635" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="before_action(method,only=nil,except=nil,filter_name=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>before_action</strong>(method, only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#before_action%28method%2Conly%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>runs code before an action is executed</p>
+<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Filter</span>(<span class="n">:before_action</span>, except: [<span class="n">:public_show</span>])]
+<span class="k">def</span> <span class="m">ensure_authenticated</span>
+  raise <span class="t">Error</span><span class="t">::</span><span class="t">Unauthorized</span>.new(<span class="s">&quot;user not found&quot;</span>) <span class="k">unless</span> session[<span class="s">&quot;user&quot;</span>]?
+<span class="k">end</span></code></pre>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L758" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="delete(path,function=nil,annotations=nil,reference=nil,&amp;block)-macro">
+      <div class="signature">
+        
+        macro <strong>delete</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)
+
+        <a class="method-permalink" href="#delete%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>define a new route that responds to DELETE requests</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L648" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="force_ssl(only=nil,except=nil,filter_name=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>force_ssl</strong>(only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#force_ssl%28only%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>ensures certain routes can only be accessed over TLS</p>
+<p>recommended that this is enabled for your entire application</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L781" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="force_tls(only=nil,except=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>force_tls</strong>(only = <span class="n">nil</span>, except = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#force_tls%28only%3Dnil%2Cexcept%3Dnil%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>ensures certain routes can only be accessed over TLS</p>
+<p>recommended that this is enabled for your entire application</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L784" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="get(path,function=nil,annotations=nil,reference=nil,&amp;block)-macro">
+      <div class="signature">
+        
+        macro <strong>get</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)
+
+        <a class="method-permalink" href="#get%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>define a new route that responds to GET requests</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L648" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="layout(filename=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>layout</strong>(filename = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#layout%28filename%3Dnil%29-macro">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L30" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="options(path,function=nil,annotations=nil,reference=nil,&amp;block)-macro">
+      <div class="signature">
+        
+        macro <strong>options</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)
+
+        <a class="method-permalink" href="#options%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>define a new route that responds to OPTIONS requests</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L648" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="partial(partial,io=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>partial</strong>(partial, io = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#partial%28partial%2Cio%3Dnil%29-macro">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L77" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="patch(path,function=nil,annotations=nil,reference=nil,&amp;block)-macro">
+      <div class="signature">
+        
+        macro <strong>patch</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)
+
+        <a class="method-permalink" href="#patch%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>define a new route that responds to PATCH requests</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L648" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="post(path,function=nil,annotations=nil,reference=nil,&amp;block)-macro">
+      <div class="signature">
+        
+        macro <strong>post</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)
+
+        <a class="method-permalink" href="#post%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>define a new route that responds to POST requests</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L648" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="put(path,function=nil,annotations=nil,reference=nil,&amp;block)-macro">
+      <div class="signature">
+        
+        macro <strong>put</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)
+
+        <a class="method-permalink" href="#put%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>define a new route that responds to PUT requests</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L648" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="rescue_from(error_class,method=nil,&amp;block)-macro">
+      <div class="signature">
+        
+        macro <strong>rescue_from</strong>(error_class, method = <span class="n">nil</span>, &block)
+
+        <a class="method-permalink" href="#rescue_from%28error_class%2Cmethod%3Dnil%2C%26block%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>provide custom responses for certain types of errors that might occur in multiple routes</p>
+<p>helps keep your code DRY and simplifies controller methods</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L689" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="skip_action(method,only=nil,except=nil,filter_name=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>skip_action</strong>(method, only = <span class="n">nil</span>, except = <span class="n">nil</span>, filter_name = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#skip_action%28method%2Conly%3Dnil%2Cexcept%3Dnil%2Cfilter_name%3Dnil%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>provides a method for skipping filters that were defined in parent classes.</p>
+<p>for instance, you might have a global authorisation check, however one route is less strict</p>
+<pre><code class="language-crystal">skip_action <span class="n">:authorize!</span>, only: [<span class="n">:public_show</span>]</code></pre>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L776" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="template(template=nil,partial=nil,layout=nil,io=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>template</strong>(template = <span class="n">nil</span>, partial = <span class="n">nil</span>, layout = <span class="n">nil</span>, io = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#template%28template%3Dnil%2Cpartial%3Dnil%2Clayout%3Dnil%2Cio%3Dnil%29-macro">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L46" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="template_path(path)-macro">
+      <div class="signature">
+        
+        macro <strong>template_path</strong>(path)
+
+        <a class="method-permalink" href="#template_path%28path%29-macro">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L38" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="ws(path,function=nil,annotations=nil,reference=nil,&amp;block)-macro">
+      <div class="signature">
+        
+        macro <strong>ws</strong>(path, function = <span class="n">nil</span>, annotations = <span class="n">nil</span>, reference = <span class="n">nil</span>, &block)
+
+        <a class="method-permalink" href="#ws%28path%2Cfunction%3Dnil%2Cannotations%3Dnil%2Creference%3Dnil%2C%26block%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>used to define a websocket route</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/base.cr#L670" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+</div>
+
+</body>
+</html>

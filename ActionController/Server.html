@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Crystal Docs 1.7.3">
+<meta name="crystal_docs.project_version" content="master">
+<meta name="crystal_docs.project_name" content="action-controller">
+
+
+
+<link href="../css/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/doc.js"></script>
+
+  <meta name="repository-name" content="action-controller">
+  <title>ActionController::Server - action-controller master</title>
+  <script type="text/javascript">
+    CrystalDocs.base_path = "../";
+  </script>
+</head>
+<body>
+
+<svg class="hidden">
+  <symbol id="octicon-link" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+  </symbol>
+</svg>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="search-box">
+      <input type="search" class="search-input" placeholder="Search..." spellcheck="false" aria-label="Search">
+    </div>
+
+    <div class="project-summary">
+      <h1 class="project-name">
+        <a href="../index.html">
+          action-controller
+        </a>
+      </h1>
+
+      <span class="project-version">
+        master
+      </span>
+    </div>
+  </div>
+
+  <div class="search-results hidden">
+    <ul class="search-list"></ul>
+  </div>
+
+  <div class="types-list">
+    <ul>
+  
+  <li class=" " data-id="action-controller/AC" data-name="ac">
+      <a href="../AC.html">AC</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="action-controller/ActionController" data-name="actioncontroller">
+      <a href="../ActionController.html">ActionController</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Base" data-name="actioncontroller::base">
+      <a href="../ActionController/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/CookieSizeExceeded" data-name="actioncontroller::cookiesizeexceeded">
+      <a href="../ActionController/CookieSizeExceeded.html">CookieSizeExceeded</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Error" data-name="actioncontroller::error">
+      <a href="../ActionController/Error.html">Error</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/CommonResponse" data-name="actioncontroller::error::commonresponse">
+      <a href="../ActionController/Error/CommonResponse.html">CommonResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Conflict" data-name="actioncontroller::error::conflict">
+      <a href="../ActionController/Error/Conflict.html">Conflict</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ContentResponse" data-name="actioncontroller::error::contentresponse">
+      <a href="../ActionController/Error/ContentResponse.html">ContentResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Forbidden" data-name="actioncontroller::error::forbidden">
+      <a href="../ActionController/Error/Forbidden.html">Forbidden</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/NotFound" data-name="actioncontroller::error::notfound">
+      <a href="../ActionController/Error/NotFound.html">NotFound</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ParameterResponse" data-name="actioncontroller::error::parameterresponse">
+      <a href="../ActionController/Error/ParameterResponse.html">ParameterResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Unauthorized" data-name="actioncontroller::error::unauthorized">
+      <a href="../ActionController/Error/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidRoute" data-name="actioncontroller::invalidroute">
+      <a href="../ActionController/InvalidRoute.html">InvalidRoute</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidSignature" data-name="actioncontroller::invalidsignature">
+      <a href="../ActionController/InvalidSignature.html">InvalidSignature</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/OpenAPI" data-name="actioncontroller::openapi">
+      <a href="../ActionController/OpenAPI.html">OpenAPI</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Param" data-name="actioncontroller::param">
+      <a href="../ActionController/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Converter" data-name="actioncontroller::param::converter">
+      <a href="../ActionController/Param/Converter.html">Converter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Info" data-name="actioncontroller::param::info">
+      <a href="../ActionController/Param/Info.html">Info</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Responders" data-name="actioncontroller::responders">
+      <a href="../ActionController/Responders.html">Responders</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Route" data-name="actioncontroller::route">
+      <a href="../ActionController/Route.html">Route</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Builder" data-name="actioncontroller::route::builder">
+      <a href="../ActionController/Route/Builder.html">Builder</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/DELETE" data-name="actioncontroller::route::delete">
+      <a href="../ActionController/Route/DELETE.html">DELETE</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Error" data-name="actioncontroller::route::error">
+      <a href="../ActionController/Route/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Exception" data-name="actioncontroller::route::exception">
+      <a href="../ActionController/Route/Exception.html">Exception</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Filter" data-name="actioncontroller::route::filter">
+      <a href="../ActionController/Route/Filter.html">Filter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/GET" data-name="actioncontroller::route::get">
+      <a href="../ActionController/Route/GET.html">GET</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/NotAcceptable" data-name="actioncontroller::route::notacceptable">
+      <a href="../ActionController/Route/NotAcceptable.html">NotAcceptable</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/OPTIONS" data-name="actioncontroller::route::options">
+      <a href="../ActionController/Route/OPTIONS.html">OPTIONS</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Route/Param" data-name="actioncontroller::route::param">
+      <a href="../ActionController/Route/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Conversion" data-name="actioncontroller::route::param::conversion">
+      <a href="../ActionController/Route/Param/Conversion.html">Conversion</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Error" data-name="actioncontroller::route::param::error">
+      <a href="../ActionController/Route/Param/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/MissingError" data-name="actioncontroller::route::param::missingerror">
+      <a href="../ActionController/Route/Param/MissingError.html">MissingError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/ValueError" data-name="actioncontroller::route::param::valueerror">
+      <a href="../ActionController/Route/Param/ValueError.html">ValueError</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PATCH" data-name="actioncontroller::route::patch">
+      <a href="../ActionController/Route/PATCH.html">PATCH</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/POST" data-name="actioncontroller::route::post">
+      <a href="../ActionController/Route/POST.html">POST</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PUT" data-name="actioncontroller::route::put">
+      <a href="../ActionController/Route/PUT.html">PUT</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/UnsupportedMediaType" data-name="actioncontroller::route::unsupportedmediatype">
+      <a href="../ActionController/Route/UnsupportedMediaType.html">UnsupportedMediaType</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/WebSocket" data-name="actioncontroller::route::websocket">
+      <a href="../ActionController/Route/WebSocket.html">WebSocket</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" current" data-id="action-controller/ActionController/Server" data-name="actioncontroller::server">
+      <a href="../ActionController/Server.html">Server</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Session" data-name="actioncontroller::session">
+      <a href="../ActionController/Session.html">Session</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Session/HabitatSettings" data-name="actioncontroller::session::habitatsettings">
+      <a href="../ActionController/Session/HabitatSettings.html">HabitatSettings</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/SpecHelper" data-name="actioncontroller::spechelper">
+      <a href="../ActionController/SpecHelper.html">SpecHelper</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+  </div>
+</div>
+
+
+<div class="main-content">
+<h1 class="type-name">
+
+  <span class="kind">class</span> ActionController::Server
+
+</h1>
+
+
+  <ul class="superclass-hierarchy"><li class="superclass"><a href="../ActionController/Server.html">ActionController::Server</a></li><li class="superclass">Reference</li><li class="superclass">Object</li></ul>
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="included-modules" class="anchor" href="#included-modules">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Included Modules
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type">ActionController::Router</li>
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="defined-in" class="anchor" href="#defined-in">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Defined in:
+  </h2>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L3" target="_blank">
+        action-controller/server.cr
+      </a>
+    
+    <br/>
+  
+
+
+
+
+
+  <h2>
+    <a id="constructors" class="anchor" href="#constructors">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructors
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#new%28port%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3ABool%3Dtrue%29-class-method" class="signature"><strong>.new</strong>(port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port : Bool = <span class="n">true</span>)</a>
+        
+          <div class="summary"><p>create an instance of the application</p></div>
+        
+      </li>
+    
+  </ul>
+
+
+
+  <h2>
+    <a id="class-method-summary" class="anchor" href="#class-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#after%28%2Ahandlers%29-class-method" class="signature"><strong>.after</strong>(*handlers)</a>
+        
+          <div class="summary"><p>handlers to run after your application code, see: <a href="https://crystal-lang.org/api/latest/HTTP/Handler.html">handlers</a></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#before%28%2Ahandlers%29-class-method" class="signature"><strong>.before</strong>(*handlers)</a>
+        
+          <div class="summary"><p>handlers to run before your application code, see: <a href="https://crystal-lang.org/api/latest/HTTP/Handler.html">handlers</a></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#print_routes-class-method" class="signature"><strong>.print_routes</strong></a>
+        
+          <div class="summary"><p>Used to output route details to the console from a command line switch</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#routes%3AArray%28Tuple%28String%2CSymbol%2CSymbol%2CString%29%29-class-method" class="signature"><strong>.routes</strong> : Array(Tuple(String, Symbol, Symbol, String))</a>
+        
+          <div class="summary"><p>returns a list of the routes defined in the application</p></div>
+        
+      </li>
+    
+  </ul>
+
+
+
+  <h2>
+    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#close-instance-method" class="signature"><strong>#close</strong></a>
+        
+          <div class="summary"><p>Terminates the application gracefully once any cluster processes have exited</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#cluster%28count%2Cshort_arg%2Clong_arg%2Cargs%3DARGV.dup%29-instance-method" class="signature"><strong>#cluster</strong>(count, short_arg, long_arg, args = <span class="t">ARGV</span>.dup)</a>
+        
+          <div class="summary"><p>Launches additional worker processes removing the short and long arguments that trigger this method</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#cluster%28count%29-instance-method" class="signature"><strong>#cluster</strong>(count)</a>
+        
+          <div class="summary"><p>Forks additional worker processes</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#host%3AString-instance-method" class="signature"><strong>#host</strong> : String</a>
+        
+          <div class="summary"><p>the host address the server is configured to run on</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#port%3AInt32-instance-method" class="signature"><strong>#port</strong> : Int32</a>
+        
+          <div class="summary"><p>the port the server is accepting connections from</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#print_addresses-instance-method" class="signature"><strong>#print_addresses</strong></a>
+        
+          <div class="summary"><p>Prints the addresses that the server is listening on</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#run%28%26%29-instance-method" class="signature"><strong>#run</strong>(&)</a>
+        
+          <div class="summary"><p>Starts the server, providing a callback once the ports are bound</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#run-instance-method" class="signature"><strong>#run</strong></a>
+        
+          <div class="summary"><p>Starts the server</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#socket%3AHTTP%3A%3AServer-instance-method" class="signature"><strong>#socket</strong> : HTTP::Server</a>
+        
+          <div class="summary"><p>Provides access the HTTP server for the purpose of binding For example <code>server.socket.bind_unix &quot;/tmp/my-socket.sock&quot;</code></p></div>
+        
+      </li>
+    
+  </ul>
+
+
+
+
+
+<div class="methods-inherited">
+  
+    
+
+  <h3>Instance methods inherited from module <code>ActionController::Router</code></h3>
+  
+  
+    <a href="../ActionController/Router.html#delete%28path%3AString%2C%26block%3AAction%29-instance-method" class="tooltip">
+      <span>delete(path : String, &block : Action)</span>
+    delete</a>, 
+    
+  
+    <a href="../ActionController/Router.html#get%28path%3AString%2C%26block%3AAction%29-instance-method" class="tooltip">
+      <span>get(path : String, &block : Action)</span>
+    get</a>, 
+    
+  
+    <a href="../ActionController/Router.html#head%28path%3AString%2C%26block%3AAction%29-instance-method" class="tooltip">
+      <span>head(path : String, &block : Action)</span>
+    head</a>, 
+    
+  
+    <a href="../ActionController/Router.html#options%28path%3AString%2C%26block%3AAction%29-instance-method" class="tooltip">
+      <span>options(path : String, &block : Action)</span>
+    options</a>, 
+    
+  
+    <a href="../ActionController/Router.html#patch%28path%3AString%2C%26block%3AAction%29-instance-method" class="tooltip">
+      <span>patch(path : String, &block : Action)</span>
+    patch</a>, 
+    
+  
+    <a href="../ActionController/Router.html#post%28path%3AString%2C%26block%3AAction%29-instance-method" class="tooltip">
+      <span>post(path : String, &block : Action)</span>
+    post</a>, 
+    
+  
+    <a href="../ActionController/Router.html#put%28path%3AString%2C%26block%3AAction%29-instance-method" class="tooltip">
+      <span>put(path : String, &block : Action)</span>
+    put</a>, 
+    
+  
+    <a href="../ActionController/Router.html#route_handler%3ARouteHandler-instance-method" class="tooltip">
+      <span>route_handler : RouteHandler</span>
+    route_handler</a>
+    
+  
+
+
+    
+
+
+    
+
+
+  
+    
+
+
+    
+
+
+    
+
+
+  
+    
+
+
+    
+
+
+    
+
+
+  
+</div>
+
+
+  <h2>
+    <a id="constructor-detail" class="anchor" href="#constructor-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructor Detail
+  </h2>
+  
+    <div class="entry-detail" id="new(port:Int32=3000,host:String=&quot;127.0.0.1&quot;,reuse_port:Bool=true)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port : Bool = <span class="n">true</span>)
+
+        <a class="method-permalink" href="#new%28port%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3ABool%3Dtrue%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>create an instance of the application</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L29" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+
+  <h2>
+    <a id="class-method-detail" class="anchor" href="#class-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="after(*handlers)-class-method">
+      <div class="signature">
+        
+        def self.<strong>after</strong>(*handlers)
+
+        <a class="method-permalink" href="#after%28%2Ahandlers%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>handlers to run after your application code, see: <a href="https://crystal-lang.org/api/latest/HTTP/Handler.html">handlers</a></p>
+<p>these will only be run if the route is not found in your application</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L22" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="before(*handlers)-class-method">
+      <div class="signature">
+        
+        def self.<strong>before</strong>(*handlers)
+
+        <a class="method-permalink" href="#before%28%2Ahandlers%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>handlers to run before your application code, see: <a href="https://crystal-lang.org/api/latest/HTTP/Handler.html">handlers</a></p>
+<p>configure these in your <a href="https://github.com/spider-gazelle/spider-gazelle/blob/master/src/config.cr">config.cr file</a></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L15" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="print_routes-class-method">
+      <div class="signature">
+        
+        def self.<strong>print_routes</strong>
+
+        <a class="method-permalink" href="#print_routes-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Used to output route details to the console from a command line switch</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L179" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="routes:Array(Tuple(String,Symbol,Symbol,String))-class-method">
+      <div class="signature">
+        
+        def self.<strong>routes</strong> : Array(Tuple(String, Symbol, Symbol, String))
+
+        <a class="method-permalink" href="#routes%3AArray%28Tuple%28String%2CSymbol%2CSymbol%2CString%29%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>returns a list of the routes defined in the application</p>
+<p>responds with <code>[{&quot;ControllerClass&quot;, :name, :verb, &quot;/route&quot;}]</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L169" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+
+  <h2>
+    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="close-instance-method">
+      <div class="signature">
+        
+        def <strong>close</strong>
+
+        <a class="method-permalink" href="#close-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Terminates the application gracefully once any cluster processes have exited</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L73" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="cluster(count,short_arg,long_arg,args=ARGV.dup)-instance-method">
+      <div class="signature">
+        
+        def <strong>cluster</strong>(count, short_arg, long_arg, args = <span class="t">ARGV</span>.dup)
+
+        <a class="method-permalink" href="#cluster%28count%2Cshort_arg%2Clong_arg%2Cargs%3DARGV.dup%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Launches additional worker processes
+removing the short and long arguments that trigger this method</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L98" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="cluster(count)-instance-method">
+      <div class="signature">
+        
+        def <strong>cluster</strong>(count)
+
+        <a class="method-permalink" href="#cluster%28count%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Forks additional worker processes</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L137" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="host:String-instance-method">
+      <div class="signature">
+        
+        def <strong>host</strong> : String
+
+        <a class="method-permalink" href="#host%3AString-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the host address the server is configured to run on</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L49" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="port:Int32-instance-method">
+      <div class="signature">
+        
+        def <strong>port</strong> : Int32
+
+        <a class="method-permalink" href="#port%3AInt32-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the port the server is accepting connections from</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L52" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="print_addresses-instance-method">
+      <div class="signature">
+        
+        def <strong>print_addresses</strong>
+
+        <a class="method-permalink" href="#print_addresses-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Prints the addresses that the server is listening on</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L79" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="run(&amp;)-instance-method">
+      <div class="signature">
+        
+        def <strong>run</strong>(&)
+
+        <a class="method-permalink" href="#run%28%26%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Starts the server, providing a callback once the ports are bound</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L59" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="run-instance-method">
+      <div class="signature">
+        
+        def <strong>run</strong>
+
+        <a class="method-permalink" href="#run-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Starts the server</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L66" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="socket:HTTP::Server-instance-method">
+      <div class="signature">
+        
+        def <strong>socket</strong> : HTTP::Server
+
+        <a class="method-permalink" href="#socket%3AHTTP%3A%3AServer-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Provides access the HTTP server for the purpose of binding
+For example <code>server.socket.bind_unix &quot;/tmp/my-socket.sock&quot;</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/server.cr#L56" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+
+
+</div>
+
+</body>
+</html>

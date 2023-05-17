@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Crystal Docs 1.7.3">
+<meta name="crystal_docs.project_version" content="master">
+<meta name="crystal_docs.project_name" content="action-controller">
+
+
+
+<link href="../css/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/doc.js"></script>
+
+  <meta name="repository-name" content="action-controller">
+  <title>ActionController::Responders - action-controller master</title>
+  <script type="text/javascript">
+    CrystalDocs.base_path = "../";
+  </script>
+</head>
+<body>
+
+<svg class="hidden">
+  <symbol id="octicon-link" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+  </symbol>
+</svg>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="search-box">
+      <input type="search" class="search-input" placeholder="Search..." spellcheck="false" aria-label="Search">
+    </div>
+
+    <div class="project-summary">
+      <h1 class="project-name">
+        <a href="../index.html">
+          action-controller
+        </a>
+      </h1>
+
+      <span class="project-version">
+        master
+      </span>
+    </div>
+  </div>
+
+  <div class="search-results hidden">
+    <ul class="search-list"></ul>
+  </div>
+
+  <div class="types-list">
+    <ul>
+  
+  <li class=" " data-id="action-controller/AC" data-name="ac">
+      <a href="../AC.html">AC</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="action-controller/ActionController" data-name="actioncontroller">
+      <a href="../ActionController.html">ActionController</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Base" data-name="actioncontroller::base">
+      <a href="../ActionController/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/CookieSizeExceeded" data-name="actioncontroller::cookiesizeexceeded">
+      <a href="../ActionController/CookieSizeExceeded.html">CookieSizeExceeded</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Error" data-name="actioncontroller::error">
+      <a href="../ActionController/Error.html">Error</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/CommonResponse" data-name="actioncontroller::error::commonresponse">
+      <a href="../ActionController/Error/CommonResponse.html">CommonResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Conflict" data-name="actioncontroller::error::conflict">
+      <a href="../ActionController/Error/Conflict.html">Conflict</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ContentResponse" data-name="actioncontroller::error::contentresponse">
+      <a href="../ActionController/Error/ContentResponse.html">ContentResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Forbidden" data-name="actioncontroller::error::forbidden">
+      <a href="../ActionController/Error/Forbidden.html">Forbidden</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/NotFound" data-name="actioncontroller::error::notfound">
+      <a href="../ActionController/Error/NotFound.html">NotFound</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ParameterResponse" data-name="actioncontroller::error::parameterresponse">
+      <a href="../ActionController/Error/ParameterResponse.html">ParameterResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Unauthorized" data-name="actioncontroller::error::unauthorized">
+      <a href="../ActionController/Error/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidRoute" data-name="actioncontroller::invalidroute">
+      <a href="../ActionController/InvalidRoute.html">InvalidRoute</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidSignature" data-name="actioncontroller::invalidsignature">
+      <a href="../ActionController/InvalidSignature.html">InvalidSignature</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/OpenAPI" data-name="actioncontroller::openapi">
+      <a href="../ActionController/OpenAPI.html">OpenAPI</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Param" data-name="actioncontroller::param">
+      <a href="../ActionController/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Converter" data-name="actioncontroller::param::converter">
+      <a href="../ActionController/Param/Converter.html">Converter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Info" data-name="actioncontroller::param::info">
+      <a href="../ActionController/Param/Info.html">Info</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" current" data-id="action-controller/ActionController/Responders" data-name="actioncontroller::responders">
+      <a href="../ActionController/Responders.html">Responders</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Route" data-name="actioncontroller::route">
+      <a href="../ActionController/Route.html">Route</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Builder" data-name="actioncontroller::route::builder">
+      <a href="../ActionController/Route/Builder.html">Builder</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/DELETE" data-name="actioncontroller::route::delete">
+      <a href="../ActionController/Route/DELETE.html">DELETE</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Error" data-name="actioncontroller::route::error">
+      <a href="../ActionController/Route/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Exception" data-name="actioncontroller::route::exception">
+      <a href="../ActionController/Route/Exception.html">Exception</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Filter" data-name="actioncontroller::route::filter">
+      <a href="../ActionController/Route/Filter.html">Filter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/GET" data-name="actioncontroller::route::get">
+      <a href="../ActionController/Route/GET.html">GET</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/NotAcceptable" data-name="actioncontroller::route::notacceptable">
+      <a href="../ActionController/Route/NotAcceptable.html">NotAcceptable</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/OPTIONS" data-name="actioncontroller::route::options">
+      <a href="../ActionController/Route/OPTIONS.html">OPTIONS</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Route/Param" data-name="actioncontroller::route::param">
+      <a href="../ActionController/Route/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Conversion" data-name="actioncontroller::route::param::conversion">
+      <a href="../ActionController/Route/Param/Conversion.html">Conversion</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Error" data-name="actioncontroller::route::param::error">
+      <a href="../ActionController/Route/Param/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/MissingError" data-name="actioncontroller::route::param::missingerror">
+      <a href="../ActionController/Route/Param/MissingError.html">MissingError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/ValueError" data-name="actioncontroller::route::param::valueerror">
+      <a href="../ActionController/Route/Param/ValueError.html">ValueError</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PATCH" data-name="actioncontroller::route::patch">
+      <a href="../ActionController/Route/PATCH.html">PATCH</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/POST" data-name="actioncontroller::route::post">
+      <a href="../ActionController/Route/POST.html">POST</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PUT" data-name="actioncontroller::route::put">
+      <a href="../ActionController/Route/PUT.html">PUT</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/UnsupportedMediaType" data-name="actioncontroller::route::unsupportedmediatype">
+      <a href="../ActionController/Route/UnsupportedMediaType.html">UnsupportedMediaType</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/WebSocket" data-name="actioncontroller::route::websocket">
+      <a href="../ActionController/Route/WebSocket.html">WebSocket</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Server" data-name="actioncontroller::server">
+      <a href="../ActionController/Server.html">Server</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Session" data-name="actioncontroller::session">
+      <a href="../ActionController/Session.html">Session</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Session/HabitatSettings" data-name="actioncontroller::session::habitatsettings">
+      <a href="../ActionController/Session/HabitatSettings.html">HabitatSettings</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/SpecHelper" data-name="actioncontroller::spechelper">
+      <a href="../ActionController/SpecHelper.html">SpecHelper</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+  </div>
+</div>
+
+
+<div class="main-content">
+<h1 class="type-name">
+
+  <span class="kind">module</span> ActionController::Responders
+
+</h1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="direct-including-types" class="anchor" href="#direct-including-types">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Direct including types
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type"><a href="../ActionController/Base.html">ActionController::Base</a></li>
+    
+  </ul>
+
+
+
+
+  <h2>
+    <a id="defined-in" class="anchor" href="#defined-in">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Defined in:
+  </h2>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/responders.cr#L4" target="_blank">
+        action-controller/responders.cr
+      </a>
+    
+    <br/>
+  
+
+
+
+  
+    <h2>
+      <a id="constant-summary" class="anchor" href="#constant-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+      Constant Summary
+    </h2>
+  
+  <dl>
+    
+      <dt class="entry-const" id="MIME_TYPES">
+        <strong>MIME_TYPES</strong> = <code>{binary: <span class="s">&quot;application/octet-stream&quot;</span>, json: <span class="s">&quot;application/json&quot;</span>, xml: <span class="s">&quot;application/xml&quot;</span>, text: <span class="s">&quot;text/plain&quot;</span>, html: <span class="s">&quot;text/html&quot;</span>, yaml: <span class="s">&quot;text/yaml&quot;</span>}</code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>common response mime types</p>
+      </dd>
+      
+    
+      <dt class="entry-const" id="REDIRECTION_CODES">
+        <strong>REDIRECTION_CODES</strong> = <code>{multiple_choices: <span class="n">300</span>, moved_permanently: <span class="n">301</span>, found: <span class="n">302</span>, see_other: <span class="n">303</span>, not_modified: <span class="n">304</span>, use_proxy: <span class="n">305</span>, temporary_redirect: <span class="n">307</span>, permanent_redirect: <span class="n">308</span>}</code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>codes to use when redirecting</p>
+      </dd>
+      
+    
+      <dt class="entry-const" id="STATUS_CODES">
+        <strong>STATUS_CODES</strong> = <code>{continue: <span class="n">100</span>, switching_protocols: <span class="n">101</span>, processing: <span class="n">102</span>, ok: <span class="n">200</span>, created: <span class="n">201</span>, accepted: <span class="n">202</span>, non_authoritative_information: <span class="n">203</span>, no_content: <span class="n">204</span>, reset_content: <span class="n">205</span>, partial_content: <span class="n">206</span>, multi_status: <span class="n">207</span>, already_reported: <span class="n">208</span>, im_used: <span class="n">226</span>, bad_request: <span class="n">400</span>, unauthorized: <span class="n">401</span>, payment_required: <span class="n">402</span>, forbidden: <span class="n">403</span>, not_found: <span class="n">404</span>, method_not_allowed: <span class="n">405</span>, not_acceptable: <span class="n">406</span>, proxy_authentication_required: <span class="n">407</span>, request_timeout: <span class="n">408</span>, conflict: <span class="n">409</span>, gone: <span class="n">410</span>, length_required: <span class="n">411</span>, precondition_failed: <span class="n">412</span>, payload_too_large: <span class="n">413</span>, uri_too_long: <span class="n">414</span>, unsupported_media_type: <span class="n">415</span>, range_not_satisfiable: <span class="n">416</span>, expectation_failed: <span class="n">417</span>, misdirected_request: <span class="n">421</span>, unprocessable_entity: <span class="n">422</span>, locked: <span class="n">423</span>, failed_dependency: <span class="n">424</span>, upgrade_required: <span class="n">426</span>, precondition_required: <span class="n">428</span>, too_many_requests: <span class="n">429</span>, request_header_fields_too_large: <span class="n">431</span>, unavailable_for_legal_reasons: <span class="n">451</span>, internal_server_error: <span class="n">500</span>, not_implemented: <span class="n">501</span>, bad_gateway: <span class="n">502</span>, service_unavailable: <span class="n">503</span>, gateway_timeout: <span class="n">504</span>, http_version_not_supported: <span class="n">505</span>, variant_also_negotiates: <span class="n">506</span>, insufficient_storage: <span class="n">507</span>, loop_detected: <span class="n">508</span>, not_extended: <span class="n">510</span>, network_authentication_required: <span class="n">511</span>}</code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>standard response codes</p>
+      </dd>
+      
+    
+  </dl>
+
+
+
+
+
+
+
+  <h2>
+    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#accepts_formats%3AArray%28String%29-instance-method" class="signature"><strong>#accepts_formats</strong> : Array(String)</a>
+        
+          <div class="summary"><p>Extracts the mime types from the Accept header</p></div>
+        
+      </li>
+    
+  </ul>
+
+
+
+  <h2>
+    <a id="macro-summary" class="anchor" href="#macro-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Macro Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#head%28status%29-macro" class="signature"><strong>head</strong>(status)</a>
+        
+          <div class="summary"><p>only sends the header, no content to be sent.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#redirect_to%28path%2Cstatus%3D%3Afound%29-macro" class="signature"><strong>redirect_to</strong>(path, status = <span class="n">:found</span>)</a>
+        
+          <div class="summary"><p>redirects the browser to a new route</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#render%28status%3D%3Aok%2Chead%3Dnil%2Cjson%3Dnil%2Cyaml%3Dnil%2Cxml%3Dnil%2Chtml%3Dnil%2Ctext%3Dnil%2Cbinary%3Dnil%2Ctemplate%3Dnil%2Cpartial%3Dnil%2Clayout%3Dnil%29-macro" class="signature"><strong>render</strong>(status = <span class="n">:ok</span>, head = <span class="n">nil</span>, json = <span class="n">nil</span>, yaml = <span class="n">nil</span>, xml = <span class="n">nil</span>, html = <span class="n">nil</span>, text = <span class="n">nil</span>, binary = <span class="n">nil</span>, template = <span class="n">nil</span>, partial = <span class="n">nil</span>, layout = <span class="n">nil</span>)</a>
+        
+          <div class="summary"><p>used to stream a response back to the user, serializing directly to the IO</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#respond_with%28status%3D%3Aok%2C%26block%29-macro" class="signature"><strong>respond_with</strong>(status = <span class="n">:ok</span>, &block)</a>
+        
+          <div class="summary"><p>uses the content-type header to respond in the appropriate format</p></div>
+        
+      </li>
+    
+  </ul>
+
+
+
+<div class="methods-inherited">
+  
+</div>
+
+
+
+
+
+
+  <h2>
+    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="accepts_formats:Array(String)-instance-method">
+      <div class="signature">
+        
+        def <strong>accepts_formats</strong> : Array(String)
+
+        <a class="method-permalink" href="#accepts_formats%3AArray%28String%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Extracts the mime types from the Accept header</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/responders.cr#L265" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+
+  <h2>
+    <a id="macro-detail" class="anchor" href="#macro-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Macro Detail
+  </h2>
+  
+    <div class="entry-detail" id="head(status)-macro">
+      <div class="signature">
+        
+        macro <strong>head</strong>(status)
+
+        <a class="method-permalink" href="#head%28status%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>only sends the header, no content to be sent.</p>
+<p>you should only use render with the Macro DSL</p>
+<pre><code class="language-crystal">delete <span class="s">&quot;/:id&quot;</span>, <span class="n">:destroy</span> <span class="k">do</span>
+  <span class="t">MyModel</span>.find(route_params[<span class="s">&quot;id&quot;</span>]).destroy
+  head <span class="t">HTTP</span><span class="t">::</span><span class="t">Status</span><span class="t">::</span><span class="t">ACCEPTED</span>
+<span class="k">end</span></code></pre>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/responders.cr#L192" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="redirect_to(path,status=:found)-macro">
+      <div class="signature">
+        
+        macro <strong>redirect_to</strong>(path, status = <span class="n">:found</span>)
+
+        <a class="method-permalink" href="#redirect_to%28path%2Cstatus%3D%3Afound%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>redirects the browser to a new route</p>
+<p>you should only use render with the Macro DSL</p>
+<pre><code class="language-crystal">patch <span class="s">&quot;/:id&quot;</span>, <span class="n">:update</span> <span class="k">do</span>
+  redirect_to <span class="s">&quot;/</span><span class="i">#{</span>params[<span class="s">&quot;id&quot;</span>]<span class="i">}</span><span class="s">&quot;</span>
+<span class="k">end</span></code></pre>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/responders.cr#L204" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="render(status=:ok,head=nil,json=nil,yaml=nil,xml=nil,html=nil,text=nil,binary=nil,template=nil,partial=nil,layout=nil)-macro">
+      <div class="signature">
+        
+        macro <strong>render</strong>(status = <span class="n">:ok</span>, head = <span class="n">nil</span>, json = <span class="n">nil</span>, yaml = <span class="n">nil</span>, xml = <span class="n">nil</span>, html = <span class="n">nil</span>, text = <span class="n">nil</span>, binary = <span class="n">nil</span>, template = <span class="n">nil</span>, partial = <span class="n">nil</span>, layout = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#render%28status%3D%3Aok%2Chead%3Dnil%2Cjson%3Dnil%2Cyaml%3Dnil%2Cxml%3Dnil%2Chtml%3Dnil%2Ctext%3Dnil%2Cbinary%3Dnil%2Ctemplate%3Dnil%2Cpartial%3Dnil%2Clayout%3Dnil%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>used to stream a response back to the user, serializing directly to the IO</p>
+<p>the content type is set appropriately based on the response type</p>
+<p>a call to render implicitly executes a <code>return</code> as the response has been written to the client</p>
+<p>you should only use render with the Macro DSL</p>
+<pre><code class="language-crystal">get <span class="s">&quot;/:id&quot;</span>, <span class="n">:show</span> <span class="k">do</span>
+  render json: <span class="t">MyModel</span>.find(route_params[<span class="s">&quot;id&quot;</span>])
+<span class="k">end</span></code></pre>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/responders.cr#L102" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="respond_with(status=:ok,&amp;block)-macro">
+      <div class="signature">
+        
+        macro <strong>respond_with</strong>(status = <span class="n">:ok</span>, &block)
+
+        <a class="method-permalink" href="#respond_with%28status%3D%3Aok%2C%26block%29-macro">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>uses the content-type header to respond in the appropriate format</p>
+<p>you should only use render with the Macro DSL</p>
+<pre><code class="language-crystal">get <span class="s">&quot;/:id&quot;</span>, <span class="n">:show</span> <span class="k">do</span>
+  model <span class="o">=</span> <span class="t">MyModel</span>.find(route_params[<span class="s">&quot;id&quot;</span>])
+
+  respond_with <span class="k">do</span>
+    text model <span class="c"># calls to_s(response) on the object passed</span>
+    json model <span class="c"># calls to_json(response) on the object passed</span>
+    xml <span class="k">do</span>     <span class="c"># can provide a block to perform additional processing too</span>
+      str <span class="o">=</span> <span class="s">&quot;&lt;set_var&gt;</span><span class="i">#{</span>model.build_xml<span class="i">}</span><span class="s">&lt;/set_var&gt;&quot;</span>
+      <span class="t">XML</span>.parse(str)
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/responders.cr#L238" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+</div>
+
+</body>
+</html>

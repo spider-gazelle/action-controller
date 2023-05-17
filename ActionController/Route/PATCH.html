@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="generator" content="Crystal Docs 1.7.3">
+<meta name="crystal_docs.project_version" content="master">
+<meta name="crystal_docs.project_name" content="action-controller">
+
+
+
+<link href="../../css/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../../js/doc.js"></script>
+
+  <meta name="repository-name" content="action-controller">
+  <title>ActionController::Route::PATCH - action-controller master</title>
+  <script type="text/javascript">
+    CrystalDocs.base_path = "../../";
+  </script>
+</head>
+<body>
+
+<svg class="hidden">
+  <symbol id="octicon-link" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+  </symbol>
+</svg>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="search-box">
+      <input type="search" class="search-input" placeholder="Search..." spellcheck="false" aria-label="Search">
+    </div>
+
+    <div class="project-summary">
+      <h1 class="project-name">
+        <a href="../../index.html">
+          action-controller
+        </a>
+      </h1>
+
+      <span class="project-version">
+        master
+      </span>
+    </div>
+  </div>
+
+  <div class="search-results hidden">
+    <ul class="search-list"></ul>
+  </div>
+
+  <div class="types-list">
+    <ul>
+  
+  <li class=" " data-id="action-controller/AC" data-name="ac">
+      <a href="../../AC.html">AC</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="action-controller/ActionController" data-name="actioncontroller">
+      <a href="../../ActionController.html">ActionController</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Base" data-name="actioncontroller::base">
+      <a href="../../ActionController/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/CookieSizeExceeded" data-name="actioncontroller::cookiesizeexceeded">
+      <a href="../../ActionController/CookieSizeExceeded.html">CookieSizeExceeded</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Error" data-name="actioncontroller::error">
+      <a href="../../ActionController/Error.html">Error</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/CommonResponse" data-name="actioncontroller::error::commonresponse">
+      <a href="../../ActionController/Error/CommonResponse.html">CommonResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Conflict" data-name="actioncontroller::error::conflict">
+      <a href="../../ActionController/Error/Conflict.html">Conflict</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ContentResponse" data-name="actioncontroller::error::contentresponse">
+      <a href="../../ActionController/Error/ContentResponse.html">ContentResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Forbidden" data-name="actioncontroller::error::forbidden">
+      <a href="../../ActionController/Error/Forbidden.html">Forbidden</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/NotFound" data-name="actioncontroller::error::notfound">
+      <a href="../../ActionController/Error/NotFound.html">NotFound</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ParameterResponse" data-name="actioncontroller::error::parameterresponse">
+      <a href="../../ActionController/Error/ParameterResponse.html">ParameterResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Unauthorized" data-name="actioncontroller::error::unauthorized">
+      <a href="../../ActionController/Error/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidRoute" data-name="actioncontroller::invalidroute">
+      <a href="../../ActionController/InvalidRoute.html">InvalidRoute</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidSignature" data-name="actioncontroller::invalidsignature">
+      <a href="../../ActionController/InvalidSignature.html">InvalidSignature</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/OpenAPI" data-name="actioncontroller::openapi">
+      <a href="../../ActionController/OpenAPI.html">OpenAPI</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Param" data-name="actioncontroller::param">
+      <a href="../../ActionController/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Converter" data-name="actioncontroller::param::converter">
+      <a href="../../ActionController/Param/Converter.html">Converter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Info" data-name="actioncontroller::param::info">
+      <a href="../../ActionController/Param/Info.html">Info</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Responders" data-name="actioncontroller::responders">
+      <a href="../../ActionController/Responders.html">Responders</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="action-controller/ActionController/Route" data-name="actioncontroller::route">
+      <a href="../../ActionController/Route.html">Route</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Builder" data-name="actioncontroller::route::builder">
+      <a href="../../ActionController/Route/Builder.html">Builder</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/DELETE" data-name="actioncontroller::route::delete">
+      <a href="../../ActionController/Route/DELETE.html">DELETE</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Error" data-name="actioncontroller::route::error">
+      <a href="../../ActionController/Route/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Exception" data-name="actioncontroller::route::exception">
+      <a href="../../ActionController/Route/Exception.html">Exception</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Filter" data-name="actioncontroller::route::filter">
+      <a href="../../ActionController/Route/Filter.html">Filter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/GET" data-name="actioncontroller::route::get">
+      <a href="../../ActionController/Route/GET.html">GET</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/NotAcceptable" data-name="actioncontroller::route::notacceptable">
+      <a href="../../ActionController/Route/NotAcceptable.html">NotAcceptable</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/OPTIONS" data-name="actioncontroller::route::options">
+      <a href="../../ActionController/Route/OPTIONS.html">OPTIONS</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Route/Param" data-name="actioncontroller::route::param">
+      <a href="../../ActionController/Route/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Conversion" data-name="actioncontroller::route::param::conversion">
+      <a href="../../ActionController/Route/Param/Conversion.html">Conversion</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Error" data-name="actioncontroller::route::param::error">
+      <a href="../../ActionController/Route/Param/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/MissingError" data-name="actioncontroller::route::param::missingerror">
+      <a href="../../ActionController/Route/Param/MissingError.html">MissingError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/ValueError" data-name="actioncontroller::route::param::valueerror">
+      <a href="../../ActionController/Route/Param/ValueError.html">ValueError</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" current" data-id="action-controller/ActionController/Route/PATCH" data-name="actioncontroller::route::patch">
+      <a href="../../ActionController/Route/PATCH.html">PATCH</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/POST" data-name="actioncontroller::route::post">
+      <a href="../../ActionController/Route/POST.html">POST</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PUT" data-name="actioncontroller::route::put">
+      <a href="../../ActionController/Route/PUT.html">PUT</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/UnsupportedMediaType" data-name="actioncontroller::route::unsupportedmediatype">
+      <a href="../../ActionController/Route/UnsupportedMediaType.html">UnsupportedMediaType</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/WebSocket" data-name="actioncontroller::route::websocket">
+      <a href="../../ActionController/Route/WebSocket.html">WebSocket</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Server" data-name="actioncontroller::server">
+      <a href="../../ActionController/Server.html">Server</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Session" data-name="actioncontroller::session">
+      <a href="../../ActionController/Session.html">Session</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Session/HabitatSettings" data-name="actioncontroller::session::habitatsettings">
+      <a href="../../ActionController/Session/HabitatSettings.html">HabitatSettings</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/SpecHelper" data-name="actioncontroller::spechelper">
+      <a href="../../ActionController/SpecHelper.html">SpecHelper</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+  </div>
+</div>
+
+
+<div class="main-content">
+<h1 class="type-name">
+
+  <span class="kind">annotation</span> ActionController::Route::PATCH
+
+</h1>
+
+
+
+
+
+  <h2>
+    <a id="overview" class="anchor" href="#overview">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Overview
+  </h2>
+
+  <p>define a new route that responds to &quot;PATCH&quot; requests</p>
+<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="s">&quot;PATCH&quot;</span>(<span class="s">&quot;/my/route/:name&quot;</span>)]
+<span class="k">def</span> <span class="m">my_route_name</span>(name : <span class="t">String</span>) : <span class="t">String</span>
+  name
+<span class="k">end</span></code></pre>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="defined-in" class="anchor" href="#defined-in">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Defined in:
+  </h2>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/4ef707e2372c7a18dab746d91ec229be774a3a75/src/action-controller/router/builder.cr#L5" target="_blank">
+        action-controller/router/builder.cr
+      </a>
+    
+    <br/>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="methods-inherited">
+  
+</div>
+
+
+
+
+
+
+
+
+
+</div>
+
+</body>
+</html>
