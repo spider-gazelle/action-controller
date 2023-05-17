@@ -87,4 +87,5 @@ class Books < Application
 end
 ```
 
-For more details on usage, see [the documentation](https://spider-gazelle.net/).
+* For more details on usage, see [the documentation](https://spider-gazelle.net/).
+* Also see [detailed project documentation](https://spider-gazelle.github.io/action-controller/ActionController.html)
