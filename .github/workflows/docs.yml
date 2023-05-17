@@ -14,7 +14,7 @@ jobs:
         with:
           crystal: latest
       - name: "Install shards"
-        run: shards install
+        run: shards install --skip-postinstall --skip-executables
       - name: "Generate docs"
         run: crystal docs
       - name: Deploy to GitHub Pages
