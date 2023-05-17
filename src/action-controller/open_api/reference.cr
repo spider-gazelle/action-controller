@@ -1,3 +1,4 @@
+# :nodoc:
 class ActionController::OpenAPI::Reference
   include JSON::Serializable
   include YAML::Serializable

@@ -1,3 +1,4 @@
+# :nodoc:
 class ActionController::OpenAPI::Response
   include JSON::Serializable
   include YAML::Serializable

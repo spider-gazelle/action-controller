@@ -1,7 +1,7 @@
 require "http/server"
 
-# Adds a helper method for storing params extracted from radix tree routes
 class HTTP::Server::Context
+  # helper method for obtaining params extracted from the route path
   property route_params : Hash(String, String) do
     {} of String => String
   end

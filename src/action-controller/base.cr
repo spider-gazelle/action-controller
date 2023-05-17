@@ -6,23 +6,25 @@ require "./support"
 require "uri"
 require "./router/builder"
 
+# the base class of all controllers
 abstract class ActionController::Base
   include ActionController::Route::Builder
   include ActionController::Responders
 
-  OPENAPI_FILTER_MAP = {} of Nil => Nil # route to filter names
-  OPENAPI_ERRORS_MAP = {} of Nil => Nil # route to exception classes
+  # :nodoc:
+  # route to filter names
+  OPENAPI_FILTER_MAP = {} of Nil => Nil
 
-  # Route IDs params
-  DEFAULT_PARAM_ID = {} of Nil => Nil
+  # :nodoc:
+  # route to exception classes
+  OPENAPI_ERRORS_MAP = {} of Nil => Nil
 
-  macro id_param(id)
-    {% DEFAULT_PARAM_ID[@type.id] = id %}
-  end
-
+  # :nodoc:
   # Template support
   TEMPLATE_LAYOUT = {} of Nil => Nil
-  TEMPLATE_PATH   = {} of Nil => Nil
+
+  # :nodoc:
+  TEMPLATE_PATH = {} of Nil => Nil
   {% TEMPLATE_PATH[@type.id] = "./src/views/" %}
 
   macro layout(filename = nil)
@@ -88,15 +90,20 @@ abstract class ActionController::Base
     {% end %}
   end
 
+  # :nodoc:
   # Base route => klass name
   CONCRETE_CONTROLLERS = {} of Nil => Nil
-  FILTER_TYPES         = %w(ROUTES BEFORE AROUND AFTER RESCUE FORCE SKIP)
+
+  # :nodoc:
+  FILTER_TYPES = %w(ROUTES BEFORE AROUND AFTER RESCUE FORCE SKIP)
 
   {% for ftype in FILTER_TYPES %}
+    # :nodoc:
     # klass => {function => options}
     {{ftype.id}}_MAPPINGS = {} of Nil => Nil
   {% end %}
 
+  # :nodoc:
   macro __build_filter_inheritance_macros__
     {% for ftype in FILTER_TYPES %}
       {% ltype = ftype.downcase %}
@@ -123,54 +130,74 @@ abstract class ActionController::Base
     {% end %}
   end
 
-  CRUD_METHODS = {
-    "index"   => {"get", "/", false},
-    "new"     => {"get", "/new", false},
-    "create"  => {"post", "/", false},
-    "show"    => {"get", "/:id", true},
-    "edit"    => {"get", "/:id/edit", true},
-    "update"  => {"patch", "/:id", true},
-    "replace" => {"put", "/:id", true},
-    "destroy" => {"delete", "/:id", true},
-  }
-
-  def initialize(@context : HTTP::Server::Context, @action_name = :index, @__head_request__ = false)
-    @render_called = false
+  # :nodoc:
+  def initialize(@__context__ : HTTP::Server::Context, @__action_name__ : Symbol = :index, @__head_request__ = false)
+    @__render_called__ = false
   end
 
-  getter context
-  getter action_name : Symbol
+  # the [request context](https://crystal-lang.org/api/latest/HTTP/Server/Context.html)
+  def context : HTTP::Server::Context
+    @__context__
+  end
+
+  # the action name being executed (typically the function name)
+  def action_name : Symbol
+    @__action_name__
+  end
+
+  # :nodoc:
   getter __session__ : Session?
-  getter __cookies__ : HTTP::Cookies?
-  getter? render_called : Bool
 
-  def render_called
-    @render_called
+  # :nodoc:
+  getter __cookies__ : HTTP::Cookies?
+
+  # has the response already been sent?
+  def render_called? : Bool
+    @__render_called__
   end
 
+  # :ditto:
+  @[Deprecated("use `render_called?`")]
+  def render_called
+    @__render_called__
+  end
+
+  # loads the session from the cookies if it exists
   def session : Session
     @__session__ ||= Session.from_cookies(cookies)
   end
 
+  # parses the cookies sent with the request
   def cookies : HTTP::Cookies
-    @__cookies__ ||= @context.request.cookies
+    @__cookies__ ||= @__context__.request.cookies
   rescue error
     Log.warn(exception: error) { "error parsing cookies" }
     @__cookies__ = HTTP::Cookies.new
   end
 
-  delegate request, response, route_params, to: @context
+  # shortcuts to methods available on the context
+  delegate request, response, route_params, to: @__context__
 
-  delegate query_params, to: @context.request
+  # parses the query params that were sent with the request
+  delegate query_params, to: @__context__.request
 
-  getter params : URI::Params do
-    _params = ActionController::Base.extract_params(@context)
-    # Add form data to params, lowest preference
-    ctype = request_content_type
-    @files, @form_data = ActionController::BodyParser.extract_form_data(request, ctype, _params) if ctype
-    _params
+  @__params__ : URI::Params?
+
+  # parses all the params (query + route + body form data) and
+  # makes them available in one place
+  def params : URI::Params
+    if _params = @__params__
+      _params
+    else
+      _params = ActionController::Base.extract_params(@__context__)
+      # Add form data to params
+      ctype = request_content_type
+      @__files__, @__form_data__ = ActionController::BodyParser.extract_form_data(request, ctype, _params) if ctype
+      @__params__ = _params
+    end
   end
 
+  # :nodoc:
   # Extracts query and route params into a single `URI::Params` instance
   def self.extract_params(context : HTTP::Server::Context) : URI::Params
     params = URI::Params.new
@@ -191,35 +218,44 @@ abstract class ActionController::Base
     params
   end
 
-  @form_data : URI::Params?
+  @__form_data__ : URI::Params?
 
+  # returns any data that could be parsed from the request body.
+  #
+  # It will only attempt to parse the data if the appropriate content-type header is set
   def form_data
-    return @form_data if @params
+    return @__form_data__ if @__params__
     params
-    @form_data
+    @__form_data__
   end
 
-  @files : Hash(String, Array(ActionController::BodyParser::FileUpload))? = nil
+  @__files__ : Hash(String, Array(ActionController::BodyParser::FileUpload))? = nil
 
+  # returns any file provided in a multipart post
   def files : Hash(String, Array(ActionController::BodyParser::FileUpload))?
-    return @files if @params
+    return @__files__ if @__params__
     params
-    @files
+    @__files__
   end
 
+  # looks at the content type header for the media type
   getter request_media_type : MIME::MediaType? do
     ActionController::Support.media_type(request.headers)
   end
 
-  def request_content_type
+  # looks at the content type header for the media type and returns the text representation of it
+  def request_content_type : String?
     request_media_type.try &.media_type
   end
 
+  # looks at the content type header to see if the charset was defined
   getter request_charset : String do
     request_media_type.try(&.[]?("charset").try(&.downcase)) || "utf-8"
   end
 
+  # :nodoc:
   macro inherited
+    # :nodoc:
     # default namespace based on class
     NAMESPACE = [{{"/" + @type.name.stringify.underscore.gsub(/\:\:/, "/")}}]
 
@@ -257,6 +293,7 @@ abstract class ActionController::Base
     end
   end
 
+  # :nodoc:
   macro __build_filter_mappings__
     {% for ftype in FILTER_TYPES %}
       {% ltype = ftype.downcase %}
@@ -264,43 +301,9 @@ abstract class ActionController::Base
     {% end %}
   end
 
+  # :nodoc:
   macro __create_route_methods__
     {% if !@type.abstract? %}
-      # Add CRUD routes to the map
-      {% for method, index in @type.methods %}
-        {% name = method.name.stringify %}
-        {% args = CRUD_METHODS[name] %}
-
-        # see if this method is already added
-        {% matching_method = false %}
-        {% for path, details in ROUTES %}
-          {% function_name = details[6] %}
-          {% if function_name == name.id %}
-            {% matching_method = true %}
-          {% end %}
-        {% end %}
-
-        {% if args && !matching_method %}
-          # check the method isn't annotated
-          {% magic_method = true %}
-          {% for route_method in {AC::Route::GET, AC::Route::POST, AC::Route::PUT, AC::Route::PATCH, AC::Route::DELETE, AC::Route::OPTIONS, AC::Route::Filter, AC::Route::Exception} %}
-            {% for ann, idx in method.annotations(route_method) %}
-              {% magic_method = false %}
-            {% end %}
-          {% end %}
-
-          # add the magic method to the routes
-          {% if magic_method %}
-            {% if args[2] && DEFAULT_PARAM_ID[@type.id] %}
-              {% new_default_param = args[1].gsub(/\:id/, ":" + DEFAULT_PARAM_ID[@type.id].id.stringify) %}
-              {% ROUTES[args[0] + new_default_param] = {args[0], new_default_param, nil, nil, false, name.id, name.id} %}
-            {% else %}
-              {% ROUTES[args[0] + args[1]] = {args[0], args[1], nil, nil, false, name.id, name.id} %}
-            {% end %}
-          {% end %}
-        {% end %}
-      {% end %}
-
       # Create functions as required for errors
       # Skip the generating methods for existing handlers
       {% for klass, details in RESCUE %}
@@ -319,20 +322,24 @@ abstract class ActionController::Base
     {% end %}
   end
 
+  # :nodoc:
   # To support inheritance
   def self.__init_routes__(router)
     nil
   end
 
+  # :nodoc:
   def self.__route_list__
     # Class, name, verb, route
     [] of {String, Symbol, Symbol, String}
   end
 
+  # :nodoc:
   def self.__yield__(inst, &)
     with inst yield
   end
 
+  # :nodoc:
   macro __draw_routes__
     {% if !@type.abstract? && !ROUTES.empty? %}
       {% CONCRETE_CONTROLLERS[@type.name.id] = NAMESPACE[0] %}
@@ -622,6 +629,9 @@ abstract class ActionController::Base
     {% end %}
   end
 
+  # this route is appended to any routes defined in the controller
+  #
+  # defaults to `/`
   macro base(name = nil)
     {% if name == nil || name.empty? || name == "/" %}
       {% NAMESPACE[0] = "/" %}
@@ -636,6 +646,7 @@ abstract class ActionController::Base
 
   # Define each method for supported http methods except head (which is meta)
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
+    # define a new route that responds to {{http_method.id.stringify.upcase.id}} requests
     macro {{http_method.id}}(path, function = nil, annotations = nil, reference = nil, &block)
       \{% unless function %}
         \{% function = "_route_" + {{http_method}} + path.gsub(/\W/, "_") %}
@@ -655,6 +666,7 @@ abstract class ActionController::Base
     end
   {% end %}
 
+  # used to define a websocket route
   macro ws(path, function = nil, annotations = nil, reference = nil, &block)
     {% unless function %}
       {% function = "ws" + path.gsub(/\W/, "_") %}
@@ -671,6 +683,9 @@ abstract class ActionController::Base
     end
   end
 
+  # provide custom responses for certain types of errors that might occur in multiple routes
+  #
+  # helps keep your code DRY and simplifies controller methods
   macro rescue_from(error_class, method = nil, &block)
     {% if method %}
       {% LOCAL_RESCUE[error_class] = {method.id, nil} %}
@@ -680,6 +695,7 @@ abstract class ActionController::Base
     {% end %}
   end
 
+  # :nodoc:
   macro __define_filter_macro__(name, store, method = nil)
     macro {{name.id}}({% if method.nil? %} method, {% end %} only = nil, except = nil, filter_name = nil)
     {% if method %}
@@ -719,12 +735,52 @@ abstract class ActionController::Base
     end
   end
 
+  # wraps actions in the code provided, must `yield` to the action
+  #
+  # ```
+  # @[AC::Route::Filter(:around_action, only: [:create, :update])]
+  # def wrap_in_transaction
+  #   PgORM::Database.transaction do
+  #     yield
+  #   end
+  # end
+  # ```
   __define_filter_macro__(:around_action, LOCAL_AROUND)
+
+  # runs code before an action is executed
+  #
+  # ```
+  # @[AC::Route::Filter(:before_action, except: [:public_show])]
+  # def ensure_authenticated
+  #   raise Error::Unauthorized.new("user not found") unless session["user"]?
+  # end
+  # ```
   __define_filter_macro__(:before_action, LOCAL_BEFORE)
+
+  # runs code after an action is executed and the response has been sent.
+  #
+  # ```
+  # @[AC::Route::Filter(:after_action)]
+  # def audit_user_activity
+  #   log_activity(session["user"], request_protocol, action_name)
+  # end
+  # ```
   __define_filter_macro__(:after_action, LOCAL_AFTER)
+
+  # provides a method for skipping filters that were defined in parent classes.
+  #
+  # for instance, you might have a global authorisation check, however one route is less strict
+  # ```
+  # skip_action :authorize!, only: [:public_show]
+  # ```
   __define_filter_macro__(:skip_action, LOCAL_SKIP)
+
+  # ensures certain routes can only be accessed over TLS
+  #
+  # recommended that this is enabled for your entire application
   __define_filter_macro__(:force_ssl, LOCAL_FORCE, :force)
 
+  # :ditto:
   macro force_tls(only = nil, except = nil)
     force_ssl({{only}}, {{except}})
   end
@@ -732,17 +788,20 @@ abstract class ActionController::Base
   # ===============
   # Helper methods:
   # ===============
+
+  # returns either `:http` or `:https`
   def request_protocol
     ActionController::Support.request_protocol(request)
   end
 
-  @client_ip : String? = nil
+  @__client_ip__ : String? = nil
 
+  # attempts to find the clients IP address using proxy headers or the remote_address
   def client_ip : String
-    cip = @client_ip
+    cip = @__client_ip__
     return cip if cip
 
-    request = @context.request
+    request = @__context__.request
     cip = request.headers["X-Forwarded-For"]? || request.headers["X-Real-IP"]?
 
     if cip.nil?
@@ -759,7 +818,7 @@ abstract class ActionController::Base
       cip = (request.remote_address.try(&.to_s) || "127.0.0.1").split(":")[0] unless cip
     end
 
-    @client_ip = cip
+    @__client_ip__ = cip
     cip
   end
 end

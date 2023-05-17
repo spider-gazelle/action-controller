@@ -3,21 +3,29 @@ require "./open_api"
 class ActionController::Server
   include Router
 
+  # :nodoc:
   BEFORE_HANDLERS = [] of HTTP::Handler
-  AFTER_HANDLERS  = [] of HTTP::Handler
 
-  # Adds handlers that should run before routes in this application
+  # :nodoc:
+  AFTER_HANDLERS = [] of HTTP::Handler
+
+  # handlers to run before your application code, see: [handlers](https://crystal-lang.org/api/latest/HTTP/Handler.html)
+  #
+  # configure these in your [config.cr file](https://github.com/spider-gazelle/spider-gazelle/blob/master/src/config.cr)
   def self.before(*handlers)
     BEFORE_HANDLERS.concat(handlers)
   end
 
-  # Adds handlers that should run if a route is not found
+  # handlers to run after your application code, see: [handlers](https://crystal-lang.org/api/latest/HTTP/Handler.html)
+  #
+  # these will only be run if the route is not found in your application
   def self.after(*handlers)
     AFTER_HANDLERS.concat(handlers)
   end
 
   @route_handler = RouteHandler.new
 
+  # create an instance of the application
   def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port = true)
     @processes = [] of Future::Compute(Nil)
     init_routes
@@ -30,13 +38,17 @@ class ActionController::Server
     {% end %}
   end
 
+  # :nodoc:
   def reload
     return unless @socket.closed?
     @processes.clear
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
+  # the host address the server is configured to run on
   getter host
+
+  # the port the server is accepting connections from
   getter port
 
   # Provides access the HTTP server for the purpose of binding
@@ -151,7 +163,10 @@ class ActionController::Server
     end
   end
 
-  def self.routes
+  # returns a list of the routes defined in the application
+  #
+  # responds with `[{"ControllerClass", :name, :verb, "/route"}]`
+  def self.routes : Array(Tuple(String, Symbol, Symbol, String))
     # Class, name, verb, route
     routes = [] of {String, Symbol, Symbol, String}
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}

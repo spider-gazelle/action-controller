@@ -14,6 +14,5 @@ alias AC = ActionController
 require "./action-controller/router"
 require "./action-controller/errors"
 require "./action-controller/base"
-require "./action-controller/file_handler"
 require "./action-controller/log_handler"
 require "./action-controller/error_handler"

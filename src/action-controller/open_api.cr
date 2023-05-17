@@ -5,6 +5,7 @@ require "./open_api/*"
 module ActionController::OpenAPI
   extend self
 
+  # :nodoc:
   alias Params = NamedTuple(
     name: String,
     in: Symbol,
@@ -13,6 +14,7 @@ module ActionController::OpenAPI
     docs: String?,
     example: String?)
 
+  # :nodoc:
   alias Filter = NamedTuple(
     controller: String,
     method: String,
@@ -20,6 +22,7 @@ module ActionController::OpenAPI
     filter_key: String,
     params: Array(Params))
 
+  # :nodoc:
   alias ExceptionHandler = NamedTuple(
     method: String,
     controller: String,
@@ -27,6 +30,7 @@ module ActionController::OpenAPI
     exception_key: String,
   )
 
+  # :nodoc:
   alias RouteDetails = NamedTuple(
     route_lookup: String,
     verb: String,
@@ -39,8 +43,10 @@ module ActionController::OpenAPI
     request_body: String,
     route_responses: Hash(Tuple(Bool, String), Int32))
 
+  # :nodoc:
   SAVE_DESCRIPTIONS_OF = {"ActionController::Base", "JSON::Serializable", "YAML::Serializable"}
 
+  # :nodoc:
   def extract_all_types(type_collection, current_list)
     type_collection.concat current_list
     current_list.each do |current_type|
@@ -50,6 +56,7 @@ module ActionController::OpenAPI
     end
   end
 
+  # :nodoc:
   def extract_route_descriptions
     output = IO::Memory.new
 
@@ -119,6 +126,7 @@ module ActionController::OpenAPI
     docs
   end
 
+  # :nodoc:
   def find_matching(
     klass_descriptions : Hash(String, KlassDoc),
     controller : String,
@@ -167,6 +175,9 @@ module ActionController::OpenAPI
   end
 
   macro finished
+    # returns a NamedTuple that represents the OpenAPI docs for the current application.
+    #
+    # the info hash splat accepts any of the keys from the [info object](https://swagger.io/specification/#info-object) 
     def generate_open_api_docs(title : String, version : String, **info)
       descriptions = extract_route_descriptions
 
@@ -364,10 +375,12 @@ module ActionController::OpenAPI
     end
   end
 
+  # :nodoc:
   def normalise_schema_reference(class_name)
     class_name.gsub(' ', '.').gsub(/[^0-9a-zA-Z_]/, '_')
   end
 
+  # :nodoc:
   def generate_openapi_doc(title : String, version : String, info, descriptions, routes, exceptions, filters, response_types, accepts, responders)
     info = info.merge({
       title:   title,
@@ -530,6 +543,7 @@ module ActionController::OpenAPI
     }
   end
 
+  # :nodoc:
   def build_response(responders, is_array, klass_name, response_code)
     response = Response.new
 

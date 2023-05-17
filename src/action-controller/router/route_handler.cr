@@ -1,5 +1,6 @@
 require "lucky_router"
 
+# :nodoc:
 class ActionController::Router::RouteHandler
   include HTTP::Handler
 

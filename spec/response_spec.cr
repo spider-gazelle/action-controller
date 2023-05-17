@@ -163,6 +163,7 @@ describe "end to end requests and responses" do
 
   it "should list routes" do
     BobJane.__route_list__.should eq([
+      {"BobJane", :index, :get, "/bob_jane/"},
       {"BobJane", :redirect, :get, "/bob_jane/redirect"},
       {"BobJane", :param_id, :get, "/bob_jane/params/:id"},
       {"BobJane", :deep_show, :get, "/bob_jane/params/:id/test/:test_id"},
@@ -171,7 +172,6 @@ describe "end to end requests and responses" do
       {"BobJane", :modified_session, :get, "/bob_jane/modified_session"},
       {"BobJane", :modified_session_with_redirect, :get, "/bob_jane/modified_session_with_redirect"},
       {"BobJane", :urlencoded, :get, "/bob_jane/urlencoded"},
-      {"BobJane", :index, :get, "/bob_jane/"},
     ])
   end
 

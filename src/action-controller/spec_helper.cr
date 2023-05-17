@@ -25,10 +25,11 @@ module ActionController
       ActionController::SpecHelper.new.hot_topic
     end
 
-    # Simplify obtaining an instance of a controller class
+    # :nodoc:
     module ContextHelper
       macro included
         macro inherited
+          # Simplify obtaining an instance of a controller class in specs
           def self.spec_instance(request : HTTP::Request = HTTP::Request.new("GET", "/"))
             response = HTTP::Server::Response.new(IO::Memory.new, request.version)
             context = HTTP::Server::Context.new request, response
@@ -46,8 +47,8 @@ module ActionController
     end
   end
 
-  # extend the action controller classes with the `with_state` helper
   abstract class Base
+    # extend the action controller classes with the `with_state` helper
     include SpecHelper::ContextHelper
   end
 end

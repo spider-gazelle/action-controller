@@ -1,3 +1,4 @@
+# :nodoc:
 # this is used to hold class and method documentation for generating OpenAPI documentation
 struct ActionController::OpenAPI::KlassDoc
   include JSON::Serializable

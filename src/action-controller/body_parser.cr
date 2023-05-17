@@ -1,3 +1,4 @@
+# :nodoc:
 module ActionController::BodyParser
   CONTENT_TYPES = {
     "application/x-www-form-urlencoded": :url_encoded_form,

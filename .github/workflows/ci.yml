@@ -27,9 +27,9 @@ jobs:
             stable: false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Install crystal
-        uses: crystal-lang/install-crystal@v1.5.3
+        uses: crystal-lang/install-crystal@v1
         with:
           crystal: ${{ matrix.crystal }}
 

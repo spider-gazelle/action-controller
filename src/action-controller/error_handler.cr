@@ -1,5 +1,6 @@
 require "exception_page"
 
+# :nodoc:
 module ActionController::ErrorHandler
   def self.new(production : Bool = false, persist_headers = [] of String)
     if production
@@ -10,6 +11,7 @@ module ActionController::ErrorHandler
   end
 end
 
+# :nodoc:
 class ActionController::ExceptionPage < ExceptionPage
   def styles : Styles
     ExceptionPage::Styles.new(
@@ -19,6 +21,7 @@ class ActionController::ExceptionPage < ExceptionPage
   end
 end
 
+# :nodoc:
 module ActionController::ErrorHandlerBase
   def initialize(@headers : Array(String))
   end
@@ -47,6 +50,7 @@ module ActionController::ErrorHandlerBase
   end
 end
 
+# :nodoc:
 class ActionController::ErrorHandlerDevelopment
   include ActionController::ErrorHandlerBase
   include HTTP::Handler
@@ -62,6 +66,7 @@ class ActionController::ErrorHandlerDevelopment
   end
 end
 
+# :nodoc:
 class ActionController::ErrorHandlerProduction
   include ActionController::ErrorHandlerBase
   include HTTP::Handler

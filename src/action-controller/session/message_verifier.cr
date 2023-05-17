@@ -1,9 +1,7 @@
 require "openssl/hmac"
 require "crypto/subtle"
 
-module ActionController
-end
-
+# :nodoc:
 class ActionController::MessageVerifier
   def initialize(@secret : String, @digest : OpenSSL::Algorithm = :sha1)
   end

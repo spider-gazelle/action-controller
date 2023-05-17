@@ -4,26 +4,85 @@ require "./route_params"
 # Create the method annotations
 {% begin %}
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
+    # define a new route that responds to {{http_method.upcase}} requests
+    #
+    # ```crystal
+    # @[AC::Route::{{http_method.upcase}}("/my/route/:name")]
+    # def my_route_name(name : String) : String
+    #   name
+    # end
+    # ```
     annotation ActionController::Route::{{http_method.upcase.id}}
     end
   {% end %}
 {% end %}
 
+# define a new route that responds to websocket requests
+#
+# ```
+# SOCKETS = [] of HTTP::WebSocket
+#
+# @[AC::Route::WebSocket("/websocket/:name")]
+# def websocket(socket, name : String)
+#   socket.on_message do |message|
+#     SOCKETS.each &.send("#{name}: #{message}")
+#   end
+#
+#   socket.on_close do
+#     SOCKETS.delete(socket)
+#   end
+# end
+# ```
 annotation ActionController::Route::WebSocket
 end
 
+# define a new route that responds to websocket requests
+#
+# ```
+# @[AC::Route::Filter(:before_action)]
+# def load_model(id : String)
+#   @model = MyModel.find(id)
+# end
+# ```
 annotation ActionController::Route::Filter
 end
 
+# define a handler for common errors
+#
+# ```
+# @[AC::Route::Exception(AC::Route::Param::MissingError, status_code: HTTP::Status::UNPROCESSABLE_ENTITY)]
+# @[AC::Route::Exception(AC::Route::Param::ValueError, status_code: HTTP::Status::BAD_REQUEST)]
+# def invalid_param(error) : AC::Error::ParameterResponse
+#   AC::Error::ParameterResponse.new error: error.message.as(String), parameter: error.parameter, restriction: error.restriction
+# end
+# ```
 annotation ActionController::Route::Exception
 end
 
+# defines a custom parser for strong parameters
+#
+# ```
+# # for converting comma seperated lists
+# # i.e. `"id-1,id-2,id-3"`
+# struct ConvertStringArray
+#   def convert(raw : String)
+#     raw.split(',').map!(&.strip).reject(&.empty?).uniq!
+#   end
+# end
+#
+# @[AC::Route::GET("/", converters: {tags: ConvertStringArray})]
+# def find_tagged(tags : Array(String))
+#   # ...
+# end
+# ```
 annotation ActionController::Param::Converter
 end
 
+# See Param::Converter in the alias definition
 alias ActionController::Param::Info = ActionController::Param::Converter
 
 module ActionController::Route
+  # the base class for all route related errors
   class Error < ::Exception
     def initialize(message : String? = nil, @accepts : Array(String)? = nil)
       super message
@@ -41,38 +100,71 @@ module ActionController::Route
   end
 end
 
+# helpers for defining routes with strong parameters
 module ActionController::Route::Builder
-  # OpenAPI tracking
-  OPENAPI_FILTERS = {} of Nil => Nil # filter name => Params used
-  OPENAPI_ERRORS  = {} of Nil => Nil # error klass => response object name => response code
-  OPENAPI_ROUTES  = {} of Nil => Nil # verb+route  => controller_name, route_name, params (path, query), request body schema, response object name => response code
+  # :nodoc:
+  # filter name => Params used
+  OPENAPI_FILTERS = {} of Nil => Nil
 
+  # :nodoc:
+  # error klass => response object name => response code
+  OPENAPI_ERRORS = {} of Nil => Nil
+
+  # :nodoc:
+  # verb+route  => controller_name, route_name, params (path, query), request body schema, response object name => response code
+  OPENAPI_ROUTES = {} of Nil => Nil
+
+  # :nodoc:
   # Routing related
-  ROUTE_FUNCTIONS   = {} of Nil => Nil
-  DEFAULT_RESPONDER = ["application/json"]
-  RESPONDERS        = {} of Nil => Nil
+  ROUTE_FUNCTIONS = {} of Nil => Nil
 
+  # by default applications respond with JSON
+  DEFAULT_RESPONDER = ["application/json"]
+
+  # :nodoc:
+  RESPONDERS = {} of Nil => Nil
+
+  # specify the responder content-type to use if the user doesn't request one
   macro default_responder(content_type)
     {% DEFAULT_RESPONDER[0] = content_type %}
     {% raise "no responder available for default content type: #{content_type}" unless RESPONDERS[content_type] %}
   end
 
+  # add a new responder for the content-type provided, this will be called to render responses
+  #
+  # ```
+  # add_responder("application/yaml") { |io, result| result.to_yaml(io) }
+  # ```
   macro add_responder(content_type, &block)
     {% RESPONDERS[content_type] = block %}
   end
 
+  # by default applications expect to receive JSON
   DEFAULT_PARSER = ["application/json"]
-  PARSERS        = {} of Nil => Nil
 
+  # :nodoc:
+  PARSERS = {} of Nil => Nil
+
+  # specify the default content-type of request bodies, if the user doesn't specify one
   macro default_parser(content_type)
     {% DEFAULT_PARSER[0] = content_type %}
     {% raise "no responder available for default content type: #{content_type}" unless PARSERS[content_type] %}
   end
 
+  # add code that can be used to deserialise request bodies of the content-type provided
+  #
+  # ```
+  # add_parser("application/yaml") do |klass, body_io, request|
+  #   request_charset = ActionController::Support.charset(request.headers)
+  #   body_io.set_encoding(request_charset) if request_charset
+  #   klass.from_yaml(body_io)
+  # end
+  # ```
   macro add_parser(content_type, &block)
     {% PARSERS[content_type] = block %}
   end
 
+  # :nodoc:
   macro __build_transformer_functions__
       {% for type, block in RESPONDERS %}
         # :nodoc:
@@ -127,6 +219,7 @@ module ActionController::Route::Builder
       end
   end
 
+  # :nodoc:
   macro __parse_inferred_routes__
     # Check if they have been applied to any of the methods
     {% for method in @type.methods.sort_by(&.line_number) %}
@@ -356,11 +449,11 @@ module ActionController::Route::Builder
                       {% if body_argument == string_name %}
                         {% open_api_route[:request_body] = arg.restriction.resolve %}
 
-                        if body_io = @context.request.body
+                        if body_io = @__context__.request.body
                           case body_type
                           {% for type, _block in PARSERS %}
                             when {{type}}
-                              {{@type.name.id}}.parse_{{type.gsub(/\W/, "_").id}}({{ arg.restriction }}, body_io, request: @context.request)
+                              {{@type.name.id}}.parse_{{type.gsub(/\W/, "_").id}}({{ arg.restriction }}, body_io, request: @__context__.request)
                           {% end %}
                           end
                         end
@@ -418,8 +511,8 @@ module ActionController::Route::Builder
                 {% open_api_route[:default_response] = {Nil, status_code, false} %}
               {% end %}
 
-              unless @render_called
-                responose = @context.response
+              unless @__render_called__
+                responose = @__context__.response
                 {% if status_code_map.empty? %}
                   response.status_code = ({{status_code}}).to_i
                 {% else %}
@@ -451,7 +544,7 @@ module ActionController::Route::Builder
                     {{@type.name.id}}.transform_{{DEFAULT_RESPONDER[0].gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
                   end
                 end
-                @render_called = true
+                @__render_called__ = true
               end
             {% end %}
           end

@@ -1,6 +1,7 @@
 require "./router/server_context"
 require "./router/route_handler"
 
+# :nodoc:
 module ActionController::Router
   alias Action = (HTTP::Server::Context, Bool) -> HTTP::Server::Context
   HTTP_METHODS = %w(get post put patch delete options head)

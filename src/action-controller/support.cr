@@ -1,5 +1,6 @@
 require "mime/media_type"
 
+# :nodoc:
 module ActionController::Support
   def self.request_protocol(request)
     return :https if request.headers["X-Forwarded-Proto"]? =~ /https/i

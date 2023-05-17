@@ -1,9 +1,11 @@
 require "log"
 
 module ActionController
+  # :nodoc:
   Log = ::Log.for("action-controller")
 
-  def self.default_formatter
+  # the default format for request logging
+  def self.default_formatter : ::Log::Formatter
     ::Log::Formatter.new do |entry, io|
       label = entry.severity.label[0].upcase
       timestamp = entry.timestamp
@@ -30,6 +32,7 @@ module ActionController
     end
   end
 
+  # :nodoc:
   def self.log_metadata_to_raw(metadata)
     value = metadata.raw
     case value
@@ -42,7 +45,10 @@ module ActionController
     end
   end
 
-  def self.json_formatter
+  # an alternative log output that uses JSON
+  #
+  # useful for logging tools like Logstash
+  def self.json_formatter : ::Log::Formatter
     ::Log::Formatter.new do |entry, io|
       # typeof doesn't execute anything
       json = {} of String => typeof(log_metadata_to_raw(entry.data[:check]))
@@ -63,7 +69,8 @@ module ActionController
     end
   end
 
-  def self.default_backend(io = STDOUT, formatter = default_formatter)
+  # configures a logging backend for use with your application
+  def self.default_backend(io = STDOUT, formatter = default_formatter) : ::Log::IOBackend
     backend = ::Log::IOBackend.new(io, formatter: formatter)
     backend
   end

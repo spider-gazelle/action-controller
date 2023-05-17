@@ -2,6 +2,7 @@ require "json"
 require "yaml"
 
 module ActionController::Responders
+  # standard response codes
   STATUS_CODES = {
     # 1xx informational
     continue:            100,
@@ -63,6 +64,7 @@ module ActionController::Responders
     network_authentication_required: 511,
   }
 
+  # codes to use when redirecting
   REDIRECTION_CODES = {
     # 3xx redirection
     multiple_choices:   300,
@@ -75,6 +77,7 @@ module ActionController::Responders
     permanent_redirect: 308,
   }
 
+  # common response mime types
   MIME_TYPES = {
     binary: "application/octet-stream",
     json:   "application/json",
@@ -84,12 +87,24 @@ module ActionController::Responders
     yaml:   "text/yaml",
   }
 
+  # used to stream a response back to the user, serializing directly to the IO
+  #
+  # the content type is set appropriately based on the response type
+  #
+  # a call to render implicitly executes a `return` as the response has been written to the client
+  #
+  # you should only use render with the Macro DSL
+  # ```
+  # get "/:id", :show do
+  #   render json: MyModel.find(route_params["id"])
+  # end
+  # ```
   macro render(status = :ok, head = nil, json = nil, yaml = nil, xml = nil, html = nil, text = nil, binary = nil, template = nil, partial = nil, layout = nil)
     {% if [head, json, xml, html, yaml, text, binary, template, partial].all?(&.is_a?(Path)) %}
       {{ raise "Render must be called with one of json, xml, html, yaml, text, binary, template, partial" }}
     {% end %}
 
-    %response = @context.response
+    %response = @__context__.response
     %ret_val = {{ json || yaml || xml || html || text || binary || template || partial }}
 
     {% if status.is_a?(SymbolLiteral) %}
@@ -161,16 +176,33 @@ module ActionController::Responders
       template(partial: {{partial}}, io: %response) unless @__head_request__
     {% end %}
 
-    @render_called = true
+    @__render_called__ = true
     return %ret_val
   end
 
+  # only sends the header, no content to be sent.
+  #
+  # you should only use render with the Macro DSL
+  # ```
+  # delete "/:id", :destroy do
+  #   MyModel.find(route_params["id"]).destroy
+  #   head HTTP::Status::ACCEPTED
+  # end
+  # ```
   macro head(status)
     render({{status}}, true)
   end
 
+  # redirects the browser to a new route
+  #
+  # you should only use render with the Macro DSL
+  # ```
+  # patch "/:id", :update do
+  #   redirect_to "/#{params["id"]}"
+  # end
+  # ```
   macro redirect_to(path, status = :found)
-    %response = @context.response
+    %response = @__context__.response
 
     %session = @__session__
     %session.encode(%response.cookies) if %session && %session.modified?
@@ -182,17 +214,34 @@ module ActionController::Responders
     {% end %}
 
     %response.headers["Location"] = {{path}}
-    @render_called = true
+    @__render_called__ = true
     return
   end
 
+  # uses the content-type header to respond in the appropriate format
+  #
+  # you should only use render with the Macro DSL
+  # ```
+  # get "/:id", :show do
+  #   model = MyModel.find(route_params["id"])
+  #
+  #   respond_with do
+  #     text model # calls to_s(response) on the object passed
+  #     json model # calls to_json(response) on the object passed
+  #     xml do     # can provide a block to perform additional processing too
+  #       str = "<set_var>#{model.build_xml}</set_var>"
+  #       XML.parse(str)
+  #     end
+  #   end
+  # end
+  # ```
   macro respond_with(status = :ok, &block)
     %resp = ::ActionController::Responders::SelectResponse.new(response, accepts_formats, @__head_request__)
     %resp.responses do
       {{block.body}}
     end
 
-    %response = @context.response
+    %response = @__context__.response
     {% if status != :ok || status != 200 %}
       {% if status.is_a?(SymbolLiteral) %}
         %response.status_code = {{STATUS_CODES[status]}}
@@ -205,10 +254,11 @@ module ActionController::Responders
     %session.encode(%response.cookies) if %session && %session.modified?
 
     %resp.build_response
-    @render_called = true
+    @__render_called__ = true
     return
   end
 
+  # :nodoc:
   ACCEPT_SEPARATOR_REGEX = /,\s*/
 
   # Extracts the mime types from the Accept header
@@ -217,6 +267,7 @@ module ActionController::Responders
     accept.split(";").flat_map(&.split(ACCEPT_SEPARATOR_REGEX).select(&.includes?('/')))
   end
 
+  # :nodoc:
   # Helper class for selecting the response to render / execute
   class SelectResponse
     def initialize(@response : HTTP::Server::Response, formats, @head_request : Bool)

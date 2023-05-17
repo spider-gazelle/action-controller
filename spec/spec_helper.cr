@@ -178,18 +178,15 @@ end
 
 # Testing ID params
 class Container < ActionController::Base
-  id_param :container_id
-
-  def show
+  get "/:container_id", :show do
     render text: "got: #{params["container_id"]}"
   end
 end
 
 class ContainerObjects < ActionController::Base
   base "/container/:container_id/objects"
-  id_param :object_id
 
-  def index
+  get "/", :index do
     respond_with do
       json do
         data = {"id" => 1}
@@ -198,7 +195,7 @@ class ContainerObjects < ActionController::Base
     end
   end
 
-  def show
+  get "/:object_id", :show do
     render text: "#{params["object_id"]} in #{params["container_id"]}"
   end
 end
@@ -207,7 +204,7 @@ class TemplateOne < ActionController::Base
   template_path "./spec/views"
   layout "layout_main.ecr"
 
-  def index
+  get "/", :index do
     data = client_ip # ameba:disable Lint/UselessAssign
     if params["inline"]?
       render html: template("inner.ecr")
@@ -216,7 +213,7 @@ class TemplateOne < ActionController::Base
     end
   end
 
-  def show
+  get "/:id", :show do
     data = params["id"] # ameba:disable Lint/UselessAssign
     if params["inline"]?
       render html: partial("inner.ecr")
@@ -234,7 +231,7 @@ end
 class TemplateTwo < TemplateOne
   layout "layout_alt.ecr"
 
-  def index
+  get "/", :index do
     data = 50 # ameba:disable Lint/UselessAssign
     render template: "inner.ecr"
   end
@@ -246,8 +243,7 @@ class BobJane < ActionController::Base
   before_action :modify_session, only: :modified_session
   add_responder "text/plain" { |io, result| result.to_s(io) }
 
-  # Test default CRUD
-  def index
+  get "/", :index do
     session["hello"] = "other_route"
     render text: "index"
   end
@@ -305,7 +301,7 @@ end
 class Users < ActionController::Base
   base "/users"
 
-  def index
+  get "/", :index do
     head :unauthorized if request.headers["Authorization"]? != "X"
 
     if params["verbose"] = "true"
@@ -340,13 +336,13 @@ class HelloWorld < Application
 
   before_action :render_early, only: :update
 
-  def show
+  get "/:id", :show do
     raise "set_var was set!" if @me
     res = 42 // params["id"].to_i
     render text: "42 / #{params["id"]} = #{res}"
   end
 
-  def index
+  get "/", :index do
     respond_with do
       text "set_var #{@me}"
       json({set_var: @me})
@@ -371,7 +367,7 @@ class HelloWorld < Application
     render text: "var is #{@me}"
   end
 
-  def update
+  patch "/:id", :update do
     render :accepted, text: "Thanks!"
   end
 
@@ -379,7 +375,7 @@ class HelloWorld < Application
     render :forbidden, text: "Access Denied"
   end
 
-  def destroy
+  delete "/:id", :destroy do
     head :accepted
   end
 

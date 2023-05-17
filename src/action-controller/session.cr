@@ -6,7 +6,9 @@ require "./session/message_encryptor"
 class ActionController::Session
   Log = ::Log.for("action-controller.session")
 
-  NEVER = 622_080_000 # (~20 years in seconds)
+  # (~20 years in seconds)
+  NEVER = 622_080_000
+
   # Cookies can typically store 4096 bytes.
   MAX_COOKIE_SIZE = 4096
 

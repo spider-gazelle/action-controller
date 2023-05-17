@@ -2,9 +2,7 @@ require "json"
 require "openssl/cipher"
 require "./message_verifier"
 
-module ActionController
-end
-
+# :nodoc:
 class ActionController::MessageEncryptor
   getter verifier : MessageVerifier
 

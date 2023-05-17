@@ -2,11 +2,13 @@ require "./logger"
 require "uuid"
 
 module ActionController
+  # :nodoc:
   # A handler that logs the request method, resource, status code, and the time
   # taken to execute.
   class LogHandler
     include HTTP::Handler
 
+    # :nodoc:
     # Events that occur within the request lifecycle.
     @[Flags]
     enum Event

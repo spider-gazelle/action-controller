@@ -1,5 +1,38 @@
 require "big"
 
+# this namespace is used to provide transparent strong parameters
+#
+# all transparent converters need to match the desired Class name
+# and be prefixed with `Convert`
+#
+# i.e. let's take a class like `Int32`
+# ```
+# struct AC::Route::Param::ConvertInt32 < AC::Route::Param::Conversion
+#   def convert(raw : String)
+#     raw.to_i
+#   end
+# end
+# ```
+#
+# now if you would like to provide custom options for a converter you can.
+#
+# in this case we're allowing for a custom Int32 base, i.e. maybe you expect a hex string
+# ```
+# struct AC::Route::Param::ConvertInt32 < AC::Route::Param::Conversion
+#   def initialize(@base : Int32 = 10)
+#   end
+#
+#   def convert(raw : String)
+#     raw.to_i(@base)
+#   end
+# end
+#
+# # then in your routes
+# @[AC::Route::GET("/hex_route/:id", config: {id: {base: 16}})]
+# def other_route_test(id : Int32) : Int32
+#   id # response will be in base 10
+# end
+# ```
 module ActionController::Route::Param
   # Handle this to return a 404
   class Error < ArgumentError
@@ -10,9 +43,11 @@ module ActionController::Route::Param
     getter restriction : String?
   end
 
+  # raised when a required param is missing from the request
   class MissingError < Error
   end
 
+  # raised when a param is provided however the value is not parsable or usable
   class ValueError < Error
   end
 
@@ -26,18 +61,21 @@ module ActionController::Route::Param
     abstract def convert(raw : String)
   end
 
+  # :nodoc:
   struct ConvertString < Conversion
     def convert(raw : String)
       raw
     end
   end
 
+  # :nodoc:
   struct ConvertChar < Conversion
     def convert(raw : String)
       raw[0]?
     end
   end
 
+  # :nodoc:
   struct ConvertBool < Conversion
     def initialize(@true_string : String = "true")
     end
@@ -47,6 +85,7 @@ module ActionController::Route::Param
     end
   end
 
+  # :nodoc:
   struct ConvertEnum(T)
     def self.convert(raw : String)
       value = raw.to_i64? || raw
@@ -59,6 +98,7 @@ module ActionController::Route::Param
     end
   end
 
+  # :nodoc:
   struct ConvertTime < Conversion
     def initialize(@format : String? = nil)
     end
@@ -72,6 +112,7 @@ module ActionController::Route::Param
     end
   end
 
+  # :nodoc:
   struct ConvertBigInt < Conversion
     def initialize(@base : Int32 = 10)
     end
@@ -81,8 +122,9 @@ module ActionController::Route::Param
     end
   end
 
+  # Big converters
+
   {% begin %}
-    # Big converters
     {%
       bigs = {
         to_big_d: BigDecimal,
@@ -90,6 +132,7 @@ module ActionController::Route::Param
       }
     %}
     {% for convert, klass in bigs %}
+      # :nodoc:
       struct Convert{{klass}} < Conversion
         def convert(raw : String)
           raw.{{convert}}?
@@ -98,6 +141,7 @@ module ActionController::Route::Param
     {% end %}
 
     # Float converters
+
     {%
       floats = {
         to_f32: Float32,
@@ -105,6 +149,7 @@ module ActionController::Route::Param
       }
     %}
     {% for convert, klass in floats %}
+      # :nodoc:
       struct Convert{{klass}} < Conversion
         def initialize(@whitespace : Bool = true, @strict : Bool = true)
         end
@@ -119,6 +164,7 @@ module ActionController::Route::Param
     {% end %}
 
     # Integer converters
+
     {%
       ints = {
         to_i8:   Int8,
@@ -134,6 +180,7 @@ module ActionController::Route::Param
       }
     %}
     {% for convert, klass in ints %}
+      # :nodoc:
       struct Convert{{klass}} < Conversion
         def initialize(@base : Int32 = 10, @whitespace : Bool = true, @underscore : Bool = false, @prefix : Bool = false, @strict : Bool = true, @leading_zero_is_octal : Bool = false)
         end
