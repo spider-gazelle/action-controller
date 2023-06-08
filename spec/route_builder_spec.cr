@@ -108,6 +108,10 @@ describe AC::Route::Builder do
       "Content-Type" => "application/json; charset=utf-8",
     }, body: "34.7")
     result.body.should eq %(34.7)
+
+    # check support for default body values
+    result = client.post("/filtering/some_entry")
+    result.body.should eq %(300.4)
   end
 
   it "should work with other charsets" do

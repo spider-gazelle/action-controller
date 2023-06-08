@@ -456,6 +456,10 @@ module ActionController::Route::Builder
                               {{@type.name.id}}.parse_{{type.gsub(/\W/, "_").id}}({{ arg.restriction }}, body_io, request: @__context__.request)
                           {% end %}
                           end
+                        {% if arg.default_value.stringify != "" %}
+                        else
+                          {{arg.default_value}}
+                        {% end %}
                         end
 
                       # Required route param, so we ensure it

@@ -129,7 +129,7 @@ class Filtering < FilterOrdering
   end
 
   @[AC::Route::POST("/some_entry/", status_code: HTTP::Status::ACCEPTED, body: :float)]
-  def create_entry(float : Float64) : Float64
+  def create_entry(float : Float64 = 300.4) : Float64
     float
   end
 
