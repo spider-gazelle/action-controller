@@ -86,6 +86,13 @@ module ActionController::Route::Param
   end
 
   # :nodoc:
+  struct ConvertUUID < Conversion
+    def convert(raw : String)
+      UUID.parse?(raw)
+    end
+  end
+
+  # :nodoc:
   struct ConvertEnum(T)
     def self.convert(raw : String)
       value = raw.to_i64? || raw
