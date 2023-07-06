@@ -1,4 +1,5 @@
 require "big"
+require "uuid"
 
 # this namespace is used to provide transparent strong parameters
 #
@@ -82,6 +83,16 @@ module ActionController::Route::Param
 
     def convert(raw : String)
       raw.strip.downcase == @true_string
+    end
+  end
+
+  # :nodoc:
+  struct ConvertUUID < Conversion
+    def initialize(@variant : UUID::Variant? = nil, @version : UUID::Version? = nil)
+    end
+    
+    def convert(raw : String)
+      UUID.parse?(raw, variant: @variant, version: @version)
     end
   end
 
