@@ -68,7 +68,7 @@ class ActionController::Server
       if ssl_context = @ssl_context
         @socket.bind_tls(@host, @port, ssl_context, @reuse_port)
       else
-        @socket.bind_tcp(@host, @port, @reuse_port) 
+        @socket.bind_tcp(@host, @port, @reuse_port)
       end
     end
     yield
@@ -81,7 +81,7 @@ class ActionController::Server
       if ssl_context = @ssl_context
         @socket.bind_tls(@host, @port, ssl_context, @reuse_port)
       else
-        @socket.bind_tcp(@host, @port, @reuse_port) 
+        @socket.bind_tcp(@host, @port, @reuse_port)
       end
     end
     "Listening on #{print_addresses}"

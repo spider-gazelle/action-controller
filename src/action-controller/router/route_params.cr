@@ -90,7 +90,7 @@ module ActionController::Route::Param
   struct ConvertUUID < Conversion
     def initialize(@variant : UUID::Variant? = nil, @version : UUID::Version? = nil)
     end
-    
+
     def convert(raw : String)
       UUID.parse?(raw, variant: @variant, version: @version)
     end
