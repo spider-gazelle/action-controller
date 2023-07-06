@@ -32,6 +32,13 @@ class ActionController::Server
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
+  # create an instance of the application with tls
+  def initialize(@ssl_context : OpenSSL::SSL::Context::Server?, @port = 3000, @host = "127.0.0.1", @reuse_port = true)
+    @processes = [] of Future::Compute(Nil)
+    init_routes
+    @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+  end
+
   private def init_routes
     {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
       {{klass}}.__init_routes__(self)
@@ -57,14 +64,26 @@ class ActionController::Server
 
   # Starts the server, providing a callback once the ports are bound
   def run(&)
-    @socket.bind_tcp(@host, @port, @reuse_port) if @socket.addresses.empty?
+    if @socket.addresses.empty?
+      if @ssl_context
+        @socket.bind_tls(@host, @port, @ssl_context, @reuse_port)
+      else
+        @socket.bind_tcp(@host, @port, @reuse_port) 
+      end
+    end
     yield
     @socket.listen
   end
 
   # Starts the server
   def run
-    @socket.bind_tcp(@host, @port, @reuse_port) if @socket.addresses.empty?
+    if @socket.addresses.empty?
+      if @ssl_context
+        @socket.bind_tls(@host, @port, @ssl_context, @reuse_port)
+      else
+        @socket.bind_tcp(@host, @port, @reuse_port) 
+      end
+    end
     "Listening on #{print_addresses}"
     @socket.listen
   end
