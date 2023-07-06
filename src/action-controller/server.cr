@@ -78,8 +78,8 @@ class ActionController::Server
   # Starts the server
   def run
     if @socket.addresses.empty?
-      if @ssl_context
-        @socket.bind_tls(@host, @port, @ssl_context.not_nil!, @reuse_port)
+      if ssl_context = @ssl_context
+        @socket.bind_tls(@host, @port, ssl_context, @reuse_port)
       else
         @socket.bind_tcp(@host, @port, @reuse_port) 
       end
