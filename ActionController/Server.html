@@ -353,7 +353,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L3" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L3" target="_blank">
         action-controller/server.cr
       </a>
     
@@ -399,16 +399,16 @@ when used with TCP it is considered a security risk as the port can be stolen</p
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#new%28ssl_context%3AOpenSSL%3A%3ASSL%3A%3AContext%3A%3AServer%7CNil%2Cport%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3DREUSE_DEFAULT%29-class-method" class="signature"><strong>.new</strong>(ssl_context : OpenSSL::SSL::Context::Server | Nil, port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port = <span class="t">REUSE_DEFAULT</span>)</a>
+        <a href="#new%28port%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3ABool%3DREUSE_DEFAULT%29-class-method" class="signature"><strong>.new</strong>(port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port : Bool = <span class="t">REUSE_DEFAULT</span>)</a>
         
-          <div class="summary"><p>create an instance of the application with tls</p></div>
+          <div class="summary"><p>create an instance of the application</p></div>
         
       </li>
     
       <li class="entry-summary">
-        <a href="#new%28port%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3DREUSE_DEFAULT%29-class-method" class="signature"><strong>.new</strong>(port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port = <span class="t">REUSE_DEFAULT</span>)</a>
+        <a href="#new%28ssl_context%3AOpenSSL%3A%3ASSL%3A%3AContext%3A%3AServer%7CNil%2Cport%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3ABool%3DREUSE_DEFAULT%29-class-method" class="signature"><strong>.new</strong>(ssl_context : OpenSSL::SSL::Context::Server | Nil, port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port : Bool = <span class="t">REUSE_DEFAULT</span>)</a>
         
-          <div class="summary"><p>create an instance of the application</p></div>
+          <div class="summary"><p>create an instance of the application with tls</p></div>
         
       </li>
     
@@ -625,33 +625,12 @@ when used with TCP it is considered a security risk as the port can be stolen</p
     Constructor Detail
   </h2>
   
-    <div class="entry-detail" id="new(ssl_context:OpenSSL::SSL::Context::Server|Nil,port:Int32=3000,host:String=&quot;127.0.0.1&quot;,reuse_port=REUSE_DEFAULT)-class-method">
+    <div class="entry-detail" id="new(port:Int32=3000,host:String=&quot;127.0.0.1&quot;,reuse_port:Bool=REUSE_DEFAULT)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(ssl_context : OpenSSL::SSL::Context::Server | Nil, port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port = <span class="t">REUSE_DEFAULT</span>)
+        def self.<strong>new</strong>(port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port : Bool = <span class="t">REUSE_DEFAULT</span>)
 
-        <a class="method-permalink" href="#new%28ssl_context%3AOpenSSL%3A%3ASSL%3A%3AContext%3A%3AServer%7CNil%2Cport%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3DREUSE_DEFAULT%29-class-method">#</a>
-      </div>
-      
-        <div class="doc">
-          
-          <p>create an instance of the application with tls</p>
-        </div>
-      
-      <br/>
-      <div>
-        
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L40" target="_blank">View source</a>]
-        
-      </div>
-    </div>
-  
-    <div class="entry-detail" id="new(port:Int32=3000,host:String=&quot;127.0.0.1&quot;,reuse_port=REUSE_DEFAULT)-class-method">
-      <div class="signature">
-        
-        def self.<strong>new</strong>(port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port = <span class="t">REUSE_DEFAULT</span>)
-
-        <a class="method-permalink" href="#new%28port%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3DREUSE_DEFAULT%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28port%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3ABool%3DREUSE_DEFAULT%29-class-method">#</a>
       </div>
       
         <div class="doc">
@@ -662,7 +641,28 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L33" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L33" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="new(ssl_context:OpenSSL::SSL::Context::Server|Nil,port:Int32=3000,host:String=&quot;127.0.0.1&quot;,reuse_port:Bool=REUSE_DEFAULT)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(ssl_context : OpenSSL::SSL::Context::Server | Nil, port : Int32 = <span class="n">3000</span>, host : String = <span class="s">&quot;127.0.0.1&quot;</span>, reuse_port : Bool = <span class="t">REUSE_DEFAULT</span>)
+
+        <a class="method-permalink" href="#new%28ssl_context%3AOpenSSL%3A%3ASSL%3A%3AContext%3A%3AServer%7CNil%2Cport%3AInt32%3D3000%2Chost%3AString%3D%22127.0.0.1%22%2Creuse_port%3ABool%3DREUSE_DEFAULT%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>create an instance of the application with tls</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L40" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -696,7 +696,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L22" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L22" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -718,7 +718,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L15" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L15" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -739,7 +739,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L202" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L202" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -761,7 +761,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L192" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L192" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -794,7 +794,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L96" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L96" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -816,7 +816,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L121" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L121" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -837,7 +837,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L160" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L160" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -858,7 +858,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L60" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L60" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -879,7 +879,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L63" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L63" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -900,7 +900,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L102" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L102" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -921,7 +921,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L70" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L70" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -942,7 +942,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L83" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L83" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -964,7 +964,7 @@ For example <code>server.socket.bind_unix &quot;/tmp/my-socket.sock&quot;</code>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/cd6126c473ad8296a07825307f5d2ebdf9070134/src/action-controller/server.cr#L67" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c1636eadd8d60fa8962c42e37558779e33c93f4f/src/action-controller/server.cr#L67" target="_blank">View source</a>]
         
       </div>
     </div>
