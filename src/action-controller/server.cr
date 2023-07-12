@@ -30,14 +30,14 @@ class ActionController::Server
   REUSE_DEFAULT = {% if flag?(:win32) %} false {% else %} true {% end %}
 
   # create an instance of the application
-  def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port = REUSE_DEFAULT)
+  def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT)
     @processes = [] of Future::Compute(Nil)
     init_routes
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   # create an instance of the application with tls
-  def initialize(@ssl_context : OpenSSL::SSL::Context::Server?, @port = 3000, @host = "127.0.0.1", @reuse_port = REUSE_DEFAULT)
+  def initialize(@ssl_context : OpenSSL::SSL::Context::Server?, @port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT)
     @processes = [] of Future::Compute(Nil)
     init_routes
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
