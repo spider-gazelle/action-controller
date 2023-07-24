@@ -12,16 +12,20 @@ class ActionController::Server
 
   # :nodoc:
   private class HTTPServer < HTTP::Server
-    @worker : WorkerPool = WorkerPool.new(100)
+    {% if flag?(:preview_mt) %}
+      # worker pooling is single threaded
+    {% else %}
+      @worker : WorkerPool = WorkerPool.new(100)
 
-    protected def dispatch(io)
-      @worker.perform { handle_client(io) }
-    end
+      protected def dispatch(io)
+        @worker.perform { handle_client(io) }
+      end
 
-    def close
-      super
-      @worker.close
-    end
+      def close
+        super
+        @worker.close
+      end
+    {% end %}
   end
 
   # handlers to run before your application code, see: [handlers](https://crystal-lang.org/api/latest/HTTP/Handler.html)
