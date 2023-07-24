@@ -11,7 +11,7 @@ class ActionController::Server
   AFTER_HANDLERS = [] of HTTP::Handler
 
   # :nodoc:
-  private class HTTPServer
+  private class HTTPServer < HTTP::Server
     getter worker : WorkerPool = WorkerPool.new(100)
 
     protected def dispatch(io)
