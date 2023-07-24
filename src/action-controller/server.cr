@@ -12,7 +12,7 @@ class ActionController::Server
 
   # :nodoc:
   private class HTTPServer < HTTP::Server
-    getter worker : WorkerPool = WorkerPool.new(100)
+    @worker : WorkerPool = WorkerPool.new(100)
 
     protected def dispatch(io)
       @worker.perform { handle_client(io) }
@@ -20,7 +20,7 @@ class ActionController::Server
 
     def close
       super
-      worker.close
+      @worker.close
     end
   end
 
@@ -111,7 +111,6 @@ class ActionController::Server
   def close : Nil
     @processes.each(&.get)
     @socket.close
-    @socket.worker.close
   end
 
   # Prints the addresses that the server is listening on
