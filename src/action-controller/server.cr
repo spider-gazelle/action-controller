@@ -19,7 +19,7 @@ class ActionController::Server
     end
 
     def close
-      previous_def
+      super
       worker.close
     end
   end
