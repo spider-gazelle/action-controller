@@ -7,7 +7,14 @@ module ActionController::BodyParser
   }
 
   struct FileUpload
-    getter body : IO
+    @[Deprecated("User #data instead")]
+    getter body : IO {
+      io = IO::Memory.new()
+      io << File.read(@file.path)
+      io.rewind
+    }
+
+    getter file : File
 
     getter name : String
     getter headers : HTTP::Headers
@@ -27,11 +34,16 @@ module ActionController::BodyParser
       @read_time = part.read_time
       @size = part.size
 
-      @body = IO::Memory.new(part.body.gets_to_end)
+      @file = File.tempfile() do |f|
+        IO.copy(part.body, f)
+      end
+
     end
 
     def initialize(@name : String, headers : HTTP::Headers, io : IO)
-      @body = IO::Memory.new(io.gets_to_end)
+      @file = File.tempfile() do |f|
+        IO.copy(io, f)
+      end
       @headers = headers
 
       parts = @headers["Content-Disposition"].split(';')
@@ -61,6 +73,11 @@ module ActionController::BodyParser
           # Ignore
         end
       end
+    end
+
+    def has_moved?() : Bool
+      true if @original_path != @file.path
+      false
     end
   end
 
