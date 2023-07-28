@@ -135,6 +135,16 @@ abstract class ActionController::Base
     @__render_called__ = false
   end
 
+  def finalize()
+    return if @__files__.nil?
+
+    @__files__.not_nil!.each() do |name,files|
+      files.each() do |file_upload|
+        file_upload.file.delete unless file_upload.has_moved?
+      end
+    end
+  end
+
   # the [request context](https://crystal-lang.org/api/latest/HTTP/Server/Context.html)
   def context : HTTP::Server::Context
     @__context__
