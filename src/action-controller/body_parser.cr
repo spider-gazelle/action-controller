@@ -7,9 +7,9 @@ module ActionController::BodyParser
   }
 
   struct FileUpload
-    @[Deprecated("User #data instead")]
+    @[Deprecated("Use FileUpload#file instead to avoid loading the file into memory")]
     getter body : IO {
-      io = IO::Memory.new()
+      io = IO::Memory.new
       io << File.read(@file.path)
       io.rewind
     }
@@ -25,6 +25,8 @@ module ActionController::BodyParser
     getter read_time : Time?
     getter size : UInt64?
 
+    @original_path : String
+
     def initialize(part : HTTP::FormData::Part)
       @name = part.name
       @headers = part.headers
@@ -34,16 +36,13 @@ module ActionController::BodyParser
       @read_time = part.read_time
       @size = part.size
 
-      @file = File.tempfile() do |f|
-        IO.copy(part.body, f)
-      end
-
+      @file = File.tempfile { |file| IO.copy(part.body, file) }
+      @original_path = @file.path
     end
 
     def initialize(@name : String, headers : HTTP::Headers, io : IO)
-      @file = File.tempfile() do |f|
-        IO.copy(io, f)
-      end
+      @file = File.tempfile { |file| IO.copy(io, file) }
+      @original_path = @file.path
       @headers = headers
 
       parts = @headers["Content-Disposition"].split(';')
@@ -75,9 +74,8 @@ module ActionController::BodyParser
       end
     end
 
-    def has_moved?() : Bool
-      true if @original_path != @file.path
-      false
+    def has_moved? : Bool
+      @original_path != @file.path
     end
   end
 
