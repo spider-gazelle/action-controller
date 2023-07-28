@@ -140,9 +140,9 @@ abstract class ActionController::Base
     uploads = @__files__
     return unless uploads
 
-    uploads.each do |name, files|
+    uploads.each_value do |files|
       files.each do |file_upload|
-        file_upload.file.delete unless file_upload.has_moved?
+        file_upload.delete
       end
     end
   end

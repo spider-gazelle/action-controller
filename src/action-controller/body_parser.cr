@@ -25,8 +25,6 @@ module ActionController::BodyParser
     getter read_time : Time?
     getter size : UInt64?
 
-    @original_path : String
-
     def initialize(part : HTTP::FormData::Part)
       @name = part.name
       @headers = part.headers
@@ -37,12 +35,10 @@ module ActionController::BodyParser
       @size = part.size
 
       @file = File.tempfile { |file| IO.copy(part.body, file) }
-      @original_path = @file.path
     end
 
     def initialize(@name : String, headers : HTTP::Headers, io : IO)
       @file = File.tempfile { |file| IO.copy(io, file) }
-      @original_path = @file.path
       @headers = headers
 
       parts = @headers["Content-Disposition"].split(';')
@@ -74,8 +70,10 @@ module ActionController::BodyParser
       end
     end
 
-    def has_moved? : Bool
-      @original_path != @file.path
+    # deletes the temporary file
+    def delete
+      File.delete? @file.path
+    rescue ::File::Error
     end
   end
 
