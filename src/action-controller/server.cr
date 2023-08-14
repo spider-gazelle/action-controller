@@ -1,4 +1,3 @@
-require "worker_pool"
 require "./open_api"
 
 class ActionController::Server
@@ -9,24 +8,6 @@ class ActionController::Server
 
   # :nodoc:
   AFTER_HANDLERS = [] of HTTP::Handler
-
-  # :nodoc:
-  private class HTTPServer < HTTP::Server
-    {% if flag?(:preview_mt) %}
-      # worker pooling is single threaded
-    {% else %}
-      @worker : WorkerPool = WorkerPool.new(100)
-
-      protected def dispatch(io)
-        @worker.perform { handle_client(io) }
-      end
-
-      def close
-        super
-        @worker.close
-      end
-    {% end %}
-  end
 
   # handlers to run before your application code, see: [handlers](https://crystal-lang.org/api/latest/HTTP/Handler.html)
   #
@@ -52,14 +33,14 @@ class ActionController::Server
   def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT)
     @processes = [] of Future::Compute(Nil)
     init_routes
-    @socket = HTTPServer.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+    @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   # create an instance of the application with tls
   def initialize(@ssl_context : OpenSSL::SSL::Context::Server?, @port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT)
     @processes = [] of Future::Compute(Nil)
     init_routes
-    @socket = HTTPServer.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+    @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   private def init_routes
@@ -72,7 +53,7 @@ class ActionController::Server
   def reload
     return unless @socket.closed?
     @processes.clear
-    @socket = HTTPServer.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+    @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   # the host address the server is configured to run on
