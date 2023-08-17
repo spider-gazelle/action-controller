@@ -12,7 +12,8 @@ module ActionController::OpenAPI
     required: Bool,
     schema: String,
     docs: String?,
-    example: String?)
+    example: String?,
+  )
 
   # :nodoc:
   alias Filter = NamedTuple(
@@ -20,7 +21,9 @@ module ActionController::OpenAPI
     method: String,
     wrapper_method: String,
     filter_key: String,
-    params: Array(Params))
+    request_body: String,
+    params: Array(Params),
+  )
 
   # :nodoc:
   alias ExceptionHandler = NamedTuple(
@@ -41,7 +44,8 @@ module ActionController::OpenAPI
     error_handlers: Array(String),
     controller: String,
     request_body: String,
-    route_responses: Hash(Tuple(Bool, String), Int32))
+    route_responses: Hash(Tuple(Bool, String), Int32),
+  )
 
   # :nodoc:
   SAVE_DESCRIPTIONS_OF = {"ActionController::Base", "JSON::Serializable", "YAML::Serializable"}
@@ -290,6 +294,7 @@ module ActionController::OpenAPI
             method: {{ details[:method] }},
             wrapper_method: {{ details[:wrapper_method] }},
             filter_key: {{ filter_key }},
+            request_body: {{ details[:request_body].id.stringify }},
             params: [
               {% for param_name, param in params %}
                 {
@@ -460,12 +465,8 @@ module ActionController::OpenAPI
       operation_id[op_id] = index
       operation.tags << route[:controller].split("::")[-1]
 
-      # see if there is any requirement for a request body
-      if route[:request_body] != "Nil"
-        req_body = build_response(accepts, false, route[:request_body], nil)
-        req_body.required = true
-        operation.request_body = req_body
-      end
+      # track request body, filter might be parsing it
+      raw_req_body = route[:request_body]
 
       # assemble the list of params
       params = route[:params].map do |raw_param|
@@ -482,6 +483,10 @@ module ActionController::OpenAPI
       route[:filters].each do |filter_key|
         filter = filters[filter_key]?
         next unless filter
+
+        if raw_req_body == "Nil"
+          raw_req_body = filter[:request_body] if filter[:request_body] != "Nil"
+        end
 
         filter[:params].each do |raw_param|
           param_name = raw_param[:name]
@@ -506,6 +511,13 @@ module ActionController::OpenAPI
         end
       end
       operation.parameters = params
+
+      # see if there is any requirement for a request body
+      if raw_req_body != "Nil"
+        req_body = build_response(accepts, false, raw_req_body, nil)
+        req_body.required = true
+        operation.request_body = req_body
+      end
 
       # assemble the list of responses
       route[:route_responses].each do |(is_array, klass_name), response_code|

@@ -260,6 +260,7 @@ module ActionController::Route::Builder
             {% filter_type = ann[0].id %}
             {% function_wrapper_name = "_#{filter_type.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
 
+            {% open_api_route[:request_body] = Nil %}
             {% open_api_route[:controller] = @type.name.stringify %}
             {% open_api_route[:method] = method_name.stringify %}
             {% open_api_route[:wrapper_method] = function_wrapper_name.stringify %}
