@@ -135,18 +135,6 @@ abstract class ActionController::Base
     @__render_called__ = false
   end
 
-  # clean up any uploaded files
-  def finalize
-    uploads = @__files__
-    return unless uploads
-
-    uploads.each_value do |files|
-      files.each do |file_upload|
-        file_upload.delete
-      end
-    end
-  end
-
   # the [request context](https://crystal-lang.org/api/latest/HTTP/Server/Context.html)
   def context : HTTP::Server::Context
     @__context__
@@ -590,6 +578,15 @@ abstract class ActionController::Base
           {% if force %}
             end # END force SSL check
           {% end %}
+
+          # clean up any uploaded files
+          if uploads = instance.try &.@__files__
+            uploads.each_value do |files|
+              files.each do |file_upload|
+                file_upload.delete
+              end
+            end
+          end
 
           # Always return the context
           context
