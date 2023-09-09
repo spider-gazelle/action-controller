@@ -459,7 +459,7 @@ module ActionController::OpenAPI
       end
 
       # ensure we have a unique operation id
-      op_id = "#{route[:controller]}##{route[:method]}"
+      op_id = "#{route[:controller]}_#{route[:method]}"
       index = operation_id[op_id] + 1
       operation.operation_id = index > 1 ? "#{op_id}{#{index}}" : op_id
       operation_id[op_id] = index
