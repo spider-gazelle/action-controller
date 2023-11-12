@@ -1,17 +1,14 @@
 name: action-controller
-version: 7.2.3
+version: 7.3.0
 crystal: ">= 1.9.0"
 
 dependencies:
-  future:
-    github: crystal-community/future.cr
-    version: ~> 1.0
   habitat:
     github: luckyframework/habitat
     version: ~> 0.4
   lucky_router:
     github: luckyframework/lucky_router
-    version: ~> 0.4
+    version: ~> 0.5
   exception_page:
     github: crystal-loot/exception_page
     version: ~> 0.3

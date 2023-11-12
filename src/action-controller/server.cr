@@ -31,14 +31,16 @@ class ActionController::Server
 
   # create an instance of the application
   def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT)
-    @processes = [] of Future::Compute(Nil)
+    @processes = 0
+    @process_closed = Channel(Nil).new
     init_routes
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   # create an instance of the application with tls
   def initialize(@ssl_context : OpenSSL::SSL::Context::Server?, @port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT)
-    @processes = [] of Future::Compute(Nil)
+    @processes = 0
+    @process_closed = Channel(Nil).new
     init_routes
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
@@ -52,7 +54,6 @@ class ActionController::Server
   # :nodoc:
   def reload
     return unless @socket.closed?
-    @processes.clear
     @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
@@ -94,7 +95,7 @@ class ActionController::Server
 
   # Terminates the application gracefully once any cluster processes have exited
   def close : Nil
-    @processes.each(&.get)
+    @processes.times { @process_closed.receive }
     @socket.close
   end
 
@@ -135,7 +136,8 @@ class ActionController::Server
 
     # Start the processes
     (0_i64...count).each do
-      @processes << future do
+      @processes += 1
+      spawn do
         process = uninitialized Process
         Process.run(process_path, args,
           input: Process::Redirect::Close,
@@ -151,7 +153,7 @@ class ActionController::Server
         else
           puts " ! worker process #{process.pid} failed with #{status.exit_status}"
         end
-        nil
+        @process_closed.send nil
       end
     end
   end
@@ -173,15 +175,16 @@ class ActionController::Server
       processes << process
     end
 
+    @processes = processes.size
     processes.each do |process|
-      @processes << future do
+      spawn do
         status = process.wait
         if status.success?
           puts " < worker #{process.pid} stopped"
         else
           puts " ! worker process #{process.pid} failed with #{status.exit_status}"
         end
-        nil
+        @process_closed.send nil
       end
     end
   end
