@@ -8,6 +8,20 @@ Spec.before_suite do
   ::Log.setup "*", :debug, Log::IOBackend.new(formatter: ActionController.default_formatter)
 end
 
+class Caching < ActionController::Base
+  base "/caching"
+
+  @[AC::Route::GET("/")]
+  def index(last_modified : Int64 = Time.utc.to_unix, public : Bool = false) : String?
+    last_modified = Time.unix last_modified
+    etag = %("12345")
+
+    if stale? last_modified, etag, public
+      "response-data"
+    end
+  end
+end
+
 abstract class FilterOrdering < ActionController::Base
   @trusted = false
   @in_around = false
@@ -205,7 +219,7 @@ class TemplateOne < ActionController::Base
   layout "layout_main.ecr"
 
   get "/", :index do
-    data = client_ip # ameba:disable Lint/UselessAssign
+    data = client_ip
     if params["inline"]?
       render html: template("inner.ecr")
     else
@@ -214,7 +228,7 @@ class TemplateOne < ActionController::Base
   end
 
   get "/:id", :show do
-    data = params["id"] # ameba:disable Lint/UselessAssign
+    data = params["id"]
     if params["inline"]?
       render html: partial("inner.ecr")
     else
@@ -232,7 +246,7 @@ class TemplateTwo < TemplateOne
   layout "layout_alt.ecr"
 
   get "/", :index do
-    data = 50 # ameba:disable Lint/UselessAssign
+    data = 50
     render template: "inner.ecr"
   end
 end

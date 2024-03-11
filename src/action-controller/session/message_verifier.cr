@@ -23,9 +23,9 @@ class ActionController::MessageVerifier
     if digest && valid_message?(data, digest)
       String.new(decode(data))
     end
-  rescue argument_error : ArgumentError
-    return if argument_error.message =~ %r{invalid base64}
-    raise argument_error
+  rescue error : ArgumentError
+    return if error.message =~ %r{invalid base64}
+    raise error
   end
 
   def verify(signed_message) : String

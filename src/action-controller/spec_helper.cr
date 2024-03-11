@@ -102,10 +102,10 @@ class HotTopic::Client(T) < HTTP::Client
       unless handshake_response.headers["Sec-WebSocket-Accept"]? == challenge_response
         raise Socket::Error.new("Handshake got denied. Server did not verify WebSocket challenge.")
       end
-    rescue exc
+    rescue error
       local_io.close
       remote_io.close
-      raise exc
+      raise error
     end
 
     HTTP::WebSocket.new HTTP::WebSocket::Protocol.new(local_io, masked: true)

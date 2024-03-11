@@ -9,7 +9,7 @@ describe ActionController::OpenAPI do
   it "generates openapi docs" do
     result = ActionController::OpenAPI.generate_open_api_docs("title", "version", description: "desc")
     result[:openapi].should eq "3.0.3"
-    result[:paths].size.should eq 22
+    result[:paths].size.should eq 23
     result[:info][:description].should eq "desc"
   end
 end

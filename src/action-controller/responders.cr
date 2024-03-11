@@ -108,7 +108,7 @@ module ActionController::Responders
     %ret_val = {{ json || yaml || xml || html || text || binary || template || partial }}
 
     {% if status.is_a?(SymbolLiteral) %}
-      %response.status_code = {{STATUS_CODES[status]}}
+      %response.status_code = {{STATUS_CODES[status] || REDIRECTION_CODES[status]}}
     {% else %}
       %response.status_code = ({{status}}).to_i
     {% end %}

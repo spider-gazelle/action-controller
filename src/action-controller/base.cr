@@ -309,7 +309,7 @@ abstract class ActionController::Base
       {% for klass, details in RESCUE %}
         {% block = details[1] %}
         {% if block != nil %}
-          def {{details[0]}}({{*details[1].args}})
+          def {{details[0]}}({{details[1].args.splat}})
             {{details[1].body}}
           end
         {% end %}
@@ -668,7 +668,7 @@ abstract class ActionController::Base
         \{% end %}
       \{% end %}
       \{{ ("def " + function.id.stringify + "(").id }}
-        \{{*block.args}}
+        \{{block.args.splat}}
       \{{ ")".id }}
         \{{block.body}}
       \{{ "end".id }}
@@ -687,7 +687,7 @@ abstract class ActionController::Base
         {{ ann.id }}
       {% end %}
     {% end %}
-    def {{function.id}}({{*block.args}})
+    def {{function.id}}({{block.args.splat}})
       {{block.body}}
     end
   end
@@ -829,5 +829,50 @@ abstract class ActionController::Base
 
     @__client_ip__ = cip
     cip
+  end
+
+  # Sets the etag and/or last_modified on the response and checks it against the client request.
+  # If it’s fresh and we don’t need to generate anything, a reply of 304 Not Modified is sent.
+  def stale?(last_modified : Time? = nil, etag : String? = nil, public : Bool = false)
+    resp_headers = response.headers
+    req_headers = request.headers
+
+    # configure and extract headers
+    if etag
+      resp_headers["ETag"] = etag
+      if none_match = req_headers["If-None-Match"]?
+        req_etags = none_match.split(",").map(&.strip)
+      end
+    end
+
+    if last_modified
+      resp_headers["Last-Modified"] = HTTP.format_time(last_modified)
+      if req_modified = req_headers["If-Modified-Since"]?
+        modified_since = HTTP.parse_time(req_modified)
+      end
+    end
+
+    if public
+      cache_control = (resp_headers["Cache-Control"]? || "").split(",").map(&.strip)
+      cache_control.delete("private")
+      cache_control.delete("no-cache")
+      cache_control << "public"
+      resp_headers["Cache-Control"] = cache_control.join(", ")
+    end
+
+    # check values
+    fresh = if req_etags && modified_since
+              etag_matches = req_etags.includes?(etag) || req_etags.includes?("*")
+              etag_matches && (modified_since >= last_modified)
+            elsif modified_since
+              modified_since >= last_modified
+            elsif req_etags
+              req_etags.includes?(etag) || req_etags.includes?("*")
+            else
+              false
+            end
+
+    head(:not_modified) if fresh
+    !fresh
   end
 end

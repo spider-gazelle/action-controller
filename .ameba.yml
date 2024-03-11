@@ -1,2 +1,4 @@
 Metrics/CyclomaticComplexity:
   Enabled: false
+Lint/UselessAssign:
+  Enabled: false # TODO: Enable once https://github.com/crystal-ameba/ameba/issues/447 is resolved

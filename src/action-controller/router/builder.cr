@@ -168,7 +168,7 @@ module ActionController::Route::Builder
   macro __build_transformer_functions__
       {% for type, block in RESPONDERS %}
         # :nodoc:
-        def self.transform_{{type.gsub(/\W/, "_").id}}(%instance, {{*block.args}}, *_args)
+        def self.transform_{{type.gsub(/\W/, "_").id}}(%instance, {{block.args.splat}}, *_args)
           __yield__(%instance) do
             {{block.body}}
           end
@@ -197,7 +197,7 @@ module ActionController::Route::Builder
 
       {% for type, block in PARSERS %}
         # :nodoc:
-        def self.parse_{{type.gsub(/\W/, "_").id}}({{*block.args}}, **_ignore)
+        def self.parse_{{type.gsub(/\W/, "_").id}}({{block.args.splat}}, **_ignore)
           {{block.body}}
         end
       {% end %}
