@@ -846,7 +846,11 @@ abstract class ActionController::Base
     end
 
     if last_modified
-      resp_headers["Last-Modified"] = HTTP.format_time(last_modified)
+      # we need to update this as the HTTP header is less exact
+      check_time = HTTP.format_time(last_modified)
+      resp_headers["Last-Modified"] = check_time
+      last_modified = HTTP.parse_time(check_time).as(Time)
+
       if req_modified = req_headers["If-Modified-Since"]?
         modified_since = HTTP.parse_time(req_modified)
       end
