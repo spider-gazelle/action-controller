@@ -62,7 +62,7 @@ class ActionController::ErrorHandlerDevelopment
     reset(response)
 
     response.content_type = "text/html"
-    ActionController::ExceptionPage.for_runtime_exception(context, ex).to_s(context.response)
+    response.print ActionController::ExceptionPage.new(context, ex)
   end
 end
 
