@@ -41,7 +41,7 @@ module ActionController
     in Hash(String, ::Log::Metadata::Value)
       value.transform_values(&.to_s)
     in Bool, Float32, Float64, Int32, UInt32, Int64, UInt64, String, Time, Nil
-      metadata.raw.as(Bool | Float32 | Float64 | Int32 | Int64 | String | Time | Nil)
+      metadata.raw.as(Bool | Float32 | Float64 | Int32 | UInt32 | Int64 | UInt64 | String | Time | Nil)
     end
   end
 
