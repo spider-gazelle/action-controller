@@ -198,9 +198,16 @@ abstract class ActionController::Base
   end
 
   # :nodoc:
-  # Extracts query and route params into a single `URI::Params` instance
+  # Extracts header, query and route params into a single `URI::Params` instance
   def self.extract_params(context : HTTP::Server::Context) : URI::Params
     params = URI::Params.new
+
+    # add header params
+    hparams = context.request.headers
+    hparams.each do |key, value|
+      params.set_all(key, value)
+    end
+
     # duplicate the query_params
     qparams = context.request.query_params
     qparams.each do |key, _|
