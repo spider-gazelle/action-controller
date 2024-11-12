@@ -387,7 +387,7 @@ module ActionController::Route::Builder
                       {% open_api_param = {} of Nil => Nil %}
                     {% else %}
                       {% open_api_param = open_api_params[query_param_name] || {} of Nil => Nil %}
-                      {% open_api_param[:in] = open_api_param[:in] || :query %}
+                      {% open_api_param[:in] = (ann_converter && ann_converter[:in]) || :query %}
                       {% open_api_param[:docs] = (ann_converter && ann_converter[:description]) %}
                       {% open_api_param[:example] = (ann_converter && ann_converter[:example]) %}
                       {% open_api_params[query_param_name] = open_api_param %}
