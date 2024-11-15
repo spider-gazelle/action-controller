@@ -387,7 +387,14 @@ module ActionController::Route::Builder
                       {% open_api_param = {} of Nil => Nil %}
                     {% else %}
                       {% open_api_param = open_api_params[query_param_name] || {} of Nil => Nil %}
-                      {% open_api_param[:in] = (ann_converter && ann_converter[:in]) || :query %}
+
+                      {% if (ann_converter && ann_converter[:header]) %}
+                        {% open_api_param[:in] = :header %}
+                        {% open_api_param[:header] = ann_converter[:header] %}
+                      {% else %}
+                        {% open_api_param[:in] = open_api_param[:in] || :query %}
+                      {% end %}
+
                       {% open_api_param[:docs] = (ann_converter && ann_converter[:description]) %}
                       {% open_api_param[:example] = (ann_converter && ann_converter[:example]) %}
                       {% open_api_params[query_param_name] = open_api_param %}
@@ -463,6 +470,16 @@ module ActionController::Route::Builder
                         {% end %}
                         end
 
+                      {% elsif open_api_param.has_key?(:header) && open_api_param[:header] == string_name %}
+                        # Handle header parameters
+                        if param_value = @__context__.request.headers.fetch({{string_name}}, nil)
+                          {{restrictions.join(" || ").id}}
+                          {% if arg.default_value.stringify != "" %}
+                          else
+                            {{arg.default_value}}
+                          {% end %}
+                        end
+                        
                       # Required route param, so we ensure it
                       {% elsif required_params.includes? string_name %}
                         if param_value = route_params[{{query_param_name}}]?
@@ -485,7 +502,7 @@ module ActionController::Route::Builder
                     # Use tap to ensure a good error message if the function param isn't nilable
                     ){% if !nilable %}.tap { |result|
                       if result.nil?
-                        if params.has_key?({{query_param_name}})
+                        if params.has_key?({{query_param_name}}) || @__context__.request.headers.has_key?({{string_name}})
                           raise ::AC::Route::Param::ValueError.new("invalid parameter value", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
                         else
                           raise ::AC::Route::Param::MissingError.new("missing required parameter", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
