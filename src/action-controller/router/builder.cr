@@ -486,7 +486,7 @@ module ActionController::Route::Builder
                         if param_value = route_params[{{query_param_name}}]?
                           {{restrictions.join(" || ").id}}
                         else
-                          raise ::AC::Route::Param::MissingError.new("missing required parameter", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
+                          raise ::AC::Route::Param::MissingError.new("missing required parameter '#{{{query_param_name}}}'", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
                         end
 
                       # An optional route param, might be passed as an query param
@@ -503,8 +503,10 @@ module ActionController::Route::Builder
                     # Use tap to ensure a good error message if the function param isn't nilable
                     ){% if !nilable %}.tap { |result|
                       if result.nil?
-                        if params.has_key?({{query_param_name}}) || @__context__.request.headers.has_key?({{open_api_param[:header] || "%"}})
-                          raise ::AC::Route::Param::ValueError.new("invalid parameter value", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
+                        if params.has_key?({{query_param_name}})
+                          raise ::AC::Route::Param::ValueError.new("invalid parameter value for '#{{{query_param_name}}}'", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
+                        elsif @__context__.request.headers.has_key?({{open_api_param[:header] || "%"}})
+                          raise ::AC::Route::Param::ValueError.new("invalid value for header '#{{{open_api_param[:header]}}}'", {{open_api_param[:header]}}, {{arg.restriction.resolve.stringify}})
                         else
                           raise ::AC::Route::Param::MissingError.new("missing required parameter", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
                         end
