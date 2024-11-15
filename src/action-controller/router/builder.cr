@@ -470,9 +470,10 @@ module ActionController::Route::Builder
                         {% end %}
                         end
 
-                      {% elsif open_api_param.has_key?(:header) && open_api_param[:header] == string_name %}
+                      {% elsif open_api_param.has_key?(:header) %}
                         # Handle header parameters
-                        if param_value = @__context__.request.headers.fetch({{string_name}}, nil)
+  
+                        if param_value = @__context__.request.headers.fetch({{open_api_param[:header] || "%"}}, nil)
                           {{restrictions.join(" || ").id}}
                           {% if arg.default_value.stringify != "" %}
                           else
@@ -502,7 +503,7 @@ module ActionController::Route::Builder
                     # Use tap to ensure a good error message if the function param isn't nilable
                     ){% if !nilable %}.tap { |result|
                       if result.nil?
-                        if params.has_key?({{query_param_name}}) || @__context__.request.headers.has_key?({{string_name}})
+                        if params.has_key?({{query_param_name}}) || @__context__.request.headers.has_key?({{open_api_param[:header] || "%"}})
                           raise ::AC::Route::Param::ValueError.new("invalid parameter value", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
                         else
                           raise ::AC::Route::Param::MissingError.new("missing required parameter", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
