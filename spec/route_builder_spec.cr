@@ -186,4 +186,33 @@ describe AC::Route::Builder do
     result = client.get("/skipping_annotation")
     result.status_code.should eq 200
   end
+
+  it "should parse headers as params" do
+    result = client.get("/filtering/testing/header/values?query_param=12", headers: HTTP::Headers{
+      "X-Count" => "123",
+    })
+    result.status_code.should eq 200
+    result.body.should eq "123--12"
+
+    result = client.get("/filtering/testing/header/values/default?query_param=13")
+    result.status_code.should eq 200
+    result.body.should eq "12--13"
+
+    # test error handling
+    expect_raises(ActionController::Route::Param::MissingError, "missing required header 'X-Count'") do
+      client.get("/filtering/testing/header/values?query_param=12")
+    end
+
+    expect_raises(ActionController::Route::Param::ValueError, "invalid header value for 'X-Count'") do
+      client.get("/filtering/testing/header/values?query_param=12", headers: HTTP::Headers{
+        "X-Count" => "abc",
+      })
+    end
+
+    expect_raises(ActionController::Route::Param::ValueError, "invalid header value for 'X-Count'") do
+      client.get("/filtering/testing/header/values/default?query_param=12", headers: HTTP::Headers{
+        "X-Count" => "abc",
+      })
+    end
+  end
 end

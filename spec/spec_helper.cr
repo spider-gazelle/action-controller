@@ -106,6 +106,24 @@ class Filtering < FilterOrdering
     id
   end
 
+  @[AC::Route::GET("/testing/header/values", content_type: "text/plain")]
+  def testing_headers(
+    @[AC::Param::Info(header: "X-Count", description: "number of requests made", example: "34")]
+    value : Int32,
+    query_param : Int32
+  ) : String
+    "#{value}--#{query_param}"
+  end
+
+  @[AC::Route::GET("/testing/header/values/default", content_type: "text/plain")]
+  def testing_headers_default(
+    query_param : Int32,
+    @[AC::Param::Info(header: "X-Count", description: "number of requests made", example: "34")]
+    value : Int32 = 12,
+  ) : String
+    "#{value}--#{query_param}"
+  end
+
   # Test default arguments and multiple routes for a single method
   @[AC::Route::GET("/other_route/:id/test")]
   @[AC::Route::GET("/other_route/test")]

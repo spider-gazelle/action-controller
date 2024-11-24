@@ -348,7 +348,7 @@ module ActionController::OpenAPI
           params: [
             {% for param_name, param in params %}
               {
-                name: {{ param_name }},
+                name: {{ param[:header] || param_name }},
                 in: {{ param[:in] }},
                 required: {{ param[:required] }},
                 schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json,

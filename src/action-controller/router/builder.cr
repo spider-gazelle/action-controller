@@ -387,6 +387,15 @@ module ActionController::Route::Builder
                       {% open_api_param = {} of Nil => Nil %}
                     {% else %}
                       {% open_api_param = open_api_params[query_param_name] || {} of Nil => Nil %}
+
+                      # check for header params
+                      {% if (ann_converter && ann_converter[:header]) %}
+                        {% open_api_param[:in] = :header %}
+                        {% open_api_param[:header] = ann_converter[:header].id.stringify %}
+                      {% else %}
+                        {% open_api_param[:in] = open_api_param[:in] || :query %}
+                      {% end %}
+
                       {% open_api_param[:in] = open_api_param[:in] || :query %}
                       {% open_api_param[:docs] = (ann_converter && ann_converter[:description]) %}
                       {% open_api_param[:example] = (ann_converter && ann_converter[:example]) %}
@@ -463,16 +472,26 @@ module ActionController::Route::Builder
                         {% end %}
                         end
 
+                      # handle header params
+                      {% elsif open_api_param.has_key?(:header) %}
+                        if param_value = @__context__.request.headers.fetch({{open_api_param[:header]}}, nil)
+                          {{restrictions.join(" || ").id}}
+                        {% if arg.default_value.stringify != "" %}
+                        else
+                          {{arg.default_value}}
+                        {% end %}
+                        end
+
                       # Required route param, so we ensure it
                       {% elsif required_params.includes? string_name %}
                         if param_value = route_params[{{query_param_name}}]?
                           {{restrictions.join(" || ").id}}
                         else
-                          raise ::AC::Route::Param::MissingError.new("missing required parameter", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
+                          raise ::AC::Route::Param::MissingError.new("missing required parameter '#{ {{query_param_name}} }'", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
                         end
 
-                      # An optional route param, might be passed as an query param
-                      {% else %}
+                      # An optional route param, might be passed as an query param (not the case for headers)
+                      {% elsif !open_api_param.has_key?(:header) %}
                         if param_value = params[{{query_param_name}}]?
                           {{restrictions.join(" || ").id}}
                         {% if arg.default_value.stringify != "" %}
@@ -485,11 +504,19 @@ module ActionController::Route::Builder
                     # Use tap to ensure a good error message if the function param isn't nilable
                     ){% if !nilable %}.tap { |result|
                       if result.nil?
-                        if params.has_key?({{query_param_name}})
-                          raise ::AC::Route::Param::ValueError.new("invalid parameter value", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
-                        else
-                          raise ::AC::Route::Param::MissingError.new("missing required parameter", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
-                        end
+                        {% if open_api_param.has_key?(:header) %}
+                          if @__context__.request.headers.has_key?({{open_api_param[:header]}})
+                            raise ::AC::Route::Param::ValueError.new("invalid header value for '#{ {{open_api_param[:header]}} }'", {{open_api_param[:header]}}, {{arg.restriction.resolve.stringify}})
+                          else
+                            raise ::AC::Route::Param::MissingError.new("missing required header '#{ {{open_api_param[:header]}} }'", {{open_api_param[:header]}}, {{arg.restriction.resolve.stringify}})
+                          end
+                        {% else %}
+                          if params.has_key?({{query_param_name}})
+                            raise ::AC::Route::Param::ValueError.new("invalid parameter value for '#{ {{query_param_name}} }'", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
+                          else
+                            raise ::AC::Route::Param::MissingError.new("missing required parameter '#{ {{query_param_name}} }'", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
+                          end
+                        {% end %}
                       end
                     }.not_nil!{% end %},
                   {% end %}
