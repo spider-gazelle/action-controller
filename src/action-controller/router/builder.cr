@@ -250,6 +250,7 @@ module ActionController::Route::Builder
           {% status_code = ann[:status_code] || HTTP::Status::OK %}
           {% status_code_map = ann[:status] || {} of TypeNode => Path %}
           {% body_argument = (ann[:body] || "%").id.stringify %} # % is an invalid argument name
+          {% response_type = ann[:response_type] || method.return_type %}
 
           {% open_api_route = {} of Nil => Nil %}
           {% open_api_params = {} of Nil => Nil %}
@@ -537,8 +538,8 @@ module ActionController::Route::Builder
             {% end %}
 
             {% if !{AC::Route::Filter, AC::Route::WebSocket}.includes?(route_method) %}
-              {% if method.return_type %}
-                {% open_api_route[:default_response] = {method.return_type.resolve, status_code, true} %}
+              {% if response_type %}
+                {% open_api_route[:default_response] = {response_type.resolve, status_code, true} %}
               {% else %}
                 {% open_api_route[:default_response] = {Nil, status_code, false} %}
               {% end %}
