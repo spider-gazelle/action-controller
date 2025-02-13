@@ -9,7 +9,7 @@ module ActionController::OpenAPI
   alias Params = NamedTuple(
     name: String,
     in: Symbol,
-    required: Bool,
+    required: Bool?,
     schema: String,
     docs: String?,
     example: String?,
@@ -300,7 +300,7 @@ module ActionController::OpenAPI
                 {
                   name: {{ param_name }},
                   in: {{ param[:in] }},
-                  required: {{ param[:required] }},
+                  required: ({{ param[:required] ? true : nil }}).as(Bool?),
                   schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json,
                   docs: {{ param[:docs] }}.as(String?),
                   example: {{ param[:example] }}.as(String?),
@@ -350,7 +350,7 @@ module ActionController::OpenAPI
               {
                 name: {{ param[:header] || param_name }},
                 in: {{ param[:in] }},
-                required: {{ param[:required] }},
+                required: ({{ param[:required] ? true : nil }}).as(Bool?),
                 schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json,
                 docs: {{ param[:docs] }}.as(String?),
                 example: {{ param[:example] }}.as(String?),
@@ -473,7 +473,7 @@ module ActionController::OpenAPI
         param = Parameter.new
         param.name = raw_param[:name]
         param.in = raw_param[:in].to_s
-        param.required = raw_param[:required]
+        param.required = raw_param[:required] ? true : nil
         param.schema = JSON.parse(raw_param[:schema])
         param.description = raw_param[:docs]
         param.example = raw_param[:example]
@@ -503,7 +503,7 @@ module ActionController::OpenAPI
           param = Parameter.new
           param.name = param_name
           param.in = raw_param[:in].to_s
-          param.required = raw_param[:required]
+          param.required = raw_param[:required] ? true : nil
           param.schema = JSON.parse(raw_param[:schema])
           param.description = raw_param[:docs]
           param.example = raw_param[:example]
