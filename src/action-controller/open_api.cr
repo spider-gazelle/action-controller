@@ -436,8 +436,8 @@ module ActionController::OpenAPI
       if controller_docs = descriptions[route[:controller]]?
         if docs = controller_docs.docs
           doc_lines = docs.split("\n", 2)
-          path.summary = doc_lines[0]
-          path.description = docs if doc_lines.size > 1
+          path.summary = doc_lines[0].strip
+          path.description = docs.strip if doc_lines.size > 1
         end
 
         # grab the documentation for the route
@@ -453,8 +453,8 @@ module ActionController::OpenAPI
 
         if docs
           doc_lines = docs.split("\n", 2)
-          operation.summary = doc_lines[0]
-          operation.description = docs if doc_lines.size > 1
+          operation.summary = doc_lines[0].strip
+          operation.description = docs.strip if doc_lines.size > 1
         end
       end
 
