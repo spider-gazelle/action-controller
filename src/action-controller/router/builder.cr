@@ -366,10 +366,24 @@ module ActionController::Route::Builder
               {% end %}
             {% else %}
               # check we can parse the body if a content type is provided
+              {% string_body_possible = false %}
               {% if body_argument != "%" %}
                 body_type = request_content_type || {{ DEFAULT_PARSER[0] }}
                 unless {{@type.name.id}}.can_parse?(body_type)
-                  raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{@type.name.id}}.parsable)
+                  # special case for mime type text/plain and String body types
+                  {% for arg, arg_index in method.args %}
+                    {% if body_argument == arg.name.id.stringify %}
+                      {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
+                      {% if union_types.includes?(String) %}
+                        {% string_body_possible = true %}
+                        if body_type != "text/plain"
+                          raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{@type.name.id}}.parsable)
+                        end
+                      {% else %}
+                        raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{@type.name.id}}.parsable)
+                      {% end %}
+                    {% end %}
+                  {% end %}
                 end
               {% end %}
 
@@ -465,6 +479,10 @@ module ActionController::Route::Builder
                           {% for type, _block in PARSERS %}
                             when {{type}}
                               {{@type.name.id}}.parse_{{type.gsub(/\W/, "_").id}}({{ arg.restriction }}, body_io, request: @__context__.request)
+                          {% end %}
+                          {% if string_body_possible == true %}
+                            when "text/plain"
+                              body_io.gets_to_end
                           {% end %}
                           end
                         {% if arg.default_value.stringify != "" %}

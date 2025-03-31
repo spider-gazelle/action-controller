@@ -114,6 +114,17 @@ describe AC::Route::Builder do
     result.body.should eq %(300.4)
   end
 
+  it "String bodies should work with text/plain mime" do
+    result = client.post("/filtering/string_entry", headers: HTTP::Headers{
+      "Content-Type" => "text/plain",
+    }, body: "some text")
+    result.body.should eq %("some text")
+
+    expect_raises(JSON::ParseException) do
+      client.post("/filtering/string_entry", body: "some text")
+    end
+  end
+
   it "should work with other charsets" do
     body_text = "34.8".encode("UTF-16")
     body_text.bytesize.should eq 10

@@ -165,6 +165,11 @@ class Filtering < FilterOrdering
     float
   end
 
+  @[AC::Route::POST("/string_entry/", status_code: HTTP::Status::ACCEPTED, body: :string)]
+  def create_string_entry(string : String) : String
+    string
+  end
+
   @[AC::Route::POST("/some_other_entry/", status_code: HTTP::Status::ACCEPTED)]
   def create_form_encoded_entry(float : Float64) : Float64
     float
