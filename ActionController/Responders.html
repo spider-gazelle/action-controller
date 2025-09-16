@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Crystal Docs 1.14.0">
+<meta name="generator" content="Crystal Docs 1.16.3">
 <meta name="crystal_docs.project_version" content="master">
 <meta name="crystal_docs.project_name" content="action-controller">
 
@@ -306,9 +306,13 @@
 <div class="main-content">
 <h1 class="type-name">
 
-  <span class="kind">module</span> ActionController::<wbr>Responders
+  <span class="kind">
+    module
+  </span> ActionController::<wbr>Responders
 
 </h1>
+
+
 
 
 
@@ -351,7 +355,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/fd50b1fc1652fefc10af83b5bdd64194216fc6a7/src/action-controller/responders.cr#L4" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/5c2ca1a8e2a4d50ea82336ae93da629b3c1f0825/src/action-controller/responders.cr#L4" target="_blank">
         action-controller/responders.cr
       </a>
     
@@ -373,7 +377,14 @@
   <dl>
     
       <dt class="entry-const" id="MIME_TYPES">
-        <strong>MIME_TYPES</strong> = <code>{binary: <span class="s">&quot;application/octet-stream&quot;</span>, json: <span class="s">&quot;application/json&quot;</span>, xml: <span class="s">&quot;application/xml&quot;</span>, text: <span class="s">&quot;text/plain&quot;</span>, html: <span class="s">&quot;text/html&quot;</span>, yaml: <span class="s">&quot;text/yaml&quot;</span>}</code>
+        <strong>MIME_TYPES</strong> = <code>{
+  binary: <span class="s">&quot;application/octet-stream&quot;</span>,
+  json: <span class="s">&quot;application/json&quot;</span>,
+  xml: <span class="s">&quot;application/xml&quot;</span>,
+  text: <span class="s">&quot;text/plain&quot;</span>,
+  html: <span class="s">&quot;text/html&quot;</span>,
+  yaml: <span class="s">&quot;text/yaml&quot;</span>,
+}</code>
       </dt>
       
       <dd class="entry-const-doc">
@@ -382,7 +393,16 @@
       
     
       <dt class="entry-const" id="REDIRECTION_CODES">
-        <strong>REDIRECTION_CODES</strong> = <code>{multiple_choices: <span class="n">300</span>, moved_permanently: <span class="n">301</span>, found: <span class="n">302</span>, see_other: <span class="n">303</span>, not_modified: <span class="n">304</span>, use_proxy: <span class="n">305</span>, temporary_redirect: <span class="n">307</span>, permanent_redirect: <span class="n">308</span>}</code>
+        <strong>REDIRECTION_CODES</strong> = <code>{
+  multiple_choices: <span class="n">300</span>,
+  moved_permanently: <span class="n">301</span>,
+  found: <span class="n">302</span>,
+  see_other: <span class="n">303</span>,
+  not_modified: <span class="n">304</span>,
+  use_proxy: <span class="n">305</span>,
+  temporary_redirect: <span class="n">307</span>,
+  permanent_redirect: <span class="n">308</span>,
+}</code>
       </dt>
       
       <dd class="entry-const-doc">
@@ -391,7 +411,65 @@
       
     
       <dt class="entry-const" id="STATUS_CODES">
-        <strong>STATUS_CODES</strong> = <code>{continue: <span class="n">100</span>, switching_protocols: <span class="n">101</span>, processing: <span class="n">102</span>, ok: <span class="n">200</span>, created: <span class="n">201</span>, accepted: <span class="n">202</span>, non_authoritative_information: <span class="n">203</span>, no_content: <span class="n">204</span>, reset_content: <span class="n">205</span>, partial_content: <span class="n">206</span>, multi_status: <span class="n">207</span>, already_reported: <span class="n">208</span>, im_used: <span class="n">226</span>, bad_request: <span class="n">400</span>, unauthorized: <span class="n">401</span>, payment_required: <span class="n">402</span>, forbidden: <span class="n">403</span>, not_found: <span class="n">404</span>, method_not_allowed: <span class="n">405</span>, not_acceptable: <span class="n">406</span>, proxy_authentication_required: <span class="n">407</span>, request_timeout: <span class="n">408</span>, conflict: <span class="n">409</span>, gone: <span class="n">410</span>, length_required: <span class="n">411</span>, precondition_failed: <span class="n">412</span>, payload_too_large: <span class="n">413</span>, uri_too_long: <span class="n">414</span>, unsupported_media_type: <span class="n">415</span>, range_not_satisfiable: <span class="n">416</span>, expectation_failed: <span class="n">417</span>, misdirected_request: <span class="n">421</span>, unprocessable_entity: <span class="n">422</span>, locked: <span class="n">423</span>, failed_dependency: <span class="n">424</span>, upgrade_required: <span class="n">426</span>, precondition_required: <span class="n">428</span>, too_many_requests: <span class="n">429</span>, request_header_fields_too_large: <span class="n">431</span>, unavailable_for_legal_reasons: <span class="n">451</span>, internal_server_error: <span class="n">500</span>, not_implemented: <span class="n">501</span>, bad_gateway: <span class="n">502</span>, service_unavailable: <span class="n">503</span>, gateway_timeout: <span class="n">504</span>, http_version_not_supported: <span class="n">505</span>, variant_also_negotiates: <span class="n">506</span>, insufficient_storage: <span class="n">507</span>, loop_detected: <span class="n">508</span>, not_extended: <span class="n">510</span>, network_authentication_required: <span class="n">511</span>}</code>
+        <strong>STATUS_CODES</strong> = <code>{
+  continue: <span class="n">100</span>,
+  switching_protocols: <span class="n">101</span>,
+  processing: <span class="n">102</span>,
+
+
+  ok: <span class="n">200</span>,
+  created: <span class="n">201</span>,
+  accepted: <span class="n">202</span>,
+  non_authoritative_information: <span class="n">203</span>,
+  no_content: <span class="n">204</span>,
+  reset_content: <span class="n">205</span>,
+  partial_content: <span class="n">206</span>,
+  multi_status: <span class="n">207</span>,
+  already_reported: <span class="n">208</span>,
+  im_used: <span class="n">226</span>,
+
+
+  bad_request: <span class="n">400</span>,
+  unauthorized: <span class="n">401</span>,
+  payment_required: <span class="n">402</span>,
+  forbidden: <span class="n">403</span>,
+  not_found: <span class="n">404</span>,
+  method_not_allowed: <span class="n">405</span>,
+  not_acceptable: <span class="n">406</span>,
+  proxy_authentication_required: <span class="n">407</span>,
+  request_timeout: <span class="n">408</span>,
+  conflict: <span class="n">409</span>,
+  gone: <span class="n">410</span>,
+  length_required: <span class="n">411</span>,
+  precondition_failed: <span class="n">412</span>,
+  payload_too_large: <span class="n">413</span>,
+  uri_too_long: <span class="n">414</span>,
+  unsupported_media_type: <span class="n">415</span>,
+  range_not_satisfiable: <span class="n">416</span>,
+  expectation_failed: <span class="n">417</span>,
+  misdirected_request: <span class="n">421</span>,
+  unprocessable_entity: <span class="n">422</span>,
+  locked: <span class="n">423</span>,
+  failed_dependency: <span class="n">424</span>,
+  upgrade_required: <span class="n">426</span>,
+  precondition_required: <span class="n">428</span>,
+  too_many_requests: <span class="n">429</span>,
+  request_header_fields_too_large: <span class="n">431</span>,
+  unavailable_for_legal_reasons: <span class="n">451</span>,
+
+
+  internal_server_error: <span class="n">500</span>,
+  not_implemented: <span class="n">501</span>,
+  bad_gateway: <span class="n">502</span>,
+  service_unavailable: <span class="n">503</span>,
+  gateway_timeout: <span class="n">504</span>,
+  http_version_not_supported: <span class="n">505</span>,
+  variant_also_negotiates: <span class="n">506</span>,
+  insufficient_storage: <span class="n">507</span>,
+  loop_detected: <span class="n">508</span>,
+  not_extended: <span class="n">510</span>,
+  network_authentication_required: <span class="n">511</span>,
+}</code>
       </dt>
       
       <dd class="entry-const-doc">
@@ -403,10 +481,11 @@
 
 
 
+  
 
+  
 
-
-
+  
   <h2>
     <a id="macro-summary" class="anchor" href="#macro-summary">
   <svg class="octicon-link" aria-hidden="true">
@@ -448,7 +527,7 @@
   </ul>
 
 
-
+  
   <h2>
     <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
   <svg class="octicon-link" aria-hidden="true">
@@ -470,15 +549,15 @@
 
 
 
-<div class="methods-inherited">
+  <div class="methods-inherited">
+    
+  </div>
+
   
-</div>
 
+  
 
-
-
-
-
+  
   <h2>
     <a id="macro-detail" class="anchor" href="#macro-detail">
   <svg class="octicon-link" aria-hidden="true">
@@ -509,7 +588,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/fd50b1fc1652fefc10af83b5bdd64194216fc6a7/src/action-controller/responders.cr#L192" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/5c2ca1a8e2a4d50ea82336ae93da629b3c1f0825/src/action-controller/responders.cr#L192" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -534,7 +613,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/fd50b1fc1652fefc10af83b5bdd64194216fc6a7/src/action-controller/responders.cr#L204" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/5c2ca1a8e2a4d50ea82336ae93da629b3c1f0825/src/action-controller/responders.cr#L204" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -561,7 +640,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/fd50b1fc1652fefc10af83b5bdd64194216fc6a7/src/action-controller/responders.cr#L102" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/5c2ca1a8e2a4d50ea82336ae93da629b3c1f0825/src/action-controller/responders.cr#L102" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -595,14 +674,14 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/fd50b1fc1652fefc10af83b5bdd64194216fc6a7/src/action-controller/responders.cr#L238" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/5c2ca1a8e2a4d50ea82336ae93da629b3c1f0825/src/action-controller/responders.cr#L238" target="_blank">View source</a>]
         
       </div>
     </div>
   
 
 
-
+  
   <h2>
     <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
   <svg class="octicon-link" aria-hidden="true">
@@ -628,11 +707,12 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/fd50b1fc1652fefc10af83b5bdd64194216fc6a7/src/action-controller/responders.cr#L265" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/5c2ca1a8e2a4d50ea82336ae93da629b3c1f0825/src/action-controller/responders.cr#L265" target="_blank">View source</a>]
         
       </div>
     </div>
   
+
 
 
 </div>
