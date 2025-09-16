@@ -137,7 +137,7 @@ module ActionController::OpenAPI
     all_filters,
     all_exceptions,
     route_filters : Array(String),
-    route_errors : Array(String)
+    route_errors : Array(String),
   ) : Tuple(KlassDoc?, Array(String), Array(String))
     if description = klass_descriptions[controller]?
       matched_filters = route_filters.compact_map do |filter_name|

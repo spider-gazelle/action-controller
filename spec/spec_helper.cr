@@ -110,7 +110,7 @@ class Filtering < FilterOrdering
   def testing_headers(
     @[AC::Param::Info(header: "X-Count", description: "number of requests made", example: "34")]
     value : Int32,
-    query_param : Int32
+    query_param : Int32,
   ) : String
     "#{value}--#{query_param}"
   end
@@ -199,7 +199,7 @@ class Filtering < FilterOrdering
   @[AC::Route::GET("/param_annotation/:thing/flexible", config: {thing: {strict: false}})]
   def test_param_annotation(
     @[AC::Param::Converter(class: IsHotDog, config: {strict: true})]
-    thing : Bool
+    thing : Bool,
   ) : Bool
     thing
   end
@@ -207,7 +207,7 @@ class Filtering < FilterOrdering
   @[AC::Route::GET("/is_this_bool/")]
   def test_param_name_error(
     @[AC::Param::Info(name: "thing", description: "param name doesn't match variable name", example: "true")]
-    is_a_bool : Bool
+    is_a_bool : Bool,
   ) : Bool?
     is_a_bool
   end
@@ -402,6 +402,10 @@ class HelloWorld < Application
 
   get "/around", :around do
     render text: "var is #{@me}"
+  end
+
+  get "/glob/*", :globglob do
+    render text: "var is #{params["glob"]}"
   end
 
   patch "/:id", :update do

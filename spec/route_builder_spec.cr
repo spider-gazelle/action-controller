@@ -226,4 +226,10 @@ describe AC::Route::Builder do
       })
     end
   end
+
+  it "should work with globs" do
+    result = client.get("/hello/glob/value")
+    result.status_code.should eq 200
+    result.body.should eq "var is value"
+  end
 end
