@@ -583,16 +583,23 @@ module ActionController::Route::Builder
                 session = @__session__
                 session.encode(response.cookies) if session && session.modified?
 
+                # HEAD requests have no body so they are skipped here. Other
+                # responses have their body serialised in the response execution
+                # context (when enabled) so a large, JSON heavy response is
+                # serialised in parallel and cannot cause head-of-line blocking of
+                # other requests.
                 unless @__head_request__ || result.nil?
-                  case responds_with
-                  {% for type, _block in RESPONDERS %}
-                    when {{type}}
-                      {{@type.name.id}}.transform_{{type.gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
-                  {% end %}
-                  else
-                    # return the default, which is allowed in HTTP 1.1
-                    # we've checked the accepts header at the top of the function and this might be an error response
-                    {{@type.name.id}}.transform_{{DEFAULT_RESPONDER[0].gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
+                  ::ActionController::ExecutionContext.serialize_response do
+                    case responds_with
+                    {% for type, _block in RESPONDERS %}
+                      when {{type}}
+                        {{@type.name.id}}.transform_{{type.gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
+                    {% end %}
+                    else
+                      # return the default, which is allowed in HTTP 1.1
+                      # we've checked the accepts header at the top of the function and this might be an error response
+                      {{@type.name.id}}.transform_{{DEFAULT_RESPONDER[0].gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
+                    end
                   end
                 end
                 @__render_called__ = true
