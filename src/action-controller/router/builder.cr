@@ -175,6 +175,23 @@ module ActionController::Route::Builder
         end
       {% end %}
 
+      # :nodoc:
+      # dispatch the response body to the responder matching the negotiated
+      # content type. Extracted so the route can serialise inline or offloaded
+      # without duplicating the dispatch. `function` is the route's action name.
+      protected def __transform_response__(responds_with, response, result, function) : Nil
+        case responds_with
+        {% for type, _block in RESPONDERS %}
+          when {{type}}
+            {{@type.name.id}}.transform_{{type.gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, function)
+        {% end %}
+        else
+          # return the default, which is allowed in HTTP 1.1
+          # we've checked the accepts header at the top of the function and this might be an error response
+          {{@type.name.id}}.transform_{{DEFAULT_RESPONDER[0].gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, function)
+        end
+      end
+
       RESPONDER_LIST = [
         {% for type, _block in RESPONDERS %}
           {{type}},
@@ -340,7 +357,7 @@ module ActionController::Route::Builder
               ws {{ann[0]}}, reference: {{method_name}} do |socket|
             {% else %}
               # :nodoc:
-              {{lower_route_method}} {{ann[0]}}, reference: {{method_name}} do
+              {{lower_route_method}} {{ann[0]}}, reference: {{method_name}}, execution_context: {{ann[:execution_context]}} do
 
                 # Check we can satisfy the accepts header, if provided
                 {% if content_type %}
@@ -583,24 +600,25 @@ module ActionController::Route::Builder
                 session = @__session__
                 session.encode(response.cookies) if session && session.modified?
 
-                # HEAD requests have no body so they are skipped here. Other
-                # responses have their body serialised in the response execution
-                # context (when enabled) so a large, JSON heavy response is
-                # serialised in parallel and cannot cause head-of-line blocking of
-                # other requests.
+                # is this route bound to a dedicated execution context?
+                # (route annotation > controller default). When bound, the whole
+                # request already runs in that context (see __init_routes__) so the
+                # body is serialised inline. When unbound, the body is offloaded to
+                # the shared response context ONLY if `offload_responses` is enabled
+                # - otherwise it is serialised inline. All resolved at macro time.
+                {% bound_execution_context = ann[:execution_context] %}
+                {% bound_execution_context = EXECUTION_CONTEXT_MAP[@type.id] if bound_execution_context == nil %}
+
+                # HEAD requests have no body to serialise, so the whole block -
+                # including any `offload_responses` offload - is skipped for them.
                 unless @__head_request__ || result.nil?
-                  ::ActionController::ExecutionContext.serialize_response do
-                    case responds_with
-                    {% for type, _block in RESPONDERS %}
-                      when {{type}}
-                        {{@type.name.id}}.transform_{{type.gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
-                    {% end %}
-                    else
-                      # return the default, which is allowed in HTTP 1.1
-                      # we've checked the accepts header at the top of the function and this might be an error response
-                      {{@type.name.id}}.transform_{{DEFAULT_RESPONDER[0].gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, {{method_name.id.symbolize}})
+                  {% if flag?(:execution_context) && bound_execution_context == nil && ::ActionController::ExecutionContext::OFFLOAD_RESPONSES[0] %}
+                    ::ActionController::ExecutionContext.offload do
+                      __transform_response__(responds_with, response, result, {{method_name.id.symbolize}})
                     end
-                  end
+                  {% else %}
+                    __transform_response__(responds_with, response, result, {{method_name.id.symbolize}})
+                  {% end %}
                 end
                 @__render_called__ = true
               end

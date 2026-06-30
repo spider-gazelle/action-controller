@@ -27,6 +27,25 @@ abstract class ActionController::Base
   TEMPLATE_PATH = {} of Nil => Nil
   {% TEMPLATE_PATH[@type.id] = "./src/views/" %}
 
+  # :nodoc:
+  # controller => named response execution context (inherited by subclasses)
+  EXECUTION_CONTEXT_MAP = {} of Nil => Nil
+
+  # bind every route in this controller to a named response execution context.
+  #
+  # The context must be declared with `ActionController::ExecutionContext.define`.
+  # A per-route `execution_context:` annotation takes precedence over this. Has
+  # no effect unless compiled with `-Dpreview_mt -Dexecution_context`.
+  #
+  # ```
+  # class Reports < ActionController::Base
+  #   execution_context "reports"
+  # end
+  # ```
+  macro execution_context(name)
+    {% EXECUTION_CONTEXT_MAP[@type.id] = name %}
+  end
+
   macro layout(filename = nil)
     {% if filename == nil || filename.empty? %}
       {% TEMPLATE_LAYOUT[@type.id] = nil %}
@@ -269,6 +288,7 @@ abstract class ActionController::Base
 
     {% TEMPLATE_LAYOUT[@type.id] = TEMPLATE_LAYOUT[@type.ancestors[0].id] %}
     {% TEMPLATE_PATH[@type.id] = TEMPLATE_PATH[@type.ancestors[0].id] %}
+    {% EXECUTION_CONTEXT_MAP[@type.id] = EXECUTION_CONTEXT_MAP[@type.ancestors[0].id] %}
 
     __build_filter_inheritance_macros__
 
@@ -599,15 +619,36 @@ abstract class ActionController::Base
         {% for _key, details in ROUTES %}
           {% http_method = details[0] %}
           {% route_path = details[1] %}
+          {% is_websocket = details[4] %}
 
-          router.{{http_method.id}}(
-            {{
-              (NAMESPACE[0].id.stringify + route_path.id.stringify)
-                .gsub(/\/$/, "")   # Remove trailing slash
-                .gsub(/\/\//, "/") # Convert double slashes to single slashes
-            }},
-            &->{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\W/, "_").id}}(HTTP::Server::Context, Bool)
-          )
+          # resolve the bound execution context: route annotation > controller default
+          {% route_execution_context = details[7] %}
+          {% execution_context = route_execution_context == nil ? EXECUTION_CONTEXT_MAP[@type.id] : route_execution_context %}
+          {% if execution_context != nil && ::ActionController::ExecutionContext::CONTEXTS[execution_context] == nil %}
+            {% raise "#{@type.name}: execution context #{execution_context} is not defined " +
+                     "(known: #{::ActionController::ExecutionContext::CONTEXTS.keys}). declare it with " +
+                     "`ActionController::ExecutionContext.define #{execution_context}`" %}
+          {% end %}
+
+          {% route = (NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/$/, "").gsub(/\/\//, "/") %}
+          {% dispatch = (http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\W/, "_").id %}
+
+          {% if flag?(:execution_context) && execution_context != nil && !is_websocket %}
+            # bound to a dedicated execution context: run the whole request there
+            # so the response payload is not separately offloaded to the default
+            # context (avoids a redundant hop and head-of-line blocking).
+            router.{{http_method.id}}({{route}}) do |%context, %head_request|
+              ::ActionController::ExecutionContext.offload(::ActionController::ExecutionContext.context_{{execution_context.gsub(/\W/, "_").id}}) do
+                {{dispatch}}(%context, %head_request)
+              end
+              %context
+            end
+          {% else %}
+            router.{{http_method.id}}(
+              {{route}},
+              &->{{dispatch}}(HTTP::Server::Context, Bool)
+            )
+          {% end %}
         {% end %}
 
         nil
@@ -656,11 +697,11 @@ abstract class ActionController::Base
   # Define each method for supported http methods except head (which is meta)
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
     # define a new route that responds to {{http_method.id.stringify.upcase.id}} requests
-    macro {{http_method.id}}(path, function = nil, annotations = nil, reference = nil, &block)
+    macro {{http_method.id}}(path, function = nil, annotations = nil, reference = nil, execution_context = nil, &block)
       \{% unless function %}
         \{% function = "_route_" + {{http_method}} + path.gsub(/\W/, "_") %}
       \{% end %}
-      \{% LOCAL_ROUTES[{{http_method}} + path] = { {{http_method}}, path, annotations, block, false, (reference || function).id, function.id } %}
+      \{% LOCAL_ROUTES[{{http_method}} + path] = { {{http_method}}, path, annotations, block, false, (reference || function).id, function.id, execution_context } %}
       \{% if annotations %}
         \{% annotations = [annotations] unless annotations.is_a?(ArrayLiteral) %}
         \{% for ann in annotations %}
@@ -680,7 +721,7 @@ abstract class ActionController::Base
     {% unless function %}
       {% function = "ws" + path.gsub(/\W/, "_") %}
     {% end %}
-    {% LOCAL_ROUTES["ws" + path] = {"get", path, annotations, block, true, (reference || function).id, function.id} %}
+    {% LOCAL_ROUTES["ws" + path] = {"get", path, annotations, block, true, (reference || function).id, function.id, nil} %}
     {% if annotations %} #
       {% annotations = [annotations] unless annotations.is_a?(ArrayLiteral) %}
       {% for ann in annotations %}

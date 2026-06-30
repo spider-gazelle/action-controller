@@ -89,3 +89,4 @@ end
 
 * For more details on usage, see [the documentation](https://spider-gazelle.net/).
 * Also see [detailed project documentation](https://spider-gazelle.github.io/action-controller/ActionController.html)
+* Running heavy endpoints on dedicated scheduler pools: [Execution Contexts](CONTEXTS.md)
