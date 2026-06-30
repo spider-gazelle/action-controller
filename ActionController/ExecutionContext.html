@@ -14,7 +14,7 @@
 <script type="text/javascript" src="../js/doc.js"></script>
 
   <meta name="repository-name" content="action-controller">
-  <title>ActionController::Responders - action-controller master</title>
+  <title>ActionController::ExecutionContext - action-controller master</title>
   <script type="text/javascript">
     CrystalDocs.base_path = "../";
   </script>
@@ -122,7 +122,7 @@
       
     </li>
   
-  <li class=" " data-id="action-controller/ActionController/ExecutionContext" data-name="actioncontroller::executioncontext">
+  <li class=" current" data-id="action-controller/ActionController/ExecutionContext" data-name="actioncontroller::executioncontext">
       <a href="../ActionController/ExecutionContext.html">ExecutionContext</a>
       
     </li>
@@ -162,7 +162,7 @@
       
     </li>
   
-  <li class=" current" data-id="action-controller/ActionController/Responders" data-name="actioncontroller::responders">
+  <li class=" " data-id="action-controller/ActionController/Responders" data-name="actioncontroller::responders">
       <a href="../ActionController/Responders.html">Responders</a>
       
     </li>
@@ -313,7 +313,7 @@
 
   <span class="kind">
     module
-  </span> ActionController::<wbr>Responders
+  </span> ActionController::<wbr>ExecutionContext
 
 </h1>
 
@@ -321,31 +321,50 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
   <h2>
-    <a id="direct-including-types" class="anchor" href="#direct-including-types">
+    <a id="overview" class="anchor" href="#overview">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
   </svg>
 </a>
-    Direct including types
+    Overview
   </h2>
-  <ul class="other-types-list">
-    
-      <li class="other-type"><a href="../ActionController/Base.html">ActionController::Base</a></li>
-    
-  </ul>
+
+  <p>Manages the optional response execution context(s).</p>
+<p>When compiled with <code>-Dpreview_mt -Dexecution_context</code> the response body
+serialisation (typically converting a handler's return value into JSON) runs
+in a dedicated parallel execution context. Moving the serialisation off the
+request fiber means a large, CPU heavy JSON response is serialised in
+parallel and cannot cause head-of-line blocking of other requests.</p>
+<p>Applications <code><a href="../ActionController/ExecutionContext.html#define%28name%2Cparallelism%3D4%29-macro">define</a></code> named contexts and bind them to a controller
+(<code>execution_context &quot;name&quot;</code>) or an individual route
+(<code>@[<a href="../ActionController/Route/GET.html">AC::Route::GET</a>(&quot;/&quot;, execution_context: &quot;name&quot;)]</code>) so heavy endpoints get
+their own dedicated pool - the whole request runs there. The binding is
+resolved at compile time - the generated route code calls the chosen context's
+getter directly, there is no per-request lookup. Named contexts are created
+once, lazily, on first use.</p>
+<p>Routes that are <strong>not</strong> bound to a context serialise their response inline on
+the request fiber by default. Call <code><a href="../ActionController/ExecutionContext.html#offload_responses%28enabled%3Dtrue%29-macro">offload_responses</a></code> to instead offload
+those responses to the shared <code>response_context</code> (useful when unbound routes
+can return large payloads).</p>
+<pre><code class="language-crystal"><span class="c"># configure your contexts (e.g. in config.cr), names are string literals</span>
+<span class="t">ActionController</span><span class="t">::</span><span class="t">ExecutionContext</span>.define <span class="s">&quot;reports&quot;</span>, parallelism: <span class="n">2</span>
+<span class="t">ActionController</span><span class="t">::</span><span class="t">ExecutionContext</span>.define <span class="s">&quot;heavy-json&quot;</span> <span class="c"># default size</span></code></pre>
+<p>When execution contexts are <strong>not</strong> enabled the configuration is a no-op and
+<code>serialize_response</code> simply yields inline, so third party code referencing
+this module still compiles unchanged.</p>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -360,8 +379,8 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/responders.cr#L4" target="_blank">
-        action-controller/responders.cr
+      <a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/execution_context.cr#L32" target="_blank">
+        action-controller/execution_context.cr
       </a>
     
     <br/>
@@ -369,126 +388,37 @@
 
 
 
+
+
   
-    <h2>
-      <a id="constant-summary" class="anchor" href="#constant-summary">
+
+  
+  <h2>
+    <a id="class-method-summary" class="anchor" href="#class-method-summary">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
   </svg>
 </a>
-      Constant Summary
-    </h2>
-  
-  <dl>
+    Class Method Summary
+  </h2>
+  <ul class="list-summary">
     
-      <dt class="entry-const" id="MIME_TYPES">
-        <strong>MIME_TYPES</strong> = <code>{
-  binary: <span class="s">&quot;application/octet-stream&quot;</span>,
-  json: <span class="s">&quot;application/json&quot;</span>,
-  xml: <span class="s">&quot;application/xml&quot;</span>,
-  text: <span class="s">&quot;text/plain&quot;</span>,
-  html: <span class="s">&quot;text/html&quot;</span>,
-  yaml: <span class="s">&quot;text/yaml&quot;</span>,
-}</code>
-      </dt>
-      
-      <dd class="entry-const-doc">
-        <p>common response mime types</p>
-      </dd>
-      
+      <li class="entry-summary">
+        <a href="#parallelism%28name%3AString%2Csize%3AInt32%29%3AInt32-class-method" class="signature"><strong>.parallelism</strong>(name : String, size : Int32) : Int32</a>
+        
+          <div class="summary"><p>no-op: execution contexts are not enabled</p></div>
+        
+      </li>
     
-      <dt class="entry-const" id="REDIRECTION_CODES">
-        <strong>REDIRECTION_CODES</strong> = <code>{
-  multiple_choices: <span class="n">300</span>,
-  moved_permanently: <span class="n">301</span>,
-  found: <span class="n">302</span>,
-  see_other: <span class="n">303</span>,
-  not_modified: <span class="n">304</span>,
-  use_proxy: <span class="n">305</span>,
-  temporary_redirect: <span class="n">307</span>,
-  permanent_redirect: <span class="n">308</span>,
-}</code>
-      </dt>
-      
-      <dd class="entry-const-doc">
-        <p>codes to use when redirecting</p>
-      </dd>
-      
+      <li class="entry-summary">
+        <a href="#response_parallelism%3D%28size%3AInt32%29%3AInt32-class-method" class="signature"><strong>.response_parallelism=</strong>(size : Int32) : Int32</a>
+        
+          <div class="summary"><p>no-op: execution contexts are not enabled</p></div>
+        
+      </li>
     
-      <dt class="entry-const" id="STATUS_CODES">
-        <strong>STATUS_CODES</strong> = <code>{
-  continue: <span class="n">100</span>,
-  switching_protocols: <span class="n">101</span>,
-  processing: <span class="n">102</span>,
+  </ul>
 
-
-  ok: <span class="n">200</span>,
-  created: <span class="n">201</span>,
-  accepted: <span class="n">202</span>,
-  non_authoritative_information: <span class="n">203</span>,
-  no_content: <span class="n">204</span>,
-  reset_content: <span class="n">205</span>,
-  partial_content: <span class="n">206</span>,
-  multi_status: <span class="n">207</span>,
-  already_reported: <span class="n">208</span>,
-  im_used: <span class="n">226</span>,
-
-
-  bad_request: <span class="n">400</span>,
-  unauthorized: <span class="n">401</span>,
-  payment_required: <span class="n">402</span>,
-  forbidden: <span class="n">403</span>,
-  not_found: <span class="n">404</span>,
-  method_not_allowed: <span class="n">405</span>,
-  not_acceptable: <span class="n">406</span>,
-  proxy_authentication_required: <span class="n">407</span>,
-  request_timeout: <span class="n">408</span>,
-  conflict: <span class="n">409</span>,
-  gone: <span class="n">410</span>,
-  length_required: <span class="n">411</span>,
-  precondition_failed: <span class="n">412</span>,
-  payload_too_large: <span class="n">413</span>,
-  uri_too_long: <span class="n">414</span>,
-  unsupported_media_type: <span class="n">415</span>,
-  range_not_satisfiable: <span class="n">416</span>,
-  expectation_failed: <span class="n">417</span>,
-  misdirected_request: <span class="n">421</span>,
-  unprocessable_entity: <span class="n">422</span>,
-  locked: <span class="n">423</span>,
-  failed_dependency: <span class="n">424</span>,
-  upgrade_required: <span class="n">426</span>,
-  precondition_required: <span class="n">428</span>,
-  too_many_requests: <span class="n">429</span>,
-  request_header_fields_too_large: <span class="n">431</span>,
-  unavailable_for_legal_reasons: <span class="n">451</span>,
-
-
-  internal_server_error: <span class="n">500</span>,
-  not_implemented: <span class="n">501</span>,
-  bad_gateway: <span class="n">502</span>,
-  service_unavailable: <span class="n">503</span>,
-  gateway_timeout: <span class="n">504</span>,
-  http_version_not_supported: <span class="n">505</span>,
-  variant_also_negotiates: <span class="n">506</span>,
-  insufficient_storage: <span class="n">507</span>,
-  loop_detected: <span class="n">508</span>,
-  not_extended: <span class="n">510</span>,
-  network_authentication_required: <span class="n">511</span>,
-}</code>
-      </dt>
-      
-      <dd class="entry-const-doc">
-        <p>standard response codes</p>
-      </dd>
-      
-    
-  </dl>
-
-
-
-  
-
-  
 
   
   <h2>
@@ -502,30 +432,23 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#head%28status%29-macro" class="signature"><strong>head</strong>(status)</a>
+        <a href="#define%28name%2Cparallelism%3D4%29-macro" class="signature"><strong>define</strong>(name, parallelism = <span class="n">4</span>)</a>
         
-          <div class="summary"><p>only sends the header, no content to be sent.</p></div>
-        
-      </li>
-    
-      <li class="entry-summary">
-        <a href="#redirect_to%28path%2Cstatus%3D%3Afound%29-macro" class="signature"><strong>redirect_to</strong>(path, status = <span class="n">:found</span>)</a>
-        
-          <div class="summary"><p>redirects the browser to a new route</p></div>
+          <div class="summary"><p>define a named execution context, created once and lazily on first use.</p></div>
         
       </li>
     
       <li class="entry-summary">
-        <a href="#render%28status%3D%3Aok%2Chead%3Dnil%2Cjson%3Dnil%2Cyaml%3Dnil%2Cxml%3Dnil%2Chtml%3Dnil%2Ctext%3Dnil%2Cbinary%3Dnil%2Ctemplate%3Dnil%2Cpartial%3Dnil%2Clayout%3Dnil%29-macro" class="signature"><strong>render</strong>(status = <span class="n">:ok</span>, head = <span class="n">nil</span>, json = <span class="n">nil</span>, yaml = <span class="n">nil</span>, xml = <span class="n">nil</span>, html = <span class="n">nil</span>, text = <span class="n">nil</span>, binary = <span class="n">nil</span>, template = <span class="n">nil</span>, partial = <span class="n">nil</span>, layout = <span class="n">nil</span>)</a>
+        <a href="#offload%28context%3Dnil%2C%26block%29-macro" class="signature"><strong>offload</strong>(context = <span class="n">nil</span>, &block)</a>
         
-          <div class="summary"><p>used to stream a response back to the user, serializing directly to the IO</p></div>
+          <div class="summary"><p>run a block in an execution context (defaulting to the shared <code>response_context</code>), blocking the calling fiber until it completes.</p></div>
         
       </li>
     
       <li class="entry-summary">
-        <a href="#respond_with%28status%3D%3Aok%2C%26block%29-macro" class="signature"><strong>respond_with</strong>(status = <span class="n">:ok</span>, &block)</a>
+        <a href="#offload_responses%28enabled%3Dtrue%29-macro" class="signature"><strong>offload_responses</strong>(enabled = <span class="n">true</span>)</a>
         
-          <div class="summary"><p>uses the content-type header to respond in the appropriate format</p></div>
+          <div class="summary"><p>enable offloading of responses to the shared <code>response_context</code> for routes and controllers that are <strong>not</strong> bound to a dedicated execution context.</p></div>
         
       </li>
     
@@ -533,25 +456,6 @@
 
 
   
-  <h2>
-    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>
-    Instance Method Summary
-  </h2>
-  <ul class="list-summary">
-    
-      <li class="entry-summary">
-        <a href="#accepts_formats%3AArray%28String%29-instance-method" class="signature"><strong>#accepts_formats</strong> : Array(String)</a>
-        
-          <div class="summary"><p>Extracts the mime types from the Accept header</p></div>
-        
-      </li>
-    
-  </ul>
-
 
 
   <div class="methods-inherited">
@@ -561,6 +465,58 @@
   
 
   
+  <h2>
+    <a id="class-method-detail" class="anchor" href="#class-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="parallelism(name:String,size:Int32):Int32-class-method">
+      <div class="signature">
+        
+        def self.<strong>parallelism</strong>(name : String, size : Int32) : Int32
+
+        <a class="method-permalink" href="#parallelism%28name%3AString%2Csize%3AInt32%29%3AInt32-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>no-op: execution contexts are not enabled</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/execution_context.cr#L134" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="response_parallelism=(size:Int32):Int32-class-method">
+      <div class="signature">
+        
+        def self.<strong>response_parallelism=</strong>(size : Int32) : Int32
+
+        <a class="method-permalink" href="#response_parallelism%3D%28size%3AInt32%29%3AInt32-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>no-op: execution contexts are not enabled</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/execution_context.cr#L134" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
 
   
   <h2>
@@ -572,114 +528,88 @@
     Macro Detail
   </h2>
   
-    <div class="entry-detail" id="head(status)-macro">
+    <div class="entry-detail" id="define(name,parallelism=4)-macro">
       <div class="signature">
         
-        macro <strong>head</strong>(status)
+        macro <strong>define</strong>(name, parallelism = <span class="n">4</span>)
 
-        <a class="method-permalink" href="#head%28status%29-macro">#</a>
+        <a class="method-permalink" href="#define%28name%2Cparallelism%3D4%29-macro">#</a>
       </div>
       
         <div class="doc">
           
-          <p>only sends the header, no content to be sent.</p>
-<p>you should only use render with the Macro DSL</p>
-<pre><code class="language-crystal">delete <span class="s">&quot;/:id&quot;</span>, <span class="n">:destroy</span> <span class="k">do</span>
-  <span class="t">MyModel</span>.find(route_params[<span class="s">&quot;id&quot;</span>]).destroy
-  head <span class="t">HTTP</span><span class="t">::</span><span class="t">Status</span><span class="t">::</span><span class="t">ACCEPTED</span>
-<span class="k">end</span></code></pre>
+          <p>define a named execution context, created once and lazily on first use.</p>
+<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">ExecutionContext</span>.define <span class="s">&quot;reports&quot;</span>, parallelism: <span class="n">2</span></code></pre>
+<p>The size can be overridden at runtime before the context is first used via
+<code><a href="../ActionController/ExecutionContext.html#parallelism%28name%3AString%2Csize%3AInt32%29%3AInt32-class-method">ActionController::ExecutionContext.parallelism(&quot;reports&quot;, n)</a></code>. Without the
+execution context compilation flags this only records the name (so routes
+referencing it still validate) and creates no context.</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/responders.cr#L192" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/execution_context.cr#L80" target="_blank">View source</a>]
         
       </div>
     </div>
   
-    <div class="entry-detail" id="redirect_to(path,status=:found)-macro">
+    <div class="entry-detail" id="offload(context=nil,&amp;block)-macro">
       <div class="signature">
         
-        macro <strong>redirect_to</strong>(path, status = <span class="n">:found</span>)
+        macro <strong>offload</strong>(context = <span class="n">nil</span>, &block)
 
-        <a class="method-permalink" href="#redirect_to%28path%2Cstatus%3D%3Afound%29-macro">#</a>
+        <a class="method-permalink" href="#offload%28context%3Dnil%2C%26block%29-macro">#</a>
       </div>
       
         <div class="doc">
           
-          <p>redirects the browser to a new route</p>
-<p>you should only use render with the Macro DSL</p>
-<pre><code class="language-crystal">patch <span class="s">&quot;/:id&quot;</span>, <span class="n">:update</span> <span class="k">do</span>
-  redirect_to <span class="s">&quot;/</span><span class="i">#{</span>params[<span class="s">&quot;id&quot;</span>]<span class="i">}</span><span class="s">&quot;</span>
-<span class="k">end</span></code></pre>
+          <p>run a block in an execution context (defaulting to the shared
+<code>response_context</code>), blocking the calling fiber until it completes.</p>
+<p>Used both to offload just the response serialisation (default context) and
+to run a whole request in a controller/route bound context. The block is
+<strong>inlined</strong> into the fiber spawned in the chosen context - the calling fiber
+blocks on a channel until it completes, freeing it to handle other requests
+while the potentially CPU heavy work runs in parallel. Any error is
+propagated back to the calling fiber. Implemented as a macro so the body is
+not captured as a separate closure.</p>
+<p>Without the execution context compilation flags the block simply runs inline.</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/responders.cr#L204" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/execution_context.cr#L115" target="_blank">View source</a>]
         
       </div>
     </div>
   
-    <div class="entry-detail" id="render(status=:ok,head=nil,json=nil,yaml=nil,xml=nil,html=nil,text=nil,binary=nil,template=nil,partial=nil,layout=nil)-macro">
+    <div class="entry-detail" id="offload_responses(enabled=true)-macro">
       <div class="signature">
         
-        macro <strong>render</strong>(status = <span class="n">:ok</span>, head = <span class="n">nil</span>, json = <span class="n">nil</span>, yaml = <span class="n">nil</span>, xml = <span class="n">nil</span>, html = <span class="n">nil</span>, text = <span class="n">nil</span>, binary = <span class="n">nil</span>, template = <span class="n">nil</span>, partial = <span class="n">nil</span>, layout = <span class="n">nil</span>)
+        macro <strong>offload_responses</strong>(enabled = <span class="n">true</span>)
 
-        <a class="method-permalink" href="#render%28status%3D%3Aok%2Chead%3Dnil%2Cjson%3Dnil%2Cyaml%3Dnil%2Cxml%3Dnil%2Chtml%3Dnil%2Ctext%3Dnil%2Cbinary%3Dnil%2Ctemplate%3Dnil%2Cpartial%3Dnil%2Clayout%3Dnil%29-macro">#</a>
+        <a class="method-permalink" href="#offload_responses%28enabled%3Dtrue%29-macro">#</a>
       </div>
       
         <div class="doc">
           
-          <p>used to stream a response back to the user, serializing directly to the IO</p>
-<p>the content type is set appropriately based on the response type</p>
-<p>a call to render implicitly executes a <code>return</code> as the response has been written to the client</p>
-<p>you should only use render with the Macro DSL</p>
-<pre><code class="language-crystal">get <span class="s">&quot;/:id&quot;</span>, <span class="n">:show</span> <span class="k">do</span>
-  render json: <span class="t">MyModel</span>.find(route_params[<span class="s">&quot;id&quot;</span>])
-<span class="k">end</span></code></pre>
+          <p>enable offloading of responses to the shared <code>response_context</code> for routes
+and controllers that are <strong>not</strong> bound to a dedicated execution context.</p>
+<p>Off by default: by default an unbound response is serialised inline on the
+request fiber (no spawn, no channel) which is cheaper for small responses.
+Enable it when your unbound routes can return large, CPU heavy payloads that
+would otherwise cause head-of-line blocking.</p>
+<p>This is a compile-time switch - call it before your controllers are
+finalised (e.g. in config.cr). It has no effect without the execution
+context compilation flags.</p>
+<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">ExecutionContext</span>.offload_responses</code></pre>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/responders.cr#L102" target="_blank">View source</a>]
-        
-      </div>
-    </div>
-  
-    <div class="entry-detail" id="respond_with(status=:ok,&amp;block)-macro">
-      <div class="signature">
-        
-        macro <strong>respond_with</strong>(status = <span class="n">:ok</span>, &block)
-
-        <a class="method-permalink" href="#respond_with%28status%3D%3Aok%2C%26block%29-macro">#</a>
-      </div>
-      
-        <div class="doc">
-          
-          <p>uses the content-type header to respond in the appropriate format</p>
-<p>you should only use render with the Macro DSL</p>
-<pre><code class="language-crystal">get <span class="s">&quot;/:id&quot;</span>, <span class="n">:show</span> <span class="k">do</span>
-  model <span class="o">=</span> <span class="t">MyModel</span>.find(route_params[<span class="s">&quot;id&quot;</span>])
-
-  respond_with <span class="k">do</span>
-    text model <span class="c"># calls to_s(response) on the object passed</span>
-    json model <span class="c"># calls to_json(response) on the object passed</span>
-    xml <span class="k">do</span>     <span class="c"># can provide a block to perform additional processing too</span>
-      str <span class="o">=</span> <span class="s">&quot;&lt;set_var&gt;</span><span class="i">#{</span>model.build_xml<span class="i">}</span><span class="s">&lt;/set_var&gt;&quot;</span>
-      <span class="t">XML</span>.parse(str)
-    <span class="k">end</span>
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-        </div>
-      
-      <br/>
-      <div>
-        
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/responders.cr#L238" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/execution_context.cr#L66" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -687,37 +617,6 @@
 
 
   
-  <h2>
-    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>
-    Instance Method Detail
-  </h2>
-  
-    <div class="entry-detail" id="accepts_formats:Array(String)-instance-method">
-      <div class="signature">
-        
-        def <strong>accepts_formats</strong> : Array(String)
-
-        <a class="method-permalink" href="#accepts_formats%3AArray%28String%29-instance-method">#</a>
-      </div>
-      
-        <div class="doc">
-          
-          <p>Extracts the mime types from the Accept header</p>
-        </div>
-      
-      <br/>
-      <div>
-        
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/298c18cfa504f6e7b8f40e9b180e411e5e9b965f/src/action-controller/responders.cr#L265" target="_blank">View source</a>]
-        
-      </div>
-    </div>
-  
-
 
 
 </div>
