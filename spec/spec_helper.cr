@@ -212,6 +212,17 @@ class Filtering < FilterOrdering
     is_a_bool
   end
 
+  # exercises the converters that no other route uses
+  @[AC::Route::GET("/converters", content_type: "text/plain")]
+  def converter_coverage(
+    uuid : UUID,
+    letter : Char,
+    big : BigInt,
+    maybe : UUID? = nil,
+  ) : String
+    "#{uuid}|#{letter}|#{big}|#{maybe.inspect}"
+  end
+
   # returns the temporary paths backing an upload so a spec can confirm the
   # route entry point cleans them up once the response has been generated
   @[AC::Route::POST("/upload_paths", content_type: "text/plain")]

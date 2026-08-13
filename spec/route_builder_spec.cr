@@ -277,3 +277,41 @@ describe "uploaded file cleanup" do
     end
   end
 end
+
+describe "converters without other coverage" do
+  client = AC::SpecHelper.client
+  uuid = "b8d0f0c0-1f1a-4b3c-9d2e-5a6f7c8d9e0f"
+
+  it "converts UUID, Char and BigInt params" do
+    result = client.get("/filtering/converters?uuid=#{uuid}&letter=abc&big=123456789012345678901234567890")
+    result.status_code.should eq 200
+    # Char takes the first character, the optional UUID stays nil
+    result.body.should eq "#{uuid}|a|123456789012345678901234567890|nil"
+  end
+
+  it "populates an optional UUID when supplied" do
+    result = client.get("/filtering/converters?uuid=#{uuid}&letter=z&big=1&maybe=#{uuid}")
+    result.body.should eq "#{uuid}|z|1|UUID(#{uuid})"
+  end
+
+  it "rejects an unparsable UUID" do
+    error = expect_raises(AC::Route::Param::ValueError, "invalid parameter value for 'uuid'") do
+      client.get("/filtering/converters?uuid=not-a-uuid&letter=a&big=1")
+    end
+    error.restriction.should eq "UUID"
+  end
+
+  it "rejects an empty Char" do
+    expect_raises(AC::Route::Param::ValueError, "invalid parameter value for 'letter'") do
+      client.get("/filtering/converters?uuid=#{uuid}&letter=&big=1")
+    end
+  end
+
+  it "raises out of the converter for an unparsable BigInt" do
+    # ConvertBigInt uses to_big_i, which raises rather than returning nil, so
+    # this surfaces as ArgumentError instead of a Param::ValueError
+    expect_raises(ArgumentError) do
+      client.get("/filtering/converters?uuid=#{uuid}&letter=a&big=nope")
+    end
+  end
+end
