@@ -160,33 +160,11 @@ class ActionController::Server
 
   # Forks additional worker processes
   def cluster(count)
-    count = count.to_i64
-    count = System.cpu_count if count <= 0
+    count = count.to_i
+    count = System.cpu_count.to_i if count <= 0
     return if count <= 1
 
-    # How many we actually want to start
-    count -= 1
-
-    processes = [] of Process
-    (0_i64...count).each do
-      # returns a nil process in the fork
-      process = Process.fork
-      return unless process
-      processes << process
-    end
-
-    @processes = processes.size
-    processes.each do |process|
-      spawn do
-        status = process.wait
-        if status.success?
-          puts " < worker #{process.pid} stopped"
-        else
-          puts " ! worker process #{process.pid} failed with #{status.exit_status}"
-        end
-        @process_closed.send nil
-      end
-    end
+    Fiber::ExecutionContext.default.resize(count)
   end
 
   # returns a list of the routes defined in the application
