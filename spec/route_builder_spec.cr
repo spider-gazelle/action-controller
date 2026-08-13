@@ -81,18 +81,19 @@ describe AC::Route::Builder do
     result = client.get("/filtering/is_this_bool?thing=false")
     result.body.should eq "false"
 
-    # ensure expected errors are raised
-    begin
-      client.get("/filtering/is_this_bool")
-    rescue error : AC::Route::Param::MissingError
-      error.parameter.should eq "thing"
-    end
+    # a Bool is coerced rather than rejected -- anything that isn't "true" is false
+    result = client.get("/filtering/is_this_bool?thing=whatever")
+    result.body.should eq "false"
 
-    begin
-      client.get("/filtering/is_this_bool?thing=whatever")
-    rescue error : AC::Route::Param::ValueError
-      error.parameter.should eq "thing"
+    # ensure expected errors are raised
+    # (expect_raises rather than begin/rescue so the example fails if no error
+    # is raised at all, and so the message is checked -- it is built by a shared
+    # helper rather than inline in each route)
+    missing = expect_raises(AC::Route::Param::MissingError, "missing required parameter 'thing'") do
+      client.get("/filtering/is_this_bool")
     end
+    missing.parameter.should eq "thing"
+    missing.restriction.should eq "Bool"
   end
 
   it "should work with a body param" do
@@ -225,6 +226,20 @@ describe AC::Route::Builder do
         "X-Count" => "abc",
       })
     end
+
+    # the query parameter equivalents of the above, which take a separate path
+    # through the builder to the same shared error helper
+    invalid = expect_raises(ActionController::Route::Param::ValueError, "invalid parameter value for 'query_param'") do
+      client.get("/filtering/testing/header/values/default?query_param=abc")
+    end
+    invalid.parameter.should eq "query_param"
+    invalid.restriction.should eq "Int32"
+
+    missing = expect_raises(ActionController::Route::Param::MissingError, "missing required parameter 'query_param'") do
+      client.get("/filtering/testing/header/values/default")
+    end
+    missing.parameter.should eq "query_param"
+    missing.restriction.should eq "Int32"
   end
 
   it "should work with globs" do

@@ -523,7 +523,7 @@ module ActionController::Route::Builder
                         if param_value = route_params[{{query_param_name}}]?
                           {{restrictions.join(" || ").id}}
                         else
-                          raise ::AC::Route::Param::MissingError.new("missing required parameter '#{ {{query_param_name}} }'", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
+                          ::ActionController::Base.__raise_missing_param__({{query_param_name}}, {{arg.restriction.resolve.stringify}})
                         end
 
                       # An optional route param, might be passed as an query param (not the case for headers)
@@ -541,17 +541,9 @@ module ActionController::Route::Builder
                     ){% if !nilable %}.tap { |result|
                       if result.nil?
                         {% if open_api_param.has_key?(:header) %}
-                          if @__context__.request.headers.has_key?({{open_api_param[:header]}})
-                            raise ::AC::Route::Param::ValueError.new("invalid header value for '#{ {{open_api_param[:header]}} }'", {{open_api_param[:header]}}, {{arg.restriction.resolve.stringify}})
-                          else
-                            raise ::AC::Route::Param::MissingError.new("missing required header '#{ {{open_api_param[:header]}} }'", {{open_api_param[:header]}}, {{arg.restriction.resolve.stringify}})
-                          end
+                          ::ActionController::Base.__raise_header_error__(@__context__.request.headers, {{open_api_param[:header]}}, {{arg.restriction.resolve.stringify}})
                         {% else %}
-                          if params.has_key?({{query_param_name}})
-                            raise ::AC::Route::Param::ValueError.new("invalid parameter value for '#{ {{query_param_name}} }'", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
-                          else
-                            raise ::AC::Route::Param::MissingError.new("missing required parameter '#{ {{query_param_name}} }'", {{query_param_name}}, {{arg.restriction.resolve.stringify}})
-                          end
+                          ::ActionController::Base.__raise_param_error__(params, {{query_param_name}}, {{arg.restriction.resolve.stringify}})
                         {% end %}
                       end
                     }.not_nil!{% end %},

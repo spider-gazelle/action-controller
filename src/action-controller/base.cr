@@ -359,6 +359,38 @@ abstract class ActionController::Base
     with inst yield
   end
 
+  # The parameter failure paths below are kept out of line on purpose.
+  #
+  # The route builder emits a coercion check for every parameter of every
+  # route, and the only things that vary between them are two string
+  # constants. Written inline, each one duplicated the branch, both exception
+  # constructions and the message interpolation into every route method, and
+  # placed that cold code in the middle of the hot path. Passing the constants
+  # to a shared method keeps one copy of the logic in the binary.
+
+  # :nodoc:
+  def self.__raise_param_error__(params : URI::Params, name : String, type : String) : NoReturn
+    if params.has_key?(name)
+      raise ::AC::Route::Param::ValueError.new("invalid parameter value for '#{name}'", name, type)
+    else
+      raise ::AC::Route::Param::MissingError.new("missing required parameter '#{name}'", name, type)
+    end
+  end
+
+  # :nodoc:
+  def self.__raise_header_error__(headers : HTTP::Headers, name : String, type : String) : NoReturn
+    if headers.has_key?(name)
+      raise ::AC::Route::Param::ValueError.new("invalid header value for '#{name}'", name, type)
+    else
+      raise ::AC::Route::Param::MissingError.new("missing required header '#{name}'", name, type)
+    end
+  end
+
+  # :nodoc:
+  def self.__raise_missing_param__(name : String, type : String) : NoReturn
+    raise ::AC::Route::Param::MissingError.new("missing required parameter '#{name}'", name, type)
+  end
+
   # :nodoc:
   macro __draw_routes__
     {% if !@type.abstract? && !ROUTES.empty? %}
@@ -793,6 +825,21 @@ abstract class ActionController::Base
   #   PgORM::Database.transaction do
   #     yield
   #   end
+  # end
+  # ```
+  #
+  # NOTE: unlike `before_action` and `after_action`, which compile to ordinary
+  # method calls, an around filter has to `yield` and so Crystal inlines its body
+  # into every route it applies to. A filter carrying a lot of code is duplicated
+  # once per route; keep the body thin and put the work in a regular method:
+  #
+  # ```
+  # @[AC::Route::Filter(:around_action)]
+  # def instrument(&)
+  #   started = start_metrics
+  #   yield
+  # ensure
+  #   record_metrics(started)
   # end
   # ```
   __define_filter_macro__(:around_action, LOCAL_AROUND)

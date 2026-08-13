@@ -37,9 +37,8 @@ module ActionController
 
             method = request.method
             req_path = request.path
-            search_path = "#{method}#{req_path}"
 
-            ActionController::SpecHelper.new.route_handler.search_route(method, req_path, search_path, context)
+            ActionController::SpecHelper.new.route_handler.search_route(method, req_path, context)
             self.new(context)
           end
         end

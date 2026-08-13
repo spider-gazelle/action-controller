@@ -51,14 +51,14 @@ module ActionController
           emit_request context
         end
 
-        start = Time.monotonic
+        start = Time.instant
         duration = Time::Span::ZERO
 
         begin
           begin
             call_next context
           ensure
-            duration = Time.monotonic - start
+            duration = Time.instant - start
           end
           emit_response context, duration if log.response?
         rescue e

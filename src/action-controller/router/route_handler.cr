@@ -6,13 +6,14 @@ class ActionController::Router::RouteHandler
 
   def initialize
     @matcher = LuckyRouter::Matcher(Tuple(Action, Bool)).new
-    @static_routes = {} of String => Tuple(Action, Bool)
+    # keyed on {method, path} rather than a concatenation of the two so that
+    # lookups don't have to build a string on every request
+    @static_routes = {} of Tuple(String, String) => Tuple(Action, Bool)
   end
 
-  # Builds the internal representation of a route
-  # then searches static routes before checking the matcher
-  def search_route(method, req_path, search_path, context : HTTP::Server::Context) : Tuple(Action, Bool)?
-    @static_routes.fetch(search_path) do
+  # Searches static routes before checking the matcher
+  def search_route(method, req_path, context : HTTP::Server::Context) : Tuple(Action, Bool)?
+    @static_routes.fetch({method, req_path}) do
       if match = @matcher.match(method, req_path)
         context.route_params = match.params
         match.payload
@@ -25,10 +26,9 @@ class ActionController::Router::RouteHandler
   def call(context : HTTP::Server::Context)
     method = context.request.method
     req_path = context.request.path
-    search_path = "#{method}#{req_path}"
 
-    if action = search_route(method, req_path, search_path, context)
-      process_request(search_path, context, action[0], action[1])
+    if action = search_route(method, req_path, context)
+      process_request(method, req_path, context, action[0], action[1])
     else
       # defined in https://crystal-lang.org/api/latest/HTTP/Handler.html
       call_next(context)
@@ -36,7 +36,7 @@ class ActionController::Router::RouteHandler
   end
 
   # We split out the processing of the request for simplified injection of telemetry
-  def process_request(search_path, context, controller_dispatch, head_request)
+  def process_request(method, req_path, context, controller_dispatch, head_request)
     controller_dispatch.call(context, head_request)
   end
 
@@ -46,14 +46,13 @@ class ActionController::Router::RouteHandler
     @matcher.add(method, path, action)
 
     unless path.includes?(':') || path.includes?('*')
-      lookup_key = "#{method}#{path}"
-      @static_routes[lookup_key] = action
+      @static_routes[{method, path}] = action
 
       # Add static routes with both trailing and non-trailing / chars
-      if lookup_key.ends_with? '/'
-        @static_routes[lookup_key[0..-2]] = action
+      if path.ends_with? '/'
+        @static_routes[{method, path.rchop}] = action
       else
-        @static_routes["#{lookup_key}/"] = action
+        @static_routes[{method, "#{path}/"}] = action
       end
     end
   end
