@@ -262,9 +262,41 @@ module ActionController::Responders
   ACCEPT_SEPARATOR_REGEX = /,\s*/
 
   # Extracts the mime types from the Accept header
+  #
+  # Scanned by hand rather than `split(";").flat_map(&.split(ACCEPT_SEPARATOR_REGEX)...)`.
+  # Every route that negotiates a content type runs this on every request, and
+  # the regex plus the intermediate arrays it built dominated the cost.
+  # Behaviour is unchanged, including that only a comma consumes the whitespace
+  # that follows it.
   def accepts_formats : Array(String)
-    accept = request.headers["Accept"]? || ""
-    accept.split(";").flat_map(&.split(ACCEPT_SEPARATOR_REGEX).select(&.includes?('/')))
+    formats = [] of String
+    accept = request.headers["Accept"]?
+    return formats if accept.nil? || accept.empty?
+
+    start = 0
+    index = 0
+    size = accept.bytesize
+
+    while index <= size
+      byte = index == size ? 0_u8 : accept.byte_at(index)
+      if index == size || byte == ';'.ord || byte == ','.ord
+        token = accept.byte_slice(start, index - start)
+        formats << token if token.includes?('/')
+
+        comma = index != size && byte == ','.ord
+        index += 1
+        if comma
+          while index < size && accept.byte_at(index).unsafe_chr.ascii_whitespace?
+            index += 1
+          end
+        end
+        start = index
+      else
+        index += 1
+      end
+    end
+
+    formats
   end
 
   # :nodoc:

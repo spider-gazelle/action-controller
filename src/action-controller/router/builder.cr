@@ -201,10 +201,17 @@ module ActionController::Route::Builder
       # :nodoc:
       def self.can_respond_with?(content_type : Array(String)) : String?
         return DEFAULT_RESPONDER[0] if content_type.empty?
-        common = content_type & RESPONDER_LIST
-        return common.first if common.size > 0
-        return DEFAULT_RESPONDER[0] if content_type.includes? "*/*"
-        nil
+
+        # a single pass, rather than `content_type & RESPONDER_LIST`, which
+        # allocated an intermediate array on every request. The first accepted
+        # type that we can render wins, matching the order `&` preserved.
+        wildcard = false
+        content_type.each do |accepted|
+          return accepted if RESPONDER_LIST.includes?(accepted)
+          wildcard = true if accepted == "*/*"
+        end
+
+        wildcard ? DEFAULT_RESPONDER[0] : nil
       end
 
       # :nodoc:

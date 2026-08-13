@@ -182,6 +182,14 @@ describe AC::Route::Builder do
     result = client.get("/filtering/other_route/3/test", headers: headers)
     result.status_code.should eq 200
     result.content_type.should eq "application/yaml"
+
+    # a type we can actually render wins over an earlier wildcard
+    headers = HTTP::Headers{
+      "Accept" => "*/*, application/yaml",
+    }
+    result = client.get("/filtering/other_route/4/test", headers: headers)
+    result.status_code.should eq 200
+    result.content_type.should eq "application/yaml"
   end
 
   it "where no body is expected, accept application/x-www-form-urlencoded data as params" do
@@ -313,5 +321,41 @@ describe "converters without other coverage" do
     expect_raises(ArgumentError) do
       client.get("/filtering/converters?uuid=#{uuid}&letter=a&big=nope")
     end
+  end
+end
+
+describe "Accept header parsing" do
+  # accepts_formats is hand rolled for speed, so pin its exact output --
+  # including the quirk that only a comma consumes the whitespace after it
+  formats_for = ->(accept : String?) do
+    headers = HTTP::Headers.new
+    headers["Accept"] = accept if accept
+    Filtering.spec_instance(HTTP::Request.new("GET", "/filtering/", headers)).accepts_formats
+  end
+
+  it "extracts the mime types a client will accept" do
+    formats_for.call("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,*/*;q=0.8")
+      .should eq ["text/html", "application/xhtml+xml", "application/xml", "image/avif", "*/*"]
+  end
+
+  it "handles a single type, a wildcard and a missing header" do
+    formats_for.call("application/json").should eq ["application/json"]
+    formats_for.call("*/*").should eq ["*/*"]
+    formats_for.call("").should eq [] of String
+    formats_for.call(nil).should eq [] of String
+  end
+
+  it "drops q-values and consumes whitespace after a comma" do
+    formats_for.call("text/html; q=0.9,application/json").should eq ["text/html", "application/json"]
+    formats_for.call("application/json,   text/plain").should eq ["application/json", "text/plain"]
+  end
+
+  it "leaves whitespace around a semicolon alone" do
+    # only `,` consumed trailing whitespace in the original regex based
+    # implementation, so a type following `;` keeps its leading whitespace
+    formats_for.call("a/b ;q=1").should eq ["a/b "]
+    formats_for.call("text/html; application/json").should eq ["text/html", " application/json"]
+    formats_for.call("a/b;  c/d").should eq ["a/b", "  c/d"]
+    formats_for.call("text/html;\tapplication/xml").should eq ["text/html", "\tapplication/xml"]
   end
 end
