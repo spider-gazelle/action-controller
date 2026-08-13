@@ -94,6 +94,14 @@ describe "end to end requests and responses" do
     result.status_code.should eq(400)
   end
 
+  it "should not swallow an error raised once a response has been rendered" do
+    # the exception handler can't render a second response, so the error is
+    # re-raised rather than handled -- contrast with the example above
+    expect_raises(DivisionByZeroError) do
+      client.get("/hello/rendered/raises")
+    end
+  end
+
   it "should perform before actions and execute the action" do
     result = client.get("/hello/")
     result.body.should eq("set_var 123")

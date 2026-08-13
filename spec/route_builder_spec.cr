@@ -248,3 +248,32 @@ describe AC::Route::Builder do
     result.body.should eq "var is value"
   end
 end
+
+describe "uploaded file cleanup" do
+  client = AC::SpecHelper.client
+
+  it "deletes temporary upload files once the route has completed" do
+    headers = HTTP::Headers{"Content-Type" => "multipart/form-data; boundary=AaB03x"}
+    body = <<-BODY
+      --AaB03x
+      Content-Disposition: form-data; name="files"; filename="file1.txt"
+      Content-Type: text/plain
+
+      ... contents of file1.txt ...
+      --AaB03x--
+      BODY
+    body = body.gsub("\n", "\r\n")
+
+    result = client.post("/filtering/upload_paths", headers: headers, body: body)
+    result.status_code.should eq 200
+
+    paths = result.body.split("\n").reject(&.empty?)
+    paths.size.should eq 1
+
+    # the route entry point calls __cleanup_uploads__ after responding, so the
+    # temporary file the parser wrote must be gone by now
+    paths.each do |path|
+      File.exists?(path).should be_false
+    end
+  end
+end

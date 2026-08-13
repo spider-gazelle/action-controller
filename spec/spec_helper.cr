@@ -211,6 +211,15 @@ class Filtering < FilterOrdering
   ) : Bool?
     is_a_bool
   end
+
+  # returns the temporary paths backing an upload so a spec can confirm the
+  # route entry point cleans them up once the response has been generated
+  @[AC::Route::POST("/upload_paths", content_type: "text/plain")]
+  def upload_paths : String
+    uploads = files
+    return "" unless uploads
+    uploads.each_value.flat_map(&.each.map(&.file.path)).join("\n")
+  end
 end
 
 # Testing ID params
@@ -371,12 +380,20 @@ class HelloWorld < Application
   before_action :set_var, except: :show
   after_action :after, only: :show
 
+  # raises once the action has already rendered, so the exception handler
+  # cannot produce a second response and the error has to continue on
+  after_action :raise_after_render, only: :rendered_then_raises
+
   before_action :render_early, only: :update
 
   get "/:id", :show do
     raise "set_var was set!" if @me
     res = 42 // params["id"].to_i
     render text: "42 / #{params["id"]} = #{res}"
+  end
+
+  get "/rendered/raises", :rendered_then_raises do
+    render text: "rendered"
   end
 
   get "/", :index do
@@ -445,6 +462,10 @@ class HelloWorld < Application
 
   private def after
     puts "after #{action_name}"
+  end
+
+  private def raise_after_render
+    42 // 0
   end
 
   private def around1(&)

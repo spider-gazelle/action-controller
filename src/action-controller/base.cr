@@ -359,6 +359,39 @@ abstract class ActionController::Base
     with inst yield
   end
 
+  # The route builder emits one entry point per route, so anything written
+  # inline in that template is duplicated across every route in the
+  # application. The steps below are the same for all of them, so they live
+  # here and are called instead.
+
+  # :nodoc:
+  # Removes the temporary files created while parsing a multipart request.
+  def __cleanup_uploads__ : Nil
+    if uploads = @__files__
+      uploads.each_value do |files|
+        files.each(&.delete)
+      end
+    end
+  end
+
+  # :nodoc:
+  # Writes the session cookie if the session was modified by the action.
+  def __write_session__ : Nil
+    return if render_called?
+    session = __session__
+    session.encode(@__context__.response.cookies) if session && session.modified?
+  end
+
+  # :nodoc:
+  # Guards an exception handler: once a response has been rendered the handler
+  # can't produce another one, so the error continues on its way.
+  #
+  # A rescue clause is emitted for every handler on every route, so the branch
+  # and the re-raise live here rather than in each one.
+  def __reraise_if_rendered__(error : Exception) : Nil
+    raise error if render_called?
+  end
+
   # The parameter failure paths below are kept out of line on purpose.
   #
   # The route builder emits a coercion check for every parameter of every
@@ -606,10 +639,7 @@ abstract class ActionController::Base
 
           {% if !is_websocket %}
             # Check if session needs to be written
-            if !instance.render_called?
-              session = instance.__session__
-              session.encode(context.response.cookies) if session && session.modified?
-            end
+            instance.__write_session__
           {% end %}
 
           # Implement error handling
@@ -617,11 +647,8 @@ abstract class ActionController::Base
             {% for exception, details in RESCUE %}
               {% OPENAPI_ERRORS_MAP[verb_route] = OPENAPI_ERRORS_MAP[verb_route] + [exception.id.stringify] %}
               rescue e : {{exception.id}}
-                if !instance.render_called?
-                  instance.{{details[0]}}(e)
-                else
-                  raise e
-                end
+                instance.__reraise_if_rendered__(e)
+                instance.{{details[0]}}(e)
             {% end %}
 
             end
@@ -632,13 +659,8 @@ abstract class ActionController::Base
           {% end %}
 
           # clean up any uploaded files
-          if uploads = instance.try &.@__files__
-            uploads.each_value do |files|
-              files.each do |file_upload|
-                file_upload.delete
-              end
-            end
-          end
+          # (instance is nil when the force-SSL check redirected)
+          instance.try &.__cleanup_uploads__
 
           # Always return the context
           context
