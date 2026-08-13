@@ -360,7 +360,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/d772d95c3388a55db03a5d1c5f01b8e0bf42a8ab/src/action-controller/responders.cr#L4" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/7a46b68237a333a343e9febe7f346dd294483cfb/src/action-controller/responders.cr#L4" target="_blank">
         action-controller/responders.cr
       </a>
     
@@ -593,7 +593,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d772d95c3388a55db03a5d1c5f01b8e0bf42a8ab/src/action-controller/responders.cr#L192" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7a46b68237a333a343e9febe7f346dd294483cfb/src/action-controller/responders.cr#L192" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -618,7 +618,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d772d95c3388a55db03a5d1c5f01b8e0bf42a8ab/src/action-controller/responders.cr#L204" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7a46b68237a333a343e9febe7f346dd294483cfb/src/action-controller/responders.cr#L204" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -645,7 +645,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d772d95c3388a55db03a5d1c5f01b8e0bf42a8ab/src/action-controller/responders.cr#L102" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7a46b68237a333a343e9febe7f346dd294483cfb/src/action-controller/responders.cr#L102" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -679,7 +679,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d772d95c3388a55db03a5d1c5f01b8e0bf42a8ab/src/action-controller/responders.cr#L238" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7a46b68237a333a343e9febe7f346dd294483cfb/src/action-controller/responders.cr#L238" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -707,12 +707,17 @@
         <div class="doc">
           
           <p>Extracts the mime types from the Accept header</p>
+<p>Scanned by hand rather than <code>split(&quot;;&quot;).flat_map(&amp;.split(ACCEPT_SEPARATOR_REGEX)...)</code>.
+Every route that negotiates a content type runs this on every request, and
+the regex plus the intermediate arrays it built dominated the cost.
+Behaviour is unchanged, including that only a comma consumes the whitespace
+that follows it.</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d772d95c3388a55db03a5d1c5f01b8e0bf42a8ab/src/action-controller/responders.cr#L265" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7a46b68237a333a343e9febe7f346dd294483cfb/src/action-controller/responders.cr#L271" target="_blank">View source</a>]
         
       </div>
     </div>
