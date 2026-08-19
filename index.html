@@ -381,6 +381,15 @@
     colour.to_s
   <span class="k">end</span>
 
+  <span class="c"># a nilable enum param silently resolves to nil when the value doesn&#39;t parse.</span>
+  <span class="c"># `strict: true` raises `AC::Route::Param::ValueError` (bad request) instead,</span>
+  <span class="c"># while an absent param still resolves to the default</span>
+  <span class="c"># route =&gt; &quot;/books/tint?colour=RED&quot;</span>
+  @[<span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/tint&quot;</span>, config: {colour: {strict: <span class="n">true</span>}})]
+  <span class="k">def</span> <span class="m">tint</span>(colour : <span class="t">Color</span>? <span class="o">=</span> <span class="n">nil</span>) : <span class="t">String</span>
+    colour.to_s
+  <span class="k">end</span>
+
   <span class="c"># Websocket support, the first param is always the socket object</span>
   <span class="c"># route =&gt; &quot;/books/:id/realtime&quot;</span>
   @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">WebSocket</span>(<span class="s">&quot;/:id/realtime&quot;</span>)]
