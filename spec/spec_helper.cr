@@ -144,6 +144,13 @@ class Filtering < FilterOrdering
     colour.to_s
   end
 
+  # strict: an unparsable colour raises the standard param error instead of
+  # being silently ignored (the default for a nilable enum param)
+  @[AC::Route::GET("/enum_route/colour_strict", config: {colour: {strict: true}}, content_type: "text/plain")]
+  def other_route_colour_strict(colour : Colour? = nil) : String
+    colour.to_s
+  end
+
   @[AC::Route::GET("/time_route/:time", config: {time: {format: "%F %:z"}})]
   def other_route_time(time : Time) : Time
     time

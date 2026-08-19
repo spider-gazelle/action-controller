@@ -68,6 +68,15 @@ class Books < Application
     colour.to_s
   end
 
+  # a nilable enum param silently resolves to nil when the value doesn't parse.
+  # `strict: true` raises `AC::Route::Param::ValueError` (bad request) instead,
+  # while an absent param still resolves to the default
+  # route => "/books/tint?colour=RED"
+  @[Route::GET("/tint", config: {colour: {strict: true}})]
+  def tint(colour : Color? = nil) : String
+    colour.to_s
+  end
+
   # Websocket support, the first param is always the socket object
   # route => "/books/:id/realtime"
   @[AC::Route::WebSocket("/:id/realtime")]

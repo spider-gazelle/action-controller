@@ -31,6 +31,25 @@ describe AC::Route::Builder do
     result.body.should eq "Green"
   end
 
+  it "should reject unparsable enum values when strict" do
+    # valid values and an absent param behave as normal for a nilable param
+    result = client.get("/filtering/enum_route/colour_strict?colour=RED")
+    result.body.should eq "Red"
+
+    result = client.get("/filtering/enum_route/colour_strict?colour=1")
+    result.body.should eq "Green"
+
+    result = client.get("/filtering/enum_route/colour_strict")
+    result.body.should eq ""
+
+    # without `strict: true` this would silently resolve to nil
+    error = expect_raises(AC::Route::Param::ValueError, "invalid parameter value for 'colour'") do
+      client.get("/filtering/enum_route/colour_strict?colour=cyan")
+    end
+    error.parameter.should eq "colour"
+    error.restriction.not_nil!.should contain "Colour"
+  end
+
   it "should work with custom time formats" do
     result = client.get("/filtering/time_route/2016-04-05%20%2B00%3A00")
     result.body.should eq "\"2016-04-05T00:00:00+00:00\""

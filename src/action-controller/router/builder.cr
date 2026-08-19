@@ -465,6 +465,15 @@ module ActionController::Route::Builder
                           {% else %}
                             {% restrictions = ["::AC::Route::Param::ConvertEnum(" + union_types[0].stringify + ").convert(param_value)"] %}
                           {% end %}
+                          {% if converter_args[:strict] %}
+                            # strict: a provided but unparsable value raises a ValueError (bad request)
+                            # instead of resolving to nil, which nilable params silently ignore
+                            {% if open_api_param.has_key?(:header) %}
+                              {% restrictions << "::ActionController::Base.__raise_header_error__(@__context__.request.headers, " + open_api_param[:header].stringify + ", " + arg.restriction.resolve.stringify.stringify + ")" %}
+                            {% else %}
+                              {% restrictions << "::ActionController::Base.__raise_param_error__(params, " + query_param_name.stringify + ", " + arg.restriction.resolve.stringify.stringify + ")" %}
+                            {% end %}
+                          {% end %}
                         {% else %}
                           {% restrictions = ["::AC::Route::Param::Convert" + union_types[0].stringify + ".new(**" + converter_args.stringify + ").convert(param_value)"] %}
                         {% end %}
