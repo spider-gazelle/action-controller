@@ -39,3 +39,15 @@ The initial Ohkami fixture used ordinary Cargo `--release`, while Ohkami's `benc
 | `/user/abc` | 166,963 | 171,967 | 181,318 | 0.418 | 0.402 | 0.226 |
 
 LTO did not materially change the local result: Action Controller remained close to bare Crystal HTTP, and Ohkami was roughly 8–9% ahead on these two tiny responses. The same-host, short-run limitations still apply. This does not explain a 2× result from a different workload or runtime configuration; reproducing that setup is the next priority.
+
+## Dynamic router table over HTTP
+
+To test whether the lookup allocations translate into a large end-to-end cost, the new `router-table` fixture serves a capture from Action Controller's `RouteHandler` directly, with no controller. Its bare Crystal comparison returns the same body from a hardcoded path check, making it a lower bound rather than a semantics-equivalent replacement. Both fixtures use Crystal's HTTP server and the same client settings; the runner validates each response before measuring. Raw three-repeat, five-second runs are [the 1,000-route one-capture case](results/2026-09-23-router-table-http.json) and [the 2,000-route one-/two-capture case](results/2026-09-23-router-table-two-captures.json).
+
+| Route table and path | Router median req/s | Hardcoded bare median req/s | Gap to bare |
+| --- | ---: | ---: | ---: |
+| 1,000 routes, `/catalog/category42/abc` | 159,624 | 169,371 | 5.8% |
+| 2,000 routes, `/catalog/category42/abc` | 163,042 | 175,383 | 7.0% |
+| 2,000 routes, `/catalog/category42/team/abc` | 158,700 | 173,483 | 8.5% |
+
+The lookup-only probe still allocates 288 bytes for a dynamic hit and takes roughly 150 ns on this machine. That is a worthwhile target if a compatible alternative can remove allocations, but the HTTP measurements put a hard upper bound of about 6–9% on the gain from eliminating this entire router-table path in these simple responses. The bare path does less work and has different matching semantics, so a real replacement would likely recover less. A router rewrite is not supported as the main answer to the reported 2× gap without the original workload or a representative dynamic-heavy profile. Characterization and differential testing remain prerequisites for any backend swap.

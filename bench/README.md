@@ -25,6 +25,8 @@ bench/bin/router 1000000 dynamic-hit 1000 simple
 
 The probe defaults to a 201-route table. Optional arguments select one case and change the number of static/dynamic route pairs. The final `simple` argument omits the generic fallback route, allowing candidate optimizations that only support simple tail captures to be assessed separately. It reports nanoseconds and Boehm GC's cumulative allocated bytes per lookup. It reuses one HTTP context and request strings; it measures route lookup, not full request allocation. The result is a development clue and must not be added arithmetically to HTTP request times.
 
+For an end-to-end routing stress fixture with 1,000 one-capture and 1,000 two-capture dynamic routes, compare `--modes router-table bare-router-table --paths /catalog/category42/abc /catalog/category42/team/abc`. The router-table mode uses Action Controller's `RouteHandler` directly; the bare mode is a hardcoded Crystal HTTP lower bound for the same response. This isolates router overhead but does not include controller dispatch or match Ohkami's route table.
+
 ## HTTP comparison
 
 ```sh

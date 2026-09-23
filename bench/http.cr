@@ -101,6 +101,31 @@ when "bare"
   end
   server.bind_tcp "127.0.0.1", port
   server.listen
+when "router-table"
+  handler = ActionController::Router::RouteHandler.new
+  action = ->(context : HTTP::Server::Context, _head : Bool) {
+    context.response.content_type = "text/plain"
+    context.response.print context.route_params["id"]
+    context
+  }
+  1000.times do |index|
+    handler.add_route("GET", "/catalog/category#{index}/:id", {action, false})
+    handler.add_route("GET", "/catalog/category#{index}/:group/:id", {action, false})
+  end
+  server = HTTP::Server.new([handler])
+  server.bind_tcp "127.0.0.1", port
+  server.listen
+when "bare-router-table"
+  server = HTTP::Server.new do |context|
+    if context.request.path == "/catalog/category42/abc" || context.request.path == "/catalog/category42/team/abc"
+      context.response.content_type = "text/plain"
+      context.response.print "abc"
+    else
+      context.response.status_code = 404
+    end
+  end
+  server.bind_tcp "127.0.0.1", port
+  server.listen
 else
-  abort "expected action-controller or bare"
+  abort "expected action-controller, bare, router-table or bare-router-table"
 end
