@@ -1,6 +1,6 @@
 # Action Controller performance plan
 
-Implementation has begun on branch `perf/benchmark-baseline`. The first release-build fixtures, repeatable runner and exploratory measurements are in [`bench/`](bench/README.md), with the initial result in [`bench/BASELINE.md`](bench/BASELINE.md). Stage A remains open until the isolated Linux runs, profiling and broader workloads are complete.
+Implementation has begun on branch `perf/benchmark-baseline`. The first release-build fixtures, repeatable runner and exploratory measurements are in [`bench/`](bench/README.md), with the initial result in [`bench/BASELINE.md`](bench/BASELINE.md). The first router characterization cases are in [`spec/router_compatibility_spec.cr`](spec/router_compatibility_spec.cr). Stage A remains open until the isolated Linux runs, CPU profiles and broader workloads are complete; Stage B is in progress.
 
 ## Objective and evidence
 

@@ -19,9 +19,10 @@ For a quick lookup probe:
 
 ```sh
 bench/bin/router 1000000
+bench/bin/router 1000000 dynamic-hit 1000
 ```
 
-The probe includes a 201-route table and reports nanoseconds and Boehm GC's cumulative allocated bytes per lookup. It reuses one HTTP context and request strings; it measures route lookup, not full request allocation. The result is a development clue and must not be added arithmetically to HTTP request times.
+The probe defaults to a 201-route table. Optional arguments select one case and change the number of static/dynamic route pairs. It reports nanoseconds and Boehm GC's cumulative allocated bytes per lookup. It reuses one HTTP context and request strings; it measures route lookup, not full request allocation. The result is a development clue and must not be added arithmetically to HTTP request times.
 
 ## HTTP comparison
 

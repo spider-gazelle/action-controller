@@ -14,3 +14,11 @@ The two Action Controller runs varied from 160,708 to 171,592 requests/s for `/p
 The separate release-build lookup probe (`bench/bin/router 1000000`) measured 12.1 ns and 0 allocated bytes for a static hit, 157.9 ns and 288 bytes for a dynamic hit, 179.4 ns and 320 bytes for a dynamic fallback, and 97.7 ns and 128 bytes for a miss. It used 201 registered routes, prebuilt path strings and a reused HTTP context. These are single-run measurements and include the current route wrapper, not just LuckyRouter.
 
 Next: run 5+ repeats of 60-second measurements on isolated Linux CPUs, add matched header/middleware and larger route-table workloads, and take CPU/allocation profiles of Action Controller and bare Crystal HTTP. Only then choose a first production optimization. The current fixture is a stable starting point for those experiments.
+
+## Follow-up: route scale and local sampling
+
+The lookup probe now supports a variable route-table size and a selected case. In one million dynamic-hit lookups it still allocated 288 bytes per call with 87, 201, 2,001 or 20,001 registered routes. Single-run timings ranged from 119 to 185 ns/op and did not vary monotonically with table size, so they are not a valid scaling conclusion. The stable allocation count is a useful target for a router prototype.
+
+A five-second macOS `sample` of a long dynamic lookup run showed LuckyRouter's recursive `find_match`, `match_for_method`, GC allocation and collection in active stacks. A separate sample of HTTP traffic showed response flushing/socket waits as prominent wall-time stacks. `sample` includes blocked time and these reports do **not** provide CPU percentage attribution. No production router or transport change is justified from them alone.
+
+The new [`router_compatibility_spec.cr`](../spec/router_compatibility_spec.cr) records static precedence, dynamic fallback, percent-decoded captures and static segments, optional captures, globs, more than sixteen captures, method separation and GET-derived HEAD. This is the first part of the compatibility gate before a router replacement.

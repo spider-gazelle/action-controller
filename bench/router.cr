@@ -1,16 +1,19 @@
 # Run with: crystal build --release -o /tmp/ac-router-bench bench/router.cr
-# Then: /tmp/ac-router-bench [iterations]
+# Then: /tmp/ac-router-bench [iterations] [case] [route_pairs]
 require "../src/action-controller"
 
 alias Router = ActionController::Router
 alias Action = Router::Action
 
 iterations = (ARGV[0]?.try(&.to_i) || 1_000_000)
+selected_case = ARGV[1]?
+route_pairs = (ARGV[2]?.try(&.to_i) || 100)
 raise "iterations must be positive" unless iterations > 0
+raise "route_pairs must be at least 43" unless route_pairs >= 43
 
 handler = Router::RouteHandler.new
 action = ->(context : HTTP::Server::Context, _head : Bool) { context }
-100.times do |index|
+route_pairs.times do |index|
   handler.add_route("GET", "/catalog/item#{index}", {action, false})
   handler.add_route("GET", "/catalog/category#{index}/:id", {action, false})
 end
@@ -26,8 +29,11 @@ cases = {
   "miss"         => "/catalog/missing/123/extra",
 }
 
-puts "Crystal #{Crystal::VERSION}, iterations=#{iterations}, routes=201"
+raise "unknown case: #{selected_case}" if selected_case && !cases.has_key?(selected_case)
+
+puts "Crystal #{Crystal::VERSION}, iterations=#{iterations}, routes=#{2 * route_pairs + 1}"
 cases.each do |label, path|
+  next if selected_case && label != selected_case
   # Use the same context object so this measurement isolates route lookup.
   # A different request context is necessary for allocation-per-request tests.
   10_000.times { handler.search_route("GET", path, context) }
