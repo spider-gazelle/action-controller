@@ -45,6 +45,10 @@ Use `--paths /json /json-buffered` to compare JSON response writing. Both paths 
 
 Use `--paths /json-large` for a 100 KiB JSON string field, with the same preallocated value in all three servers. This checks the bounded buffer after it switches to direct writes. The runner validates the full body before measuring.
 
+Use `--paths /json-large /json-large-static` to separate JSON encoding from response writing for that payload. The static variant holds the fully serialized body in memory before requests arrive and writes it through each server's normal response path. It is a diagnostic reference, not a proposed production cache.
+
+Use `/json-large-buffered` to serialize the same value into a fresh String on every request and then write it once. This diagnoses serializer CPU cost separately from its response IO write pattern, at the cost of an unbounded temporary allocation. Ohkami's normal JSON responder already serializes to a byte vector per request, so `/json-large` and `/json-large-buffered` use the same implementation there.
+
 The in-process bounded-buffer probe runs with:
 
 ```sh

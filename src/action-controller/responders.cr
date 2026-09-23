@@ -121,7 +121,7 @@ module ActionController::Responders
     {% unless json.nil? %}
       %response.content_type = {{MIME_TYPES[:json]}} unless %ctype
       unless @__head_request__
-        %json = ({{json}})
+        %json = %ret_val
         if %json.is_a?(String)
           %json.to_s(%response)
         else

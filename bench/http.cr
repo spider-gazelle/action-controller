@@ -5,6 +5,7 @@ require "../src/action-controller"
 require "../src/action-controller/server"
 
 LARGE_JSON_DATA = "x" * 100_000
+LARGE_JSON_BODY = %({"data":"#{LARGE_JSON_DATA}"})
 
 class BenchController < ActionController::Base
   base "/"
@@ -33,6 +34,16 @@ class BenchController < ActionController::Base
   def json_large
     {data: LARGE_JSON_DATA}
   end
+
+  @[AC::Route::GET("/json-large-buffered")]
+  def json_large_buffered
+    render json: {data: LARGE_JSON_DATA}.to_json
+  end
+
+  @[AC::Route::GET("/json-large-static")]
+  def json_large_static
+    render json: LARGE_JSON_BODY
+  end
 end
 
 mode = ARGV[0]? || "action-controller"
@@ -59,6 +70,12 @@ when "bare"
     elsif path == "/json-large"
       context.response.content_type = "application/json"
       {data: LARGE_JSON_DATA}.to_json(context.response)
+    elsif path == "/json-large-buffered"
+      context.response.content_type = "application/json"
+      context.response.print({data: LARGE_JSON_DATA}.to_json)
+    elsif path == "/json-large-static"
+      context.response.content_type = "application/json"
+      context.response.print LARGE_JSON_BODY
     else
       context.response.status_code = 404
     end

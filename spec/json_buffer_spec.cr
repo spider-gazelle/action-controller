@@ -29,6 +29,8 @@ end
 class JSONBufferCustomController < ActionController::Base
   base "/json_buffer_custom"
 
+  @json_evaluations = 0
+
   @[AC::Route::GET("/")]
   def index
     render json: ResponseOnlyJSON.new
@@ -37,6 +39,16 @@ class JSONBufferCustomController < ActionController::Base
   @[AC::Route::GET("/generated")]
   def generated
     ResponseOnlyJSON.new
+  end
+
+  @[AC::Route::GET("/once")]
+  def once
+    render json: next_json
+  end
+
+  private def next_json
+    @json_evaluations += 1
+    %({"evaluations":#{@json_evaluations}})
   end
 end
 
@@ -89,5 +101,11 @@ describe ActionController::JSONBuffer do
     result = ActionController::SpecHelper.client.get("/json_buffer_custom/generated")
     result.status_code.should eq 200
     result.body.should eq %({"response_only":true})
+  end
+
+  it "evaluates an explicit JSON render expression once" do
+    result = ActionController::SpecHelper.client.get("/json_buffer_custom/once")
+    result.status_code.should eq 200
+    result.body.should eq %({"evaluations":1})
   end
 end

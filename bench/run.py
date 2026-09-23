@@ -58,7 +58,7 @@ def main():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--modes", nargs="+", choices=("action-controller", "baseline", "bare", "ohkami"),
                         default=["action-controller", "bare", "ohkami"])
-    parser.add_argument("--paths", nargs="+", choices=("/plain", "/user/abc", "/json", "/json-buffered", "/json-large"),
+    parser.add_argument("--paths", nargs="+", choices=("/plain", "/user/abc", "/json", "/json-buffered", "/json-large", "/json-large-buffered", "/json-large-static"),
                         default=["/plain", "/user/abc"], help="paths to benchmark")
     parser.add_argument("--crystal-binary", type=Path, default=ROOT / "bench" / "bin" / "http",
                         help="override the Action Controller/bare HTTP binary for before/after runs")
@@ -125,7 +125,9 @@ def main():
                     expected = {"/plain": "OK", "/user/abc": "abc",
                                 "/json": '{"message":"Hello, world!"}',
                                 "/json-buffered": '{"message":"Hello, world!"}',
-                                "/json-large": '{"data":"' + 'x' * 100_000 + '"}'}[path]
+                                "/json-large": '{"data":"' + 'x' * 100_000 + '"}',
+                                "/json-large-buffered": '{"data":"' + 'x' * 100_000 + '"}',
+                                "/json-large-static": '{"data":"' + 'x' * 100_000 + '"}'}[path]
                     if (status, body) != (200, expected):
                         raise RuntimeError(f"unexpected response: status={status}, bytes={len(body)}, sha256={hashlib.sha256(body.encode()).hexdigest()}")
                     run_oha(args.port, path, args.warmup, args.connections)

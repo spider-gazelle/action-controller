@@ -3,6 +3,8 @@ use ohkami::prelude::*;
 use std::sync::LazyLock;
 
 static LARGE_JSON_DATA: LazyLock<String> = LazyLock::new(|| "x".repeat(100_000));
+static LARGE_JSON_BODY: LazyLock<Vec<u8>> =
+    LazyLock::new(|| format!("{{\"data\":\"{}\"}}", LARGE_JSON_DATA.as_str()).into_bytes());
 
 #[derive(Serialize)]
 struct Message {
@@ -35,6 +37,14 @@ async fn main() {
             Json(LargeMessage {
                 data: LARGE_JSON_DATA.as_str(),
             })
+        }),
+        "/json-large-buffered".GET(|| async {
+            Json(LargeMessage {
+                data: LARGE_JSON_DATA.as_str(),
+            })
+        }),
+        "/json-large-static".GET(|| async {
+            Response::OK().with_payload("application/json", LARGE_JSON_BODY.as_slice())
         }),
     ))
     .howl(address)
