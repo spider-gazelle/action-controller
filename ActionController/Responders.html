@@ -360,7 +360,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/08c65c4a0eaab9e51b7f12c795d0a4ebd5c16e6d/src/action-controller/responders.cr#L4" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/170560b24ac8f6f32e67b8198f4454a276725af3/src/action-controller/responders.cr#L13" target="_blank">
         action-controller/responders.cr
       </a>
     
@@ -489,6 +489,25 @@
   
 
   
+  <h2>
+    <a id="class-method-summary" class="anchor" href="#class-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#write_string%28response%3AHTTP%3A%3AServer%3A%3AResponse%2Cbody%3AString%29%3ANil-class-method" class="signature"><strong>.write_string</strong>(response : HTTP::Server::Response, body : String) : Nil</a>
+        
+          <div class="summary"><p>A String is already the complete response body.</p></div>
+        
+      </li>
+    
+  </ul>
+
 
   
   <h2>
@@ -561,6 +580,40 @@
   
 
   
+  <h2>
+    <a id="class-method-detail" class="anchor" href="#class-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="write_string(response:HTTP::Server::Response,body:String):Nil-class-method">
+      <div class="signature">
+        
+        def self.<strong>write_string</strong>(response : HTTP::Server::Response, body : String) : Nil
+
+        <a class="method-permalink" href="#write_string%28response%3AHTTP%3A%3AServer%3A%3AResponse%2Cbody%3AString%29%3ANil-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>A String is already the complete response body. Crystal's HTTP response
+switches to chunked transfer when a write reaches its output buffer size;
+supplying the known length avoids that work for large bodies. Leave custom
+output wrappers and explicit framing headers in control of their own bytes.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/170560b24ac8f6f32e67b8198f4454a276725af3/src/action-controller/responders.cr#L103" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
 
   
   <h2>
@@ -593,7 +646,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/08c65c4a0eaab9e51b7f12c795d0a4ebd5c16e6d/src/action-controller/responders.cr#L192" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/170560b24ac8f6f32e67b8198f4454a276725af3/src/action-controller/responders.cr#L271" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -618,7 +671,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/08c65c4a0eaab9e51b7f12c795d0a4ebd5c16e6d/src/action-controller/responders.cr#L204" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/170560b24ac8f6f32e67b8198f4454a276725af3/src/action-controller/responders.cr#L283" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -645,7 +698,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/08c65c4a0eaab9e51b7f12c795d0a4ebd5c16e6d/src/action-controller/responders.cr#L102" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/170560b24ac8f6f32e67b8198f4454a276725af3/src/action-controller/responders.cr#L128" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -679,7 +732,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/08c65c4a0eaab9e51b7f12c795d0a4ebd5c16e6d/src/action-controller/responders.cr#L238" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/170560b24ac8f6f32e67b8198f4454a276725af3/src/action-controller/responders.cr#L317" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -717,7 +770,7 @@ that follows it.</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/08c65c4a0eaab9e51b7f12c795d0a4ebd5c16e6d/src/action-controller/responders.cr#L271" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/170560b24ac8f6f32e67b8198f4454a276725af3/src/action-controller/responders.cr#L350" target="_blank">View source</a>]
         
       </div>
     </div>
