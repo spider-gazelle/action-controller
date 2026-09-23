@@ -134,4 +134,12 @@ describe ActionController::Router::RouteHandler do
     handler.search_route("GET", "/items/new", context).should_not be_nil
     context.route_params.should eq({"id" => "42"})
   end
+
+  it "matches a required capture after a multibyte static prefix" do
+    handler = ActionController::Router::RouteHandler.new
+    handler.add_route("GET", "/café/:name", {route_action, false})
+    context = route_context("/café/naïve")
+    handler.search_route("GET", "/café/naïve", context).should_not be_nil
+    context.route_params.should eq({"name" => "naïve"})
+  end
 end

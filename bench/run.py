@@ -56,8 +56,12 @@ def main():
     parser.add_argument("--connections", type=int, default=32)
     parser.add_argument("--port", type=int, default=38121)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--modes", nargs="+", choices=("action-controller", "bare", "ohkami"),
+    parser.add_argument("--modes", nargs="+", choices=("action-controller", "baseline", "bare", "ohkami"),
                         default=["action-controller", "bare", "ohkami"])
+    parser.add_argument("--crystal-binary", type=Path, default=ROOT / "bench" / "bin" / "http",
+                        help="override the Action Controller/bare HTTP binary for before/after runs")
+    parser.add_argument("--baseline-binary", type=Path,
+                        help="previous Action Controller binary; select it with --modes baseline")
     parser.add_argument("--output", type=Path, default=ROOT / "bench" / "results.json")
     args = parser.parse_args()
     if args.repeats < 1 or args.connections < 1:
@@ -65,10 +69,13 @@ def main():
     if shutil.which("oha") is None:
         parser.error("oha is required; install it before running this suite")
 
-    crystal_binary = ROOT / "bench" / "bin" / "http"
+    crystal_binary = args.crystal_binary.resolve()
+    baseline_binary = args.baseline_binary.resolve() if args.baseline_binary else None
     ohkami_binary = ROOT / "bench" / "ohkami" / "target" / "release" / "action-controller-ohkami-bench"
+    if "baseline" in args.modes and baseline_binary is None:
+        parser.error("--baseline-binary is required when --modes includes baseline")
     for mode in args.modes:
-        binary = ohkami_binary if mode == "ohkami" else crystal_binary
+        binary = ohkami_binary if mode == "ohkami" else baseline_binary if mode == "baseline" else crystal_binary
         if not binary.is_file():
             parser.error(f"missing {binary}; build release binaries first")
 
@@ -87,7 +94,9 @@ def main():
         "shard_lock_sha256": sha256(ROOT / "shard.lock"),
         "lucky_matcher_sha256": sha256(ROOT / "lib" / "lucky_router" / "src" / "lucky_router" / "matcher.cr"),
         "cargo_lock_sha256": sha256(ROOT / "bench" / "ohkami" / "Cargo.lock"),
-        "settings": vars(args) | {"output": str(args.output)},
+        "settings": vars(args) | {"output": str(args.output),
+                                    "crystal_binary": str(crystal_binary),
+                                    "baseline_binary": str(baseline_binary) if baseline_binary else None},
         "runs": [],
     }
     order = [(mode, path) for mode in args.modes for path in ("/plain", "/user/abc")]
@@ -96,8 +105,9 @@ def main():
         for repeat in range(args.repeats):
             randomizer.shuffle(order)
             for mode, path in order:
-                binary = ohkami_binary if mode == "ohkami" else crystal_binary
-                command = [str(binary), str(args.port)] if mode == "ohkami" else [str(binary), mode, str(args.port)]
+                binary = ohkami_binary if mode == "ohkami" else baseline_binary if mode == "baseline" else crystal_binary
+                server_mode = "action-controller" if mode == "baseline" else mode
+                command = [str(binary), str(args.port)] if mode == "ohkami" else [str(binary), server_mode, str(args.port)]
                 process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
                 try:
                     for _ in range(100):

@@ -22,3 +22,20 @@ The lookup probe now supports a variable route-table size and a selected case. I
 A five-second macOS `sample` of a long dynamic lookup run showed LuckyRouter's recursive `find_match`, `match_for_method`, GC allocation and collection in active stacks. A separate sample of HTTP traffic showed response flushing/socket waits as prominent wall-time stacks. `sample` includes blocked time and these reports do **not** provide CPU percentage attribution. No production router or transport change is justified from them alone.
 
 The new [`router_compatibility_spec.cr`](../spec/router_compatibility_spec.cr) records static precedence, dynamic fallback, percent-decoded captures and static segments, optional captures, globs, more than sixteen captures, method separation and GET-derived HEAD. This is the first part of the compatibility gate before a router replacement.
+
+## Trial: simple tail-capture shortcut
+
+A temporary `RouteHandler` fast path for routes such as `/users/:id` was built in release mode and compared against the preceding commit. With 2,000 routes and no complex fallback, lookup fell from 155.8 to 94.3 ns/op, and allocation from 288 to 256 bytes/op. On the full two-route HTTP fixture, two randomized three-second runs showed median `/user/abc` throughput of 158,857 requests/s on baseline versus 161,899 on the candidate (about 1.9%). The `/plain` median was 164,170 versus 163,101 requests/s. These are too short to establish a small production gain.
+
+The shortcut was removed before commit. It had to disable itself for an entire method when an optional, glob or more complex dynamic pattern was registered, and it still allocated a prefix string, capture string and parameter hash. It offered a narrow improvement with behavior risk around route precedence and encoding. The isolated speedup supports a general allocation-light matcher experiment, but the end-to-end result does not justify this particular branch of production routing code. The benchmark runner now accepts `--baseline-binary` so later candidates can use the same randomized comparison.
+
+## Aligned Ohkami release profile
+
+The initial Ohkami fixture used ordinary Cargo `--release`, while Ohkami's `benches_rt` profile enables LTO, one codegen unit and panic-abort. The fixture now uses those settings. A separate two-repeat, five-second local run is saved as [raw JSON](results/2026-09-23-macos-ohkami-lto.json). The run uses the same routes, connections, warmup, machine and validation as the first exploratory run.
+
+| Path | Action Controller median req/s | Bare Crystal median req/s | Ohkami median req/s | AC p99 ms | Bare p99 ms | Ohkami p99 ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `/plain` | 169,047 | 172,478 | 182,298 | 0.405 | 0.397 | 0.225 |
+| `/user/abc` | 166,963 | 171,967 | 181,318 | 0.418 | 0.402 | 0.226 |
+
+LTO did not materially change the local result: Action Controller remained close to bare Crystal HTTP, and Ohkami was roughly 8–9% ahead on these two tiny responses. The same-host, short-run limitations still apply. This does not explain a 2× result from a different workload or runtime configuration; reproducing that setup is the next priority.
