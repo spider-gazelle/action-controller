@@ -49,6 +49,8 @@ Use `--paths /json-large /json-large-static` to separate JSON encoding from resp
 
 Use `/json-large-buffered` to serialize the same value into a fresh String on every request and then write it once. This diagnoses serializer CPU cost separately from its response IO write pattern, at the cost of an unbounded temporary allocation. Ohkami's normal JSON responder already serializes to a byte vector per request, so `/json-large` and `/json-large-buffered` use the same implementation there.
 
+Use `/json-large-static-length` alongside `/json-large-static` to isolate the cost of Crystal's chunked transfer framing for an already-serialized large body. The former explicitly sets the correct Content-Length in Crystal; Ohkami emits that header for both paths. The runner checks the header and body before measuring.
+
 The in-process bounded-buffer probe runs with:
 
 ```sh

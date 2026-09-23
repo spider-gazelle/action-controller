@@ -46,6 +46,9 @@ async fn main() {
         "/json-large-static".GET(|| async {
             Response::OK().with_payload("application/json", LARGE_JSON_BODY.as_slice())
         }),
+        "/json-large-static-length".GET(|| async {
+            Response::OK().with_payload("application/json", LARGE_JSON_BODY.as_slice())
+        }),
     ))
     .howl(address)
     .await;

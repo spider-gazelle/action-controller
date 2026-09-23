@@ -44,6 +44,12 @@ class BenchController < ActionController::Base
   def json_large_static
     render json: LARGE_JSON_BODY
   end
+
+  @[AC::Route::GET("/json-large-static-length")]
+  def json_large_static_length
+    response.content_length = LARGE_JSON_BODY.bytesize
+    render json: LARGE_JSON_BODY
+  end
 end
 
 mode = ARGV[0]? || "action-controller"
@@ -75,6 +81,10 @@ when "bare"
       context.response.print({data: LARGE_JSON_DATA}.to_json)
     elsif path == "/json-large-static"
       context.response.content_type = "application/json"
+      context.response.print LARGE_JSON_BODY
+    elsif path == "/json-large-static-length"
+      context.response.content_type = "application/json"
+      context.response.content_length = LARGE_JSON_BODY.bytesize
       context.response.print LARGE_JSON_BODY
     else
       context.response.status_code = 404
