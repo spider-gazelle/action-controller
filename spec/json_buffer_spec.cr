@@ -60,6 +60,15 @@ describe ActionController::JSONBuffer do
     output.write_sizes.should eq [output.data.size]
   end
 
+  it "keeps exact output while growing past its inline capacity" do
+    [127, 128, 129, 512, ActionController::JSONBuffer::LIMIT].each do |size|
+      value = {data: "x" * size}
+      output = JSONBufferCountingIO.new
+      ActionController::JSONBuffer.serialize(output, value)
+      output.data.to_s.should eq value.to_json
+    end
+  end
+
   it "passes large responses through after the bounded buffer fills" do
     output = JSONBufferCountingIO.new
     large_value = "x" * (ActionController::JSONBuffer::LIMIT + 1)
@@ -89,6 +98,26 @@ describe ActionController::JSONBuffer do
     ActionController::JSONBuffer.serialize(response, ResponseOnlyJSON.new)
     response.close
     bytes.to_s.should contain %({"response_only":true})
+  end
+
+  it "lets the native response close small JSON with a known length" do
+    bytes = IO::Memory.new
+    response = HTTP::Server::Response.new(bytes)
+    ActionController::JSONBuffer.serialize(response, {message: "hello"})
+    response.close
+    wire = bytes.to_s
+    wire.should contain "Content-Length: 19\r\n"
+    wire.should_not contain "Transfer-Encoding: chunked"
+    wire.ends_with?(%({"message":"hello"})).should be_true
+  end
+
+  it "keeps bounded writes when the HTTP output is wrapped" do
+    response = HTTP::Server::Response.new(IO::Memory.new)
+    wrapper = JSONBufferCountingIO.new
+    response.output = wrapper
+    ActionController::JSONBuffer.serialize(response, {message: "hello"})
+    wrapper.data.to_s.should eq %({"message":"hello"})
+    wrapper.writes.should eq 1
   end
 
   it "keeps response-specialized serializers working in explicit render" do

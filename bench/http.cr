@@ -6,6 +6,7 @@ require "../src/action-controller/server"
 
 LARGE_JSON_DATA = "x" * 100_000
 LARGE_JSON_BODY = %({"data":"#{LARGE_JSON_DATA}"})
+SMALL_JSON_BODY = %({"message":"Hello, world!"})
 
 class BenchController < ActionController::Base
   base "/"
@@ -23,6 +24,11 @@ class BenchController < ActionController::Base
   @[AC::Route::GET("/json")]
   def json
     {message: "Hello, world!"}
+  end
+
+  @[AC::Route::GET("/json-static")]
+  def json_static
+    render json: SMALL_JSON_BODY
   end
 
   @[AC::Route::GET("/json-buffered")]
@@ -70,6 +76,9 @@ when "bare"
     elsif path == "/json"
       context.response.content_type = "application/json"
       {message: "Hello, world!"}.to_json(context.response)
+    elsif path == "/json-static"
+      context.response.content_type = "application/json"
+      context.response.print SMALL_JSON_BODY
     elsif path == "/json-buffered"
       context.response.content_type = "application/json"
       context.response.print({message: "Hello, world!"}.to_json)

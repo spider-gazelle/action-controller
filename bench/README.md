@@ -43,6 +43,8 @@ The runner starts a fresh server for each measurement, validates status and body
 
 Use `--paths /json /json-buffered` to compare JSON response writing. Both paths return the same body. At commit `5300af9`, `/json` serialized directly to response IO and `/json-buffered` serialized to a String and wrote once. The current `/json` path uses Action Controller's bounded JSON response helper; `/json-buffered` remains the unbounded String reference. Bare Crystal retains direct and String variants. Ohkami uses its normal JSON responder for both paths. These variants expose the cost of many small writes to Crystal's HTTP response; see [the JSON findings](JSON_FINDINGS.md).
 
+Use `/json-static` with `/json` for the same small body already serialized before requests arrive. This is a diagnostic upper bound for removing per-request JSON encoding, not a proposed cache of dynamic responses.
+
 Use `--paths /json-large` for a 100 KiB JSON string field, with the same preallocated value in all three servers. This checks the bounded buffer after it switches to direct writes. The runner validates the full body before measuring.
 
 Use `--paths /json-large /json-large-static` to separate JSON encoding from response writing for that payload. The static variant holds the fully serialized body in memory before requests arrive and writes it through each server's normal response path. It is a diagnostic reference, not a proposed production cache.
