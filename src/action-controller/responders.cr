@@ -1,6 +1,15 @@
 require "json"
 require "yaml"
 
+# Crystal's response output may still hold earlier body bytes in its private
+# buffer without having sent headers yet. Expose that state so a later render
+# does not declare a length for only the final String.
+class HTTP::Server::Response::Output
+  def action_controller_unwritten? : Bool
+    @out_count == 0 && !response.wrote_headers?
+  end
+end
+
 module ActionController::Responders
   # standard response codes
   STATUS_CODES = {
@@ -87,6 +96,23 @@ module ActionController::Responders
     yaml:   "text/yaml",
   }
 
+  # A String is already the complete response body. Crystal's HTTP response
+  # switches to chunked transfer when a write reaches its output buffer size;
+  # supplying the known length avoids that work for large bodies. Leave custom
+  # output wrappers and explicit framing headers in control of their own bytes.
+  def self.write_string(response : HTTP::Server::Response, body : String) : Nil
+    status = response.status
+    output = response.output
+    if output.is_a?(HTTP::Server::Response::Output) &&
+       body.bytesize >= output.buffer_size && output.action_controller_unwritten? &&
+       !response.headers.has_key?("Content-Length") &&
+       !response.headers.has_key?("Transfer-Encoding") &&
+       !status.not_modified? && !status.no_content? && !status.informational?
+      response.content_length = body.bytesize
+    end
+    body.to_s(response)
+  end
+
   # used to stream a response back to the user, serializing directly to the IO
   #
   # the content type is set appropriately based on the response type
@@ -106,6 +132,7 @@ module ActionController::Responders
 
     %response = @__context__.response
     %ret_val = {{ json || yaml || xml || html || text || binary || template || partial }}
+    {% sole_body = [json, yaml, xml, html, text, binary, template, partial].select { |value| !value.nil? }.size == 1 %}
 
     {% if status.is_a?(SymbolLiteral) %}
       %response.status_code = {{STATUS_CODES[status] || REDIRECTION_CODES[status]}}
@@ -123,7 +150,11 @@ module ActionController::Responders
       unless @__head_request__
         %json = %ret_val
         if %json.is_a?(String)
-          %json.to_s(%response)
+          {% if sole_body %}
+            ActionController::Responders.write_string(%response, %json)
+          {% else %}
+            %json.to_s(%response)
+          {% end %}
         else
           ActionController::JSONBuffer.serialize(%response, %json)
         end
@@ -135,7 +166,11 @@ module ActionController::Responders
       unless @__head_request__
         %yaml = ({{yaml}})
         if %yaml.is_a?(String)
-          %yaml.to_s(%response)
+          {% if sole_body %}
+            ActionController::Responders.write_string(%response, %yaml)
+          {% else %}
+            %yaml.to_s(%response)
+          {% end %}
         else
           %yaml.to_yaml(%response)
         end
@@ -144,22 +179,66 @@ module ActionController::Responders
 
     {% unless xml.nil? %}
       %response.content_type = {{MIME_TYPES[:xml]}} unless %ctype
-      {{xml}}.to_s(%response) unless @__head_request__
+      unless @__head_request__
+        %xml = ({{xml}})
+        {% if sole_body %}
+          if %xml.is_a?(String)
+            ActionController::Responders.write_string(%response, %xml)
+          else
+            %xml.to_s(%response)
+          end
+        {% else %}
+          %xml.to_s(%response)
+        {% end %}
+      end
     {% end %}
 
     {% unless html.nil? %}
       %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
-      {{html}}.to_s(%response) unless @__head_request__
+      unless @__head_request__
+        %html = ({{html}})
+        {% if sole_body %}
+          if %html.is_a?(String)
+            ActionController::Responders.write_string(%response, %html)
+          else
+            %html.to_s(%response)
+          end
+        {% else %}
+          %html.to_s(%response)
+        {% end %}
+      end
     {% end %}
 
     {% unless text.nil? %}
       %response.content_type = {{MIME_TYPES[:text]}} unless %ctype
-      {{text}}.to_s(%response) unless @__head_request__
+      unless @__head_request__
+        %text = ({{text}})
+        {% if sole_body %}
+          if %text.is_a?(String)
+            ActionController::Responders.write_string(%response, %text)
+          else
+            %text.to_s(%response)
+          end
+        {% else %}
+          %text.to_s(%response)
+        {% end %}
+      end
     {% end %}
 
     {% unless binary.nil? %}
       %response.content_type = {{MIME_TYPES[:binary]}} unless %ctype
-      {{binary}}.to_s(%response) unless @__head_request__
+      unless @__head_request__
+        %binary = ({{binary}})
+        {% if sole_body %}
+          if %binary.is_a?(String)
+            ActionController::Responders.write_string(%response, %binary)
+          else
+            %binary.to_s(%response)
+          end
+        {% else %}
+          %binary.to_s(%response)
+        {% end %}
+      end
     {% end %}
 
     {% unless template.nil? %}
