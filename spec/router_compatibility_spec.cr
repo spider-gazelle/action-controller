@@ -32,15 +32,17 @@ describe ActionController::Router::RouteHandler do
 
     ["/items/new", "/items/new/"].each do |path|
       context = route_context(path)
-      matched = handler.search_route("GET", path, context).not_nil!
-      matched[0].call(context, false)
+      matched = handler.search_route("GET", path, context)
+      matched.should_not be_nil
+      matched.try(&.[0].call(context, false))
       context.response.headers["X-Route"].should eq "static"
       context.route_params.should be_empty
     end
 
     context = route_context("/items/42")
-    matched = handler.search_route("GET", "/items/42", context).not_nil!
-    matched[0].call(context, false)
+    matched = handler.search_route("GET", "/items/42", context)
+    matched.should_not be_nil
+    matched.try(&.[0].call(context, false))
     context.response.headers["X-Route"].should eq "dynamic"
     context.route_params.should eq({"id" => "42"})
   end
@@ -53,8 +55,9 @@ describe ActionController::Router::RouteHandler do
     handler.add_route("GET", "/catalog/:kind/:id", fallback)
 
     context = route_context("/catalog/fixed/123")
-    matched = handler.search_route("GET", "/catalog/fixed/123", context).not_nil!
-    matched[0].call(context, false)
+    matched = handler.search_route("GET", "/catalog/fixed/123", context)
+    matched.should_not be_nil
+    matched.try(&.[0].call(context, false))
     context.response.headers["X-Route"].should eq "fallback"
     context.route_params.should eq({"kind" => "fixed", "id" => "123"})
   end
@@ -113,9 +116,9 @@ describe ActionController::Router::RouteHandler do
     get = route_context("/resource")
     head = route_context("/resource", "HEAD")
     post = route_context("/resource", "POST")
-    router.route_handler.search_route("GET", "/resource", get).not_nil![1].should be_false
-    router.route_handler.search_route("HEAD", "/resource", head).not_nil![1].should be_true
-    router.route_handler.search_route("POST", "/resource", post).not_nil![1].should be_false
+    router.route_handler.search_route("GET", "/resource", get).try(&.[1]).should be_false
+    router.route_handler.search_route("HEAD", "/resource", head).try(&.[1]).should be_true
+    router.route_handler.search_route("POST", "/resource", post).try(&.[1]).should be_false
     router.route_handler.search_route("DELETE", "/resource", route_context("/resource", "DELETE")).should be_nil
   end
 
@@ -138,7 +141,9 @@ describe ActionController::Router::RouteHandler do
   it "matches a required capture after a multibyte static prefix" do
     handler = ActionController::Router::RouteHandler.new
     handler.add_route("GET", "/café/:name", {route_action, false})
-    context = route_context("/café/naïve")
+    # Test the matcher directly: newer Crystal request validators reject raw
+    # UTF-8 on an HTTP request line before the router sees it.
+    context = route_context("/")
     handler.search_route("GET", "/café/naïve", context).should_not be_nil
     context.route_params.should eq({"name" => "naïve"})
   end

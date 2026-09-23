@@ -1,10 +1,10 @@
 # Action Controller performance plan
 
-Implementation has begun on branch `perf/benchmark-baseline`. The release-build fixtures and repeatable runner are in [`bench/`](bench/README.md); the initial result is in [`bench/BASELINE.md`](bench/BASELINE.md). The first router characterization cases are in [`spec/router_compatibility_spec.cr`](spec/router_compatibility_spec.cr). A bounded small-JSON response change and its measurements are described in [`bench/JSON_FINDINGS.md`](bench/JSON_FINDINGS.md). Stage A remains open until isolated Linux runs, CPU profiles and broader workloads are complete; Stage B is in progress and Stage C has its first measured patch.
+Implementation has begun on branch `perf/benchmark-baseline`. The release-build fixtures and repeatable runner are in [`bench/`](bench/README.md); the initial result is in [`bench/BASELINE.md`](bench/BASELINE.md). The first router characterization cases are in [`spec/router_compatibility_spec.cr`](spec/router_compatibility_spec.cr). A bounded small-JSON response change and small/large HTTP measurements are described in [`bench/JSON_FINDINGS.md`](bench/JSON_FINDINGS.md). Stage A remains open until isolated Linux runs, CPU profiles and broader workloads are complete; Stage B is in progress and Stage C has its first measured patch. The 100 KiB JSON check puts Action Controller near bare Crystal HTTP while both trail Ohkami, so router replacement is not the next step for large responses.
 
 ## Objective and evidence
 
-Aim for a substantial reduction in CPU time and allocations per request, with no application changes and no observable changes to existing routing, controller, middleware, or response behavior. Treat the reported ~2× Ohkami throughput advantage as a hypothesis to reproduce, not an established measurement for every workload. This document is a source review and implementation plan; no comparative benchmarks were run for it.
+Aim for a substantial reduction in CPU time and allocations per request, with no application changes and no observable changes to existing routing, controller, middleware, or response behavior. Treat the reported ~2× Ohkami throughput advantage as a hypothesis to reproduce, not an established measurement for every workload. This document began as a source review and implementation plan; subsequent comparative results are linked above.
 
 Reviewed on 2026-09-23:
 

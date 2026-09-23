@@ -4,6 +4,8 @@
 require "../src/action-controller"
 require "../src/action-controller/server"
 
+LARGE_JSON_DATA = "x" * 100_000
+
 class BenchController < ActionController::Base
   base "/"
 
@@ -25,6 +27,11 @@ class BenchController < ActionController::Base
   @[AC::Route::GET("/json-buffered")]
   def json_buffered
     render json: {message: "Hello, world!"}.to_json
+  end
+
+  @[AC::Route::GET("/json-large")]
+  def json_large
+    {data: LARGE_JSON_DATA}
   end
 end
 
@@ -49,6 +56,9 @@ when "bare"
     elsif path == "/json-buffered"
       context.response.content_type = "application/json"
       context.response.print({message: "Hello, world!"}.to_json)
+    elsif path == "/json-large"
+      context.response.content_type = "application/json"
+      {data: LARGE_JSON_DATA}.to_json(context.response)
     else
       context.response.status_code = 404
     end

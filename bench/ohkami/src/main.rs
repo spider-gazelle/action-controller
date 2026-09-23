@@ -1,9 +1,17 @@
 use ohkami::claw::{Json, Path};
 use ohkami::prelude::*;
+use std::sync::LazyLock;
+
+static LARGE_JSON_DATA: LazyLock<String> = LazyLock::new(|| "x".repeat(100_000));
 
 #[derive(Serialize)]
 struct Message {
     message: &'static str,
+}
+
+#[derive(Serialize)]
+struct LargeMessage {
+    data: &'static str,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -21,6 +29,11 @@ async fn main() {
         "/json-buffered".GET(|| async {
             Json(Message {
                 message: "Hello, world!",
+            })
+        }),
+        "/json-large".GET(|| async {
+            Json(LargeMessage {
+                data: LARGE_JSON_DATA.as_str(),
             })
         }),
     ))

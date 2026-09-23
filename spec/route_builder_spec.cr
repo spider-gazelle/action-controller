@@ -47,7 +47,8 @@ describe AC::Route::Builder do
       client.get("/filtering/enum_route/colour_strict?colour=cyan")
     end
     error.parameter.should eq "colour"
-    error.restriction.not_nil!.should contain "Colour"
+    error.restriction.should_not be_nil
+    error.restriction.try(&.includes?("Colour")).should be_true
   end
 
   it "should work with custom time formats" do
