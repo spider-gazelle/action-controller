@@ -1,5 +1,10 @@
-use ohkami::claw::Path;
+use ohkami::claw::{Json, Path};
 use ohkami::prelude::*;
+
+#[derive(Serialize)]
+struct Message {
+    message: &'static str,
+}
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
@@ -8,6 +13,16 @@ async fn main() {
     Ohkami::new((
         "/plain".GET(|| async { "OK" }),
         "/user/:id".GET(|Path(id): Path<String>| async move { id }),
+        "/json".GET(|| async {
+            Json(Message {
+                message: "Hello, world!",
+            })
+        }),
+        "/json-buffered".GET(|| async {
+            Json(Message {
+                message: "Hello, world!",
+            })
+        }),
     ))
     .howl(address)
     .await;

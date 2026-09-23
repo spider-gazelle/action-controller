@@ -58,6 +58,8 @@ def main():
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--modes", nargs="+", choices=("action-controller", "baseline", "bare", "ohkami"),
                         default=["action-controller", "bare", "ohkami"])
+    parser.add_argument("--paths", nargs="+", choices=("/plain", "/user/abc", "/json", "/json-buffered"),
+                        default=["/plain", "/user/abc"], help="paths to benchmark")
     parser.add_argument("--crystal-binary", type=Path, default=ROOT / "bench" / "bin" / "http",
                         help="override the Action Controller/bare HTTP binary for before/after runs")
     parser.add_argument("--baseline-binary", type=Path,
@@ -99,7 +101,7 @@ def main():
                                     "baseline_binary": str(baseline_binary) if baseline_binary else None},
         "runs": [],
     }
-    order = [(mode, path) for mode in args.modes for path in ("/plain", "/user/abc")]
+    order = [(mode, path) for mode in args.modes for path in args.paths]
     randomizer = random.Random(args.seed)
     try:
         for repeat in range(args.repeats):
@@ -120,7 +122,9 @@ def main():
                             time.sleep(0.05)
                     else:
                         raise RuntimeError(f"server did not start: {command}")
-                    expected = "OK" if path == "/plain" else "abc"
+                    expected = {"/plain": "OK", "/user/abc": "abc",
+                                "/json": '{"message":"Hello, world!"}',
+                                "/json-buffered": '{"message":"Hello, world!"}'}[path]
                     if (status, body) != (200, expected):
                         raise RuntimeError(f"unexpected response: {status} {body!r}")
                     run_oha(args.port, path, args.warmup, args.connections)

@@ -16,6 +16,16 @@ class BenchController < ActionController::Base
   def user(id : String)
     render text: id
   end
+
+  @[AC::Route::GET("/json")]
+  def json
+    {message: "Hello, world!"}
+  end
+
+  @[AC::Route::GET("/json-buffered")]
+  def json_buffered
+    render json: {message: "Hello, world!"}.to_json
+  end
 end
 
 mode = ARGV[0]? || "action-controller"
@@ -33,6 +43,12 @@ when "bare"
     elsif path.starts_with?("/user/") && (id = path.byte_slice(6)).size > 0 && !id.includes?('/')
       context.response.content_type = "text/plain"
       context.response.print id
+    elsif path == "/json"
+      context.response.content_type = "application/json"
+      {message: "Hello, world!"}.to_json(context.response)
+    elsif path == "/json-buffered"
+      context.response.content_type = "application/json"
+      context.response.print({message: "Hello, world!"}.to_json)
     else
       context.response.status_code = 404
     end
