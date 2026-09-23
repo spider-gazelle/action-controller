@@ -125,7 +125,7 @@ module ActionController::Responders
         if %json.is_a?(String)
           %json.to_s(%response)
         else
-          %json.to_json(%response)
+          ActionController::JSONBuffer.serialize(%response, %json)
         end
       end
     {% end %}
@@ -342,7 +342,7 @@ module ActionController::Responders
           {% if obj.is_a?(String) %}
             output.to_s(io)
           {% else %}
-            output.to_json(io)
+            ActionController::JSONBuffer.serialize(io, output)
           {% end %}
         }
       {% else %}
@@ -351,7 +351,7 @@ module ActionController::Responders
           if output.is_a?(String)
             output.to_s(io)
           else
-            output.to_json(io)
+            ActionController::JSONBuffer.serialize(io, output)
           end
         }
       {% end %}

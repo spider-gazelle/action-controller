@@ -1,5 +1,6 @@
 require "openssl/sha1"
 require "./body_parser"
+require "./json_buffer"
 require "./responders"
 require "./session"
 require "./support"

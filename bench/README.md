@@ -41,7 +41,14 @@ python3 bench/report.py /tmp/ac-compare.json
 
 The runner starts a fresh server for each measurement, validates status and body, randomizes run order, runs `oha` over HTTP/1.1 with keep-alive, and saves the complete `oha` JSON plus host/tool versions, commands, git state and response headers. The default 10-second, three-repeat setting is for development; use the longer invocation above for decisions. All three servers run with one request-processing worker. Run on an isolated Linux machine with a separate or isolated load generator for release claims. The same-host Mac run remains exploratory.
 
-Use `--paths /json /json-buffered` to compare JSON response writing. Both paths return the same body. `/json` serializes the object directly to response IO; `/json-buffered` serializes to a String and writes once. The bare Crystal fixture uses the same two approaches. The Ohkami fixture uses its normal JSON responder for both paths. These variants expose the cost of many small writes to Crystal's HTTP response.
+Use `--paths /json /json-buffered` to compare JSON response writing. Both paths return the same body. At commit `5300af9`, `/json` serialized directly to response IO and `/json-buffered` serialized to a String and wrote once. The current `/json` path uses Action Controller's bounded JSON response helper; `/json-buffered` remains the unbounded String reference. Bare Crystal retains direct and String variants. Ohkami uses its normal JSON responder for both paths. These variants expose the cost of many small writes to Crystal's HTTP response; see [the JSON findings](JSON_FINDINGS.md).
+
+The in-process bounded-buffer probe runs with:
+
+```sh
+crystal build --release -o bench/bin/json-buffer bench/json_buffer.cr
+bench/bin/json-buffer 10000
+```
 
 Both paths return HTTP 200 and the same body: `/plain` returns `OK`, `/user/abc` returns `abc`. Response headers currently differ: Ohkami adds Date and `charset=UTF-8`, while Crystal emits `Connection: keep-alive` and `text/plain`. Record this difference with the results. The bare Crystal dynamic route is intentionally simple and does not model all router semantics. Add matched header and realistic middleware profiles before interpreting small gaps. Do not use ApacheBench for this comparison: it sent HTTP/1.0 requests that this Ohkami fixture rejected.
 
