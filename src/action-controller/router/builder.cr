@@ -655,7 +655,9 @@ module ActionController::Route::Builder
     # JSON APIs by default
 
     # Responders are executed in the context of the controller so can access all controller instance methods
-    add_responder("application/json") { |io, result| result.to_json(io) }
+    add_responder("application/json") do |io, result|
+      ActionController::JSONBuffer.serialize(io, result)
+    end
     default_responder "application/json"
 
     # parsers have access to the request so they can modify how they parse the body
