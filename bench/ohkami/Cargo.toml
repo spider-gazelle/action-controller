@@ -1,0 +1,9 @@
+[package]
+name = "action-controller-ohkami-bench"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+ohkami = { path = "../../../ohkami/ohkami", default-features = false, features = ["rt_tokio"] }
+tokio = { version = "1", features = ["rt", "net", "io-util", "macros", "time"] }
