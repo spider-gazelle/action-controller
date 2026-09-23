@@ -4,8 +4,6 @@
 
 Extending [lucky_router](https://github.com/luckyframework/lucky_router) for a Rails like DSL without the overhead. See the [docs site](https://spider-gazelle.net/) for usage details
 
-See the [performance improvement plan](PERFORMANCE_PLAN.md) for optimization priorities, benchmarking against Ohkami, and compatibility requirements.
-
 ## Strong Parameter Usage
 
 ```crystal
