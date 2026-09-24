@@ -1,5 +1,5 @@
 name: action-controller
-version: 8.2.0
+version: 8.2.1
 crystal: ">= 1.21.0"
 
 dependencies:
@@ -17,7 +17,7 @@ dependencies:
   hot_topic:
     github: jgaskins/hot_topic
 
-  # Used for generating OpenAPI
+  # Used for generating OpenAPI docs
   json-schema:
     github: spider-gazelle/json-schema
     version: ">= 1.3"

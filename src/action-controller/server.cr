@@ -158,8 +158,18 @@ class ActionController::Server
     end
   end
 
-  # Forks additional worker processes
+  # Spawns `count` number of threads in the default Fiber::ExecutionContext
+  @[Deprecated("Use `#threads` instead")]
   def cluster(count)
+    count = count.to_i
+    count = System.cpu_count.to_i if count <= 0
+    return if count <= 1
+
+    Fiber::ExecutionContext.default.resize(count)
+  end
+
+  # Spawns `count` number of threads in the default Fiber::ExecutionContext
+  def threads(count = -1)
     count = count.to_i
     count = System.cpu_count.to_i if count <= 0
     return if count <= 1
