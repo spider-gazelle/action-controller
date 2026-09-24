@@ -362,7 +362,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L3" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L3" target="_blank">
         action-controller/server.cr
       </a>
     
@@ -497,7 +497,8 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <li class="entry-summary">
         <a href="#cluster%28count%29-instance-method" class="signature"><strong>#cluster</strong>(count)</a>
         
-          <div class="summary"><p>Forks additional worker processes</p></div>
+          <div class="summary"><p>Spawns <code>count</code> number of threads in the default Fiber::ExecutionContext</p>
+<p><span class="flag red">DEPRECATED</span>  Use <code><a href="../ActionController/Server.html#threads%28count%3D-1%29-instance-method">#threads</a></code> instead</p></div>
         
       </li>
     
@@ -540,6 +541,13 @@ when used with TCP it is considered a security risk as the port can be stolen</p
         <a href="#socket%3AHTTP%3A%3AServer-instance-method" class="signature"><strong>#socket</strong> : HTTP::Server</a>
         
           <div class="summary"><p>Provides access the HTTP server for the purpose of binding For example <code>server.socket.bind_unix &quot;/tmp/my-socket.sock&quot;</code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#threads%28count%3D-1%29-instance-method" class="signature"><strong>#threads</strong>(count = <span class="n">-1</span>)</a>
+        
+          <div class="summary"><p>Spawns <code>count</code> number of threads in the default Fiber::ExecutionContext</p></div>
         
       </li>
     
@@ -660,7 +668,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L33" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L33" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -681,7 +689,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L41" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L41" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -715,7 +723,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L22" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L22" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -737,7 +745,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L15" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L15" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -758,7 +766,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L183" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L193" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -780,7 +788,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L173" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L183" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -815,7 +823,7 @@ when used with TCP it is considered a security risk as the port can be stolen</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L97" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L97" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -837,7 +845,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L122" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L122" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -852,13 +860,14 @@ removing the short and long arguments that trigger this method</p>
       
         <div class="doc">
           
-          <p>Forks additional worker processes</p>
+          <p>Spawns <code>count</code> number of threads in the default Fiber::ExecutionContext</p>
+<p><span class="flag red">DEPRECATED</span>  Use <code><a href="../ActionController/Server.html#threads%28count%3D-1%29-instance-method">#threads</a></code> instead</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L162" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L163" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -879,7 +888,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L61" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L61" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -900,7 +909,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L64" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L64" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -921,7 +930,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L103" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L103" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -942,7 +951,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L71" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L71" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -963,7 +972,7 @@ removing the short and long arguments that trigger this method</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L84" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L84" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -985,7 +994,28 @@ For example <code>server.socket.bind_unix &quot;/tmp/my-socket.sock&quot;</code>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/b8fc928e072bdac08d7d2a232674b3088e978fad/src/action-controller/server.cr#L68" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L68" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="threads(count=-1)-instance-method">
+      <div class="signature">
+        
+        def <strong>threads</strong>(count = <span class="n">-1</span>)
+
+        <a class="method-permalink" href="#threads%28count%3D-1%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>Spawns <code>count</code> number of threads in the default Fiber::ExecutionContext</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/51e1bceb175f5bd268255c7dc8e1e58c966c6e1b/src/action-controller/server.cr#L172" target="_blank">View source</a>]
         
       </div>
     </div>
