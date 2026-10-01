@@ -28,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Refresh apt package index
+        run: sudo apt-get update
       - name: Install crystal
         uses: crystal-lang/install-crystal@v1
         with:

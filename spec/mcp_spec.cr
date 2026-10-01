@@ -621,6 +621,7 @@ describe ActionController::MCPServer do
   end
 
   it "tracks sessions in the transport" do
+    MCPTestClient.new.initialize_session
     (transport.sessions.size > 0).should be_true
   end
 end
