@@ -8,12 +8,15 @@ MCP_URI  = URI.parse("http://127.0.0.1:#{MCP_PORT}/mcp")
 class MCPTestClient
   getter session_id : String? = nil
 
+  # credentials sent with each request, `nil` for none
+  property authorization : String? = "Bearer token"
+
   def headers(accept = "application/json, text/event-stream", origin : String? = nil) : HTTP::Headers
     headers = HTTP::Headers{
-      "Content-Type"  => "application/json",
-      "Accept"        => accept,
-      "Authorization" => "Bearer token",
+      "Content-Type" => "application/json",
+      "Accept"       => accept,
     }
+    headers["Authorization"] = @authorization.as(String) if @authorization
     headers["Mcp-Session-Id"] = @session_id.as(String) if @session_id
     headers["Origin"] = origin if origin
     headers
@@ -57,6 +60,25 @@ class MCPTestClient
   end
 end
 
+# meta tools followed by the root tools
+DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "mcp_widgets_colours", "mcp_root_time"]
+
+MCP_INIT = {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}
+
+# configures MCP authentication for the duration of the block
+def with_mcp_auth(transport, authenticator = nil, probe = nil, metadata = nil, &)
+  ActionController::MCPServer.authenticator = authenticator
+  ActionController::MCPServer.auth_probe = probe
+  ActionController::MCPServer.resource_metadata = metadata
+  transport.auth_cache.clear
+  yield
+ensure
+  ActionController::MCPServer.authenticator = nil
+  ActionController::MCPServer.auth_probe = nil
+  ActionController::MCPServer.resource_metadata = nil
+  transport.auth_cache.clear
+end
+
 describe ActionController::MCPServer do
   server = ActionController::Server.new(MCP_PORT, "127.0.0.1")
   transport = ActionController::MCPServer.mount(server, "/mcp")
@@ -65,6 +87,7 @@ describe ActionController::MCPServer do
     # `crystal docs` only documents src/, so provide the fixture comments
     widget_docs = ActionController::OpenAPI::KlassDoc.new("McpWidgets", "Manages widgets, used by the MCP specs\n\nwidgets are not persisted")
     widget_docs.methods["show"] = "returns the widget requested"
+    widget_docs.methods["summarise"] = "summarise a widget for the user"
     ActionController::MCPServer.description = ActionController::MCPServer.generate_description({"McpWidgets" => widget_docs})
     bound = Channel(Nil).new
     spawn { server.run { bound.send nil } }
@@ -82,7 +105,7 @@ describe ActionController::MCPServer do
       widgets = description.toolbox?("mcp_widgets").should_not be_nil
       widgets.controller.should eq "McpWidgets"
       widgets.description.should eq "Manages widgets, used by the MCP specs\n\nwidgets are not persisted"
-      widgets.tools.map(&.name).should eq ["mcp_widgets_show", "mcp_widgets_create", "mcp_widgets_destroy"]
+      widgets.tools.map(&.name).should eq ["mcp_widgets_show", "mcp_widgets_create", "mcp_widgets_destroy", "mcp_widgets_colours"]
 
       show = widgets.tools.first
       show.description.should eq "returns the widget requested"
@@ -184,7 +207,7 @@ describe ActionController::MCPServer do
     it "only lists the meta tools by default" do
       client = MCPTestClient.new
       client.initialize_session
-      client.tool_names.should eq ["list_toolboxes", "open_toolbox", "close_toolbox"]
+      client.tool_names.should eq DEFAULT_TOOLS
     end
 
     it "lists the toolboxes" do
@@ -195,6 +218,7 @@ describe ActionController::MCPServer do
       toolboxes = result["structuredContent"]["toolboxes"].as_a
       widgets = toolboxes.find!(&.["name"].==("mcp_widgets"))
       widgets["tools"].should eq 3
+      widgets["prompts"].should eq 1
       widgets["open"].should be_false
       widgets["description"].as_s.should start_with "Manages widgets"
     end
@@ -204,15 +228,16 @@ describe ActionController::MCPServer do
       client.initialize_session
 
       messages = client.request("tools/call", {name: "open_toolbox", arguments: {name: "mcp_widgets"}}, accept: "application/json, text/event-stream")
-      messages.size.should eq 2
+      messages.size.should eq 3
       messages[0]["method"].should eq "notifications/tools/list_changed"
-      messages[1]["result"]["content"][0]["text"].as_s.should contain "mcp_widgets_show"
-      client.tool_names.should eq ["list_toolboxes", "open_toolbox", "close_toolbox", "mcp_widgets_show", "mcp_widgets_create", "mcp_widgets_destroy"]
+      messages[1]["method"].should eq "notifications/prompts/list_changed"
+      messages[2]["result"]["content"][0]["text"].as_s.should contain "mcp_widgets_show"
+      client.tool_names.should eq DEFAULT_TOOLS + ["mcp_widgets_show", "mcp_widgets_create", "mcp_widgets_destroy"]
 
       # sessions are independent
       other = MCPTestClient.new
       other.initialize_session
-      other.tool_names.size.should eq 3
+      other.tool_names.should eq DEFAULT_TOOLS
 
       # already open, nothing changed
       messages = client.request("tools/call", {name: "open_toolbox", arguments: {name: "mcp_widgets"}}, accept: "application/json, text/event-stream")
@@ -220,7 +245,8 @@ describe ActionController::MCPServer do
 
       messages = client.request("tools/call", {name: "close_toolbox", arguments: {name: "mcp_widgets"}}, accept: "application/json, text/event-stream")
       messages[0]["method"].should eq "notifications/tools/list_changed"
-      client.tool_names.size.should eq 3
+      messages[1]["method"].should eq "notifications/prompts/list_changed"
+      client.tool_names.should eq DEFAULT_TOOLS
     end
 
     it "reports unknown toolboxes as tool errors" do
@@ -325,6 +351,272 @@ describe ActionController::MCPServer do
       result = JSON.parse(response.body)["result"]
       result["isError"].should be_true
       result["content"][0]["text"].as_s.should start_with "401"
+    end
+  end
+
+  describe "prompts" do
+    it "describes prompts" do
+      description = ActionController::MCPServer.description
+      widgets = description.toolbox?("mcp_widgets").should_not be_nil
+      widgets.prompts.map(&.name).should eq ["mcp_widgets_summarise", "mcp_widgets_review"]
+
+      summarise = widgets.prompts.first
+      summarise.description.should eq "summarise a widget for the user"
+      summarise.root?.should be_false
+      summarise.arguments.map { |arg| {arg.name, arg.in, arg.description, arg.required?} }.should eq [
+        {"id", "query", nil, true},
+        {"tone", "query", "the tone of the summary", false},
+      ]
+      widgets.prompts.last.root?.should be_true
+
+      hidden = description.toolbox?("mcp_hidden").should_not be_nil
+      hidden.prompts.should be_empty
+      root = description.toolbox?("mcp_root").should_not be_nil
+      root.prompts.map(&.name).should eq ["mcp_root_greet"]
+    end
+
+    it "are not HTTP routes" do
+      headers = HTTP::Headers{"Authorization" => "Bearer token"}
+      HTTP::Client.get("http://127.0.0.1:#{MCP_PORT}/mcp_widgets/__mcp_prompt__/summarise?id=1", headers: headers).status_code.should eq 404
+      ActionController::Server.routes.map(&.[1]).should_not contain :summarise
+      ActionController::OpenAPI.generate_open_api_docs("title", "version")[:paths].keys.select(&.includes?("__mcp_prompt__")).should be_empty
+    end
+
+    it "advertises the prompts capability" do
+      client = MCPTestClient.new
+      client.initialize_session["result"]["capabilities"]["prompts"]["listChanged"].should be_true
+    end
+
+    it "lists root prompts and the prompts of open toolboxes" do
+      client = MCPTestClient.new
+      client.initialize_session
+      prompt_names = -> { client.request("prompts/list").last["result"]["prompts"].as_a.map(&.["name"].as_s) }
+      prompt_names.call.should eq ["mcp_widgets_review", "mcp_root_greet"]
+
+      client.call("open_toolbox", {name: "mcp_widgets"})
+      prompt_names.call.should eq ["mcp_widgets_review", "mcp_root_greet", "mcp_widgets_summarise"]
+
+      prompt = client.request("prompts/list").last["result"]["prompts"].as_a.last
+      prompt["description"].should eq "summarise a widget for the user"
+      prompt["arguments"].as_a.should eq [
+        JSON.parse(%({"name":"id","required":true})),
+        JSON.parse(%({"name":"tone","description":"the tone of the summary","required":false})),
+      ]
+
+      client.call("close_toolbox", {name: "mcp_widgets"})
+      prompt_names.call.should eq ["mcp_widgets_review", "mcp_root_greet"]
+    end
+
+    it "renders single message prompts" do
+      client = MCPTestClient.new
+      client.initialize_session
+      client.call("open_toolbox", {name: "mcp_widgets"})
+
+      result = client.request("prompts/get", {name: "mcp_widgets_summarise", arguments: {id: "5", tone: "formal"}}).last["result"]
+      result["description"].should eq "summarise a widget for the user"
+      result["messages"].should eq JSON.parse(%([{"role":"user","content":{"type":"text","text":"Summarise widget 5 in a formal tone"}}]))
+
+      result = client.request("prompts/get", {name: "mcp_widgets_summarise", arguments: {id: "5"}}).last["result"]
+      result["messages"][0]["content"]["text"].should eq "Summarise widget 5 in a casual tone"
+    end
+
+    it "renders multi-message root prompts without opening the toolbox" do
+      client = MCPTestClient.new
+      client.initialize_session
+      messages = client.request("prompts/get", {name: "mcp_widgets_review", arguments: {id: "2"}}).last["result"]["messages"].as_a
+      messages.map { |message| {message["role"].as_s, message["content"]["text"].as_s} }.should eq [
+        {"user", "Review widget 2"},
+        {"assistant", "Which aspects should I focus on?"},
+      ]
+    end
+
+    it "reports prompt errors" do
+      client = MCPTestClient.new
+      client.initialize_session
+
+      # toolbox is closed
+      error = client.request("prompts/get", {name: "mcp_widgets_summarise", arguments: {id: "1"}}).last["error"]
+      error["code"].should eq -32602
+      error["message"].as_s.should contain "open the mcp_widgets toolbox"
+
+      # missing required argument
+      error = client.request("prompts/get", {name: "mcp_widgets_review"}).last["error"]
+      error["code"].should eq -32602
+      error["message"].should eq "missing required argument: id"
+
+      # argument that can't be parsed
+      client.request("prompts/get", {name: "mcp_widgets_review", arguments: {id: "abc"}}).last["error"]["code"].should eq -32603
+
+      # unknown prompt
+      client.request("prompts/get", {name: "nope"}).last["error"]["code"].should eq -32602
+    end
+
+    it "runs the controller filters" do
+      client = MCPTestClient.new
+      client.authorization = "Bearer wrong"
+      client.initialize_session
+      error = client.request("prompts/get", {name: "mcp_widgets_review", arguments: {id: "2"}}).last["error"]
+      error["code"].should eq -32602
+      error["message"].as_s.should start_with "401"
+    end
+
+    it "escalates prompts rejected by the application when authentication is enabled" do
+      metadata = ->(_request : HTTP::Request) do
+        ActionController::MCPServer::ResourceMetadata.new(["https://auth.example.com"])
+      end
+
+      with_mcp_auth(transport, metadata: metadata) do
+        client = MCPTestClient.new
+        client.authorization = "Bearer expired"
+        client.initialize_session
+        response = client.post({jsonrpc: "2.0", id: 3, method: "prompts/get", params: {name: "mcp_widgets_review", arguments: {id: "2"}}})
+        response.status_code.should eq 401
+      end
+    end
+  end
+
+  describe "root items" do
+    it "calls root tools without opening the toolbox" do
+      client = MCPTestClient.new
+      client.initialize_session
+      result = client.call("mcp_widgets_colours")
+      result["isError"].should be_false
+      result["content"][0]["text"].should eq %(["red","green"])
+      client.call("mcp_root_time")["content"][0]["text"].should eq %("noon")
+    end
+
+    it "omits toolboxes that only contain root items" do
+      client = MCPTestClient.new
+      client.initialize_session
+      names = client.call("list_toolboxes")["structuredContent"]["toolboxes"].as_a.map(&.["name"].as_s)
+      names.should contain "mcp_widgets"
+      names.should_not contain "mcp_root"
+      client.call("open_toolbox", {name: "mcp_root"})["isError"].should be_true
+    end
+  end
+
+  describe "authentication" do
+    it "is optional" do
+      ActionController::MCPServer.auth_enabled?.should be_false
+      client = MCPTestClient.new
+      client.authorization = nil
+      client.initialize_session["result"]["protocolVersion"].should eq "2025-11-25"
+      client.tool_names.should eq DEFAULT_TOOLS
+    end
+
+    it "authenticates every request with the authenticator" do
+      calls = 0
+      authenticator = ->(request : HTTP::Request) do
+        calls += 1
+        request.headers["Authorization"]? == "Bearer token"
+      end
+
+      with_mcp_auth(transport, authenticator: authenticator) do
+        anonymous = MCPTestClient.new
+        anonymous.authorization = nil
+        response = anonymous.post(MCP_INIT)
+        response.status_code.should eq 401
+        response.headers["WWW-Authenticate"].should eq "Bearer"
+        response.headers["Mcp-Session-Id"]?.should be_nil
+
+        invalid = MCPTestClient.new
+        invalid.authorization = "Bearer wrong"
+        response = invalid.post(MCP_INIT)
+        response.status_code.should eq 401
+        response.headers["WWW-Authenticate"].should eq %(Bearer error="invalid_token")
+
+        client = MCPTestClient.new
+        client.initialize_session
+        client.tool_names.should eq DEFAULT_TOOLS
+
+        # successful checks are cached
+        calls.should eq 3
+
+        # the event stream and session termination require authentication
+        headers = client.headers(accept: "text/event-stream")
+        headers.delete("Authorization")
+        HTTP::Client.get(MCP_URI, headers: headers).status_code.should eq 401
+        HTTP::Client.delete(MCP_URI, headers: headers).status_code.should eq 401
+      end
+    end
+
+    it "authenticates using a probe route" do
+      with_mcp_auth(transport, probe: "/mcp_widgets/1") do
+        invalid = MCPTestClient.new
+        invalid.authorization = "Bearer wrong"
+        response = invalid.post(MCP_INIT)
+        response.status_code.should eq 401
+        response.headers["WWW-Authenticate"].should eq %(Bearer error="invalid_token")
+
+        client = MCPTestClient.new
+        client.initialize_session["result"]["protocolVersion"].should eq "2025-11-25"
+      end
+    end
+
+    it "advertises the authorization server" do
+      metadata = ->(request : HTTP::Request) do
+        ActionController::MCPServer::ResourceMetadata.new(["https://#{request.hostname}/auth"], ["public"])
+      end
+
+      with_mcp_auth(transport, metadata: metadata) do
+        anonymous = MCPTestClient.new
+        anonymous.authorization = nil
+        response = anonymous.post(MCP_INIT)
+        response.status_code.should eq 401
+        metadata_url = "http://127.0.0.1:#{MCP_PORT}/.well-known/oauth-protected-resource/mcp"
+        response.headers["WWW-Authenticate"].should eq %(Bearer resource_metadata="#{metadata_url}", scope="public")
+
+        document = JSON.parse(HTTP::Client.get(metadata_url).body)
+        document["resource"].should eq "http://127.0.0.1:#{MCP_PORT}/mcp"
+        document["authorization_servers"].as_a.should eq ["https://127.0.0.1/auth"]
+        document["scopes_supported"].as_a.should eq ["public"]
+        document["bearer_methods_supported"].as_a.should eq ["header"]
+
+        # resource URLs are per tenant
+        tenant = HTTP::Headers{"Host" => "tenant.example.com", "X-Forwarded-Proto" => "https"}
+        document = JSON.parse(HTTP::Client.get(metadata_url, headers: tenant).body)
+        document["resource"].should eq "https://tenant.example.com/mcp"
+        document["authorization_servers"].as_a.should eq ["https://tenant.example.com/auth"]
+      end
+
+      HTTP::Client.get("http://127.0.0.1:#{MCP_PORT}/.well-known/oauth-protected-resource/mcp").status_code.should eq 404
+    end
+
+    it "escalates tool calls rejected by the application" do
+      metadata = ->(_request : HTTP::Request) do
+        ActionController::MCPServer::ResourceMetadata.new(["https://auth.example.com"])
+      end
+
+      with_mcp_auth(transport, metadata: metadata) do
+        # credentials are present so the session can be established
+        client = MCPTestClient.new
+        client.authorization = "Bearer expired"
+        client.initialize_session
+        client.call("open_toolbox", {name: "mcp_widgets"})["isError"].should be_false
+
+        fingerprint = ActionController::MCPServer::AuthCache.fingerprint(
+          HTTP::Request.new("POST", "/mcp", HTTP::Headers{"Host" => "127.0.0.1:#{MCP_PORT}", "Authorization" => "Bearer expired"})
+        ).should_not be_nil
+        transport.auth_cache.valid?(fingerprint).should be_true
+
+        # the route responds with a 401, which is returned to the client
+        response = client.post({jsonrpc: "2.0", id: 3, method: "tools/call", params: {name: "mcp_widgets_show", arguments: {id: 1}}})
+        response.status_code.should eq 401
+        response.headers["WWW-Authenticate"].should eq %(Bearer resource_metadata="http://127.0.0.1:#{MCP_PORT}/.well-known/oauth-protected-resource/mcp", error="invalid_token")
+        transport.auth_cache.valid?(fingerprint).should be_false
+
+        # once refreshed the tool call succeeds
+        client.authorization = "Bearer token"
+        client.call("mcp_widgets_show", {id: 1})["isError"].should be_false
+      end
+    end
+
+    it "forwards API keys by default" do
+      origin = HTTP::Request.new("POST", "/mcp", HTTP::Headers{"X-API-Key" => "id.secret", "X-Other" => "nope", "Host" => "example.com"})
+      headers = ActionController::MCPServer::Invoker.new(server.route_handler).forwarded_headers(origin)
+      headers["X-API-Key"].should eq "id.secret"
+      headers["Host"].should eq "example.com"
+      headers.has_key?("X-Other").should be_false
     end
   end
 

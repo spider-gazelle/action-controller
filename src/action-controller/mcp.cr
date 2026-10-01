@@ -62,7 +62,7 @@ module ActionController::MCPServer
 
   # request headers copied from the MCP request to the route being invoked,
   # typically used for authentication
-  class_property forward_headers : Array(String) = ["Authorization", "Cookie"]
+  class_property forward_headers : Array(String) = ["Authorization", "Cookie", "X-API-Key"]
 
   # browser origins permitted to connect, in addition to same origin requests.
   # `"*"` permits any origin
@@ -70,6 +70,30 @@ module ActionController::MCPServer
 
   # sessions inactive for this period are discarded
   class_property session_timeout : Time::Span = 30.minutes
+
+  # authenticates MCP requests, returning `true` if the request is permitted.
+  #
+  # optional, see `auth_probe` for a simpler alternative
+  class_property authenticator : Proc(HTTP::Request, Bool)? = nil
+
+  # a route used to authenticate MCP requests, i.e. `/api/v1/users/current`.
+  #
+  # the route is requested in-process with the forwarded headers, a successful
+  # (2xx) response indicates the request is authenticated
+  class_property auth_probe : String? = nil
+
+  # how long a successful authentication check is cached for
+  class_property auth_cache_ttl : Time::Span = 1.minute
+
+  # advertises the OAuth authorization server so MCP clients can obtain and
+  # refresh access tokens. The request is provided for multi-tenant deployments
+  class_property resource_metadata : Proc(HTTP::Request, ResourceMetadata)? = nil
+
+  # authentication is optional and enabled when any of `authenticator`,
+  # `auth_probe` or `resource_metadata` is configured
+  def auth_enabled? : Bool
+    !!(authenticator || auth_probe || resource_metadata)
+  end
 
   @@description : Description? = nil
   @@description_lock = Mutex.new
@@ -96,12 +120,14 @@ module ActionController::MCPServer
 
   # mounts the MCP endpoint at the path provided.
   #
-  # tool calls are dispatched via the router, typically `ActionController::Server`
+  # tool calls are dispatched via the router, typically `ActionController::Server`.
+  # The OAuth protected resource metadata is served at `/.well-known/oauth-protected-resource<path>`
   def mount(router : Router, path : String = "/mcp") : Transport
-    transport = Transport.new(router.route_handler)
+    transport = Transport.new(router.route_handler, path)
     router.post(path) { |context, _head| transport.post(context) }
     router.get(path) { |context, head| transport.get(context, head) }
     router.delete(path) { |context, _head| transport.delete(context) }
+    router.get(Transport::RESOURCE_METADATA_PATH + path) { |context, _head| transport.resource_metadata(context) }
     transport
   end
 

@@ -3,38 +3,123 @@ require "http/client"
 require "uri"
 
 module ActionController::MCPServer
-  # dispatches tool calls to the application routes in-process
+  # dispatches tool calls and prompts to the application routes in-process
   class Invoker
-    def initialize(@route_handler : Router::RouteHandler)
+    # prompts are internal routes, not accessible via HTTP
+    def initialize(@route_handler : Router::RouteHandler, @prompt_handler : Router::RouteHandler = Router::RouteHandler.new)
     end
 
     # raised when the arguments can't be mapped onto the route
     class ArgumentError < ::ArgumentError
     end
 
-    # runs the route and returns a `CallToolResult` JSON string
+    # runs the route and returns a `CallToolResult` JSON string.
+    #
+    # raises `Unauthorized` if authentication is enabled and the route responds with a 401
     def call(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : String
-      request = build_request(tool, arguments, origin)
-      response_io = IO::Memory.new
-      response = HTTP::Server::Response.new(response_io)
-      context = HTTP::Server::Context.new(request, response)
-
-      begin
-        @route_handler.call(context)
-        response.close
+      response = begin
+        dispatch build_request(tool, arguments, origin)
+      rescue error : ArgumentError
+        return MCPServer.tool_result(error.message.as(String), error: true)
       rescue error
         Log.error(exception: error) { "MCP tool #{tool.name} failed" }
         return MCPServer.tool_result("500 Internal Server Error", error: true)
       end
 
-      response_io.rewind
-      to_result HTTP::Client::Response.from_io(response_io)
-    rescue error : ArgumentError
-      MCPServer.tool_result(error.message.as(String), error: true)
+      if response.status.unauthorized? && MCPServer.auth_enabled?
+        raise Unauthorized.new("#{tool.name} responded with 401")
+      end
+      to_result response
     end
 
-    # :nodoc:
-    def build_request(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : HTTP::Request
+    # requests the route provided with the forwarded credentials, returning `true` on success
+    def probe(path : String, origin : HTTP::Request) : Bool
+      headers = forwarded_headers(origin)
+      headers["Accept"] = "application/json"
+      request = HTTP::Request.new("GET", path, headers)
+      request.remote_address = origin.remote_address
+      dispatch(request).status.success?
+    rescue error
+      Log.error(exception: error) { "MCP auth probe #{path} failed" }
+      false
+    end
+
+    # renders the prompt and returns a `GetPromptResult` JSON string
+    #
+    # raises `RPCError` if the prompt can't be rendered and `Unauthorized` if
+    # authentication is enabled and the prompt responds with a 401
+    def get_prompt(prompt : Prompt, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : String
+      prompt.arguments.each do |argument|
+        if argument.required? && arguments[argument.name]?.try(&.raw).nil?
+          raise RPCError.new(RPCError::INVALID_PARAMS, "missing required argument: #{argument.name}")
+        end
+      end
+
+      response = begin
+        dispatch build("GET", prompt.path, prompt.arguments, nil, arguments, origin), @prompt_handler
+      rescue error : ArgumentError
+        raise RPCError.new(RPCError::INVALID_PARAMS, error.message.as(String))
+      rescue error
+        Log.error(exception: error) { "MCP prompt #{prompt.name} failed" }
+        raise RPCError.new(RPCError::INTERNAL_ERROR, "prompt #{prompt.name} failed")
+      end
+
+      status = response.status
+      body = response.body
+      if status.unauthorized? && MCPServer.auth_enabled?
+        raise Unauthorized.new("#{prompt.name} responded with 401")
+      end
+      unless status.success?
+        code = status.client_error? ? RPCError::INVALID_PARAMS : RPCError::INTERNAL_ERROR
+        raise RPCError.new(code, body.empty? ? "#{status.code} #{status.description}" : "#{status.code} #{status.description}: #{body}")
+      end
+
+      # prompts render JSON, either a string or an array of messages
+      messages = begin
+        if text = JSON.parse(body).as_s?
+          [::ActionController::PromptMessage.user(text)]
+        else
+          Array(::ActionController::PromptMessage).from_json(body)
+        end
+      rescue error : JSON::ParseException | JSON::SerializableError
+        Log.error(exception: error) { "MCP prompt #{prompt.name} rendered an invalid response" }
+        raise RPCError.new(RPCError::INTERNAL_ERROR, "prompt #{prompt.name} failed")
+      end
+
+      JSON.build do |json|
+        json.object do
+          json.field "description", prompt.description if prompt.description
+          json.field "messages" do
+            json.array do
+              messages.each do |message|
+                json.object do
+                  json.field "role", message.role.to_s.downcase
+                  json.field "content" do
+                    json.object do
+                      json.field "type", "text"
+                      json.field "text", message.text
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
+    # runs the request through the application routes in-process
+    def dispatch(request : HTTP::Request, handler : Router::RouteHandler = @route_handler) : HTTP::Client::Response
+      response_io = IO::Memory.new
+      response = HTTP::Server::Response.new(response_io)
+      handler.call HTTP::Server::Context.new(request, response)
+      response.close
+      response_io.rewind
+      HTTP::Client::Response.from_io(response_io)
+    end
+
+    # the credential headers copied from the MCP request
+    def forwarded_headers(origin : HTTP::Request) : HTTP::Headers
       headers = HTTP::Headers.new
       MCPServer.forward_headers.each do |header|
         if values = origin.headers.get?(header)
@@ -42,10 +127,21 @@ module ActionController::MCPServer
         end
       end
       headers["Host"] = origin.headers["Host"] if origin.headers.has_key?("Host")
+      headers
+    end
+
+    # :nodoc:
+    def build_request(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : HTTP::Request
+      build(tool.verb.upcase, tool.path, tool.params, tool.body, arguments, origin)
+    end
+
+    # params are `ToolParam` or `PromptArgument`, anything with a name and location
+    private def build(verb : String, path : String, params, body_key : String?, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : HTTP::Request
+      headers = forwarded_headers(origin)
       headers["Accept"] = "application/json, */*;q=0.5"
 
       query = URI::Params.new
-      tool.params.each do |param|
+      params.each do |param|
         next unless value = arguments[param.name]?
         next if value.raw.nil?
         case param.in
@@ -55,21 +151,21 @@ module ActionController::MCPServer
       end
 
       body = nil
-      if (body_key = tool.body) && (body_value = arguments[body_key]?)
+      if body_key && (body_value = arguments[body_key]?)
         headers["Content-Type"] = "application/json"
         body = body_value.to_json
       end
 
-      resource = build_path(tool, arguments)
+      resource = build_path(path, arguments)
       resource = "#{resource}?#{query}" unless query.empty?
 
-      request = HTTP::Request.new(tool.verb.upcase, resource, headers, body)
+      request = HTTP::Request.new(verb, resource, headers, body)
       request.remote_address = origin.remote_address
       request
     end
 
-    private def build_path(tool : Tool, arguments : Hash(String, JSON::Any)) : String
-      segments = tool.path.split('/').compact_map do |segment|
+    private def build_path(path : String, arguments : Hash(String, JSON::Any)) : String
+      segments = path.split('/').compact_map do |segment|
         case segment
         when .starts_with?(':')
           name = segment.lchop(':')

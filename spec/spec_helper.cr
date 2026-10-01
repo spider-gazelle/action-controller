@@ -546,6 +546,32 @@ class McpWidgets < ActionController::Base
   def destroy(id : Int32) : Nil
   end
 
+  # lists the widget colours
+  @[AC::MCP(root: true)]
+  @[AC::Route::GET("/colours")]
+  def colours : Array(String)
+    ["red", "green"]
+  end
+
+  # summarise a widget for the user
+  @[AC::MCP(prompt: true)]
+  def summarise(
+    id : Int32,
+    @[AC::Param::Info(description: "the tone of the summary", example: "formal")]
+    tone : String = "casual",
+  ) : String
+    "Summarise widget #{id} in a #{tone} tone"
+  end
+
+  # starts a widget review
+  @[AC::MCP(prompt: true, root: true)]
+  def review(id : Int32) : Array(AC::PromptMessage)
+    [
+      AC::PromptMessage.user("Review widget #{id}"),
+      AC::PromptMessage.assistant("Which aspects should I focus on?"),
+    ]
+  end
+
   # not exposed to MCP clients
   @[AC::MCP(hide: true)]
   @[AC::Route::GET("/hidden/secret")]
@@ -573,6 +599,29 @@ class McpHidden < ActionController::Base
   @[AC::Route::GET("/visible")]
   def visible : String
     "visible"
+  end
+
+  @[AC::MCP(prompt: true)]
+  def hidden_prompt : String
+    "hidden"
+  end
+end
+
+# everything is available without opening the toolbox
+@[AC::MCP(root: true)]
+class McpRoot < ActionController::Base
+  base "/mcp_root"
+
+  # the current time
+  @[AC::Route::GET("/time")]
+  def time : String
+    "noon"
+  end
+
+  # greets someone
+  @[AC::MCP(prompt: true)]
+  def greet(name : String) : String
+    "Say hello to #{name}"
   end
 end
 

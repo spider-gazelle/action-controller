@@ -1,5 +1,6 @@
 require "../router"
 require "./route_params"
+require "../prompt_message"
 
 # Create the method annotations
 {% begin %}
@@ -63,6 +64,9 @@ end
 # optional MCP server (see `ActionController::MCPServer`)
 #
 # * `hide: true` excludes the route(s) from the MCP toolboxes
+# * `root: true` always lists the tool(s) or prompt(s), without opening the toolbox
+# * `prompt: true` exposes a method as an MCP prompt (not as a HTTP route).
+#   The method must return `String` or `Array(AC::PromptMessage)`
 #
 # a method level annotation overrides the controller level annotation
 #
@@ -74,6 +78,17 @@ end
 #   @[AC::Route::GET("/status")]
 #   def status : String
 #     "ok"
+#   end
+# end
+#
+# class Widgets < AC::Base
+#   # summarise a widget for the user
+#   @[AC::MCP(prompt: true)]
+#   def summarise(
+#     @[AC::Param::Info(description: "the widget to summarise")]
+#     id : Int64,
+#   ) : String
+#     "Summarise the widget: #{Widget.find(id).to_json}"
 #   end
 # end
 # ```
@@ -271,12 +286,37 @@ module ActionController::Route::Builder
       {% method_name = method.name %}
       {% annotation_found = false %}
 
+      # MCP options, method level annotation takes precedence
+      {% mcp_klass_ann = @type.annotation(::ActionController::MCP) %}
+      {% mcp_method_ann = method.annotation(::ActionController::MCP) %}
+      {% mcp_hide = mcp_klass_ann ? mcp_klass_ann[:hide] : nil %}
+      {% mcp_root = mcp_klass_ann ? mcp_klass_ann[:root] : nil %}
+      {% if mcp_method_ann && mcp_method_ann[:hide] != nil %}
+        {% mcp_hide = mcp_method_ann[:hide] %}
+      {% end %}
+      {% if mcp_method_ann && mcp_method_ann[:root] != nil %}
+        {% mcp_root = mcp_method_ann[:root] %}
+      {% end %}
+
+      # MCP prompts are implemented as internal GET routes so filters, error handlers and param parsing apply
+      {% mcp_prompt = mcp_method_ann && mcp_method_ann[:prompt] == true %}
+      {% if mcp_prompt %}
+        {% for route_method in {AC::Route::WebSocket, AC::Route::GET, AC::Route::POST, AC::Route::PUT, AC::Route::PATCH, AC::Route::DELETE, AC::Route::OPTIONS, AC::Route::Filter, AC::Route::Exception} %}
+          {% raise "#{@type.name}##{method_name} is an MCP prompt, it can't also be a route, filter or exception handler" unless method.annotations(route_method).empty? %}
+        {% end %}
+        {% prompt_type = method.return_type ? method.return_type.resolve : nil %}
+        {% multi_message = prompt_type && prompt_type.stringify.starts_with?("Array(") && prompt_type.type_vars[0] == ::ActionController::PromptMessage %}
+        {% raise "#{@type.name}##{method_name} is an MCP prompt and must declare a return type of String or Array(AC::PromptMessage)" unless prompt_type == String || multi_message %}
+        # always rendered as JSON (the responder is always available), a string is a single message
+        {% prompt_annotation = {0 => "/__mcp_prompt__/" + method_name.stringify, :content_type => "application/json", :internal => true} %}
+      {% end %}
+
       # Run through the various route annotations
       {% for route_method in {AC::Route::WebSocket, AC::Route::GET, AC::Route::POST, AC::Route::PUT, AC::Route::PATCH, AC::Route::DELETE, AC::Route::OPTIONS, AC::Route::Filter, AC::Route::Exception} %}
         {% lower_route_method = route_method.stringify.split("::")[-1].downcase.id %}
 
         # Multiple routes can be applied to a single method
-        {% for ann, idx in method.annotations(route_method) %}
+        {% for ann, idx in (mcp_prompt && route_method == AC::Route::GET) ? [prompt_annotation] : method.annotations(route_method) %}
           {% annotation_found = true %}
 
           # OpenAPI route lookup (note full route here is not valid for exceptions and filters)
@@ -354,14 +394,9 @@ module ActionController::Route::Builder
             {% open_api_route[:route] = "/" + full_route.join("/") %}
             {% open_api_route[:verb] = lower_route_method.stringify %}
 
-            # MCP visibility, method level annotation takes precedence
-            {% mcp_klass_ann = @type.annotation(::ActionController::MCP) %}
-            {% mcp_method_ann = method.annotation(::ActionController::MCP) %}
-            {% mcp_hide = mcp_klass_ann ? mcp_klass_ann[:hide] : nil %}
-            {% if mcp_method_ann && mcp_method_ann[:hide] != nil %}
-              {% mcp_hide = mcp_method_ann[:hide] %}
-            {% end %}
             {% open_api_route[:mcp_hide] = mcp_hide == true %}
+            {% open_api_route[:mcp_root] = mcp_root == true %}
+            {% open_api_route[:mcp_prompt] = ann[:internal] == true %}
             {% OPENAPI_ROUTES[verb_route] = open_api_route %}
 
             # initial recording of path params
@@ -380,7 +415,7 @@ module ActionController::Route::Builder
             {% open_api_route[:params] = open_api_params %}
 
             # add a redirect helper (yes, it will only match the last route applied)
-            {% if lower_route_method.stringify == "get" %}
+            {% if lower_route_method.stringify == "get" && !ann[:internal] %}
               def self.{{method_name.id}}(**tuple_parts)
                 route = {{"/" + full_route.join("/")}}
                 ActionController::Support.build_route(route, nil, **tuple_parts)
@@ -394,7 +429,7 @@ module ActionController::Route::Builder
               ws {{ann[0]}}, reference: {{method_name}} do |socket|
             {% else %}
               # :nodoc:
-              {{lower_route_method}} {{ann[0]}}, reference: {{method_name}}, execution_context: {{ann[:execution_context]}} do
+              {{lower_route_method}} {{ann[0]}}, reference: {{method_name}}, execution_context: {{ann[:execution_context]}}, internal: {{ann[:internal] == true}} do
 
                 # Check we can satisfy the accepts header, if provided
                 {% if content_type %}

@@ -45,7 +45,10 @@ module ActionController::MCPServer
     @[YAML::Field(converter: ActionController::MCPServer::JSONAnyConverter)]
     getter input_schema : JSON::Any
 
-    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema)
+    # always available, without opening the toolbox
+    getter? root : Bool = false
+
+    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false)
     end
 
     # the tool definition as returned by `tools/list`
@@ -75,7 +78,61 @@ module ActionController::MCPServer
     end
   end
 
-  # a controller exposed as a group of tools
+  # an argument accepted by a prompt
+  struct PromptArgument
+    include JSON::Serializable
+    include YAML::Serializable
+
+    getter name : String
+
+    # path, query or header
+    getter in : String
+    getter description : String?
+    getter? required : Bool
+
+    def initialize(@name, @in, @description, @required)
+    end
+  end
+
+  # a controller method exposed as a prompt, see `ActionController::MCP`
+  class Prompt
+    include JSON::Serializable
+    include YAML::Serializable
+
+    getter name : String
+    getter description : String?
+
+    # the internal route that renders the prompt
+    getter path : String
+    getter arguments : Array(PromptArgument)
+
+    # always available, without opening the toolbox
+    getter? root : Bool = false
+
+    def initialize(@name, @description, @path, @arguments, @root = false)
+    end
+
+    # the prompt definition as returned by `prompts/list`
+    def to_mcp_json(json : JSON::Builder) : Nil
+      json.object do
+        json.field "name", name
+        json.field "description", description if description
+        json.field "arguments" do
+          json.array do
+            arguments.each do |argument|
+              json.object do
+                json.field "name", argument.name
+                json.field "description", argument.description if argument.description
+                json.field "required", argument.required?
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  # a controller exposed as a group of tools and prompts
   class Toolbox
     include JSON::Serializable
     include YAML::Serializable
@@ -84,8 +141,24 @@ module ActionController::MCPServer
     getter controller : String
     getter description : String?
     getter tools : Array(Tool)
+    getter prompts : Array(Prompt) = [] of Prompt
 
-    def initialize(@name, @controller, @description, @tools = [] of Tool)
+    def initialize(@name, @controller, @description, @tools = [] of Tool, @prompts = [] of Prompt)
+    end
+
+    # the tools added when the toolbox is opened
+    def toolbox_tools : Array(Tool)
+      tools.reject(&.root?)
+    end
+
+    # the prompts added when the toolbox is opened
+    def toolbox_prompts : Array(Prompt)
+      prompts.reject(&.root?)
+    end
+
+    # true if there is anything to add when the toolbox is opened
+    def openable? : Bool
+      tools.any? { |tool| !tool.root? } || prompts.any? { |prompt| !prompt.root? }
     end
   end
 
@@ -107,6 +180,10 @@ module ActionController::MCPServer
     @[YAML::Field(ignore: true)]
     @tool_lookup : Hash(String, Tuple(Toolbox, Tool))? = nil
 
+    @[JSON::Field(ignore: true)]
+    @[YAML::Field(ignore: true)]
+    @prompt_lookup : Hash(String, Tuple(Toolbox, Prompt))? = nil
+
     def toolbox?(name : String) : Toolbox?
       lookup = @toolbox_lookup ||= toolboxes.to_h { |box| {box.name, box} }
       lookup[name]?
@@ -121,10 +198,37 @@ module ActionController::MCPServer
       end
       lookup[name]?
     end
+
+    # returns the prompt and the toolbox it belongs to
+    def prompt?(name : String) : Tuple(Toolbox, Prompt)?
+      lookup = @prompt_lookup ||= begin
+        prompts = {} of String => Tuple(Toolbox, Prompt)
+        toolboxes.each { |box| box.prompts.each { |prompt| prompts[prompt.name] = {box, prompt} } }
+        prompts
+      end
+      lookup[name]?
+    end
+
+    def prompts? : Bool
+      toolboxes.any? { |box| !box.prompts.empty? }
+    end
+
+    # the tools available without opening a toolbox
+    def root_tools : Array(Tool)
+      toolboxes.flat_map { |box| box.tools.select(&.root?) }
+    end
+
+    # the prompts available without opening a toolbox
+    def root_prompts : Array(Prompt)
+      toolboxes.flat_map { |box| box.prompts.select(&.root?) }
+    end
   end
 
   # :nodoc:
-  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String)
+  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool)
+
+  # :nodoc:
+  alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument))
 
   # generates the MCP description from the compiled routes.
   #
@@ -149,26 +253,56 @@ module ActionController::MCPServer
 
       routes = [
         {% for _route_key, details in ::ActionController::Route::Builder::OPENAPI_ROUTES %}
-          {% if details[:verb] != "websocket" && !details[:mcp_hide] %}
+          {% if details[:verb] != "websocket" && !details[:mcp_hide] && !details[:mcp_prompt] %}
             {
               controller: {{ details[:controller] }},
               method: {{ details[:method] }},
               verb: {{ details[:verb] }},
               route: {{ details[:route] }},
+              root: {{ details[:mcp_root] == true }},
             },
           {% end %}
         {% end %}
       ] of RouteInfo
 
-      build_description(open_api, descriptions, routes.select { |route| concrete.includes?(route[:controller]) })
+      prompts = [
+        {% for _route_key, details in ::ActionController::Route::Builder::OPENAPI_ROUTES %}
+          {% if details[:mcp_prompt] && !details[:mcp_hide] %}
+            {
+              controller: {{ details[:controller] }},
+              method: {{ details[:method] }},
+              route: {{ details[:route] }},
+              root: {{ details[:mcp_root] == true }},
+              arguments: [
+                {% for param_name, param in details[:params] %}
+                  PromptArgument.new(
+                    {{ param[:header] || param_name }},
+                    {{ param[:in].id.stringify }},
+                    {{ param[:docs] }}.as(String?),
+                    {{ param[:required] == true }},
+                  ),
+                {% end %}
+              ] of PromptArgument,
+            },
+          {% end %}
+        {% end %}
+      ] of PromptInfo
+
+      build_description(
+        open_api,
+        descriptions,
+        routes.select { |route| concrete.includes?(route[:controller]) },
+        prompts.select { |prompt| concrete.includes?(prompt[:controller]) },
+      )
     {% end %}
   end
 
   # :nodoc:
-  def build_description(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo)) : Description
+  def build_description(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo), prompts : Array(PromptInfo) = [] of PromptInfo) : Description
     schemas = open_api[:components].schemas
     toolboxes = {} of String => Toolbox
     tool_names = Hash(String, Int32).new(0)
+    prompt_names = Hash(String, Int32).new(0)
 
     routes.each do |route|
       path = open_api[:paths][OpenAPI.openapi_path(route[:route])]?
@@ -181,23 +315,45 @@ module ActionController::MCPServer
                   end
       next unless operation
 
-      controller = route[:controller]
-      toolbox = toolboxes[controller] ||= Toolbox.new(
-        tool_name(controller.underscore.gsub("::", "_")),
-        controller,
-        descriptions[controller]?.try(&.docs).try(&.strip).presence,
-      )
-
-      # ensure tool names are unique
-      name = tool_name("#{toolbox.name}_#{route[:method]}")
-      index = tool_names[name] += 1
-      name = "#{name}_#{index}" if index > 1
-
+      toolbox = toolbox_for(toolboxes, route[:controller], descriptions)
+      name = unique_name(tool_names, "#{toolbox.name}_#{route[:method]}")
       description = operation.description || operation.summary || "#{route[:verb].upcase} #{route[:route]}"
       toolbox.tools << build_tool(name, description, route, operation, schemas)
     end
 
+    prompts.each do |prompt|
+      toolbox = toolbox_for(toolboxes, prompt[:controller], descriptions)
+      name = unique_name(prompt_names, "#{toolbox.name}_#{prompt[:method]}")
+      description = method_docs(descriptions, prompt[:controller], prompt[:method]).try(&.strip)
+      toolbox.prompts << Prompt.new(name, description, prompt[:route], prompt[:arguments], prompt[:root])
+    end
+
     Description.new(toolboxes.values)
+  end
+
+  private def toolbox_for(toolboxes : Hash(String, Toolbox), controller : String, descriptions : Hash(String, OpenAPI::KlassDoc)) : Toolbox
+    toolboxes[controller] ||= Toolbox.new(
+      tool_name(controller.underscore.gsub("::", "_")),
+      controller,
+      descriptions[controller]?.try(&.docs).try(&.strip).presence,
+    )
+  end
+
+  # ensures names are unique
+  private def unique_name(names : Hash(String, Int32), name : String) : String
+    name = tool_name(name)
+    index = names[name] += 1
+    index > 1 ? "#{name}_#{index}" : name
+  end
+
+  # the method comment, checking ancestor classes if required
+  private def method_docs(descriptions : Hash(String, OpenAPI::KlassDoc), controller : String, method : String) : String?
+    return unless controller_docs = descriptions[controller]?
+    controller_docs.methods[method]? || controller_docs.ancestors.each do |ancestor|
+      if docs = descriptions[ancestor]?.try(&.methods[method]?)
+        return docs
+      end
+    end
   end
 
   # :nodoc:
@@ -237,7 +393,7 @@ module ActionController::MCPServer
     collect_definitions(JSON::Any.new(properties), schemas, definitions)
     input_schema["$defs"] = JSON::Any.new(definitions) unless definitions.empty?
 
-    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)))
+    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root])
   end
 
   # :nodoc:

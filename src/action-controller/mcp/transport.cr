@@ -1,20 +1,39 @@
 module ActionController::MCPServer
+  # :nodoc:
+  # MCP prompts are routes that are not exposed via HTTP
+  class PromptRouter
+    include Router
+
+    def initialize
+      # expanded when the method is used, once all the routes are known
+      {% for klass in ::ActionController::Base::CONCRETE_CONTROLLERS.keys %}
+        {{klass}}.__init_internal_routes__(self)
+      {% end %}
+    end
+  end
+
   # implements the [Streamable HTTP](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#streamable-http) transport
   class Transport
-    SESSION_HEADER = "Mcp-Session-Id"
-    VERSION_HEADER = "MCP-Protocol-Version"
-    KEEPALIVE      = 25.seconds
+    SESSION_HEADER         = "Mcp-Session-Id"
+    VERSION_HEADER         = "MCP-Protocol-Version"
+    KEEPALIVE              = 25.seconds
+    RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource"
 
     getter sessions : SessionStore = SessionStore.new
+    getter auth_cache : AuthCache = AuthCache.new
     getter protocol : Protocol
 
-    def initialize(route_handler : Router::RouteHandler)
-      @protocol = Protocol.new(Invoker.new(route_handler))
+    # the path the transport is mounted at
+    getter path : String
+
+    def initialize(route_handler : Router::RouteHandler, @path : String = "/mcp")
+      @invoker = Invoker.new(route_handler, PromptRouter.new.route_handler)
+      @protocol = Protocol.new(@invoker)
     end
 
     # client to server messages
     def post(context : HTTP::Server::Context) : HTTP::Server::Context
-      return context unless valid_origin?(context) && valid_version?(context)
+      return context unless valid_origin?(context) && valid_version?(context) && authenticated?(context)
 
       message = begin
         JSON.parse(context.request.body.try(&.gets_to_end) || "").as_h?
@@ -41,6 +60,10 @@ module ActionController::MCPServer
         result = @protocol.handle(method, params, session, context.request, emitted)
       rescue error : RPCError
         return rpc_error(context, id, error.code, error.message.as(String))
+      rescue Unauthorized
+        # the credentials are no longer valid, prompt the client to re-authenticate
+        AuthCache.fingerprint(context.request).try { |fingerprint| @auth_cache.delete(fingerprint) }
+        return unauthorized(context, invalid_token: true)
       end
 
       reply = rpc_result(id, result)
@@ -60,7 +83,7 @@ module ActionController::MCPServer
 
     # opens an event stream for server to client messages
     def get(context : HTTP::Server::Context, head_request : Bool) : HTTP::Server::Context
-      return context unless valid_origin?(context) && valid_version?(context)
+      return context unless valid_origin?(context) && valid_version?(context) && authenticated?(context)
       if head_request || !accepts?(context, "text/event-stream")
         return respond(context, HTTP::Status::METHOD_NOT_ALLOWED, "text/plain", "event stream requires Accept: text/event-stream")
       end
@@ -90,11 +113,76 @@ module ActionController::MCPServer
 
     # terminates the session
     def delete(context : HTTP::Server::Context) : HTTP::Server::Context
-      return context unless valid_origin?(context)
+      return context unless valid_origin?(context) && authenticated?(context)
       return context unless session = find_session(context)
       @sessions.delete(session.id)
       context.response.status = HTTP::Status::NO_CONTENT
       context
+    end
+
+    # OAuth 2.0 protected resource metadata, see `MCPServer.resource_metadata`
+    def resource_metadata(context : HTTP::Server::Context) : HTTP::Server::Context
+      builder = MCPServer.resource_metadata
+      return respond(context, HTTP::Status::NOT_FOUND, "text/plain", "resource metadata not configured") unless builder
+
+      context.response.headers["Access-Control-Allow-Origin"] = "*"
+      metadata = builder.call(context.request)
+      respond(context, HTTP::Status::OK, "application/json", metadata.to_json(public_url(context.request, @path)))
+    end
+
+    # checks the request is authenticated when authentication is enabled
+    private def authenticated?(context) : Bool
+      return true unless MCPServer.auth_enabled?
+
+      request = context.request
+      fingerprint = AuthCache.fingerprint(request)
+      return true if fingerprint && @auth_cache.valid?(fingerprint)
+
+      permitted = if authenticator = MCPServer.authenticator
+                    authenticator.call(request)
+                  elsif probe = MCPServer.auth_probe
+                    @invoker.probe(probe, request)
+                  else
+                    # credentials are validated by the routes when tools are called
+                    !fingerprint.nil?
+                  end
+
+      if permitted
+        @auth_cache.store(fingerprint, MCPServer.auth_cache_ttl) if fingerprint
+        true
+      else
+        unauthorized(context, invalid_token: !fingerprint.nil?)
+        false
+      end
+    end
+
+    # responds with a challenge that prompts MCP clients to (re)authenticate
+    private def unauthorized(context, invalid_token : Bool) : HTTP::Server::Context
+      request = context.request
+      params = [] of String
+      if builder = MCPServer.resource_metadata
+        params << %(resource_metadata="#{public_url(request, RESOURCE_METADATA_PATH + @path)}")
+        if scopes = builder.call(request).scopes_supported
+          params << %(scope="#{scopes.join(' ')}") unless scopes.empty?
+        end
+      end
+      params << %(error="invalid_token") if invalid_token
+
+      context.response.headers["WWW-Authenticate"] = params.empty? ? "Bearer" : "Bearer #{params.join(", ")}"
+      rpc_error(context, nil, RPCError::INVALID_REQUEST, "Unauthorized", HTTP::Status::UNAUTHORIZED)
+    end
+
+    # the public URL of a path on this server
+    private def public_url(request : HTTP::Request, path : String) : String
+      host = request.headers["Host"]? || "localhost"
+      scheme = request.headers["X-Forwarded-Proto"]?.try(&.split(',').first.strip.presence)
+      scheme ||= loopback?(request.hostname) ? "http" : "https"
+      "#{scheme}://#{host}#{path}"
+    end
+
+    private def loopback?(hostname : String?) : Bool
+      return true if hostname.nil?
+      hostname == "localhost" || hostname == "::1" || hostname == "[::1]" || hostname.starts_with?("127.")
     end
 
     private def initialize_session(context, id : JSON::Any, params : Hash(String, JSON::Any)) : HTTP::Server::Context

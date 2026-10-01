@@ -203,6 +203,7 @@ module ActionController::OpenAPI
       # * default response will include all the other responses types (split up and differentiate)
       # * ignore array types (need to reference the internal type [if possible])
       {% for route_key, details in Route::Builder::OPENAPI_ROUTES %}
+        {% if !details[:mcp_prompt] %}
         {% default_type = details[:default_response][0].resolve %}
         {% default_code = details[:default_response][1] %}
         {% default_specified = details[:default_response][2] %}
@@ -248,6 +249,7 @@ module ActionController::OpenAPI
             response_types[{{resolved_klass.stringify}}] = ::JSON::Schema.introspect({{ resolved_klass }}, openapi: true).to_json
           {% end %}
           route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
+        {% end %}
         {% end %}
       {% end %}
 
@@ -335,6 +337,7 @@ module ActionController::OpenAPI
 
       routes = {} of String => RouteDetails
       {% for route_key, details in Route::Builder::OPENAPI_ROUTES %}
+        {% if !details[:mcp_prompt] %}
         # the filters applied to this route
         {% filters = Base::OPENAPI_FILTER_MAP[route_key] %}
         {% errors = Base::OPENAPI_ERRORS_MAP[route_key] %}
@@ -369,6 +372,7 @@ module ActionController::OpenAPI
           request_body: {{ details[:request_body].id.stringify }},
           route_responses: route_response[{{route_key}}]
         }
+        {% end %}
       {% end %}
 
       #{

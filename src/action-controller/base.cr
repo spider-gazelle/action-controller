@@ -675,6 +675,7 @@ abstract class ActionController::Base
           {% http_method = details[0] %}
           {% route_path = details[1] %}
           {% is_websocket = details[4] %}
+          {% unless details[8] %}
 
           # resolve the bound execution context: route annotation > controller default
           {% route_execution_context = details[7] %}
@@ -704,19 +705,35 @@ abstract class ActionController::Base
               &->{{dispatch}}(HTTP::Server::Context, Bool)
             )
           {% end %}
+          {% end %}
         {% end %}
 
         nil
       end
 
+      # :nodoc:
+      # MCP prompts are routes that are not exposed via HTTP
+      def self.__init_internal_routes__(router)
+        {% for _key, details in ROUTES %}
+          {% if details[8] %}
+            {% route = (NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/$/, "").gsub(/\/\//, "/") %}
+            {% dispatch = (details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\W/, "_").id %}
+            router.{{details[0].id}}({{route}}, &->{{dispatch}}(HTTP::Server::Context, Bool))
+          {% end %}
+        {% end %}
+        nil
+      end
+
       # Helper methods for performing redirect_to calls
       {% for _key, details in ROUTES %}
+        {% unless details[8] %}
         {% reference_name = details[5] %}
         {% route_path = details[1] %}
         def self.{{reference_name}}(hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
           route = "{{NAMESPACE[0].id}}{{route_path.id}}".gsub("//", "/")
           ActionController::Support.build_route(route, hash_parts, **tuple_parts)
         end
+        {% end %}
       {% end %}
 
       # :nodoc:
@@ -724,12 +741,14 @@ abstract class ActionController::Base
         [
           # "Class", :name, :verb, "route"
           {% for _key, details in ROUTES %}
+            {% unless details[8] %}
             {% http_method = details[0] %}
             {% route_path = details[1] %}
             {% reference_name = details[5] %}
             { "{{@type.name}}", :{{reference_name}}, :{{http_method.id}}, "{{NAMESPACE[0].id}}{{route_path.id}}".gsub("//", "/")},
+            {% end %}
           {% end %}
-        ]
+        ] of Tuple(String, Symbol, Symbol, String)
       end
     {% end %}
   end
@@ -752,11 +771,13 @@ abstract class ActionController::Base
   # Define each method for supported http methods except head (which is meta)
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
     # define a new route that responds to {{http_method.id.stringify.upcase.id}} requests
-    macro {{http_method.id}}(path, function = nil, annotations = nil, reference = nil, execution_context = nil, &block)
+    #
+    # `internal: true` routes are not exposed via HTTP, they're used to implement MCP prompts
+    macro {{http_method.id}}(path, function = nil, annotations = nil, reference = nil, execution_context = nil, internal = false, &block)
       \{% unless function %}
         \{% function = "_route_" + {{http_method}} + path.gsub(/\W/, "_") %}
       \{% end %}
-      \{% LOCAL_ROUTES[{{http_method}} + path] = { {{http_method}}, path, annotations, block, false, (reference || function).id, function.id, execution_context } %}
+      \{% LOCAL_ROUTES[{{http_method}} + path] = { {{http_method}}, path, annotations, block, false, (reference || function).id, function.id, execution_context, internal } %}
       \{% if annotations %}
         \{% annotations = [annotations] unless annotations.is_a?(ArrayLiteral) %}
         \{% for ann in annotations %}
@@ -776,7 +797,7 @@ abstract class ActionController::Base
     {% unless function %}
       {% function = "ws" + path.gsub(/\W/, "_") %}
     {% end %}
-    {% LOCAL_ROUTES["ws" + path] = {"get", path, annotations, block, true, (reference || function).id, function.id, nil} %}
+    {% LOCAL_ROUTES["ws" + path] = {"get", path, annotations, block, true, (reference || function).id, function.id, nil, false} %}
     {% if annotations %} #
       {% annotations = [annotations] unless annotations.is_a?(ArrayLiteral) %}
       {% for ann in annotations %}
