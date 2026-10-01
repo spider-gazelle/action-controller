@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Crystal Docs 1.20.3">
+<meta name="crystal_docs.project_version" content="master">
+<meta name="crystal_docs.project_name" content="action-controller">
+
+
+
+<link href="../css/style.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="../js/doc.js"></script>
+
+  <meta name="repository-name" content="action-controller">
+  <title>ActionController::MCPServer - action-controller master</title>
+  <script type="text/javascript">
+    CrystalDocs.base_path = "../";
+  </script>
+</head>
+<body>
+
+<svg class="hidden">
+  <symbol id="octicon-link" viewBox="0 0 16 16">
+    <path fill="currentColor" fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+  </symbol>
+</svg>
+<input type="checkbox" id="sidebar-btn">
+<label for="sidebar-btn" id="sidebar-btn-label">
+  <svg class="open" xmlns="http://www.w3.org/2000/svg" height="2em" width="2em" viewBox="0 0 512 512"><title>Open Sidebar</title><path fill="currentColor" d="M80 96v64h352V96H80zm0 112v64h352v-64H80zm0 112v64h352v-64H80z"></path></svg>
+  <svg class="close" xmlns="http://www.w3.org/2000/svg" width="2em" height="2em" viewBox="0 0 512 512"><title>Close Sidebar</title><path fill="currentColor" d="m118.6 73.4-45.2 45.2L210.7 256 73.4 393.4l45.2 45.2L256 301.3l137.4 137.3 45.2-45.2L301.3 256l137.3-137.4-45.2-45.2L256 210.7Z"></path></svg>
+</label>
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="search-box">
+      <input type="search" class="search-input" placeholder="Search..." spellcheck="false" aria-label="Search">
+    </div>
+
+    <div class="project-summary">
+      <h1 class="project-name">
+        <a href="../index.html">
+          action-controller
+        </a>
+      </h1>
+
+      <span class="project-version">
+        master
+      </span>
+    </div>
+  </div>
+
+  <div class="search-results hidden">
+    <ul class="search-list"></ul>
+  </div>
+
+  <div class="types-list">
+    <ul>
+  
+  <li class=" " data-id="action-controller/AC" data-name="ac">
+      <a href="../AC.html">AC</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="action-controller/ActionController" data-name="actioncontroller">
+      <a href="../ActionController.html">ActionController</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Base" data-name="actioncontroller::base">
+      <a href="../ActionController/Base.html">Base</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/CookieSizeExceeded" data-name="actioncontroller::cookiesizeexceeded">
+      <a href="../ActionController/CookieSizeExceeded.html">CookieSizeExceeded</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Error" data-name="actioncontroller::error">
+      <a href="../ActionController/Error.html">Error</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/CommonResponse" data-name="actioncontroller::error::commonresponse">
+      <a href="../ActionController/Error/CommonResponse.html">CommonResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Conflict" data-name="actioncontroller::error::conflict">
+      <a href="../ActionController/Error/Conflict.html">Conflict</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ContentResponse" data-name="actioncontroller::error::contentresponse">
+      <a href="../ActionController/Error/ContentResponse.html">ContentResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Forbidden" data-name="actioncontroller::error::forbidden">
+      <a href="../ActionController/Error/Forbidden.html">Forbidden</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/NotFound" data-name="actioncontroller::error::notfound">
+      <a href="../ActionController/Error/NotFound.html">NotFound</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/ParameterResponse" data-name="actioncontroller::error::parameterresponse">
+      <a href="../ActionController/Error/ParameterResponse.html">ParameterResponse</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Error/Unauthorized" data-name="actioncontroller::error::unauthorized">
+      <a href="../ActionController/Error/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/ExecutionContext" data-name="actioncontroller::executioncontext">
+      <a href="../ActionController/ExecutionContext.html">ExecutionContext</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidRoute" data-name="actioncontroller::invalidroute">
+      <a href="../ActionController/InvalidRoute.html">InvalidRoute</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/InvalidSignature" data-name="actioncontroller::invalidsignature">
+      <a href="../ActionController/InvalidSignature.html">InvalidSignature</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCP" data-name="actioncontroller::mcp">
+      <a href="../ActionController/MCP.html">MCP</a>
+      
+    </li>
+  
+  <li class="parent open current" data-id="action-controller/ActionController/MCPServer" data-name="actioncontroller::mcpserver">
+      <a href="../ActionController/MCPServer.html">MCPServer</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/AuthCache" data-name="actioncontroller::mcpserver::authcache">
+      <a href="../ActionController/MCPServer/AuthCache.html">AuthCache</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Description" data-name="actioncontroller::mcpserver::description">
+      <a href="../ActionController/MCPServer/Description.html">Description</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/MCPServer/Invoker" data-name="actioncontroller::mcpserver::invoker">
+      <a href="../ActionController/MCPServer/Invoker.html">Invoker</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Invoker/ArgumentError" data-name="actioncontroller::mcpserver::invoker::argumenterror">
+      <a href="../ActionController/MCPServer/Invoker/ArgumentError.html">ArgumentError</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Prompt" data-name="actioncontroller::mcpserver::prompt">
+      <a href="../ActionController/MCPServer/Prompt.html">Prompt</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/PromptArgument" data-name="actioncontroller::mcpserver::promptargument">
+      <a href="../ActionController/MCPServer/PromptArgument.html">PromptArgument</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Protocol" data-name="actioncontroller::mcpserver::protocol">
+      <a href="../ActionController/MCPServer/Protocol.html">Protocol</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/ResourceMetadata" data-name="actioncontroller::mcpserver::resourcemetadata">
+      <a href="../ActionController/MCPServer/ResourceMetadata.html">ResourceMetadata</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/RPCError" data-name="actioncontroller::mcpserver::rpcerror">
+      <a href="../ActionController/MCPServer/RPCError.html">RPCError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Session" data-name="actioncontroller::mcpserver::session">
+      <a href="../ActionController/MCPServer/Session.html">Session</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/SessionStore" data-name="actioncontroller::mcpserver::sessionstore">
+      <a href="../ActionController/MCPServer/SessionStore.html">SessionStore</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Tool" data-name="actioncontroller::mcpserver::tool">
+      <a href="../ActionController/MCPServer/Tool.html">Tool</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Toolbox" data-name="actioncontroller::mcpserver::toolbox">
+      <a href="../ActionController/MCPServer/Toolbox.html">Toolbox</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/ToolParam" data-name="actioncontroller::mcpserver::toolparam">
+      <a href="../ActionController/MCPServer/ToolParam.html">ToolParam</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Transport" data-name="actioncontroller::mcpserver::transport">
+      <a href="../ActionController/MCPServer/Transport.html">Transport</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Unauthorized" data-name="actioncontroller::mcpserver::unauthorized">
+      <a href="../ActionController/MCPServer/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/OpenAPI" data-name="actioncontroller::openapi">
+      <a href="../ActionController/OpenAPI.html">OpenAPI</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Param" data-name="actioncontroller::param">
+      <a href="../ActionController/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Converter" data-name="actioncontroller::param::converter">
+      <a href="../ActionController/Param/Converter.html">Converter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Param/Info" data-name="actioncontroller::param::info">
+      <a href="../ActionController/Param/Info.html">Info</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/PromptMessage" data-name="actioncontroller::promptmessage">
+      <a href="../ActionController/PromptMessage.html">PromptMessage</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/PromptMessage/Role" data-name="actioncontroller::promptmessage::role">
+      <a href="../ActionController/PromptMessage/Role.html">Role</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Responders" data-name="actioncontroller::responders">
+      <a href="../ActionController/Responders.html">Responders</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Route" data-name="actioncontroller::route">
+      <a href="../ActionController/Route.html">Route</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Builder" data-name="actioncontroller::route::builder">
+      <a href="../ActionController/Route/Builder.html">Builder</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/DELETE" data-name="actioncontroller::route::delete">
+      <a href="../ActionController/Route/DELETE.html">DELETE</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Error" data-name="actioncontroller::route::error">
+      <a href="../ActionController/Route/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Exception" data-name="actioncontroller::route::exception">
+      <a href="../ActionController/Route/Exception.html">Exception</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Filter" data-name="actioncontroller::route::filter">
+      <a href="../ActionController/Route/Filter.html">Filter</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/GET" data-name="actioncontroller::route::get">
+      <a href="../ActionController/Route/GET.html">GET</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/NotAcceptable" data-name="actioncontroller::route::notacceptable">
+      <a href="../ActionController/Route/NotAcceptable.html">NotAcceptable</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/OPTIONS" data-name="actioncontroller::route::options">
+      <a href="../ActionController/Route/OPTIONS.html">OPTIONS</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Route/Param" data-name="actioncontroller::route::param">
+      <a href="../ActionController/Route/Param.html">Param</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Conversion" data-name="actioncontroller::route::param::conversion">
+      <a href="../ActionController/Route/Param/Conversion.html">Conversion</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/Error" data-name="actioncontroller::route::param::error">
+      <a href="../ActionController/Route/Param/Error.html">Error</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/MissingError" data-name="actioncontroller::route::param::missingerror">
+      <a href="../ActionController/Route/Param/MissingError.html">MissingError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/Param/ValueError" data-name="actioncontroller::route::param::valueerror">
+      <a href="../ActionController/Route/Param/ValueError.html">ValueError</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PATCH" data-name="actioncontroller::route::patch">
+      <a href="../ActionController/Route/PATCH.html">PATCH</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/POST" data-name="actioncontroller::route::post">
+      <a href="../ActionController/Route/POST.html">POST</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PUT" data-name="actioncontroller::route::put">
+      <a href="../ActionController/Route/PUT.html">PUT</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/UnsupportedMediaType" data-name="actioncontroller::route::unsupportedmediatype">
+      <a href="../ActionController/Route/UnsupportedMediaType.html">UnsupportedMediaType</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/WebSocket" data-name="actioncontroller::route::websocket">
+      <a href="../ActionController/Route/WebSocket.html">WebSocket</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Server" data-name="actioncontroller::server">
+      <a href="../ActionController/Server.html">Server</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/Session" data-name="actioncontroller::session">
+      <a href="../ActionController/Session.html">Session</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/Session/HabitatSettings" data-name="actioncontroller::session::habitatsettings">
+      <a href="../ActionController/Session/HabitatSettings.html">HabitatSettings</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/SpecHelper" data-name="actioncontroller::spechelper">
+      <a href="../ActionController/SpecHelper.html">SpecHelper</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+</ul>
+
+  </div>
+</div>
+
+
+<div class="main-content">
+<h1 class="type-name">
+
+  <span class="kind">
+    module
+  </span> ActionController::<wbr>MCPServer
+
+</h1>
+
+
+
+
+
+  <h2>
+    <a id="overview" class="anchor" href="#overview">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Overview
+  </h2>
+
+  <p>Exposes the application's annotated routes as an <a href="https://modelcontextprotocol.io">MCP</a> server
+using the Streamable HTTP transport.</p>
+<p>Controllers are presented as toolboxes and their routes as tools. To keep the
+model's context lean only three tools are listed by default:</p>
+<ul>
+<li><code>list_toolboxes</code> lists the controllers and their descriptions</li>
+<li><code>open_toolbox(name)</code> adds the controller's routes to the session's tool set</li>
+<li><code>close_toolbox(name)</code> removes them again</li>
+</ul>
+<p>Tool calls are dispatched in-process through the application router, so
+filters, authentication and error handlers apply exactly as they would for a
+regular request.</p>
+<pre><code class="language-crystal"><span class="k">require</span> <span class="s">&quot;action-controller/mcp&quot;</span>
+
+server <span class="o">=</span> <span class="t">ActionController</span><span class="t">::</span><span class="t">Server</span>.new
+<span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.mount(server, <span class="s">&quot;/mcp&quot;</span>)
+server.run</code></pre>
+<p>Tool descriptions are extracted from the source code comments, so they need to
+be generated at build time and shipped alongside the binary:</p>
+<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.write_description(<span class="s">&quot;mcp.yml&quot;</span>)</code></pre>
+<p>the file is lazily loaded from <code><a href="../ActionController/MCPServer.html#description_path%3AString-class-method">.description_path</a></code> the first time it is needed.
+Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::MCP</a>(hide: true)]</code></p>
+
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="extended-modules" class="anchor" href="#extended-modules">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Extended Modules
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type"><a href="../ActionController/MCPServer.html">ActionController::MCPServer</a></li>
+    
+  </ul>
+
+
+
+
+
+
+
+
+  <h2>
+    <a id="defined-in" class="anchor" href="#defined-in">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Defined in:
+  </h2>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L37" target="_blank">
+        action-controller/mcp.cr
+      </a>
+    
+    <br/>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp/auth.cr#L3" target="_blank">
+        action-controller/mcp/auth.cr
+      </a>
+    
+    <br/>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp/description.cr#L1" target="_blank">
+        action-controller/mcp/description.cr
+      </a>
+    
+    <br/>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp/invoker.cr#L5" target="_blank">
+        action-controller/mcp/invoker.cr
+      </a>
+    
+    <br/>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp/protocol.cr#L1" target="_blank">
+        action-controller/mcp/protocol.cr
+      </a>
+    
+    <br/>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp/session.cr#L3" target="_blank">
+        action-controller/mcp/session.cr
+      </a>
+    
+    <br/>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp/transport.cr#L1" target="_blank">
+        action-controller/mcp/transport.cr
+      </a>
+    
+    <br/>
+  
+
+
+
+  
+    <h2>
+      <a id="constant-summary" class="anchor" href="#constant-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+      Constant Summary
+    </h2>
+  
+  <dl>
+    
+      <dt class="entry-const" id="DEFAULT_INSTRUCTIONS">
+        <strong>DEFAULT_INSTRUCTIONS</strong> = <code><span class="s">&quot;Tools are grouped into toolboxes. Call list_toolboxes to discover what is available,\nopen_toolbox to load the tools in a toolbox and close_toolbox once you no longer need them.&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="PROTOCOL_VERSIONS">
+        <strong>PROTOCOL_VERSIONS</strong> = <code>{<span class="s">&quot;2025-11-25&quot;</span>, <span class="s">&quot;2025-06-18&quot;</span>, <span class="s">&quot;2025-03-26&quot;</span>}</code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>supported protocol versions, newest first</p>
+      </dd>
+      
+    
+  </dl>
+
+
+
+  
+
+  
+  <h2>
+    <a id="class-method-summary" class="anchor" href="#class-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#allowed_origins%3AArray%28String%29-class-method" class="signature"><strong>.allowed_origins</strong> : Array(String)</a>
+        
+          <div class="summary"><p>browser origins permitted to connect, in addition to same origin requests.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#allowed_origins%3D%28allowed_origins%3AArray%28String%29%29-class-method" class="signature"><strong>.allowed_origins=</strong>(allowed_origins : Array(String))</a>
+        
+          <div class="summary"><p>browser origins permitted to connect, in addition to same origin requests.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#auth_cache_ttl%3ATime%3A%3ASpan-class-method" class="signature"><strong>.auth_cache_ttl</strong> : Time::Span</a>
+        
+          <div class="summary"><p>how long a successful authentication check is cached for</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#auth_cache_ttl%3D%28auth_cache_ttl%3ATime%3A%3ASpan%29-class-method" class="signature"><strong>.auth_cache_ttl=</strong>(auth_cache_ttl : Time::Span)</a>
+        
+          <div class="summary"><p>how long a successful authentication check is cached for</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#auth_probe%3AString%7CNil-class-method" class="signature"><strong>.auth_probe</strong> : String | Nil</a>
+        
+          <div class="summary"><p>a route used to authenticate MCP requests, i.e.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#auth_probe%3D%28auth_probe%3AString%7CNil%29-class-method" class="signature"><strong>.auth_probe=</strong>(auth_probe : String | Nil)</a>
+        
+          <div class="summary"><p>a route used to authenticate MCP requests, i.e.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#authenticator%3AProc%28HTTP%3A%3ARequest%2CBool%29%7CNil-class-method" class="signature"><strong>.authenticator</strong> : Proc(HTTP::Request, Bool) | Nil</a>
+        
+          <div class="summary"><p>authenticates MCP requests, returning <code>true</code> if the request is permitted.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#authenticator%3D%28authenticator%3AProc%28HTTP%3A%3ARequest%2CBool%29%7CNil%29-class-method" class="signature"><strong>.authenticator=</strong>(authenticator : Proc(HTTP::Request, Bool) | Nil)</a>
+        
+          <div class="summary"><p>authenticates MCP requests, returning <code>true</code> if the request is permitted.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#description_path%3AString-class-method" class="signature"><strong>.description_path</strong> : String</a>
+        
+          <div class="summary"><p>location of the MCP description file, generated using <code><a href="../ActionController/MCPServer.html#write_description%28path%3AString%3Ddescription_path%29%3ANil-instance-method">#write_description</a></code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#description_path%3D%28description_path%3AString%29-class-method" class="signature"><strong>.description_path=</strong>(description_path : String)</a>
+        
+          <div class="summary"><p>location of the MCP description file, generated using <code><a href="../ActionController/MCPServer.html#write_description%28path%3AString%3Ddescription_path%29%3ANil-instance-method">#write_description</a></code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#forward_headers%3AArray%28String%29-class-method" class="signature"><strong>.forward_headers</strong> : Array(String)</a>
+        
+          <div class="summary"><p>request headers copied from the MCP request to the route being invoked, typically used for authentication</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#forward_headers%3D%28forward_headers%3AArray%28String%29%29-class-method" class="signature"><strong>.forward_headers=</strong>(forward_headers : Array(String))</a>
+        
+          <div class="summary"><p>request headers copied from the MCP request to the route being invoked, typically used for authentication</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#instructions%3AString%7CNil-class-method" class="signature"><strong>.instructions</strong> : String | Nil</a>
+        
+          <div class="summary"><p>usage instructions provided to the model</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#instructions%3D%28instructions%3AString%7CNil%29-class-method" class="signature"><strong>.instructions=</strong>(instructions : String | Nil)</a>
+        
+          <div class="summary"><p>usage instructions provided to the model</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#resource_metadata%3AProc%28HTTP%3A%3ARequest%2CResourceMetadata%29%7CNil-class-method" class="signature"><strong>.resource_metadata</strong> : Proc(HTTP::Request, ResourceMetadata) | Nil</a>
+        
+          <div class="summary"><p>advertises the OAuth authorization server so MCP clients can obtain and refresh access tokens.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#resource_metadata%3D%28resource_metadata%3AProc%28HTTP%3A%3ARequest%2CResourceMetadata%29%7CNil%29-class-method" class="signature"><strong>.resource_metadata=</strong>(resource_metadata : Proc(HTTP::Request, ResourceMetadata) | Nil)</a>
+        
+          <div class="summary"><p>advertises the OAuth authorization server so MCP clients can obtain and refresh access tokens.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#server_name%3AString-class-method" class="signature"><strong>.server_name</strong> : String</a>
+        
+          <div class="summary"><p>reported to clients during initialization</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#server_name%3D%28server_name%3AString%29-class-method" class="signature"><strong>.server_name=</strong>(server_name : String)</a>
+        
+          <div class="summary"><p>reported to clients during initialization</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#server_version%3AString-class-method" class="signature"><strong>.server_version</strong> : String</a>
+        
+          <div class="summary"><p>reported to clients during initialization</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#server_version%3D%28server_version%3AString%29-class-method" class="signature"><strong>.server_version=</strong>(server_version : String)</a>
+        
+          <div class="summary"><p>reported to clients during initialization</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#session_timeout%3ATime%3A%3ASpan-class-method" class="signature"><strong>.session_timeout</strong> : Time::Span</a>
+        
+          <div class="summary"><p>sessions inactive for this period are discarded</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#session_timeout%3D%28session_timeout%3ATime%3A%3ASpan%29-class-method" class="signature"><strong>.session_timeout=</strong>(session_timeout : Time::Span)</a>
+        
+          <div class="summary"><p>sessions inactive for this period are discarded</p></div>
+        
+      </li>
+    
+  </ul>
+
+
+  
+
+  
+  <h2>
+    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#auth_enabled%3F%3ABool-instance-method" class="signature"><strong>#auth_enabled?</strong> : Bool</a>
+        
+          <div class="summary"><p>authentication is optional and enabled when any of <code><a href="../ActionController/MCPServer.html#authenticator%3AProc%28HTTP%3A%3ARequest%2CBool%29%7CNil-class-method">.authenticator</a></code>, <code><a href="../ActionController/MCPServer.html#auth_probe%3AString%7CNil-class-method">.auth_probe</a></code> or <code><a href="../ActionController/MCPServer.html#resource_metadata%3AProc%28HTTP%3A%3ARequest%2CResourceMetadata%29%7CNil-class-method">.resource_metadata</a></code> is configured</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#description%3ADescription-instance-method" class="signature"><strong>#description</strong> : Description</a>
+        
+          <div class="summary"><p>the tool descriptions, lazily loaded from <code><a href="../ActionController/MCPServer.html#description_path%3AString-class-method">.description_path</a></code>.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#description%3D%28description%3ADescription%7CNil%29-instance-method" class="signature"><strong>#description=</strong>(description : Description | Nil)</a>
+        
+          <div class="summary"><p>replaces the current description, <code>nil</code> will reload it on next use</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#generate_description%28docs%3ABool%3Dtrue%29%3ADescription-instance-method" class="signature"><strong>#generate_description</strong>(docs : Bool = <span class="n">true</span>) : Description</a>
+        
+          <div class="summary"><p>generates the MCP description from the compiled routes.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#mount%28router%3ARouter%2Cpath%3AString%3D%22/mcp%22%29%3ATransport-instance-method" class="signature"><strong>#mount</strong>(router : Router, path : String = <span class="s">&quot;/mcp&quot;</span>) : Transport</a>
+        
+          <div class="summary"><p>mounts the MCP endpoint at the path provided.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#write_description%28path%3AString%3Ddescription_path%29%3ANil-instance-method" class="signature"><strong>#write_description</strong>(path : String = description_path) : Nil</a>
+        
+          <div class="summary"><p>generates the description, including source code comments, and saves it to a file</p></div>
+        
+      </li>
+    
+  </ul>
+
+
+
+  <div class="methods-inherited">
+    
+  </div>
+
+  
+
+  
+  <h2>
+    <a id="class-method-detail" class="anchor" href="#class-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="allowed_origins:Array(String)-class-method">
+      <div class="signature">
+        
+        def self.<strong>allowed_origins</strong> : Array(String)
+
+        <a class="method-permalink" href="#allowed_origins%3AArray%28String%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>browser origins permitted to connect, in addition to same origin requests.
+<code>&quot;*&quot;</code> permits any origin</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L69" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="allowed_origins=(allowed_origins:Array(String))-class-method">
+      <div class="signature">
+        
+        def self.<strong>allowed_origins=</strong>(allowed_origins : Array(String))
+
+        <a class="method-permalink" href="#allowed_origins%3D%28allowed_origins%3AArray%28String%29%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>browser origins permitted to connect, in addition to same origin requests.
+<code>&quot;*&quot;</code> permits any origin</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L69" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="auth_cache_ttl:Time::Span-class-method">
+      <div class="signature">
+        
+        def self.<strong>auth_cache_ttl</strong> : Time::Span
+
+        <a class="method-permalink" href="#auth_cache_ttl%3ATime%3A%3ASpan-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>how long a successful authentication check is cached for</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L86" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="auth_cache_ttl=(auth_cache_ttl:Time::Span)-class-method">
+      <div class="signature">
+        
+        def self.<strong>auth_cache_ttl=</strong>(auth_cache_ttl : Time::Span)
+
+        <a class="method-permalink" href="#auth_cache_ttl%3D%28auth_cache_ttl%3ATime%3A%3ASpan%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>how long a successful authentication check is cached for</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L86" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="auth_probe:String|Nil-class-method">
+      <div class="signature">
+        
+        def self.<strong>auth_probe</strong> : String | Nil
+
+        <a class="method-permalink" href="#auth_probe%3AString%7CNil-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>a route used to authenticate MCP requests, i.e. <code>/api/v1/users/current</code>.</p>
+<p>the route is requested in-process with the forwarded headers, a successful
+(2xx) response indicates the request is authenticated</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L83" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="auth_probe=(auth_probe:String|Nil)-class-method">
+      <div class="signature">
+        
+        def self.<strong>auth_probe=</strong>(auth_probe : String | Nil)
+
+        <a class="method-permalink" href="#auth_probe%3D%28auth_probe%3AString%7CNil%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>a route used to authenticate MCP requests, i.e. <code>/api/v1/users/current</code>.</p>
+<p>the route is requested in-process with the forwarded headers, a successful
+(2xx) response indicates the request is authenticated</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L83" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="authenticator:Proc(HTTP::Request,Bool)|Nil-class-method">
+      <div class="signature">
+        
+        def self.<strong>authenticator</strong> : Proc(HTTP::Request, Bool) | Nil
+
+        <a class="method-permalink" href="#authenticator%3AProc%28HTTP%3A%3ARequest%2CBool%29%7CNil-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>authenticates MCP requests, returning <code>true</code> if the request is permitted.</p>
+<p>optional, see <code><a href="../ActionController/MCPServer.html#auth_probe%3AString%7CNil-class-method">.auth_probe</a></code> for a simpler alternative</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L77" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="authenticator=(authenticator:Proc(HTTP::Request,Bool)|Nil)-class-method">
+      <div class="signature">
+        
+        def self.<strong>authenticator=</strong>(authenticator : Proc(HTTP::Request, Bool) | Nil)
+
+        <a class="method-permalink" href="#authenticator%3D%28authenticator%3AProc%28HTTP%3A%3ARequest%2CBool%29%7CNil%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>authenticates MCP requests, returning <code>true</code> if the request is permitted.</p>
+<p>optional, see <code><a href="../ActionController/MCPServer.html#auth_probe%3AString%7CNil-class-method">.auth_probe</a></code> for a simpler alternative</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L77" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="description_path:String-class-method">
+      <div class="signature">
+        
+        def self.<strong>description_path</strong> : String
+
+        <a class="method-permalink" href="#description_path%3AString-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>location of the MCP description file, generated using <code><a href="../ActionController/MCPServer.html#write_description%28path%3AString%3Ddescription_path%29%3ANil-instance-method">#write_description</a></code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L52" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="description_path=(description_path:String)-class-method">
+      <div class="signature">
+        
+        def self.<strong>description_path=</strong>(description_path : String)
+
+        <a class="method-permalink" href="#description_path%3D%28description_path%3AString%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>location of the MCP description file, generated using <code><a href="../ActionController/MCPServer.html#write_description%28path%3AString%3Ddescription_path%29%3ANil-instance-method">#write_description</a></code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L52" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="forward_headers:Array(String)-class-method">
+      <div class="signature">
+        
+        def self.<strong>forward_headers</strong> : Array(String)
+
+        <a class="method-permalink" href="#forward_headers%3AArray%28String%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>request headers copied from the MCP request to the route being invoked,
+typically used for authentication</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L65" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="forward_headers=(forward_headers:Array(String))-class-method">
+      <div class="signature">
+        
+        def self.<strong>forward_headers=</strong>(forward_headers : Array(String))
+
+        <a class="method-permalink" href="#forward_headers%3D%28forward_headers%3AArray%28String%29%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>request headers copied from the MCP request to the route being invoked,
+typically used for authentication</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L65" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="instructions:String|Nil-class-method">
+      <div class="signature">
+        
+        def self.<strong>instructions</strong> : String | Nil
+
+        <a class="method-permalink" href="#instructions%3AString%7CNil-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>usage instructions provided to the model</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L61" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="instructions=(instructions:String|Nil)-class-method">
+      <div class="signature">
+        
+        def self.<strong>instructions=</strong>(instructions : String | Nil)
+
+        <a class="method-permalink" href="#instructions%3D%28instructions%3AString%7CNil%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>usage instructions provided to the model</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L61" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="resource_metadata:Proc(HTTP::Request,ResourceMetadata)|Nil-class-method">
+      <div class="signature">
+        
+        def self.<strong>resource_metadata</strong> : Proc(HTTP::Request, <a href="../ActionController/MCPServer/ResourceMetadata.html">ResourceMetadata</a>) | Nil
+
+        <a class="method-permalink" href="#resource_metadata%3AProc%28HTTP%3A%3ARequest%2CResourceMetadata%29%7CNil-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>advertises the OAuth authorization server so MCP clients can obtain and
+refresh access tokens. The request is provided for multi-tenant deployments</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L90" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="resource_metadata=(resource_metadata:Proc(HTTP::Request,ResourceMetadata)|Nil)-class-method">
+      <div class="signature">
+        
+        def self.<strong>resource_metadata=</strong>(resource_metadata : Proc(HTTP::Request, <a href="../ActionController/MCPServer/ResourceMetadata.html">ResourceMetadata</a>) | Nil)
+
+        <a class="method-permalink" href="#resource_metadata%3D%28resource_metadata%3AProc%28HTTP%3A%3ARequest%2CResourceMetadata%29%7CNil%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>advertises the OAuth authorization server so MCP clients can obtain and
+refresh access tokens. The request is provided for multi-tenant deployments</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L90" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="server_name:String-class-method">
+      <div class="signature">
+        
+        def self.<strong>server_name</strong> : String
+
+        <a class="method-permalink" href="#server_name%3AString-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>reported to clients during initialization</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L55" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="server_name=(server_name:String)-class-method">
+      <div class="signature">
+        
+        def self.<strong>server_name=</strong>(server_name : String)
+
+        <a class="method-permalink" href="#server_name%3D%28server_name%3AString%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>reported to clients during initialization</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L55" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="server_version:String-class-method">
+      <div class="signature">
+        
+        def self.<strong>server_version</strong> : String
+
+        <a class="method-permalink" href="#server_version%3AString-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>reported to clients during initialization</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L58" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="server_version=(server_version:String)-class-method">
+      <div class="signature">
+        
+        def self.<strong>server_version=</strong>(server_version : String)
+
+        <a class="method-permalink" href="#server_version%3D%28server_version%3AString%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>reported to clients during initialization</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L58" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="session_timeout:Time::Span-class-method">
+      <div class="signature">
+        
+        def self.<strong>session_timeout</strong> : Time::Span
+
+        <a class="method-permalink" href="#session_timeout%3ATime%3A%3ASpan-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>sessions inactive for this period are discarded</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L72" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="session_timeout=(session_timeout:Time::Span)-class-method">
+      <div class="signature">
+        
+        def self.<strong>session_timeout=</strong>(session_timeout : Time::Span)
+
+        <a class="method-permalink" href="#session_timeout%3D%28session_timeout%3ATime%3A%3ASpan%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>sessions inactive for this period are discarded</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L72" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+  
+
+  
+  <h2>
+    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="auth_enabled?:Bool-instance-method">
+      <div class="signature">
+        
+        def <strong>auth_enabled?</strong> : Bool
+
+        <a class="method-permalink" href="#auth_enabled%3F%3ABool-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>authentication is optional and enabled when any of <code><a href="../ActionController/MCPServer.html#authenticator%3AProc%28HTTP%3A%3ARequest%2CBool%29%7CNil-class-method">.authenticator</a></code>,
+<code><a href="../ActionController/MCPServer.html#auth_probe%3AString%7CNil-class-method">.auth_probe</a></code> or <code><a href="../ActionController/MCPServer.html#resource_metadata%3AProc%28HTTP%3A%3ARequest%2CResourceMetadata%29%7CNil-class-method">.resource_metadata</a></code> is configured</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L94" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="description:Description-instance-method">
+      <div class="signature">
+        
+        def <strong>description</strong> : <a href="../ActionController/MCPServer/Description.html">Description</a>
+
+        <a class="method-permalink" href="#description%3ADescription-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the tool descriptions, lazily loaded from <code><a href="../ActionController/MCPServer.html#description_path%3AString-class-method">.description_path</a></code>.</p>
+<p>if the file doesn't exist the description is generated from the compiled
+routes, however it will not include the documentation comments</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L105" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="description=(description:Description|Nil)-instance-method">
+      <div class="signature">
+        
+        def <strong>description=</strong>(description : <a href="../ActionController/MCPServer/Description.html">Description</a> | Nil)
+
+        <a class="method-permalink" href="#description%3D%28description%3ADescription%7CNil%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>replaces the current description, <code>nil</code> will reload it on next use</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L112" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="generate_description(docs:Bool=true):Description-instance-method">
+      <div class="signature">
+        
+        def <strong>generate_description</strong>(docs : Bool = <span class="n">true</span>) : <a href="../ActionController/MCPServer/Description.html">Description</a>
+
+        <a class="method-permalink" href="#generate_description%28docs%3ABool%3Dtrue%29%3ADescription-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>generates the MCP description from the compiled routes.</p>
+<p><code>docs: true</code> extracts the source code comments using <code>crystal docs</code>,
+which requires access to the source code</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp/description.cr#L237" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="mount(router:Router,path:String=&quot;/mcp&quot;):Transport-instance-method">
+      <div class="signature">
+        
+        def <strong>mount</strong>(router : Router, path : String = <span class="s">&quot;/mcp&quot;</span>) : <a href="../ActionController/MCPServer/Transport.html">Transport</a>
+
+        <a class="method-permalink" href="#mount%28router%3ARouter%2Cpath%3AString%3D%22/mcp%22%29%3ATransport-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>mounts the MCP endpoint at the path provided.</p>
+<p>tool calls are dispatched via the router, typically <code><a href="../ActionController/Server.html">ActionController::Server</a></code>.
+The OAuth protected resource metadata is served at <code>/.well-known/oauth-protected-resource&lt;path&gt;</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L125" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="write_description(path:String=description_path):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>write_description</strong>(path : String = description_path) : Nil
+
+        <a class="method-permalink" href="#write_description%28path%3AString%3Ddescription_path%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>generates the description, including source code comments, and saves it to a file</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/7de8eaea29b946806c9d89edf0dfdca7b168a145/src/action-controller/mcp.cr#L117" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+
+</div>
+
+</body>
+</html>
