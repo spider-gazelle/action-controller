@@ -178,13 +178,18 @@ module ActionController::OpenAPI
     {description, matched_filters, matched_errors}
   end
 
-  macro finished
-    # returns a NamedTuple that represents the OpenAPI docs for the current application.
-    #
-    # the info hash splat accepts any of the keys from the [info object](https://swagger.io/specification/#info-object)
-    def generate_open_api_docs(title : String, version : String, **info)
-      descriptions = extract_route_descriptions
+  # returns a NamedTuple that represents the OpenAPI docs for the current application.
+  #
+  # the info hash splat accepts any of the keys from the [info object](https://swagger.io/specification/#info-object)
+  def generate_open_api_docs(title : String, version : String, **info)
+    generate_open_api_docs(extract_route_descriptions, title, version, **info)
+  end
 
+  # :nodoc:
+  # generates the OpenAPI docs using the provided class and method descriptions
+  def generate_open_api_docs(descriptions : Hash(String, KlassDoc), title : String, version : String, **info)
+    # expanded when the method is used, once all the routes are known
+    {% begin %}
       # build the OpenAPI document
 
       # Class => Schema (and request types)
@@ -377,12 +382,29 @@ module ActionController::OpenAPI
       responders = {{ ActionController::Route::Builder::RESPONDERS.keys }}
 
       generate_openapi_doc(title, version, info, descriptions, routes, exceptions, filters, response_types, accepts, responders)
-    end
+      {% end %}
   end
 
   # :nodoc:
   def normalise_schema_reference(class_name)
     class_name.gsub(' ', '.').gsub(/[^0-9a-zA-Z_]/, '_')
+  end
+
+  # :nodoc:
+  # converts a route, `/users/:id`, into OpenAPI format, `/users/{id}`
+  def openapi_path(route : String) : String
+    route.split('/').join('/') do |i|
+      case i
+      when .starts_with?(':')
+        "{#{i.lstrip(':')}}"
+      when .starts_with?("?:")
+        "{#{i.lstrip("?:")}}"
+      when .starts_with?("*:")
+        "{#{i.lstrip("*:")}}"
+      else
+        i
+      end
+    end
   end
 
   # :nodoc:
@@ -415,18 +437,7 @@ module ActionController::OpenAPI
       verb = route[:verb]
 
       # ensure the path is in OpenAPI format
-      path_key = path_key.split('/').join('/') do |i|
-        case i
-        when .starts_with?(':')
-          "{#{i.lstrip(':')}}"
-        when .starts_with?("?:")
-          "{#{i.lstrip("?:")}}"
-        when .starts_with?("*:")
-          "{#{i.lstrip("*:")}}"
-        else
-          i
-        end
-      end
+      path_key = openapi_path(path_key)
 
       # grab the path object
       path = paths[path_key]

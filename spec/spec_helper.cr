@@ -500,6 +500,82 @@ class HelloWorld < Application
   end
 end
 
+# Manages widgets, used by the MCP specs
+#
+# widgets are not persisted
+class McpWidgets < ActionController::Base
+  base "/mcp_widgets"
+
+  # a widget
+  struct Widget
+    include JSON::Serializable
+    include YAML::Serializable
+
+    getter name : String
+    getter size : Int32?
+
+    def initialize(@name, @size = nil)
+    end
+  end
+
+  @[AC::Route::Filter(:before_action)]
+  def check_auth
+    head :unauthorized unless request.headers["Authorization"]? == "Bearer token"
+  end
+
+  # returns the widget requested
+  @[AC::Route::GET("/:id")]
+  def show(
+    id : Int32,
+    @[AC::Param::Info(description: "include the widget size", example: "true")]
+    detailed : Bool = false,
+    @[AC::Param::Info(header: "X-Tenant")]
+    tenant : String? = nil,
+  ) : Widget
+    Widget.new("widget-#{id}-#{tenant}", detailed ? 10 : nil)
+  end
+
+  # creates a new widget
+  @[AC::Route::POST("/", body: :widget, status_code: HTTP::Status::CREATED)]
+  def create(widget : Widget) : Widget
+    widget
+  end
+
+  # removes a widget
+  @[AC::Route::DELETE("/:id", status_code: HTTP::Status::ACCEPTED)]
+  def destroy(id : Int32) : Nil
+  end
+
+  # not exposed to MCP clients
+  @[AC::MCP(hide: true)]
+  @[AC::Route::GET("/hidden/secret")]
+  def secret : String
+    "secret"
+  end
+
+  @[AC::Route::WebSocket("/ws")]
+  def websocket(socket)
+  end
+end
+
+# hidden from MCP clients
+@[AC::MCP(hide: true)]
+class McpHidden < ActionController::Base
+  base "/mcp_hidden"
+
+  @[AC::Route::GET("/")]
+  def index : String
+    "hidden"
+  end
+
+  # the only visible route
+  @[AC::MCP(hide: false)]
+  @[AC::Route::GET("/visible")]
+  def visible : String
+    "visible"
+  end
+end
+
 require "../src/action-controller/server"
 
 # require "random"

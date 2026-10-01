@@ -59,6 +59,27 @@ end
 annotation ActionController::Route::Exception
 end
 
+# configures how a route, or every route in a controller, is exposed by the
+# optional MCP server (see `ActionController::MCPServer`)
+#
+# * `hide: true` excludes the route(s) from the MCP toolboxes
+#
+# a method level annotation overrides the controller level annotation
+#
+# ```
+# @[AC::MCP(hide: true)]
+# class Internal < AC::Base
+#   # exposed even though the rest of the controller is hidden
+#   @[AC::MCP(hide: false)]
+#   @[AC::Route::GET("/status")]
+#   def status : String
+#     "ok"
+#   end
+# end
+# ```
+annotation ActionController::MCP
+end
+
 # defines a custom parser for strong parameters
 #
 # ```
@@ -332,6 +353,15 @@ module ActionController::Route::Builder
             {% open_api_route[:method] = method_name.stringify %}
             {% open_api_route[:route] = "/" + full_route.join("/") %}
             {% open_api_route[:verb] = lower_route_method.stringify %}
+
+            # MCP visibility, method level annotation takes precedence
+            {% mcp_klass_ann = @type.annotation(::ActionController::MCP) %}
+            {% mcp_method_ann = method.annotation(::ActionController::MCP) %}
+            {% mcp_hide = mcp_klass_ann ? mcp_klass_ann[:hide] : nil %}
+            {% if mcp_method_ann && mcp_method_ann[:hide] != nil %}
+              {% mcp_hide = mcp_method_ann[:hide] %}
+            {% end %}
+            {% open_api_route[:mcp_hide] = mcp_hide == true %}
             {% OPENAPI_ROUTES[verb_route] = open_api_route %}
 
             # initial recording of path params
