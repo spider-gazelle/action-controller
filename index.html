@@ -530,7 +530,7 @@
 <p>Action Controller can expose your annotated routes to LLM clients as a
 <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server using the
 Streamable HTTP transport.</p>
-<p>Controllers are presented as <strong>toolboxes</strong>, their routes as <strong>tools</strong>, and methods
+<p>Controllers are presented as <strong>toolboxes</strong>, their route methods as <strong>tools</strong>, and methods
 annotated with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(prompt: true)]</code> as <strong>prompts</strong>. To keep the model's context
 lean, a session starts with just three tools, plus any <a href="#root-tools-and-prompts">root items</a>:</p>
 <p>| tool | description |
@@ -580,7 +580,8 @@ without the documentation comments, and a warning is logged.</p>
 The module namespace shared by every controller is omitted, so
 <code>PlaceOS::Api::Zones</code> and <code>PlaceOS::Api::Groups::Users</code> become <code>zones</code> and
 <code>groups_users</code></li>
-<li>a tool per route
+<li>a tool per controller method. A method with several route annotations is a single
+tool, using its first <code>GET</code> route (otherwise its first route)
 <ul>
 <li>the tool name, <code>&lt;toolbox&gt;_&lt;method&gt;</code></li>
 <li>the description, from the method comment</li>
