@@ -442,19 +442,19 @@
   <span class="c"># A filter can raise or render to prevent a route being executed</span>
   @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Filter</span>(<span class="n">:before_action</span>)]
   <span class="k">def</span> <span class="m">ensure_authenticated</span>
-    render <span class="n">:unauthorized</span> <span class="k">unless</span> cookies[<span class="s">&quot;user&quot;</span>]
+    render <span class="n">:unauthorized</span> <span class="k">unless</span> cookies[<span class="s">&quot;user&quot;</span>]?
   <span class="k">end</span>
 
   <span class="c"># You can define controller level exception handlers for consistent error messages</span>
   <span class="c"># note, the first param is always the error object</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Exception</span>(<span class="t">Route</span><span class="t">::</span><span class="t">Param</span><span class="t">::</span><span class="t">Error</span>, status_code: <span class="n">:not_found</span>)]
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Exception</span>(<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Param</span><span class="t">::</span><span class="t">Error</span>, status_code: <span class="t">HTTP</span><span class="t">::</span><span class="t">Status</span><span class="t">::</span><span class="t">BAD_REQUEST</span>)]
   <span class="k">def</span> <span class="m">route_param_error</span>(error, id : <span class="t">Int64</span>?)
     <span class="c"># as id is nillable, it will look for a supplied id (route, query, formdata)</span>
     <span class="c"># and set it if one was found and it could be converted</span>
     {
-      error: error.message,
-      parameter: error.parameter,
-      restriction: error.restriction
+      error:       error.message,
+      parameter:   error.parameter,
+      restriction: error.restriction,
     }
   <span class="k">end</span>
 <span class="k">end</span>
@@ -466,33 +466,34 @@
   base <span class="s">&quot;/books&quot;</span>
 
   <span class="c"># route =&gt; &quot;/books/?book=1234&quot;</span>
-  @[<span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/&quot;</span>)]
-  <span class="k">def</span> <span class="m">index</span>(book : <span class="t">UInt64</span>? <span class="o">=</span> <span class="n">nil</span>) : <span class="t">Array</span>(<span class="t">String</span>)
-    redirect_to <span class="t">Books</span>.show(id: book) <span class="k">if</span> book
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/&quot;</span>)]
+  <span class="k">def</span> <span class="m">index</span>(book : <span class="t">UInt64</span>? <span class="o">=</span> <span class="n">nil</span>) : <span class="t">Array</span>(<span class="t">String</span>)?
+    <span class="c"># redirecting renders a response, so nothing is returned</span>
+    <span class="k">return</span> redirect_to <span class="t">Books</span>.show(id: book) <span class="k">if</span> book
     [<span class="s">&quot;book1&quot;</span>, <span class="s">&quot;book2&quot;</span>]
   <span class="k">end</span>
 
-  <span class="c"># Params are automatically extracted and converted to the corrent type</span>
-  <span class="c"># here `id` in the route matches the `id` paramater in the function</span>
+  <span class="c"># Params are automatically extracted and converted to the correct type</span>
+  <span class="c"># here `id` in the route matches the `id` parameter in the function</span>
   <span class="c"># route =&gt; &quot;/books/0FF/hex&quot;</span>
   <span class="c"># route =&gt; &quot;/books/123&quot;</span>
-  @[<span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id/hex&quot;</span>, config: {id: {base: <span class="n">16</span>}})]
-  @[<span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id&quot;</span>)]
-  <span class="k">def</span> <span class="m">show</span>(id : <span class="t">UInt64</span>)
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id/hex&quot;</span>, config: {id: {base: <span class="n">16</span>}})]
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id&quot;</span>)]
+  <span class="k">def</span> <span class="m">show</span>(id : <span class="t">UInt64</span>) : <span class="t">NamedTuple</span>(id: <span class="t">UInt64</span>, name: <span class="t">String</span>)
     {id: id, name: <span class="s">&quot;book1&quot;</span>}
   <span class="k">end</span>
 
-  <span class="k">enum</span> <span class="t">Color</span>
+  <span class="k">enum</span> <span class="t">Colour</span>
     <span class="t">Red</span>
     <span class="t">Blue</span>
     <span class="t">Green</span>
   <span class="k">end</span>
 
-  <span class="c"># route =&gt; &quot;/books/set_color/RED&quot;</span>
-  <span class="c"># route =&gt; &quot;/books/set_color/colour_value/2&quot;</span>
-  @[<span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/set_color/:colour&quot;</span>)]
-  @[<span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/set_color/colour_value/:colour&quot;</span>, config: {colour: {from_value: <span class="n">true</span>}})]
-  <span class="k">def</span> <span class="m">set_color</span>(color : <span class="t">Color</span>) : <span class="t">String</span>
+  <span class="c"># route =&gt; &quot;/books/set_colour/RED&quot;</span>
+  <span class="c"># route =&gt; &quot;/books/set_colour/colour_value/2&quot;</span>
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/set_colour/:colour&quot;</span>)]
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/set_colour/colour_value/:colour&quot;</span>, config: {colour: {from_value: <span class="n">true</span>}})]
+  <span class="k">def</span> <span class="m">set_colour</span>(colour : <span class="t">Colour</span>) : <span class="t">String</span>
     colour.to_s
   <span class="k">end</span>
 
@@ -500,8 +501,8 @@
   <span class="c"># `strict: true` raises `AC::Route::Param::ValueError` (bad request) instead,</span>
   <span class="c"># while an absent param still resolves to the default</span>
   <span class="c"># route =&gt; &quot;/books/tint?colour=RED&quot;</span>
-  @[<span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/tint&quot;</span>, config: {colour: {strict: <span class="n">true</span>}})]
-  <span class="k">def</span> <span class="m">tint</span>(colour : <span class="t">Color</span>? <span class="o">=</span> <span class="n">nil</span>) : <span class="t">String</span>
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/tint&quot;</span>, config: {colour: {strict: <span class="n">true</span>}})]
+  <span class="k">def</span> <span class="m">tint</span>(colour : <span class="t">Colour</span>? <span class="o">=</span> <span class="n">nil</span>) : <span class="t">String</span>
     colour.to_s
   <span class="k">end</span>
 
@@ -512,7 +513,7 @@
     <span class="t">SOCKETS</span> <span class="o">&lt;&lt;</span> socket
 
     socket.on_message <span class="k">do</span> <span class="o">|</span>message<span class="o">|</span>
-      <span class="t">SOCKETS</span>.each { <span class="o">|</span>socket<span class="o">|</span> socket.send <span class="s">&quot;Echo back from server: </span><span class="i">#{</span>message<span class="i">}</span><span class="s">&quot;</span> }
+      <span class="t">SOCKETS</span>.each { <span class="o">|</span>sock<span class="o">|</span> sock.send <span class="s">&quot;Echo back from server: </span><span class="i">#{</span>message<span class="i">}</span><span class="s">&quot;</span> }
     <span class="k">end</span>
 
     socket.on_close <span class="k">do</span>
