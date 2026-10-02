@@ -10,7 +10,7 @@ describe ActionController::OpenAPI do
     result = ActionController::OpenAPI.generate_open_api_docs("title", "version", description: "desc")
     result[:openapi].should eq "3.0.3"
     # includes the controllers defined in other spec files, after the server is required
-    result[:paths].size.should eq 49
+    result[:paths].size.should eq 54
     result[:info][:description].should eq "desc"
   end
 end

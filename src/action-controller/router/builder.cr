@@ -360,8 +360,14 @@ module ActionController::Route::Builder
           {% elsif route_method == AC::Route::Exception %}
             # annotation based exception handlers
             {% required_params = [] of StringLiteral %}
-            {% exception_class = ann[0].resolve.stringify %}
-            {% function_wrapper_name = "_#{exception_class.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
+            {% exception_type = ann[0].resolve %}
+            # an uninstantiated generic (`MyError` for `MyError(T)`) handles every instance
+            {% if ann[0].is_a?(Path) && !exception_type.type_vars.empty? %}
+              {% exception_class = exception_type.name(generic_args: false).stringify %}
+            {% else %}
+              {% exception_class = exception_type.stringify %}
+            {% end %}
+            {% function_wrapper_name = "_#{exception_class.underscore.gsub(/\W/, "_").id}_#{method_name}_wrapper_".id %}
 
             {% open_api_route[:controller] = @type.name.stringify %}
             {% open_api_route[:exception] = exception_class %}

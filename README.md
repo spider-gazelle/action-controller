@@ -14,19 +14,19 @@ abstract class Application < ActionController::Base
   # A filter can raise or render to prevent a route being executed
   @[AC::Route::Filter(:before_action)]
   def ensure_authenticated
-    render :unauthorized unless cookies["user"]
+    render :unauthorized unless cookies["user"]?
   end
 
   # You can define controller level exception handlers for consistent error messages
   # note, the first param is always the error object
-  @[AC::Route::Exception(Route::Param::Error, status_code: :not_found)]
+  @[AC::Route::Exception(AC::Route::Param::Error, status_code: HTTP::Status::BAD_REQUEST)]
   def route_param_error(error, id : Int64?)
     # as id is nillable, it will look for a supplied id (route, query, formdata)
     # and set it if one was found and it could be converted
     {
-      error: error.message,
-      parameter: error.parameter,
-      restriction: error.restriction
+      error:       error.message,
+      parameter:   error.parameter,
+      restriction: error.restriction,
     }
   end
 end
@@ -38,33 +38,34 @@ class Books < Application
   base "/books"
 
   # route => "/books/?book=1234"
-  @[Route::GET("/")]
-  def index(book : UInt64? = nil) : Array(String)
-    redirect_to Books.show(id: book) if book
+  @[AC::Route::GET("/")]
+  def index(book : UInt64? = nil) : Array(String)?
+    # redirecting renders a response, so nothing is returned
+    return redirect_to Books.show(id: book) if book
     ["book1", "book2"]
   end
 
-  # Params are automatically extracted and converted to the corrent type
-  # here `id` in the route matches the `id` paramater in the function
+  # Params are automatically extracted and converted to the correct type
+  # here `id` in the route matches the `id` parameter in the function
   # route => "/books/0FF/hex"
   # route => "/books/123"
-  @[Route::GET("/:id/hex", config: {id: {base: 16}})]
-  @[Route::GET("/:id")]
-  def show(id : UInt64)
+  @[AC::Route::GET("/:id/hex", config: {id: {base: 16}})]
+  @[AC::Route::GET("/:id")]
+  def show(id : UInt64) : NamedTuple(id: UInt64, name: String)
     {id: id, name: "book1"}
   end
 
-  enum Color
+  enum Colour
     Red
     Blue
     Green
   end
 
-  # route => "/books/set_color/RED"
-  # route => "/books/set_color/colour_value/2"
-  @[Route::GET("/set_color/:colour")]
-  @[Route::GET("/set_color/colour_value/:colour", config: {colour: {from_value: true}})]
-  def set_color(color : Color) : String
+  # route => "/books/set_colour/RED"
+  # route => "/books/set_colour/colour_value/2"
+  @[AC::Route::GET("/set_colour/:colour")]
+  @[AC::Route::GET("/set_colour/colour_value/:colour", config: {colour: {from_value: true}})]
+  def set_colour(colour : Colour) : String
     colour.to_s
   end
 
@@ -72,8 +73,8 @@ class Books < Application
   # `strict: true` raises `AC::Route::Param::ValueError` (bad request) instead,
   # while an absent param still resolves to the default
   # route => "/books/tint?colour=RED"
-  @[Route::GET("/tint", config: {colour: {strict: true}})]
-  def tint(colour : Color? = nil) : String
+  @[AC::Route::GET("/tint", config: {colour: {strict: true}})]
+  def tint(colour : Colour? = nil) : String
     colour.to_s
   end
 
@@ -84,7 +85,7 @@ class Books < Application
     SOCKETS << socket
 
     socket.on_message do |message|
-      SOCKETS.each { |socket| socket.send "Echo back from server: #{message}" }
+      SOCKETS.each { |sock| sock.send "Echo back from server: #{message}" }
     end
 
     socket.on_close do

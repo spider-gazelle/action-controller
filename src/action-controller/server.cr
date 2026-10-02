@@ -71,7 +71,8 @@ class ActionController::Server
   def run(&) : Nil
     if @socket.addresses.empty?
       if ssl_context = @ssl_context
-        @socket.bind_tls(@host, @port, ssl_context, @reuse_port)
+        address = @socket.bind_tls(@host, @port, ssl_context, @reuse_port)
+        ActionController::Support.tls_ports << address.port
       else
         @socket.bind_tcp(@host, @port, @reuse_port)
       end
@@ -84,7 +85,8 @@ class ActionController::Server
   def run : Nil
     if @socket.addresses.empty?
       if ssl_context = @ssl_context
-        @socket.bind_tls(@host, @port, ssl_context, @reuse_port)
+        address = @socket.bind_tls(@host, @port, ssl_context, @reuse_port)
+        ActionController::Support.tls_ports << address.port
       else
         @socket.bind_tcp(@host, @port, @reuse_port)
       end

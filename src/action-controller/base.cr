@@ -456,7 +456,9 @@ abstract class ActionController::Base
           {% if FORCE[:force] %}
             {% options = FORCE[:force] %}
             {% only = options[0] %}
-            {% if only != nil && only.includes?(reference_name) %} # only
+            {% if only == nil && options[1] == nil %} # every route
+              {% force = true %}
+            {% elsif only != nil && only.includes?(reference_name) %} # only
               {% force = true %}
             {% else %}
               {% except = options[1] %}
@@ -916,7 +918,12 @@ abstract class ActionController::Base
   # ```
   __define_filter_macro__(:skip_action, LOCAL_SKIP)
 
-  # ensures certain routes can only be accessed over TLS
+  # ensures routes can only be accessed over TLS, plain HTTP requests are redirected
+  # to HTTPS (websockets are refused). Applies to every route when neither `only:` nor
+  # `except:` is provided.
+  #
+  # the protocol is determined by `ActionController::Support.request_protocol`:
+  # proxy headers, otherwise whether the connection is to a port `Server` bound with TLS.
   #
   # recommended that this is enabled for your entire application
   __define_filter_macro__(:force_ssl, LOCAL_FORCE, :force)
@@ -996,17 +1003,17 @@ abstract class ActionController::Base
       resp_headers["Cache-Control"] = cache_control.join(", ")
     end
 
-    # check values
-    fresh = if req_etags && modified_since
-              etag_matches = req_etags.includes?(etag) || req_etags.includes?("*")
-              etag_matches && (modified_since >= last_modified)
-            elsif modified_since
-              modified_since >= last_modified
-            elsif req_etags
-              req_etags.includes?(etag) || req_etags.includes?("*")
-            else
-              false
-            end
+    # fresh when every validator the client sent matches
+    fresh = false
+    if req_etags || modified_since
+      etag_matches = req_etags.nil? || req_etags.includes?(etag) || req_etags.includes?("*")
+      not_modified = if (since = modified_since) && (modified = last_modified)
+                       since >= modified
+                     else
+                       true
+                     end
+      fresh = etag_matches && not_modified
+    end
 
     head(:not_modified) if fresh
     !fresh

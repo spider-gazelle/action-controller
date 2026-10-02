@@ -89,4 +89,16 @@ describe ActionController::Base do
     result.headers["Last-Modified"]?.should eq HTTP.format_time(last_modified)
     result.headers["ETag"]?.should eq %("12345")
   end
+
+  it "supports an etag without a last modified time" do
+    client = AC::SpecHelper.client
+
+    result = client.get("/caching/etag")
+    result.status_code.should eq 200
+    result.headers["ETag"].should eq %("abc")
+
+    client.get("/caching/etag", headers: HTTP::Headers{"If-None-Match" => %("abc")}).status_code.should eq 304
+    client.get("/caching/etag", headers: HTTP::Headers{"If-None-Match" => %("old", "other")}).status_code.should eq 200
+    client.get("/caching/etag", headers: HTTP::Headers{"If-None-Match" => "*"}).status_code.should eq 304
+  end
 end

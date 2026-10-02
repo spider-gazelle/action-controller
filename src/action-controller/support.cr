@@ -2,9 +2,22 @@ require "mime/media_type"
 
 # :nodoc:
 module ActionController::Support
+  # ports `ActionController::Server` accepts TLS connections on
+  class_getter tls_ports : Set(Int32) = Set(Int32).new
+
+  # returns `:https` or `:http`.
+  #
+  # proxy headers (`X-Forwarded-Proto`, `Forwarded`) describe the client's protocol, so
+  # take precedence. Otherwise a connection to a port the server bound with TLS is `:https`
   def self.request_protocol(request)
-    return :https if request.headers["X-Forwarded-Proto"]? =~ /https/i
-    return :https if request.headers["Forwarded"]? =~ /https/i
+    if proto = request.headers["X-Forwarded-Proto"]?
+      return proto =~ /https/i ? :https : :http
+    end
+    if forwarded = request.headers["Forwarded"]?
+      return forwarded =~ /proto=https/i ? :https : :http if forwarded =~ /proto=/i
+    end
+    address = request.local_address
+    return :https if address.is_a?(Socket::IPAddress) && tls_ports.includes?(address.port)
     :http
   end
 

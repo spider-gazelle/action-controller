@@ -58,8 +58,9 @@ class HotTopic::Client(T) < HTTP::Client
     # build bi-directional io
     local_read, remote_write = IO.pipe
     remote_read, local_write = IO.pipe
-    local_io = IO::Stapled.new(local_read, local_write)
-    remote_io = IO::Stapled.new(remote_read, remote_write)
+    # sync_close so closing either side closes the pipes, signalling EOF to the other
+    local_io = IO::Stapled.new(local_read, local_write, sync_close: true)
+    remote_io = IO::Stapled.new(remote_read, remote_write, sync_close: true)
 
     begin
       random_key = Base64.strict_encode(StaticArray(UInt8, 16).new { rand(256).to_u8 })
@@ -82,17 +83,35 @@ class HotTopic::Client(T) < HTTP::Client
       handshake = HTTP::Request.new("GET", path, headers)
       response = HTTP::Server::Response.new(remote_io)
       context = HTTP::Server::Context.new(handshake, response)
-      context.response.output = remote_io
 
       # emulate the upgrade request processing
+      app_error = nil
       spawn do
-        @app.call(context)
-        if upgrade_handler = response.upgrade_handler
-          upgrade_handler.call(remote_io)
+        begin
+          @app.call(context)
+          if upgrade_handler = response.upgrade_handler
+            upgrade_handler.call(remote_io)
+          else
+            # the handshake was rejected (e.g. by a filter), send the response
+            # so the client isn't left waiting for one
+            response.close
+            remote_io.close
+          end
+        rescue error
+          app_error = error
+          remote_io.close
         end
       end
 
-      handshake_response = HTTP::Client::Response.from_io(local_io, ignore_body: true)
+      handshake_response = begin
+        HTTP::Client::Response.from_io(local_io, ignore_body: true)
+      rescue error : IO::Error
+        # surface the application's exception, if that's why the connection closed
+        if failure = app_error
+          raise failure
+        end
+        raise error
+      end
       unless handshake_response.status.switching_protocols?
         raise Socket::Error.new("Handshake got denied. Status code was #{handshake_response.status.code}.")
       end

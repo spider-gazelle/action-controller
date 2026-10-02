@@ -20,6 +20,12 @@ class Caching < ActionController::Base
       "response-data"
     end
   end
+
+  # only an etag, no last modified time
+  @[AC::Route::GET("/etag")]
+  def etag_only : String?
+    "etag-data" if stale?(etag: %("abc"))
+  end
 end
 
 abstract class FilterOrdering < ActionController::Base
@@ -622,6 +628,73 @@ class McpRoot < ActionController::Base
   @[AC::MCP(prompt: true)]
   def greet(name : String) : String
     "Say hello to #{name}"
+  end
+end
+
+# a generic exception, like `Authly::Error(Code)`
+class GenericError(Code) < Exception
+  def code : Int32
+    Code
+  end
+end
+
+# handles every instantiation of a generic exception
+class GenericErrors < ActionController::Base
+  base "/generic_errors"
+
+  @[AC::Route::GET("/:code", content_type: "text/plain")]
+  def raise_code(code : Int32) : String
+    case code
+    when 400 then raise GenericError(400).new("bad request")
+    when 401 then raise GenericError(401).new("unauthorized")
+    else          "no error"
+    end
+  end
+
+  @[AC::Route::Exception(GenericError, status_code: HTTP::Status::BAD_REQUEST, content_type: "text/plain")]
+  def generic_error(error) : String
+    "handled #{error.code}: #{error.message}"
+  end
+end
+
+# handles one instantiation of a generic exception
+class SpecificGenericError < ActionController::Base
+  base "/specific_generic_error"
+
+  @[AC::Route::GET("/:code", content_type: "text/plain")]
+  def raise_code(code : Int32) : String
+    code == 418 ? raise(GenericError(418).new("teapot")) : raise(GenericError(500).new("other"))
+  end
+
+  @[AC::Route::Exception(GenericError(418), status_code: HTTP::Status::IM_A_TEAPOT, content_type: "text/plain")]
+  def teapot(error) : String
+    "short and stout"
+  end
+end
+
+# every route requires TLS
+class ForceTLSEverywhere < ActionController::Base
+  base "/force_tls_everywhere"
+  force_tls
+
+  @[AC::Route::GET("/", content_type: "text/plain")]
+  def index : String
+    "secure"
+  end
+end
+
+# a websocket that requires authentication
+class ProtectedSocket < ActionController::Base
+  base "/protected_socket"
+
+  @[AC::Route::Filter(:before_action)]
+  def check_auth
+    head :unauthorized unless request.headers["Authorization"]? == "Bearer token"
+  end
+
+  @[AC::Route::WebSocket("/")]
+  def echo(socket)
+    socket.on_message { |message| socket.send(message) }
   end
 end
 
