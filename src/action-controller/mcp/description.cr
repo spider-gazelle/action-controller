@@ -305,7 +305,13 @@ module ActionController::MCPServer
     prompt_names = Hash(String, Int32).new(0)
     namespace = common_namespace(routes.map(&.[:controller]) + prompts.map(&.[:controller]))
 
+    # A method with several route annotations is a single tool. Routes arrive in
+    # verb order (GET, POST, PUT, PATCH, DELETE), source order within a verb, so
+    # the tool uses the method's first GET route, otherwise its first route.
+    methods = Set(Tuple(String, String)).new
+
     routes.each do |route|
+      next if methods.includes?({route[:controller], route[:method]})
       path = open_api[:paths][OpenAPI.openapi_path(route[:route])]?
       operation = case route[:verb]
                   when "get"    then path.try &.get
@@ -320,6 +326,7 @@ module ActionController::MCPServer
       name = unique_name(tool_names, "#{toolbox.name}_#{route[:method]}")
       description = operation.description || operation.summary || "#{route[:verb].upcase} #{route[:route]}"
       toolbox.tools << build_tool(name, description, route, operation, schemas)
+      methods << {route[:controller], route[:method]}
     end
 
     prompts.each do |prompt|

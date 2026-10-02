@@ -141,6 +141,14 @@ describe ActionController::MCPServer do
       hidden.tools.map(&.name).should eq ["mcp_hidden_visible"]
     end
 
+    it "generates a single tool for a method with several routes" do
+      # Filtering#other_route_test has three GET routes, the first is used
+      filtering = ActionController::MCPServer.description.toolbox?("filtering").should_not be_nil
+      tools = filtering.tools.select(&.name.starts_with?("filtering_other_route_test"))
+      tools.map(&.name).should eq ["filtering_other_route_test"]
+      tools.first.path.should eq "/filtering/other_route/:id/test"
+    end
+
     it "omits the namespace shared by every controller from names" do
       namespace = ActionController::MCPServer.common_namespace(["PlaceOS::Api::Zones", "PlaceOS::Api::Groups::Users", "PlaceOS::Api::OAuthApplications"])
       namespace.should eq ["PlaceOS", "Api"]
