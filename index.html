@@ -576,7 +576,10 @@ generator), then ship <code>mcp.yml</code> next to the binary:</p>
 without the documentation comments, and a warning is logged.</p>
 <p>The file contains, for each controller:</p>
 <ul>
-<li>the toolbox name (snake case controller name) and description (class comment)</li>
+<li>the toolbox name (snake case controller name) and description (class comment).
+The module namespace shared by every controller is omitted, so
+<code>PlaceOS::Api::Zones</code> and <code>PlaceOS::Api::Groups::Users</code> become <code>zones</code> and
+<code>groups_users</code></li>
 <li>a tool per route
 <ul>
 <li>the tool name, <code>&lt;toolbox&gt;_&lt;method&gt;</code></li>
