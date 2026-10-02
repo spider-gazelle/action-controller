@@ -141,6 +141,24 @@ describe ActionController::MCPServer do
       hidden.tools.map(&.name).should eq ["mcp_hidden_visible"]
     end
 
+    it "omits the namespace shared by every controller from names" do
+      namespace = ActionController::MCPServer.common_namespace(["PlaceOS::Api::Zones", "PlaceOS::Api::Groups::Users", "PlaceOS::Api::OAuthApplications"])
+      namespace.should eq ["PlaceOS", "Api"]
+      ActionController::MCPServer.toolbox_name("PlaceOS::Api::Zones", namespace).should eq "zones"
+      ActionController::MCPServer.toolbox_name("PlaceOS::Api::Groups::Users", namespace).should eq "groups_users"
+      ActionController::MCPServer.toolbox_name("PlaceOS::Api::OAuthApplications", namespace).should eq "o_auth_applications"
+
+      # only whole modules are shared, a controller's own name is never removed
+      ActionController::MCPServer.common_namespace(["Admin::Users", "Users"]).should be_empty
+      ActionController::MCPServer.common_namespace(["Api::V1::Users", "Api::V2::Users"]).should eq ["Api"]
+      ActionController::MCPServer.common_namespace(["Api::Users"]).should eq ["Api"]
+      ActionController::MCPServer.toolbox_name("Api::Users", ["Api"]).should eq "users"
+      ActionController::MCPServer.common_namespace([] of String).should be_empty
+
+      # the spec controllers aren't namespaced
+      ActionController::MCPServer.description.toolbox?("mcp_widgets").should_not be_nil
+    end
+
     it "round trips via YAML" do
       yaml = ActionController::MCPServer.description.to_yaml
       parsed = ActionController::MCPServer::Description.from_yaml(yaml)

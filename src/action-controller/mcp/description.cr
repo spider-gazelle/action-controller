@@ -303,6 +303,7 @@ module ActionController::MCPServer
     toolboxes = {} of String => Toolbox
     tool_names = Hash(String, Int32).new(0)
     prompt_names = Hash(String, Int32).new(0)
+    namespace = common_namespace(routes.map(&.[:controller]) + prompts.map(&.[:controller]))
 
     routes.each do |route|
       path = open_api[:paths][OpenAPI.openapi_path(route[:route])]?
@@ -315,14 +316,14 @@ module ActionController::MCPServer
                   end
       next unless operation
 
-      toolbox = toolbox_for(toolboxes, route[:controller], descriptions)
+      toolbox = toolbox_for(toolboxes, route[:controller], namespace, descriptions)
       name = unique_name(tool_names, "#{toolbox.name}_#{route[:method]}")
       description = operation.description || operation.summary || "#{route[:verb].upcase} #{route[:route]}"
       toolbox.tools << build_tool(name, description, route, operation, schemas)
     end
 
     prompts.each do |prompt|
-      toolbox = toolbox_for(toolboxes, prompt[:controller], descriptions)
+      toolbox = toolbox_for(toolboxes, prompt[:controller], namespace, descriptions)
       name = unique_name(prompt_names, "#{toolbox.name}_#{prompt[:method]}")
       description = method_docs(descriptions, prompt[:controller], prompt[:method]).try(&.strip)
       toolbox.prompts << Prompt.new(name, description, prompt[:route], prompt[:arguments], prompt[:root])
@@ -331,12 +332,37 @@ module ActionController::MCPServer
     Description.new(toolboxes.values)
   end
 
-  private def toolbox_for(toolboxes : Hash(String, Toolbox), controller : String, descriptions : Hash(String, OpenAPI::KlassDoc)) : Toolbox
+  private def toolbox_for(toolboxes : Hash(String, Toolbox), controller : String, namespace : Array(String), descriptions : Hash(String, OpenAPI::KlassDoc)) : Toolbox
     toolboxes[controller] ||= Toolbox.new(
-      tool_name(controller.underscore.gsub("::", "_")),
+      toolbox_name(controller, namespace),
       controller,
       descriptions[controller]?.try(&.docs).try(&.strip).presence,
     )
+  end
+
+  # :nodoc:
+  # The module namespace shared by every controller, i.e. `["PlaceOS", "Api"]`
+  # for `PlaceOS::Api::Zones` and `PlaceOS::Api::Groups::Users`. It's redundant
+  # in toolbox and tool names, so it's omitted. Never includes a controller's
+  # own name, so a name is never empty, and as every name loses the same
+  # prefix they remain unique.
+  def common_namespace(controllers : Enumerable(String)) : Array(String)
+    namespaces = controllers.map(&.split("::")[0...-1])
+    return [] of String if namespaces.empty?
+
+    namespaces.reduce do |common, namespace|
+      shared = 0
+      while shared < common.size && shared < namespace.size && common[shared] == namespace[shared]
+        shared += 1
+      end
+      common[0, shared]
+    end
+  end
+
+  # :nodoc:
+  # the snake case controller name without the common namespace, `groups_users`
+  def toolbox_name(controller : String, namespace : Array(String)) : String
+    tool_name(controller.split("::")[namespace.size..].join("::").underscore.gsub("::", "_"))
   end
 
   # ensures names are unique

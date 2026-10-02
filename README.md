@@ -159,7 +159,10 @@ without the documentation comments, and a warning is logged.
 
 The file contains, for each controller:
 
-* the toolbox name (snake case controller name) and description (class comment)
+* the toolbox name (snake case controller name) and description (class comment).
+  The module namespace shared by every controller is omitted, so
+  `PlaceOS::Api::Zones` and `PlaceOS::Api::Groups::Users` become `zones` and
+  `groups_users`
 * a tool per route
   * the tool name, `<toolbox>_<method>`
   * the description, from the method comment
