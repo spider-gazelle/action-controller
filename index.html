@@ -794,6 +794,7 @@ annotation takes precedence:</p>
   mcp.forward_headers <span class="o">=</span> [<span class="s">&quot;Authorization&quot;</span>, <span class="s">&quot;Cookie&quot;</span>, <span class="s">&quot;X-API-Key&quot;</span>] <span class="c"># copied onto tool requests</span>
   mcp.allowed_origins <span class="o">=</span> [<span class="s">&quot;https://app.example.com&quot;</span>]              <span class="c"># &quot;*&quot; allows any origin</span>
   mcp.session_timeout <span class="o">=</span> <span class="n">30</span>.minutes
+  mcp.excluded_response_headers <span class="o">+=</span> [<span class="s">&quot;X-Runtime&quot;</span>]  <span class="c"># left out of tool results, `*` matches a prefix</span>
 
   <span class="c"># authentication, all optional (see above)</span>
   mcp.auth_probe <span class="o">=</span> <span class="s">&quot;/api/users/current&quot;</span>
@@ -817,12 +818,35 @@ accepts <code>text/event-stream</code>. In that case the notifications are strea
 <li><code>Origin</code> headers must be same-origin or listed in <code>allowed_origins</code>, which protects against DNS rebinding.</li>
 <li>Sessions are stored in memory per process. Multi-node deployments need sticky sessions.
 Sessions are not credentials: when authentication is enabled every request must be authenticated.</li>
-<li>Tool results contain the response body as text. Successful JSON object responses
-are also provided as <code>structuredContent</code>, and responses with a status of 400 or above set <code>isError</code>
-(except <code>401</code> when authentication is enabled, see above).</li>
+<li>Unhandled exceptions raised by a route are logged and returned as a generic <code>500</code> tool error.</li>
 <li>Clients must support <code>notifications/tools/list_changed</code> and <code>notifications/prompts/list_changed</code>
 to see the tools and prompts added by <code>open_toolbox</code>. Root items don't require them.</li>
-<li>Unhandled exceptions raised by a route are logged and returned as a generic <code>500</code> tool error.</li>
+</ul>
+<h3><a id="tool-results" class="anchor" href="#tool-results">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Tool results</h3>
+<p>A tool call returns the route's response as <code>{status, headers, body}</code>, both as the text
+content and as <code>structuredContent</code>:</p>
+<pre><code class="language-json">{
+  &quot;status&quot;: 200,
+  &quot;headers&quot;: {&quot;X-Total-Count&quot;: &quot;120&quot;, &quot;Link&quot;: &quot;&lt;/api/users?page=2&gt;; rel=\&quot;next\&quot;&quot;},
+  &quot;body&quot;: [{&quot;id&quot;: 1, &quot;name&quot;: &quot;Steve&quot;}]
+}</code></pre>
+<ul>
+<li><code>body</code> is the parsed JSON, or the text of any other response. It's left out when empty,
+and so is <code>headers</code>.</li>
+<li>Headers matching <code>excluded_response_headers</code> are left out. By default these are
+<code>Date</code>, <code>Content-Length</code>, <code>X-Request-ID</code>, <code>Content-Type</code>, cookies and credentials,
+transport headers (<code>Connection</code>, <code>Transfer-Encoding</code> ...) and browser policy headers
+(<code>Strict-Transport-Security</code>, <code>Access-Control-*</code> ...). Everything else, such as
+<code>Link</code>, <code>X-Total-Count</code>, <code>Content-Range</code> and <code>Location</code>, is returned so the model can
+page through results.</li>
+<li>Responses with a status of 400 or above set <code>isError</code> (except <code>401</code> when
+authentication is enabled, see above).</li>
+<li>Images and audio are returned as an <code>image</code> or <code>audio</code> content block, followed by the
+envelope without a body.</li>
 </ul>
 <h2><a id="more-information" class="anchor" href="#more-information">
   <svg class="octicon-link" aria-hidden="true">
