@@ -71,6 +71,35 @@ module ActionController::MCPServer
   # sessions inactive for this period are discarded
   class_property session_timeout : Time::Span = 30.minutes
 
+  # response headers left out of tool results, matched case-insensitively. An entry
+  # ending in `*` matches by prefix. Everything else (`Link`, `X-Total-Count`,
+  # `Content-Range`, `Location`, `ETag`, ...) is returned to the model
+  class_property excluded_response_headers : Array(String) = [
+    # noise
+    "Date", "Content-Length", "X-Request-ID", "Content-Type", "Server", "Vary",
+    "Cache-Control", "Pragma", "Expires", "Alt-Svc",
+    # credentials
+    "Set-Cookie", "Cookie", "Authorization", "WWW-Authenticate", "Proxy-*",
+    # transport, the body is already decoded
+    "Connection", "Keep-Alive", "Transfer-Encoding", "Content-Encoding", "Trailer", "Upgrade",
+    # browser policy
+    "Strict-Transport-Security", "Content-Security-Policy", "X-Frame-Options",
+    "X-Content-Type-Options", "Referrer-Policy", "Access-Control-*",
+  ]
+
+  # :nodoc:
+  # the response headers included in tool results
+  def visible_headers(headers : HTTP::Headers) : Hash(String, String)
+    excluded = excluded_response_headers.map(&.downcase)
+    visible = {} of String => String
+    headers.each do |name, values|
+      lower = name.downcase
+      next if excluded.any? { |pattern| pattern.ends_with?('*') ? lower.starts_with?(pattern.rchop('*')) : lower == pattern }
+      visible[name] = values.join(", ")
+    end
+    visible
+  end
+
   # authenticates MCP requests, returning `true` if the request is permitted.
   #
   # optional, see `auth_probe` for a simpler alternative

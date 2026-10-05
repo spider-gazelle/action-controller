@@ -556,6 +556,9 @@ class McpWidgets < ActionController::Base
   @[AC::MCP(root: true)]
   @[AC::Route::GET("/colours")]
   def colours : Array(String)
+    response.headers["X-Total-Count"] = "2"
+    response.headers["Link"] = %(</mcp_widgets/colours?page=2>; rel="next")
+    response.cookies << HTTP::Cookie.new("secret", "value")
     ["red", "green"]
   end
 
@@ -635,6 +638,14 @@ class McpRoot < ActionController::Base
     "noon"
   end
 
+  # a tiny image
+  @[AC::Route::GET("/pixel")]
+  def pixel
+    response.content_type = "image/png"
+    response.headers["ETag"] = %("pixel")
+    render binary: String.new(Bytes[137, 80, 78, 71])
+  end
+
   # greets someone
   @[AC::MCP(prompt: true)]
   def greet(name : String) : String
@@ -705,7 +716,10 @@ class ProtectedSocket < ActionController::Base
 
   @[AC::Route::WebSocket("/")]
   def echo(socket)
-    socket.on_message { |message| socket.send(message) }
+    socket.on_message do |message|
+      # the server ends the session
+      message == "bye" ? socket.close : socket.send(message)
+    end
   end
 end
 

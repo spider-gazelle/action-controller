@@ -398,6 +398,7 @@ ActionController::MCPServer.tap do |mcp|
   mcp.forward_headers = ["Authorization", "Cookie", "X-API-Key"] # copied onto tool requests
   mcp.allowed_origins = ["https://app.example.com"]              # "*" allows any origin
   mcp.session_timeout = 30.minutes
+  mcp.excluded_response_headers += ["X-Runtime"]  # left out of tool results, `*` matches a prefix
 
   # authentication, all optional (see above)
   mcp.auth_probe = "/api/users/current"
@@ -419,12 +420,35 @@ end
 * `Origin` headers must be same-origin or listed in `allowed_origins`, which protects against DNS rebinding.
 * Sessions are stored in memory per process. Multi-node deployments need sticky sessions.
   Sessions are not credentials: when authentication is enabled every request must be authenticated.
-* Tool results contain the response body as text. Successful JSON object responses
-  are also provided as `structuredContent`, and responses with a status of 400 or above set `isError`
-  (except `401` when authentication is enabled, see above).
+* Unhandled exceptions raised by a route are logged and returned as a generic `500` tool error.
 * Clients must support `notifications/tools/list_changed` and `notifications/prompts/list_changed`
   to see the tools and prompts added by `open_toolbox`. Root items don't require them.
-* Unhandled exceptions raised by a route are logged and returned as a generic `500` tool error.
+
+### Tool results
+
+A tool call returns the route's response as `{status, headers, body}`, both as the text
+content and as `structuredContent`:
+
+```json
+{
+  "status": 200,
+  "headers": {"X-Total-Count": "120", "Link": "</api/users?page=2>; rel=\"next\""},
+  "body": [{"id": 1, "name": "Steve"}]
+}
+```
+
+* `body` is the parsed JSON, or the text of any other response. It's left out when empty,
+  and so is `headers`.
+* Headers matching `excluded_response_headers` are left out. By default these are
+  `Date`, `Content-Length`, `X-Request-ID`, `Content-Type`, cookies and credentials,
+  transport headers (`Connection`, `Transfer-Encoding` ...) and browser policy headers
+  (`Strict-Transport-Security`, `Access-Control-*` ...). Everything else, such as
+  `Link`, `X-Total-Count`, `Content-Range` and `Location`, is returned so the model can
+  page through results.
+* Responses with a status of 400 or above set `isError` (except `401` when
+  authentication is enabled, see above).
+* Images and audio are returned as an `image` or `audio` content block, followed by the
+  envelope without a body.
 
 ## More information
 

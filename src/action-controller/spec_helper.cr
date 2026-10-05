@@ -58,9 +58,10 @@ class HotTopic::Client(T) < HTTP::Client
     # build bi-directional io
     local_read, remote_write = IO.pipe
     remote_read, local_write = IO.pipe
-    # sync_close so closing either side closes the pipes, signalling EOF to the other
+    # the server signals EOF by closing only its write end, the pipe the client writes
+    # into stays open so the client can still reply to a close frame
     local_io = IO::Stapled.new(local_read, local_write, sync_close: true)
-    remote_io = IO::Stapled.new(remote_read, remote_write, sync_close: true)
+    remote_io = IO::Stapled.new(remote_read, remote_write)
 
     begin
       random_key = Base64.strict_encode(StaticArray(UInt8, 16).new { rand(256).to_u8 })
@@ -95,11 +96,11 @@ class HotTopic::Client(T) < HTTP::Client
             # the handshake was rejected (e.g. by a filter), send the response
             # so the client isn't left waiting for one
             response.close
-            remote_io.close
           end
         rescue error
           app_error = error
-          remote_io.close
+        ensure
+          remote_write.close
         end
       end
 
@@ -122,7 +123,8 @@ class HotTopic::Client(T) < HTTP::Client
       end
     rescue error
       local_io.close
-      remote_io.close
+      remote_read.close
+      remote_write.close
       raise error
     end
 

@@ -61,7 +61,7 @@ class MCPTestClient
 end
 
 # meta tools followed by the root tools
-DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "mcp_widgets_colours", "mcp_root_time"]
+DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "mcp_widgets_colours", "mcp_root_time", "mcp_root_pixel"]
 
 MCP_INIT = {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}
 
@@ -406,8 +406,9 @@ describe ActionController::MCPServer do
 
       result = client.call("mcp_widgets_show", {"id" => JSON::Any.new(12_i64), "detailed" => JSON::Any.new(true), "X-Tenant" => JSON::Any.new("acme")})
       result["isError"].should be_false
-      result["structuredContent"].should eq JSON.parse(%({"name":"widget-12-acme","size":10}))
-      JSON.parse(result["content"][0]["text"].as_s)["name"].should eq "widget-12-acme"
+      result["structuredContent"].should eq JSON.parse(%({"status":200,"body":{"name":"widget-12-acme","size":10}}))
+      # the text is the same envelope, for clients that only pass text to the model
+      JSON.parse(result["content"][0]["text"].as_s).should eq result["structuredContent"]
     end
 
     it "invokes routes with a request body" do
@@ -417,7 +418,8 @@ describe ActionController::MCPServer do
 
       result = client.call("mcp_widgets_create", {body: {name: "new", size: 3}})
       result["isError"].should be_false
-      result["structuredContent"]["name"].should eq "new"
+      result["structuredContent"]["status"].should eq 201
+      result["structuredContent"]["body"]["name"].should eq "new"
     end
 
     it "reports empty responses using the status" do
@@ -427,7 +429,8 @@ describe ActionController::MCPServer do
 
       result = client.call("mcp_widgets_destroy", {id: 4})
       result["isError"].should be_false
-      result["content"][0]["text"].should eq "202 Accepted"
+      result["content"][0]["text"].should eq %({"status":202})
+      result["structuredContent"].should eq JSON.parse(%({"status":202}))
     end
 
     it "flags HTTP errors" do
@@ -453,7 +456,55 @@ describe ActionController::MCPServer do
       response = HTTP::Client.post(MCP_URI, headers: headers, body: {jsonrpc: "2.0", id: 3, method: "tools/call", params: {name: "mcp_widgets_show", arguments: {id: 1}}}.to_json)
       result = JSON.parse(response.body)["result"]
       result["isError"].should be_true
-      result["content"][0]["text"].as_s.should start_with "401"
+      result["structuredContent"]["status"].should eq 401
+    end
+  end
+
+  describe "response headers" do
+    it "returns useful headers and leaves out excluded ones" do
+      client = MCPTestClient.new
+      client.initialize_session
+
+      result = client.call("mcp_widgets_colours")
+      result["structuredContent"].should eq JSON.parse({
+        status:  200,
+        headers: {"X-Total-Count" => "2", "Link" => %(</mcp_widgets/colours?page=2>; rel="next")},
+        body:    ["red", "green"],
+      }.to_json)
+    end
+
+    it "returns media as its own content block" do
+      client = MCPTestClient.new
+      client.initialize_session
+
+      result = client.call("mcp_root_pixel")
+      result["content"][0].should eq JSON.parse(%({"type":"image","data":"iVBORw==","mimeType":"image/png"}))
+      result["content"][1]["text"].should eq %({"status":200,"headers":{"ETag":"\\"pixel\\""}})
+      result["structuredContent"].should eq JSON.parse(%({"status":200,"headers":{"ETag":"\\"pixel\\""}}))
+    end
+
+    it "can be configured" do
+      original = ActionController::MCPServer.excluded_response_headers
+      ActionController::MCPServer.excluded_response_headers = original + ["link", "X-Total-*"]
+      begin
+        client = MCPTestClient.new
+        client.initialize_session
+        client.call("mcp_widgets_colours")["structuredContent"].should eq JSON.parse(%({"status": 200, "body": ["red", "green"]}))
+      ensure
+        ActionController::MCPServer.excluded_response_headers = original
+      end
+    end
+
+    it "matches names case-insensitively and by prefix" do
+      headers = HTTP::Headers{
+        "set-cookie" => "a=b", "DATE" => "today", "Access-Control-Allow-Origin" => "*",
+        "Proxy-Authenticate" => "Basic", "ETag" => %("abc"), "Retry-After" => "5",
+      }
+      headers.add("Link", "<a>; rel=\"next\"")
+      headers.add("Link", "<b>; rel=\"last\"")
+      ActionController::MCPServer.visible_headers(headers).should eq({
+        "ETag" => %("abc"), "Retry-After" => "5", "Link" => %(<a>; rel="next", <b>; rel="last"),
+      })
     end
   end
 
@@ -584,8 +635,8 @@ describe ActionController::MCPServer do
       client.initialize_session
       result = client.call("mcp_widgets_colours")
       result["isError"].should be_false
-      result["content"][0]["text"].should eq %(["red","green"])
-      client.call("mcp_root_time")["content"][0]["text"].should eq %("noon")
+      result["structuredContent"]["body"].should eq JSON.parse(%(["red","green"]))
+      client.call("mcp_root_time")["structuredContent"]["body"].should eq "noon"
     end
 
     it "omits toolboxes that only contain root items" do

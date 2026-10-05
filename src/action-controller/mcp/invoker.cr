@@ -190,45 +190,55 @@ module ActionController::MCPServer
       value.as_s? || value.to_json
     end
 
+    # the response as `{status, headers, body}`. Headers listed in
+    # `MCPServer.excluded_response_headers` are left out, and so are empty headers and bodies
     private def to_result(response : HTTP::Client::Response) : String
       status = response.status
       error = !status.success? && !status.redirection?
-      mime = response.mime_type
-      media_type = mime.try(&.media_type) || ""
+      media_type = response.mime_type.try(&.media_type) || ""
       body = response.body
+      media = media_type.starts_with?("image/") || media_type.starts_with?("audio/")
+      headers = MCPServer.visible_headers(response.headers)
 
-      if media_type.starts_with?("image/") || media_type.starts_with?("audio/")
-        return JSON.build { |json|
-          json.object do
-            json.field "content" do
-              json.array do
+      envelope = JSON.build do |json|
+        json.object do
+          json.field "status", status.code
+          unless headers.empty?
+            json.field "headers" do
+              json.object { headers.each { |name, value| json.field name, value } }
+            end
+          end
+          # media is returned as its own content block
+          unless body.empty? || media
+            json.field "body" do
+              parsed = (JSON.parse(body) rescue nil) if media_type.ends_with?("json")
+              parsed ? parsed.to_json(json) : json.string(body)
+            end
+          end
+        end
+      end
+
+      JSON.build do |json|
+        json.object do
+          json.field "content" do
+            json.array do
+              if media
                 json.object do
                   json.field "type", media_type.starts_with?("image/") ? "image" : "audio"
                   json.field "data", Base64.strict_encode(body)
                   json.field "mimeType", media_type
                 end
               end
+              json.object do
+                json.field "type", "text"
+                json.field "text", envelope
+              end
             end
-            json.field "isError", error
           end
-        }
+          json.field("structuredContent") { json.raw envelope }
+          json.field "isError", error
+        end
       end
-
-      structured = nil
-      if !error && media_type.ends_with?("json")
-        structured = JSON.parse(body).as_h? rescue nil
-      end
-
-      status_line = "#{status.code} #{status.description}"
-      text = if body.empty?
-               status_line
-             elsif error
-               "#{status_line}\n#{body}"
-             else
-               body
-             end
-
-      MCPServer.tool_result(text, error: error, structured: structured)
     end
   end
 

@@ -41,4 +41,14 @@ describe "establish_ws" do
       result.should eq "ping"
     end
   end
+
+  it "finishes cleanly when the server closes the socket" do
+    within(5.seconds) do
+      websocket = client.establish_ws("/protected_socket/", headers: HTTP::Headers{"Authorization" => "Bearer token"})
+      websocket.send "bye"
+      # replying to the server's close frame must not raise
+      websocket.run
+      websocket.closed?.should be_true
+    end
+  end
 end
