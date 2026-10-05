@@ -613,6 +613,17 @@ class McpHidden < ActionController::Base
   end
 end
 
+# a toolbox with prompts but no tools
+class McpPromptsOnly < ActionController::Base
+  base "/mcp_prompts_only"
+
+  # suggests a greeting
+  @[AC::MCP(prompt: true)]
+  def greeting : String
+    "Say hello"
+  end
+end
+
 # everything is available without opening the toolbox
 @[AC::MCP(root: true)]
 class McpRoot < ActionController::Base

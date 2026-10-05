@@ -92,6 +92,9 @@ module ActionController::MCPServer
       response = context.response
       response.content_type = "text/event-stream"
       response.headers["Cache-Control"] = "no-cache"
+      # headers are only sent with the first bytes of the body, so open the stream
+      # with an SSE comment (ignored by clients) rather than waiting for an event
+      response << ": stream open\n\n"
       response.flush
 
       loop do

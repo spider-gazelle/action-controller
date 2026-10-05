@@ -312,6 +312,83 @@ describe ActionController::MCPServer do
       end
     end
 
+    sse = "application/json, text/event-stream"
+    notifications = ->(messages : Array(JSON::Any)) { messages.compact_map(&.["method"]?.try(&.as_s)) }
+
+    # streams a session's GET event stream: "connected" once it's open, the data of
+    # each event, then `nil` when the stream ends
+    open_stream = ->(client : MCPTestClient) do
+      events = Channel(String?).new(32)
+      spawn do
+        HTTP::Client.get(MCP_URI, headers: client.headers(accept: "text/event-stream")) do |response|
+          response.status_code.should eq 200
+          events.send "connected"
+          while line = response.body_io.gets
+            events.send line.lchop("data: ") if line.starts_with?("data: ")
+          end
+        end
+        events.send nil
+      end
+      events
+    end
+
+    next_event = ->(events : Channel(String?)) do
+      select
+      when event = events.receive
+        event
+      when timeout(5.seconds)
+        fail "no event received"
+      end
+    end
+
+    it "only notifies about the lists that changed" do
+      client = MCPTestClient.new
+      client.initialize_session
+
+      # tools but no prompts
+      notifications.call(client.request("tools/call", {name: "open_toolbox", arguments: {name: "mcp_hidden"}}, accept: sse))
+        .should eq ["notifications/tools/list_changed"]
+
+      # prompts but no tools
+      notifications.call(client.request("tools/call", {name: "open_toolbox", arguments: {name: "mcp_prompts_only"}}, accept: sse))
+        .should eq ["notifications/prompts/list_changed"]
+      client.request("prompts/list").last["result"]["prompts"].as_a.map(&.["name"].as_s).should contain "mcp_prompts_only_greeting"
+
+      notifications.call(client.request("tools/call", {name: "close_toolbox", arguments: {name: "mcp_prompts_only"}}, accept: sse))
+        .should eq ["notifications/prompts/list_changed"]
+      notifications.call(client.request("tools/call", {name: "close_toolbox", arguments: {name: "mcp_hidden"}}, accept: sse))
+        .should eq ["notifications/tools/list_changed"]
+
+      # closing a toolbox that isn't open changes nothing
+      notifications.call(client.request("tools/call", {name: "close_toolbox", arguments: {name: "mcp_hidden"}}, accept: sse)).should be_empty
+    end
+
+    it "delivers every notification on the GET event stream" do
+      client = MCPTestClient.new
+      client.initialize_session
+      events = open_stream.call(client)
+      next_event.call(events).should eq "connected"
+
+      client.call("open_toolbox", {name: "mcp_widgets"})["isError"].should be_false
+      client.call("close_toolbox", {name: "mcp_widgets"})["isError"].should be_false
+
+      methods = Array.new(4) { JSON.parse(next_event.call(events).to_s)["method"].as_s }
+      methods.should eq [
+        "notifications/tools/list_changed", "notifications/prompts/list_changed",
+        "notifications/tools/list_changed", "notifications/prompts/list_changed",
+      ]
+    end
+
+    it "ends the event stream when the session ends" do
+      client = MCPTestClient.new
+      client.initialize_session
+      events = open_stream.call(client)
+      next_event.call(events).should eq "connected"
+
+      HTTP::Client.delete(MCP_URI, headers: client.headers).status_code.should eq 204
+      next_event.call(events).should be_nil
+    end
+
     it "rejects tools from closed toolboxes" do
       client = MCPTestClient.new
       client.initialize_session
@@ -649,5 +726,37 @@ describe ActionController::MCPServer do
   it "tracks sessions in the transport" do
     MCPTestClient.new.initialize_session
     (transport.sessions.size > 0).should be_true
+  end
+end
+
+describe ActionController::MCPServer::Session do
+  it "drops notifications rather than blocking when nobody is listening" do
+    session = ActionController::MCPServer::Session.new("2025-11-25")
+
+    notified = Channel(Nil).new(1)
+    spawn do
+      40.times { |index| session.notify(%({"index":#{index}})) }
+      notified.send nil
+    end
+    select
+    when notified.receive
+    when timeout(5.seconds)
+      fail "notify blocked"
+    end
+
+    queued = 0
+    loop do
+      select
+      when session.notifications.receive
+        queued += 1
+      else
+        break
+      end
+    end
+    queued.should eq 32
+
+    # notifying an ended session is ignored
+    session.terminate
+    session.notify(%({"index":41}))
   end
 end
