@@ -55,13 +55,17 @@ class MCPTestClient
     request("tools/call", {name: tool, arguments: arguments}, accept).last["result"]
   end
 
+  def tools : Array(JSON::Any)
+    request("tools/list").last["result"]["tools"].as_a
+  end
+
   def tool_names : Array(String)
-    request("tools/list").last["result"]["tools"].as_a.map(&.["name"].as_s)
+    tools.map(&.["name"].as_s)
   end
 end
 
 # meta tools followed by the root tools
-DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "call_tool", "mcp_widgets_colours", "mcp_root_time", "mcp_root_pixel"]
+DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "call_read_only", "call_tool", "mcp_widgets_colours", "mcp_root_time", "mcp_root_pixel"]
 
 MCP_INIT = {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}
 
@@ -171,6 +175,14 @@ describe ActionController::MCPServer do
       yaml = ActionController::MCPServer.description.to_yaml
       parsed = ActionController::MCPServer::Description.from_yaml(yaml)
       parsed.to_yaml.should eq yaml
+
+      # read_only is only stored when overridden
+      tools = parsed.toolbox?("mcp_read_only").should_not be_nil
+      tools = tools.tools
+      tools.find!(&.name.==("mcp_read_only_search")).read_only.should be_true
+      tools.find!(&.name.==("mcp_read_only_touch")).read_only.should be_false
+      widgets = parsed.toolbox?("mcp_widgets").should_not be_nil
+      widgets.tools.all?(&.read_only.nil?).should be_true
       original = ActionController::MCPServer.description.tool?("mcp_widgets_show").should_not be_nil
       loaded = parsed.tool?("mcp_widgets_show").should_not be_nil
       loaded[1].input_schema.should eq original[1].input_schema
@@ -473,6 +485,7 @@ describe ActionController::MCPServer do
       show = contents["tools"].as_a.find! { |tool| tool["name"] == "mcp_widgets_show" }
       show["inputSchema"]["required"].as_a.should contain "id"
       show["annotations"]["readOnlyHint"].should be_true
+      show["proxy"].should eq "call_read_only"
       contents["prompts"].as_a.should_not be_empty
       contents["usage"].as_s.should contain "call_tool"
       JSON.parse(result["content"][0]["text"].as_s).should eq contents
@@ -527,6 +540,51 @@ describe ActionController::MCPServer do
       client.call("list_toolboxes")["structuredContent"]["toolboxes"].as_a.find!(&.["name"].==("mcp_widgets"))["open"].should be_false
     end
 
+    it "runs only read only tools with call_read_only" do
+      client = MCPTestClient.new
+      client.initialize_session
+      # managing toolboxes only changes the session, not data
+      %w(list_toolboxes open_toolbox close_toolbox).each do |name|
+        client.tools.find!(&.["name"].==(name))["annotations"]["readOnlyHint"].should be_true
+      end
+      client.tools.find!(&.["name"].==("call_read_only"))["annotations"]["readOnlyHint"].should be_true
+      client.tools.find!(&.["name"].==("call_tool"))["annotations"]["readOnlyHint"].should be_false
+
+      client.call("call_read_only", {name: "mcp_widgets_colours"})["structuredContent"]["body"].should eq JSON.parse(%(["red","green"]))
+
+      client.call("open_toolbox", {name: "mcp_widgets"})
+      destroy = client.call("call_read_only", {name: "mcp_widgets_destroy", arguments: {id: 4}})
+      destroy["isError"].should be_true
+      destroy["content"][0]["text"].should eq "Tool mcp_widgets_destroy can change data, run it with call_tool"
+      client.call("call_tool", {name: "mcp_widgets_destroy", arguments: {id: 4}})["structuredContent"]["status"].should eq 202
+
+      # call_tool runs read only tools too
+      client.call("call_tool", {name: "mcp_widgets_colours"})["isError"].should be_false
+    end
+
+    it "names the proxy for each tool, honouring read_only overrides" do
+      client = MCPTestClient.new
+      client.initialize_session
+      tools = client.call("open_toolbox", {name: "mcp_read_only"})["structuredContent"]["tools"].as_a
+      search = tools.find!(&.["name"].==("mcp_read_only_search"))
+      touch = tools.find!(&.["name"].==("mcp_read_only_touch"))
+
+      search["proxy"].should eq "call_read_only"
+      search["annotations"].should eq JSON.parse(%({"readOnlyHint":true}))
+      touch["proxy"].should eq "call_tool"
+      touch["annotations"]["readOnlyHint"].should be_false
+
+      client.call("call_read_only", {name: "mcp_read_only_search", arguments: {body: "blue"}})["structuredContent"]["body"].should eq JSON.parse(%(["found blue"]))
+      client.call("call_read_only", {name: "mcp_read_only_touch"})["isError"].should be_true
+      client.call("call_tool", {name: "mcp_read_only_touch"})["structuredContent"]["body"].should eq "touched"
+
+      # the same hints when listed directly
+      listed = client.tools
+      listed.find!(&.["name"].==("mcp_read_only_search"))["annotations"]["readOnlyHint"].should be_true
+      listed.find!(&.["name"].==("mcp_read_only_touch"))["annotations"]["readOnlyHint"].should be_false
+      listed.find!(&.["name"].==("mcp_read_only_touch"))["proxy"]?.should be_nil
+    end
+
     it "can be disabled" do
       ActionController::MCPServer.tool_proxy = false
       begin
@@ -534,6 +592,7 @@ describe ActionController::MCPServer do
         result = client.initialize_session["result"]
         result["instructions"].as_s.should_not contain "call_tool"
         client.tool_names.should_not contain "call_tool"
+        client.tool_names.should_not contain "call_read_only"
         client.call("open_toolbox", {name: "mcp_widgets"})["structuredContent"]["usage"]?.should be_nil
 
         response = client.post({jsonrpc: "2.0", id: 9, method: "tools/call", params: {name: "call_tool", arguments: {name: "mcp_root_time"}}}, "application/json")

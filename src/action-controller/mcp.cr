@@ -51,7 +51,8 @@ module ActionController::MCPServer
   PROXY_INSTRUCTIONS = <<-TEXT
     #{DEFAULT_INSTRUCTIONS}
     open_toolbox returns the definitions of the tools it loads. If they don't appear in your
-    available tools, run them with call_tool, passing the tool name and its arguments.
+    available tools, run them with the tool named in their proxy field, passing the tool name
+    and its arguments: call_read_only for tools that only read data, call_tool for the rest.
     TEXT
 
   # location of the MCP description file, generated using `write_description`

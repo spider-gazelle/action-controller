@@ -616,6 +616,25 @@ class McpHidden < ActionController::Base
   end
 end
 
+# read only overrides: searching is read only, touching changes data
+@[AC::MCP(read_only: true)]
+class McpReadOnly < ActionController::Base
+  base "/mcp_read_only"
+
+  # searches widgets
+  @[AC::Route::POST("/search", body: :query)]
+  def search(query : String) : Array(String)
+    ["found #{query}"]
+  end
+
+  # records that the widgets were viewed
+  @[AC::MCP(read_only: false)]
+  @[AC::Route::GET("/touch")]
+  def touch : String
+    "touched"
+  end
+end
+
 # a toolbox with prompts but no tools
 class McpPromptsOnly < ActionController::Base
   base "/mcp_prompts_only"

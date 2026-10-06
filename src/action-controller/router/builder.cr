@@ -65,6 +65,10 @@ end
 #
 # * `hide: true` excludes the route(s) from the MCP toolboxes
 # * `root: true` always lists the tool(s) or prompt(s), without opening the toolbox
+# * `read_only: Bool` overrides whether a tool only reads data, which defaults to
+#   `true` for GET routes. Read only tools are hinted as such to clients and can be run
+#   with the `call_read_only` proxy, e.g. `false` for a GET with side effects or `true`
+#   for a POST search
 # * `prompt: true` exposes a method as an MCP prompt (not as a HTTP route).
 #   The method must return `String` or `Array(AC::PromptMessage)`
 #
@@ -291,11 +295,15 @@ module ActionController::Route::Builder
       {% mcp_method_ann = method.annotation(::ActionController::MCP) %}
       {% mcp_hide = mcp_klass_ann ? mcp_klass_ann[:hide] : nil %}
       {% mcp_root = mcp_klass_ann ? mcp_klass_ann[:root] : nil %}
+      {% mcp_read_only = mcp_klass_ann ? mcp_klass_ann[:read_only] : nil %}
       {% if mcp_method_ann && mcp_method_ann[:hide] != nil %}
         {% mcp_hide = mcp_method_ann[:hide] %}
       {% end %}
       {% if mcp_method_ann && mcp_method_ann[:root] != nil %}
         {% mcp_root = mcp_method_ann[:root] %}
+      {% end %}
+      {% if mcp_method_ann && mcp_method_ann[:read_only] != nil %}
+        {% mcp_read_only = mcp_method_ann[:read_only] %}
       {% end %}
 
       # MCP prompts are implemented as internal GET routes so filters, error handlers and param parsing apply
@@ -402,6 +410,7 @@ module ActionController::Route::Builder
 
             {% open_api_route[:mcp_hide] = mcp_hide == true %}
             {% open_api_route[:mcp_root] = mcp_root == true %}
+            {% open_api_route[:mcp_read_only] = mcp_read_only %}
             {% open_api_route[:mcp_prompt] = ann[:internal] == true %}
             {% OPENAPI_ROUTES[verb_route] = open_api_route %}
 

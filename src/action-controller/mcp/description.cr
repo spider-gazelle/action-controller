@@ -48,32 +48,54 @@ module ActionController::MCPServer
     # always available, without opening the toolbox
     getter? root : Bool = false
 
-    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false)
+    # overrides whether the tool only reads data, see `read_only?`
+    getter read_only : Bool? = nil
+
+    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @read_only = nil)
     end
 
-    # the tool definition as returned by `tools/list`
-    def to_mcp_json(json : JSON::Builder) : Nil
+    # only reads data, GET routes unless overridden with `@[AC::MCP(read_only:)]`
+    def read_only? : Bool
+      override = @read_only
+      override.nil? ? verb == "get" : override
+    end
+
+    # the proxy tool that runs this tool, for clients that can't see it
+    def proxy : String
+      read_only? ? "call_read_only" : "call_tool"
+    end
+
+    # the tool definition as returned by `tools/list`, `proxy: true` also names the
+    # proxy tool that runs it
+    def to_mcp_json(json : JSON::Builder, proxy : Bool = false) : Nil
       json.object do
         json.field "name", name
         json.field "description", description if description
         json.field "inputSchema", input_schema
+        json.field "proxy", self.proxy if proxy
         json.field "annotations" do
           json.object do
-            case verb
-            when "get"
+            if read_only?
               json.field "readOnlyHint", true
-            when "delete"
-              json.field "readOnlyHint", false
-              json.field "destructiveHint", true
-              json.field "idempotentHint", true
-            when "put"
-              json.field "readOnlyHint", false
-              json.field "idempotentHint", true
             else
-              json.field "readOnlyHint", false
+              annotate_changes(json)
             end
           end
         end
+      end
+    end
+
+    private def annotate_changes(json : JSON::Builder) : Nil
+      case verb
+      when "delete"
+        json.field "readOnlyHint", false
+        json.field "destructiveHint", true
+        json.field "idempotentHint", true
+      when "put"
+        json.field "readOnlyHint", false
+        json.field "idempotentHint", true
+      else
+        json.field "readOnlyHint", false
       end
     end
   end
@@ -225,7 +247,7 @@ module ActionController::MCPServer
   end
 
   # :nodoc:
-  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool)
+  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, read_only: Bool?)
 
   # :nodoc:
   alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument))
@@ -260,6 +282,7 @@ module ActionController::MCPServer
               verb: {{ details[:verb] }},
               route: {{ details[:route] }},
               root: {{ details[:mcp_root] == true }},
+              read_only: {{ details[:mcp_read_only] == nil ? nil : details[:mcp_read_only] }},
             },
           {% end %}
         {% end %}
@@ -426,7 +449,7 @@ module ActionController::MCPServer
     collect_definitions(JSON::Any.new(properties), schemas, definitions)
     input_schema["$defs"] = JSON::Any.new(definitions) unless definitions.empty?
 
-    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root])
+    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:read_only])
   end
 
   # :nodoc:

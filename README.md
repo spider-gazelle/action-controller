@@ -105,19 +105,26 @@ Streamable HTTP transport.
 
 Controllers are presented as **toolboxes**, their route methods as **tools**, and methods
 annotated with `@[AC::MCP(prompt: true)]` as **prompts**. To keep the model's context
-lean, a session starts with just four tools, plus any [root items](#root-tools-and-prompts):
+lean, a session starts with just five tools, plus any [root items](#root-tools-and-prompts):
 
 | tool | description |
 |------|-------------|
 | `list_toolboxes` | lists the controllers, their descriptions (the class comment), and their tool and prompt counts |
 | `open_toolbox(name)` | adds the controller's tools and prompts to the session, sends `notifications/tools/list_changed` and/or `notifications/prompts/list_changed`, and returns the tool definitions |
 | `close_toolbox(name)` | removes them again and sends the same notifications |
-| `call_tool(name, arguments)` | runs a tool from an open toolbox (or a root tool), for clients that don't refresh their tools when notified |
+| `call_read_only(name, arguments)` | runs a read only tool from an open toolbox (or a root tool), for clients that don't refresh their tools when notified |
+| `call_tool(name, arguments)` | runs any tool from an open toolbox (or a root tool), the same way |
 
 Some MCP clients (currently including Claude and ChatGPT) don't re-fetch their tools when
 notified, so the opened tools never appear. `open_toolbox` returns each tool's name,
-description and `inputSchema`, and the model runs them with `call_tool` instead. Calls
-through the proxy behave exactly like direct calls. Disable it with
+description, `inputSchema`, annotations and `proxy` (the proxy tool to run it with), and
+the model runs them through the proxies instead. Calls through a proxy behave exactly
+like direct calls.
+
+There are two proxies so clients can tell reads from writes: `call_read_only` is hinted
+`readOnlyHint: true` (so ChatGPT, for example, doesn't ask the user to confirm each call)
+and refuses tools that aren't read only. A tool is read only if it's a GET route,
+unless overridden with `@[AC::MCP(read_only:)]`. Disable both proxies with
 `MCPServer.tool_proxy = false` once your clients support `list_changed`.
 
 Tool calls and prompts are dispatched in-process through the application router, so
@@ -381,6 +388,7 @@ annotation takes precedence:
 |--------|-------------|
 | `hide: true` | excludes the routes / prompts from MCP |
 | `root: true` | always available, without opening the toolbox |
+| `read_only: Bool` | whether the tool only reads data (default: GET routes). Sets `readOnlyHint` and whether `call_read_only` runs it. Use `false` for a GET with side effects, `true` for a POST search |
 | `prompt: true` | the method is an MCP prompt (methods only) |
 
 ```crystal
@@ -402,7 +410,7 @@ ActionController::MCPServer.tap do |mcp|
   mcp.server_name = "my-app"
   mcp.server_version = "1.2.0"
   mcp.instructions = "About my-app. #{mcp.toolbox_instructions}" # nil (default): toolbox usage only, "": none
-  mcp.tool_proxy = true                           # the call_tool meta tool
+  mcp.tool_proxy = true                           # the call_read_only and call_tool meta tools
   mcp.forward_headers = ["Authorization", "Cookie", "X-API-Key"] # copied onto tool requests
   mcp.allowed_origins = ["https://app.example.com"]              # "*" allows any origin
   mcp.session_timeout = 30.minutes
@@ -430,7 +438,7 @@ end
   Sessions are not credentials: when authentication is enabled every request must be authenticated.
 * Unhandled exceptions raised by a route are logged and returned as a generic `500` tool error.
 * Clients that support `notifications/tools/list_changed` see the tools added by
-  `open_toolbox` directly, others use `call_tool`. Prompts added by a toolbox need
+  `open_toolbox` directly, others use `call_read_only` and `call_tool`. Prompts added by a toolbox need
   `notifications/prompts/list_changed`. Root items don't require either.
 
 ### Tool results

@@ -27,7 +27,12 @@ module ActionController::MCPServer
       %({"name":"close_toolbox","description":"Removes the tools and prompts in a toolbox, close toolboxes you are no longer using","inputSchema":#{TOOLBOX_ARGS},"annotations":{"readOnlyHint":true,"idempotentHint":true}}),
     }
 
-    CALL_TOOL = %({"name":"call_tool","description":"Runs a tool from an open toolbox, use it when the tools returned by open_toolbox aren't in your available tools","inputSchema":{"type":"object","properties":{"name":{"type":"string","description":"the tool name, as returned by open_toolbox"},"arguments":{"type":"object","description":"the tool arguments, matching its inputSchema"}},"required":["name"]},"annotations":{"readOnlyHint":false,"openWorldHint":false}})
+    PROXY_ARGS = %({"type":"object","properties":{"name":{"type":"string","description":"the tool name, as returned by open_toolbox"},"arguments":{"type":"object","description":"the tool arguments, matching its inputSchema"}},"required":["name"]})
+
+    PROXY_TOOLS = {
+      %({"name":"call_read_only","description":"Runs a tool that only reads data (proxy: call_read_only) from an open toolbox, use it when the tools returned by open_toolbox aren't in your available tools","inputSchema":#{PROXY_ARGS},"annotations":{"readOnlyHint":true,"openWorldHint":false}}),
+      %({"name":"call_tool","description":"Runs a tool that can change data (proxy: call_tool) from an open toolbox, use it when the tools returned by open_toolbox aren't in your available tools. Prefer call_read_only for tools that only read data","inputSchema":#{PROXY_ARGS},"annotations":{"readOnlyHint":false,"openWorldHint":false}}),
+    }
 
     def initialize(@invoker : Invoker)
     end
@@ -86,7 +91,7 @@ module ActionController::MCPServer
           json.field "tools" do
             json.array do
               META_TOOLS.each { |tool| json.raw tool }
-              json.raw CALL_TOOL if MCPServer.tool_proxy?
+              PROXY_TOOLS.each { |tool| json.raw tool } if MCPServer.tool_proxy?
               description.root_tools.each(&.to_mcp_json(json))
               session.open_toolboxes.each do |name|
                 description.toolbox?(name).try &.toolbox_tools.each(&.to_mcp_json(json))
@@ -115,9 +120,9 @@ module ActionController::MCPServer
         else
           close_toolbox(session, toolbox, emitted)
         end
-      when "call_tool"
+      when "call_tool", "call_read_only"
         raise RPCError.new(RPCError::INVALID_PARAMS, "Unknown tool: #{name}") unless MCPServer.tool_proxy?
-        proxy_call(arguments, session, request)
+        proxy_call(arguments, session, request, read_only: name == "call_read_only")
       else
         found = description.tool?(name)
         raise RPCError.new(RPCError::INVALID_PARAMS, "Unknown tool: #{name}") unless found
@@ -130,7 +135,7 @@ module ActionController::MCPServer
 
     # runs a tool on behalf of a client that can't see it, mistakes are tool errors so
     # the model can correct itself
-    private def proxy_call(arguments : Hash(String, JSON::Any), session : Session, request : HTTP::Request) : String
+    private def proxy_call(arguments : Hash(String, JSON::Any), session : Session, request : HTTP::Request, read_only : Bool) : String
       name = arguments["name"]?.try(&.as_s?)
       return MCPServer.tool_result("Missing the name of the tool to call", error: true) unless name
       tool_arguments = arguments["arguments"]?.try(&.as_h?) || {} of String => JSON::Any
@@ -139,6 +144,7 @@ module ActionController::MCPServer
       return MCPServer.tool_result("Unknown tool: #{name.inspect}, use open_toolbox to find the available tools", error: true) unless found
       toolbox, tool = found
       return MCPServer.tool_result("Tool #{name} is not available, open the #{toolbox.name} toolbox first", error: true) unless tool.root? || session.open?(toolbox.name)
+      return MCPServer.tool_result("Tool #{name} can change data, run it with call_tool", error: true) if read_only && !tool.read_only?
 
       @invoker.call(tool, tool_arguments, request)
     end
@@ -201,13 +207,13 @@ module ActionController::MCPServer
           json.field "toolbox", toolbox.name
           json.field "status", opened ? "opened" : "already open"
           json.field "tools" do
-            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json)) }
+            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json, proxy: MCPServer.tool_proxy?)) }
           end
           json.field "prompts" do
             json.array { toolbox.toolbox_prompts.each { |prompt| json.string prompt.name } }
           end
           if MCPServer.tool_proxy?
-            json.field "usage", "call these tools directly if they are in your available tools, otherwise use call_tool"
+            json.field "usage", "call these tools directly if they are in your available tools, otherwise run them with the tool named in their proxy field (call_read_only or call_tool)"
           end
         end
       end
