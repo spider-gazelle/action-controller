@@ -23,12 +23,17 @@ module ActionController::MCPServer
     getter auth_cache : AuthCache = AuthCache.new
     getter protocol : Protocol
 
-    # the path the transport is mounted at
+    # the path the transport is mounted at, a template for controller endpoints
     getter path : String
 
-    def initialize(route_handler : Router::RouteHandler, @path : String = "/mcp")
+    # the path params bound from the URL, for controller endpoints
+    getter bound : Array(String)
+
+    # `endpoint: true` serves the controller endpoint mounted at `path`
+    def initialize(route_handler : Router::RouteHandler, @path : String = "/mcp", endpoint : Bool = false)
       @invoker = Invoker.new(route_handler, PromptRouter.new.route_handler)
-      @protocol = Protocol.new(@invoker)
+      @protocol = Protocol.new(@invoker, endpoint ? @path : nil)
+      @bound = endpoint ? Endpoint.bound_params(@path) : [] of String
     end
 
     # client to server messages
@@ -130,7 +135,8 @@ module ActionController::MCPServer
 
       context.response.headers["Access-Control-Allow-Origin"] = "*"
       metadata = builder.call(context.request)
-      respond(context, HTTP::Status::OK, "application/json", metadata.to_json(public_url(context.request, @path)))
+      resource = context.request.path.lchop(RESOURCE_METADATA_PATH)
+      respond(context, HTTP::Status::OK, "application/json", metadata.to_json(public_url(context.request, resource)))
     end
 
     # checks the request is authenticated when authentication is enabled
@@ -164,7 +170,7 @@ module ActionController::MCPServer
       request = context.request
       params = [] of String
       if builder = MCPServer.resource_metadata
-        params << %(resource_metadata="#{public_url(request, RESOURCE_METADATA_PATH + @path)}")
+        params << %(resource_metadata="#{public_url(request, RESOURCE_METADATA_PATH + request.path)}")
         if scopes = builder.call(request).scopes_supported
           params << %(scope="#{scopes.join(' ')}") unless scopes.empty?
         end
@@ -191,7 +197,7 @@ module ActionController::MCPServer
     private def initialize_session(context, id : JSON::Any, params : Hash(String, JSON::Any)) : HTTP::Server::Context
       requested = params["protocolVersion"]?.try(&.as_s?)
       version = PROTOCOL_VERSIONS.includes?(requested) ? requested.as(String) : PROTOCOL_VERSIONS.first
-      session = @sessions.create(version)
+      session = @sessions.create(version, bound_values(context))
       context.response.headers[SESSION_HEADER] = session.id
       respond(context, HTTP::Status::OK, "application/json", rpc_result(id, @protocol.initialize_result(version)))
     end
@@ -202,9 +208,16 @@ module ActionController::MCPServer
         return
       end
 
-      session = @sessions[session_id]?
+      # sessions are bound to the endpoint URL they were created at
+      session = @sessions[session_id]?.try { |found| found if found.bound == bound_values(context) }
       rpc_error(context, nil, RPCError::INVALID_REQUEST, "Session not found", HTTP::Status::NOT_FOUND) unless session
       session
+    end
+
+    private def bound_values(context) : Hash(String, String)
+      return {} of String => String if @bound.empty?
+      params = context.route_params
+      @bound.to_h { |name| {name, params[name]? || ""} }
     end
 
     # protects against DNS rebinding attacks

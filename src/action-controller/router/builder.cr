@@ -65,6 +65,11 @@ end
 #
 # * `hide: true` excludes the route(s) from the MCP toolboxes
 # * `root: true` always lists the tool(s) or prompt(s), without opening the toolbox
+# * `endpoint: true` (controllers only) also serves the controller as its own MCP server at
+#   `<base>/mcp`, or at a sub path such as `endpoint: "/assistant"`. Path params in the base
+#   (`base "/accounts/:account_id"`) are bound from the endpoint URL. The controller is
+#   hidden from the global server unless it's annotated `hide: false`, and a method
+#   annotated `hide: true` is hidden from both
 # * `read_only: Bool` overrides whether a tool only reads data, which defaults to
 #   `true` for GET routes. Read only tools are hinted as such to clients and can be run
 #   with the `call_read_only` proxy, e.g. `false` for a GET with side effects or `true`
@@ -295,6 +300,16 @@ module ActionController::Route::Builder
       {% mcp_method_ann = method.annotation(::ActionController::MCP) %}
       {% mcp_hide = mcp_klass_ann ? mcp_klass_ann[:hide] : nil %}
       {% mcp_root = mcp_klass_ann ? mcp_klass_ann[:root] : nil %}
+
+      # a controller served by its own MCP endpoint is hidden from the global server by default
+      {% raise "#{@type.name}##{method_name}: @[AC::MCP(endpoint:)] applies to controllers, not methods" if mcp_method_ann && mcp_method_ann[:endpoint] != nil %}
+      {% mcp_endpoint = mcp_klass_ann ? mcp_klass_ann[:endpoint] : nil %}
+      {% mcp_endpoint_path = nil %}
+      {% if mcp_endpoint %}
+        {% mcp_endpoint_path = "/" + (NAMESPACE[0] + "/" + (mcp_endpoint == true ? "/mcp" : mcp_endpoint.id.stringify)).split("/").reject(&.empty?).join("/") %}
+        {% mcp_hide = true if mcp_hide == nil %}
+      {% end %}
+      {% mcp_endpoint_hide = mcp_method_ann && mcp_method_ann[:hide] == true %}
       {% mcp_read_only = mcp_klass_ann ? mcp_klass_ann[:read_only] : nil %}
       {% if mcp_method_ann && mcp_method_ann[:hide] != nil %}
         {% mcp_hide = mcp_method_ann[:hide] %}
@@ -411,6 +426,8 @@ module ActionController::Route::Builder
             {% open_api_route[:mcp_hide] = mcp_hide == true %}
             {% open_api_route[:mcp_root] = mcp_root == true %}
             {% open_api_route[:mcp_read_only] = mcp_read_only %}
+            {% open_api_route[:mcp_endpoint] = mcp_endpoint_path %}
+            {% open_api_route[:mcp_endpoint_hide] = mcp_endpoint_hide %}
             {% open_api_route[:mcp_prompt] = ann[:internal] == true %}
             {% OPENAPI_ROUTES[verb_route] = open_api_route %}
 

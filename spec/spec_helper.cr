@@ -635,6 +635,49 @@ class McpReadOnly < ActionController::Base
   end
 end
 
+# served as its own MCP server at /mcp_account/:account_id/mcp
+@[AC::MCP(endpoint: true)]
+class McpAccount < ActionController::Base
+  base "/mcp_account/:account_id"
+
+  # shows a widget in the account
+  @[AC::Route::GET("/widgets/:id")]
+  def show(account_id : String, id : Int32) : NamedTuple(account: String, id: Int32)
+    {account: account_id, id: id}
+  end
+
+  # renames the account
+  @[AC::Route::POST("/rename", body: :name)]
+  def rename(account_id : String, name : String) : String
+    "#{account_id} is now #{name}"
+  end
+
+  # hidden everywhere
+  @[AC::MCP(hide: true)]
+  @[AC::Route::GET("/secret")]
+  def secret : String
+    "secret"
+  end
+
+  # describes the account
+  @[AC::MCP(prompt: true)]
+  def describe(account_id : String, tone : String = "formal") : String
+    "Describe account #{account_id} in a #{tone} tone"
+  end
+end
+
+# served at /mcp_shared/assistant and also by the global server
+@[AC::MCP(endpoint: "/assistant", hide: false)]
+class McpShared < ActionController::Base
+  base "/mcp_shared"
+
+  # replies pong
+  @[AC::Route::GET("/ping")]
+  def ping : String
+    "pong"
+  end
+end
+
 # a toolbox with prompts but no tools
 class McpPromptsOnly < ActionController::Base
   base "/mcp_prompts_only"

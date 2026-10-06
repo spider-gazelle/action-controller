@@ -11,6 +11,9 @@ class MCPTestClient
   # credentials sent with each request, `nil` for none
   property authorization : String? = "Bearer token"
 
+  def initialize(@uri : URI = MCP_URI)
+  end
+
   def headers(accept = "application/json, text/event-stream", origin : String? = nil) : HTTP::Headers
     headers = HTTP::Headers{
       "Content-Type" => "application/json",
@@ -23,7 +26,7 @@ class MCPTestClient
   end
 
   def post(body, accept = "application/json, text/event-stream", origin = nil) : HTTP::Client::Response
-    HTTP::Client.post(MCP_URI, headers: headers(accept, origin), body: body.to_json)
+    HTTP::Client.post(@uri, headers: headers(accept, origin), body: body.to_json)
   end
 
   def initialize_session : JSON::Any
@@ -92,7 +95,8 @@ describe ActionController::MCPServer do
     widget_docs = ActionController::OpenAPI::KlassDoc.new("McpWidgets", "Manages widgets, used by the MCP specs\n\nwidgets are not persisted")
     widget_docs.methods["show"] = "returns the widget requested"
     widget_docs.methods["summarise"] = "summarise a widget for the user"
-    ActionController::MCPServer.description = ActionController::MCPServer.generate_description({"McpWidgets" => widget_docs})
+    account_docs = ActionController::OpenAPI::KlassDoc.new("McpAccount", "Manages an account, call show to look up its widgets")
+    ActionController::MCPServer.description = ActionController::MCPServer.generate_description({"McpWidgets" => widget_docs, "McpAccount" => account_docs})
     bound = Channel(Nil).new
     spawn { server.run { bound.send nil } }
     bound.receive
@@ -619,6 +623,93 @@ describe ActionController::MCPServer do
         MCPTestClient.new.initialize_session["result"]["instructions"]?.should be_nil
       ensure
         ActionController::MCPServer.instructions = nil
+      end
+    end
+  end
+
+  describe "controller endpoints" do
+    account_uri = ->(account : String) { URI.parse("http://127.0.0.1:#{MCP_PORT}/mcp_account/#{account}/mcp") }
+
+    it "describes endpoints, binding the base path params" do
+      description = ActionController::MCPServer.description
+      ActionController::MCPServer.endpoint_paths.sort.should eq ["/mcp_account/:account_id/mcp", "/mcp_shared/assistant"]
+
+      endpoint = description.endpoint?("/mcp_account/:account_id/mcp").should_not be_nil
+      endpoint.name.should eq "mcp_account"
+      endpoint.bound.should eq ["account_id"]
+      endpoint.instructions.should eq "Manages an account, call show to look up its widgets"
+      endpoint.toolbox.tools.map(&.name).sort!.should eq ["rename", "show"]
+      endpoint.toolbox.tools.all?(&.root?).should be_true
+      show = endpoint.toolbox.tools.find!(&.name.==("show"))
+      show.input_schema["properties"].as_h.keys.should eq ["id"]
+      show.input_schema["required"].should eq JSON.parse(%(["id"]))
+      endpoint.toolbox.prompts.map(&.name).should eq ["describe"]
+      endpoint.toolbox.prompts.first.arguments.map(&.name).should eq ["tone"]
+
+      # endpoint controllers are hidden from the global server, unless `hide: false`
+      description.toolbox?("mcp_account").should be_nil
+      description.toolbox?("mcp_shared").should_not be_nil
+      description.endpoint?("/mcp_shared/assistant").should_not be_nil
+
+      # round trips, and older files without endpoints still load
+      ActionController::MCPServer::Description.from_yaml(description.to_yaml).endpoint?("/mcp_account/:account_id/mcp").should_not be_nil
+      ActionController::MCPServer::Description.from_yaml("toolboxes: []").endpoints.should be_empty
+    end
+
+    it "serves the controller's tools directly" do
+      client = MCPTestClient.new(account_uri.call("acme"))
+      result = client.initialize_session["result"]
+      result["serverInfo"]["name"].should eq "mcp_account"
+      result["instructions"].should eq "Manages an account, call show to look up its widgets"
+      result["capabilities"]["tools"]["listChanged"].should be_false
+
+      client.tool_names.sort.should eq ["rename", "show"]
+      client.tools.find!(&.["name"].==("show"))["inputSchema"]["properties"].as_h.keys.should eq ["id"]
+
+      # the account comes from the URL, not the model
+      client.call("show", {id: 3, account_id: "other"})["structuredContent"]["body"].should eq JSON.parse(%({"account":"acme","id":3}))
+      client.call("rename", {body: "Acme Ltd"})["structuredContent"]["body"].should eq "acme is now Acme Ltd"
+
+      prompt = client.request("prompts/get", {name: "describe", arguments: {tone: "casual"}}).last["result"]
+      prompt["messages"][0]["content"]["text"].should eq "Describe account acme in a casual tone"
+    end
+
+    it "has no toolboxes or proxies" do
+      client = MCPTestClient.new(account_uri.call("acme"))
+      client.initialize_session
+      %w(list_toolboxes open_toolbox call_tool secret mcp_widgets_colours).each do |name|
+        response = client.post({jsonrpc: "2.0", id: 2, method: "tools/call", params: {name: name, arguments: {} of String => String}}, "application/json")
+        JSON.parse(response.body)["error"]["message"].should eq "Unknown tool: #{name}"
+      end
+    end
+
+    it "binds sessions to the endpoint URL" do
+      client = MCPTestClient.new(account_uri.call("acme"))
+      client.initialize_session
+      response = HTTP::Client.post(account_uri.call("other"), headers: client.headers("application/json"), body: {jsonrpc: "2.0", id: 2, method: "tools/list"}.to_json)
+      response.status_code.should eq 404
+
+      # nor at the global server
+      HTTP::Client.post(MCP_URI, headers: client.headers("application/json"), body: {jsonrpc: "2.0", id: 2, method: "tools/list"}.to_json).status_code.should eq 404
+    end
+
+    it "serves endpoints at a custom path" do
+      client = MCPTestClient.new(URI.parse("http://127.0.0.1:#{MCP_PORT}/mcp_shared/assistant"))
+      client.initialize_session
+      client.tool_names.should eq ["ping"]
+      client.call("ping")["structuredContent"]["body"].should eq "pong"
+    end
+
+    it "advertises the endpoint URL as the protected resource" do
+      metadata = ->(_request : HTTP::Request) { ActionController::MCPServer::ResourceMetadata.new(["https://auth.example.com"]) }
+      with_mcp_auth(transport, authenticator: ->(_request : HTTP::Request) { false }, metadata: metadata) do
+        response = HTTP::Client.post(account_uri.call("acme"), headers: HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json"}, body: MCP_INIT.to_json)
+        response.status_code.should eq 401
+        metadata_url = "http://127.0.0.1:#{MCP_PORT}/.well-known/oauth-protected-resource/mcp_account/acme/mcp"
+        response.headers["WWW-Authenticate"].should eq %(Bearer resource_metadata="#{metadata_url}")
+
+        resource = JSON.parse(HTTP::Client.get(metadata_url).body)["resource"]
+        resource.should eq "http://127.0.0.1:#{MCP_PORT}/mcp_account/acme/mcp"
       end
     end
   end

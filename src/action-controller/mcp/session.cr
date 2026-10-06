@@ -10,10 +10,13 @@ module ActionController::MCPServer
     # server to client messages awaiting delivery via the GET event stream
     getter notifications : Channel(String) = Channel(String).new(32)
 
+    # the path params bound from an endpoint URL, a session can only be used at that URL
+    getter bound : Hash(String, String)
+
     @open_toolboxes = [] of String
     @lock = Mutex.new
 
-    def initialize(@protocol_version)
+    def initialize(@protocol_version, @bound = {} of String => String)
     end
 
     def touch : Nil
@@ -66,8 +69,8 @@ module ActionController::MCPServer
     @sessions = {} of String => Session
     @lock = Mutex.new
 
-    def create(protocol_version : String) : Session
-      session = Session.new(protocol_version)
+    def create(protocol_version : String, bound : Hash(String, String) = {} of String => String) : Session
+      session = Session.new(protocol_version, bound)
       @lock.synchronize do
         expire_sessions
         @sessions[session.id] = session

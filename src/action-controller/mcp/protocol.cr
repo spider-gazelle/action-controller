@@ -34,7 +34,18 @@ module ActionController::MCPServer
       %({"name":"call_tool","description":"Runs a tool that can change data (proxy: call_tool) from an open toolbox, use it when the tools returned by open_toolbox aren't in your available tools. Prefer call_read_only for tools that only read data","inputSchema":#{PROXY_ARGS},"annotations":{"readOnlyHint":false,"openWorldHint":false}}),
     }
 
-    def initialize(@invoker : Invoker)
+    # `endpoint` is the path template of a controller endpoint, `nil` for the global server
+    def initialize(@invoker : Invoker, @endpoint : String? = nil)
+    end
+
+    # a controller endpoint lists every tool directly, there are no toolboxes
+    def flat? : Bool
+      !@endpoint.nil?
+    end
+
+    private def endpoint : Endpoint
+      path = @endpoint.as(String)
+      MCPServer.description.endpoint?(path) || raise RPCError.new(RPCError::INTERNAL_ERROR, "No MCP description for #{path}")
     end
 
     # the `initialize` result for the negotiated protocol version
@@ -45,22 +56,22 @@ module ActionController::MCPServer
           json.field "capabilities" do
             json.object do
               json.field "tools" do
-                json.object { json.field "listChanged", true }
+                json.object { json.field "listChanged", !flat? }
               end
               if description.prompts?
                 json.field "prompts" do
-                  json.object { json.field "listChanged", true }
+                  json.object { json.field "listChanged", !flat? }
                 end
               end
             end
           end
           json.field "serverInfo" do
             json.object do
-              json.field "name", MCPServer.server_name
+              json.field "name", flat? ? endpoint.name : MCPServer.server_name
               json.field "version", MCPServer.server_version
             end
           end
-          if instructions = MCPServer.instructions.presence
+          if instructions = (flat? ? endpoint.instructions : MCPServer.instructions).presence
             json.field "instructions", instructions
           end
         end
@@ -82,7 +93,7 @@ module ActionController::MCPServer
     end
 
     private def description : Description
-      MCPServer.description
+      flat? ? endpoint.description : MCPServer.description
     end
 
     private def list_tools(session : Session) : String
@@ -90,8 +101,10 @@ module ActionController::MCPServer
         json.object do
           json.field "tools" do
             json.array do
-              META_TOOLS.each { |tool| json.raw tool }
-              PROXY_TOOLS.each { |tool| json.raw tool } if MCPServer.tool_proxy?
+              unless flat?
+                META_TOOLS.each { |tool| json.raw tool }
+                PROXY_TOOLS.each { |tool| json.raw tool } if MCPServer.tool_proxy?
+              end
               description.root_tools.each(&.to_mcp_json(json))
               session.open_toolboxes.each do |name|
                 description.toolbox?(name).try &.toolbox_tools.each(&.to_mcp_json(json))
@@ -106,6 +119,7 @@ module ActionController::MCPServer
       name = params["name"]?.try(&.as_s?)
       raise RPCError.new(RPCError::INVALID_PARAMS, "Missing tool name") unless name
       arguments = params["arguments"]?.try(&.as_h?) || {} of String => JSON::Any
+      return direct_call(name, arguments, session, request) if flat?
 
       case name
       when "list_toolboxes"
@@ -124,13 +138,17 @@ module ActionController::MCPServer
         raise RPCError.new(RPCError::INVALID_PARAMS, "Unknown tool: #{name}") unless MCPServer.tool_proxy?
         proxy_call(arguments, session, request, read_only: name == "call_read_only")
       else
-        found = description.tool?(name)
-        raise RPCError.new(RPCError::INVALID_PARAMS, "Unknown tool: #{name}") unless found
-        toolbox, tool = found
-        raise RPCError.new(RPCError::INVALID_PARAMS, "Tool #{name} is not available, open the #{toolbox.name} toolbox first") unless tool.root? || session.open?(toolbox.name)
-
-        @invoker.call(tool, arguments, request)
+        direct_call(name, arguments, session, request)
       end
+    end
+
+    private def direct_call(name : String, arguments : Hash(String, JSON::Any), session : Session, request : HTTP::Request) : String
+      found = description.tool?(name)
+      raise RPCError.new(RPCError::INVALID_PARAMS, "Unknown tool: #{name}") unless found
+      toolbox, tool = found
+      raise RPCError.new(RPCError::INVALID_PARAMS, "Tool #{name} is not available, open the #{toolbox.name} toolbox first") unless tool.root? || session.open?(toolbox.name)
+
+      @invoker.call(tool, arguments, request, session.bound)
     end
 
     # runs a tool on behalf of a client that can't see it, mistakes are tool errors so
@@ -146,7 +164,7 @@ module ActionController::MCPServer
       return MCPServer.tool_result("Tool #{name} is not available, open the #{toolbox.name} toolbox first", error: true) unless tool.root? || session.open?(toolbox.name)
       return MCPServer.tool_result("Tool #{name} can change data, run it with call_tool", error: true) if read_only && !tool.read_only?
 
-      @invoker.call(tool, tool_arguments, request)
+      @invoker.call(tool, tool_arguments, request, session.bound)
     end
 
     private def list_prompts(session : Session) : String
@@ -174,7 +192,7 @@ module ActionController::MCPServer
       toolbox, prompt = found
       raise RPCError.new(RPCError::INVALID_PARAMS, "Prompt #{name} is not available, open the #{toolbox.name} toolbox first") unless prompt.root? || session.open?(toolbox.name)
 
-      @invoker.get_prompt(prompt, arguments, request)
+      @invoker.get_prompt(prompt, arguments, request, session.bound)
     end
 
     private def list_toolboxes(session : Session) : String

@@ -191,7 +191,15 @@ module ActionController::MCPServer
 
     getter toolboxes : Array(Toolbox)
 
-    def initialize(@toolboxes = [] of Toolbox)
+    # controllers served as their own MCP server, see `ActionController::MCP`
+    getter endpoints : Array(Endpoint) = [] of Endpoint
+
+    def initialize(@toolboxes = [] of Toolbox, @endpoints = [] of Endpoint)
+    end
+
+    # the endpoint served at the path template, i.e. `/accounts/:account_id/mcp`
+    def endpoint?(path : String) : Endpoint?
+      endpoints.find(&.path.==(path))
     end
 
     @[JSON::Field(ignore: true)]
@@ -246,11 +254,55 @@ module ActionController::MCPServer
     end
   end
 
-  # :nodoc:
-  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, read_only: Bool?)
+  # a controller served as its own MCP server, `@[AC::MCP(endpoint: true)]`.
+  # Every tool and prompt is listed, there are no toolboxes to open
+  class Endpoint
+    include JSON::Serializable
+    include YAML::Serializable
+
+    # the path template the endpoint is served at, i.e. `/accounts/:account_id/mcp`
+    getter path : String
+
+    # the path params bound from the endpoint URL, removed from the tool arguments
+    getter bound : Array(String)
+
+    # the endpoint's tools and prompts, all of them root items
+    getter toolbox : Toolbox
+
+    def initialize(@path, @bound, @toolbox)
+    end
+
+    # the toolbox name, used as the server name
+    def name : String
+      toolbox.name
+    end
+
+    # the controller doc comment, used as the server instructions
+    def instructions : String?
+      toolbox.description
+    end
+
+    @[JSON::Field(ignore: true)]
+    @[YAML::Field(ignore: true)]
+    @description : Description? = nil
+
+    # the endpoint as a description with a single toolbox of root items
+    def description : Description
+      @description ||= Description.new([toolbox])
+    end
+
+    # the path params in a path template
+    def self.bound_params(path : String) : Array(String)
+      path.split('/').compact_map(&.lchop?(':'))
+    end
+  end
 
   # :nodoc:
-  alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument))
+  # `global`: listed by the global server, `endpoint`: the endpoint path it's served on
+  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, read_only: Bool?, global: Bool, endpoint: String?)
+
+  # :nodoc:
+  alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), global: Bool, endpoint: String?)
 
   # generates the MCP description from the compiled routes.
   #
@@ -275,7 +327,8 @@ module ActionController::MCPServer
 
       routes = [
         {% for _route_key, details in ::ActionController::Route::Builder::OPENAPI_ROUTES %}
-          {% if details[:verb] != "websocket" && !details[:mcp_hide] && !details[:mcp_prompt] %}
+          {% endpoint = details[:mcp_endpoint_hide] ? nil : details[:mcp_endpoint] %}
+          {% if details[:verb] != "websocket" && !details[:mcp_prompt] && (!details[:mcp_hide] || endpoint) %}
             {
               controller: {{ details[:controller] }},
               method: {{ details[:method] }},
@@ -283,6 +336,8 @@ module ActionController::MCPServer
               route: {{ details[:route] }},
               root: {{ details[:mcp_root] == true }},
               read_only: {{ details[:mcp_read_only] == nil ? nil : details[:mcp_read_only] }},
+              global: {{ !details[:mcp_hide] }},
+              endpoint: {{ endpoint }}.as(String?),
             },
           {% end %}
         {% end %}
@@ -290,7 +345,8 @@ module ActionController::MCPServer
 
       prompts = [
         {% for _route_key, details in ::ActionController::Route::Builder::OPENAPI_ROUTES %}
-          {% if details[:mcp_prompt] && !details[:mcp_hide] %}
+          {% endpoint = details[:mcp_endpoint_hide] ? nil : details[:mcp_endpoint] %}
+          {% if details[:mcp_prompt] && (!details[:mcp_hide] || endpoint) %}
             {
               controller: {{ details[:controller] }},
               method: {{ details[:method] }},
@@ -306,6 +362,8 @@ module ActionController::MCPServer
                   ),
                 {% end %}
               ] of PromptArgument,
+              global: {{ !details[:mcp_hide] }},
+              endpoint: {{ endpoint }}.as(String?),
             },
           {% end %}
         {% end %}
@@ -322,11 +380,34 @@ module ActionController::MCPServer
 
   # :nodoc:
   def build_description(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo), prompts : Array(PromptInfo) = [] of PromptInfo) : Description
+    namespace = common_namespace(routes.map(&.[:controller]) + prompts.map(&.[:controller]))
+
+    toolboxes = build_toolboxes(open_api, descriptions, routes.select(&.[:global]), prompts.select(&.[:global]), namespace) do |toolbox, method|
+      "#{toolbox.name}_#{method}"
+    end
+
+    # each endpoint is a single toolbox of root items, named by method
+    endpoint_routes = routes.select(&.[:endpoint])
+    endpoint_prompts = prompts.select(&.[:endpoint])
+    paths = (endpoint_routes.map(&.[:endpoint]) + endpoint_prompts.map(&.[:endpoint])).compact.uniq!
+    endpoints = paths.compact_map do |path|
+      bound = Endpoint.bound_params(path)
+      boxes = build_toolboxes(open_api, descriptions, endpoint_routes.select(&.[:endpoint].==(path)), endpoint_prompts.select(&.[:endpoint].==(path)), namespace, root: true, bound: bound) do |_toolbox, method|
+        method
+      end
+      boxes.first?.try { |box| Endpoint.new(path, bound, box) }
+    end
+
+    Description.new(toolboxes, endpoints)
+  end
+
+  # one toolbox per controller. `root` makes every item a root item, and `bound`
+  # path params are left out of the tool arguments
+  private def build_toolboxes(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo), prompts : Array(PromptInfo), namespace : Array(String), root : Bool = false, bound : Array(String) = [] of String, & : Toolbox, String -> String) : Array(Toolbox)
     schemas = open_api[:components].schemas
     toolboxes = {} of String => Toolbox
     tool_names = Hash(String, Int32).new(0)
     prompt_names = Hash(String, Int32).new(0)
-    namespace = common_namespace(routes.map(&.[:controller]) + prompts.map(&.[:controller]))
 
     # A method with several route annotations is a single tool. Routes arrive in
     # verb order (GET, POST, PUT, PATCH, DELETE), source order within a verb, so
@@ -346,20 +427,22 @@ module ActionController::MCPServer
       next unless operation
 
       toolbox = toolbox_for(toolboxes, route[:controller], namespace, descriptions)
-      name = unique_name(tool_names, "#{toolbox.name}_#{route[:method]}")
+      name = unique_name(tool_names, yield(toolbox, route[:method]))
       description = operation.description || operation.summary || "#{route[:verb].upcase} #{route[:route]}"
-      toolbox.tools << build_tool(name, description, route, operation, schemas)
+      route = route.merge(root: true) if root
+      toolbox.tools << build_tool(name, description, route, operation, schemas, bound)
       methods << {route[:controller], route[:method]}
     end
 
     prompts.each do |prompt|
       toolbox = toolbox_for(toolboxes, prompt[:controller], namespace, descriptions)
-      name = unique_name(prompt_names, "#{toolbox.name}_#{prompt[:method]}")
+      name = unique_name(prompt_names, yield(toolbox, prompt[:method]))
       description = method_docs(descriptions, prompt[:controller], prompt[:method]).try(&.strip)
-      toolbox.prompts << Prompt.new(name, description, prompt[:route], prompt[:arguments], prompt[:root])
+      arguments = prompt[:arguments].reject { |argument| argument.in == "path" && bound.includes?(argument.name) }
+      toolbox.prompts << Prompt.new(name, description, prompt[:route], arguments, root || prompt[:root])
     end
 
-    Description.new(toolboxes.values)
+    toolboxes.values
   end
 
   private def toolbox_for(toolboxes : Hash(String, Toolbox), controller : String, namespace : Array(String), descriptions : Hash(String, OpenAPI::KlassDoc)) : Toolbox
@@ -413,19 +496,23 @@ module ActionController::MCPServer
   end
 
   # :nodoc:
-  def build_tool(name : String, description : String, route : RouteInfo, operation : OpenAPI::Operation, schemas : Hash(String, JSON::Any)) : Tool
+  def build_tool(name : String, description : String, route : RouteInfo, operation : OpenAPI::Operation, schemas : Hash(String, JSON::Any), bound : Array(String) = [] of String) : Tool
     properties = {} of String => JSON::Any
     required = [] of String
     params = [] of ToolParam
 
     operation.parameters.try &.each do |param|
       param_name = param.name.as(String)
+      in_path = param.in == "path"
+      params << ToolParam.new(param_name, param.in.as(String))
+      # bound from the endpoint URL rather than provided by the model
+      next if in_path && bound.includes?(param_name)
+
       schema = param.schema.try(&.as_h?).try(&.dup) || {} of String => JSON::Any
       schema["description"] = JSON::Any.new(param.description.as(String)) if param.description
       schema["examples"] = JSON::Any.new([JSON::Any.new(param.example.as(String))]) if param.example
       properties[param_name] = JSON::Any.new(schema)
       required << param_name if param.required
-      params << ToolParam.new(param_name, param.in.as(String))
     end
 
     body = nil

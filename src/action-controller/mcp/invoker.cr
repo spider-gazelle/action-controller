@@ -16,9 +16,11 @@ module ActionController::MCPServer
     # runs the route and returns a `CallToolResult` JSON string.
     #
     # raises `Unauthorized` if authentication is enabled and the route responds with a 401
-    def call(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : String
+    #
+    # `bound` path params, from an endpoint URL, take precedence over the arguments
+    def call(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request, bound : Hash(String, String) = {} of String => String) : String
       response = begin
-        dispatch build_request(tool, arguments, origin)
+        dispatch build_request(tool, bind(arguments, bound), origin)
       rescue error : ArgumentError
         return MCPServer.tool_result(error.message.as(String), error: true)
       rescue error
@@ -48,7 +50,8 @@ module ActionController::MCPServer
     #
     # raises `RPCError` if the prompt can't be rendered and `Unauthorized` if
     # authentication is enabled and the prompt responds with a 401
-    def get_prompt(prompt : Prompt, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : String
+    def get_prompt(prompt : Prompt, arguments : Hash(String, JSON::Any), origin : HTTP::Request, bound : Hash(String, String) = {} of String => String) : String
+      arguments = bind(arguments, bound)
       prompt.arguments.each do |argument|
         if argument.required? && arguments[argument.name]?.try(&.raw).nil?
           raise RPCError.new(RPCError::INVALID_PARAMS, "missing required argument: #{argument.name}")
@@ -133,6 +136,11 @@ module ActionController::MCPServer
     # :nodoc:
     def build_request(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : HTTP::Request
       build(tool.verb.upcase, tool.path, tool.params, tool.body, arguments, origin)
+    end
+
+    private def bind(arguments : Hash(String, JSON::Any), bound : Hash(String, String)) : Hash(String, JSON::Any)
+      return arguments if bound.empty?
+      arguments.merge(bound.transform_values { |value| JSON::Any.new(value) })
     end
 
     # params are `ToolParam` or `PromptArgument`, anything with a name and location

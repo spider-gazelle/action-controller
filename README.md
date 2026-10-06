@@ -285,6 +285,51 @@ end
 Root items keep their `<toolbox>_<method>` names. Toolboxes that only contain root items
 are not listed by `list_toolboxes`.
 
+### Controller endpoints
+
+A controller can also be served as its own MCP server, for example one per account or
+room. Annotate the class with `@[AC::MCP(endpoint: true)]` and it's served at
+`<base>/mcp` (or a sub path, `endpoint: "/assistant"`):
+
+```crystal
+# Controls a room, look up its state before changing it
+@[AC::MCP(endpoint: true)]
+class Room < AC::Base
+  base "/rooms/:room_id"
+
+  # the room state
+  @[AC::Route::GET("/state")]
+  def state(room_id : String) : State
+    State.for(room_id)
+  end
+
+  # turns the lights on or off
+  @[AC::Route::POST("/lights")]
+  def lights(room_id : String, on : Bool) : Nil
+    Lights.set(room_id, on)
+  end
+end
+```
+
+Connecting to `/rooms/boardroom/mcp` lists `state` and `lights` directly:
+
+* **Bound path params:** the base path params (`room_id`) come from the endpoint URL.
+  They're left out of the tool arguments, and a session can only be used at the URL it
+  was created at.
+* **No toolboxes:** there are no meta tools or proxies, every tool and prompt is listed,
+  named by its method.
+* **Instructions:** the controller's doc comment is given to the model as the server's
+  instructions, and the server is named after the controller.
+* **Visibility:** the controller is hidden from the global server unless it's also
+  annotated `hide: false`. A method annotated `hide: true` is hidden from both.
+* **Shared configuration:** authentication, forwarded headers and tool results use the
+  `MCPServer` configuration, and tool calls run the controller's filters, so check access
+  to the room (or account) in a `before_action`. The protected resource metadata is
+  served for each endpoint URL.
+
+`MCPServer.mount` mounts the endpoints too (`endpoints: false` skips them), and
+`write_description` includes them in `mcp.yml`.
+
 ### Connecting a client
 
 Point any MCP client that supports Streamable HTTP at the mounted path, for example
@@ -388,6 +433,7 @@ annotation takes precedence:
 |--------|-------------|
 | `hide: true` | excludes the routes / prompts from MCP |
 | `root: true` | always available, without opening the toolbox |
+| `endpoint: true` | serves the controller as its own MCP server at `<base>/mcp` (controllers only), see [controller endpoints](#controller-endpoints) |
 | `read_only: Bool` | whether the tool only reads data (default: GET routes). Sets `readOnlyHint` and whether `call_read_only` runs it. Use `false` for a GET with side effects, `true` for a POST search |
 | `prompt: true` | the method is an MCP prompt (methods only) |
 

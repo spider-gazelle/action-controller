@@ -172,8 +172,23 @@ module ActionController::MCPServer
   #
   # tool calls are dispatched via the router, typically `ActionController::Server`.
   # The OAuth protected resource metadata is served at `/.well-known/oauth-protected-resource<path>`
-  def mount(router : Router, path : String = "/mcp") : Transport
-    transport = Transport.new(router.route_handler, path)
+  #
+  # `endpoints: true` also mounts the controller endpoints, `@[AC::MCP(endpoint: true)]`,
+  # see `mount_endpoints`
+  def mount(router : Router, path : String = "/mcp", endpoints : Bool = true) : Transport
+    mount_endpoints(router) if endpoints
+    mount_transport(router, Transport.new(router.route_handler, path))
+  end
+
+  # mounts a server for each controller annotated `@[AC::MCP(endpoint: true)]`
+  def mount_endpoints(router : Router) : Array(Transport)
+    endpoint_paths.map do |path|
+      mount_transport(router, Transport.new(router.route_handler, path, endpoint: true))
+    end
+  end
+
+  private def mount_transport(router : Router, transport : Transport) : Transport
+    path = transport.path
     router.post(path) { |context, _head| transport.post(context) }
     router.get(path) { |context, head| transport.get(context, head) }
     router.delete(path) { |context, _head| transport.delete(context) }
@@ -181,9 +196,36 @@ module ActionController::MCPServer
     transport
   end
 
+  # the path templates of the controller endpoints, `@[AC::MCP(endpoint: true)]`
+  def endpoint_paths : Array(String)
+    # expanded when the method is used, once all the routes are known
+    {% begin %}
+      concrete = [
+        {% for klass in ::ActionController::Base::CONCRETE_CONTROLLERS.keys %}
+          {{klass.stringify}},
+        {% end %}
+      ] of String
+
+      paths = [
+        {% for _route_key, details in ::ActionController::Route::Builder::OPENAPI_ROUTES %}
+          {% if details[:mcp_endpoint] %}
+            { {{ details[:controller] }}, {{ details[:mcp_endpoint] }} },
+          {% end %}
+        {% end %}
+      ] of Tuple(String, String)
+
+      paths.select { |(controller, _path)| concrete.includes?(controller) }.map(&.[1]).uniq!
+    {% end %}
+  end
+
   protected def load_description : Description
     if File.exists?(description_path)
-      Description.from_yaml(File.read(description_path))
+      description = Description.from_yaml(File.read(description_path))
+      missing = endpoint_paths.reject { |path| description.endpoint?(path) }
+      return description if missing.empty?
+
+      Log.warn { "#{description_path} is out of date, it's missing the endpoints #{missing.join(", ")}. Regenerate it using `ActionController::MCPServer.write_description`" }
+      generate_description(docs: false)
     else
       Log.warn { "#{description_path} not found, tool descriptions will be missing. Generate it using `ActionController::MCPServer.write_description`" }
       generate_description(docs: false)
