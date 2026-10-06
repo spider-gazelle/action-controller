@@ -14,7 +14,7 @@
 <script type="text/javascript" src="../../js/doc.js"></script>
 
   <meta name="repository-name" content="action-controller">
-  <title>ActionController::Route::DELETE - action-controller master</title>
+  <title>ActionController::MCPServer::Endpoint - action-controller master</title>
   <script type="text/javascript">
     CrystalDocs.base_path = "../../";
   </script>
@@ -142,7 +142,7 @@
       
     </li>
   
-  <li class="parent " data-id="action-controller/ActionController/MCPServer" data-name="actioncontroller::mcpserver">
+  <li class="parent open current" data-id="action-controller/ActionController/MCPServer" data-name="actioncontroller::mcpserver">
       <a href="../../ActionController/MCPServer.html">MCPServer</a>
       
         <ul>
@@ -157,7 +157,7 @@
       
     </li>
   
-  <li class=" " data-id="action-controller/ActionController/MCPServer/Endpoint" data-name="actioncontroller::mcpserver::endpoint">
+  <li class=" current" data-id="action-controller/ActionController/MCPServer/Endpoint" data-name="actioncontroller::mcpserver::endpoint">
       <a href="../../ActionController/MCPServer/Endpoint.html">Endpoint</a>
       
     </li>
@@ -287,7 +287,7 @@
       
     </li>
   
-  <li class="parent open current" data-id="action-controller/ActionController/Route" data-name="actioncontroller::route">
+  <li class="parent " data-id="action-controller/ActionController/Route" data-name="actioncontroller::route">
       <a href="../../ActionController/Route.html">Route</a>
       
         <ul>
@@ -297,7 +297,7 @@
       
     </li>
   
-  <li class=" current" data-id="action-controller/ActionController/Route/DELETE" data-name="actioncontroller::route::delete">
+  <li class=" " data-id="action-controller/ActionController/Route/DELETE" data-name="actioncontroller::route::delete">
       <a href="../../ActionController/Route/DELETE.html">DELETE</a>
       
     </li>
@@ -432,11 +432,13 @@
 <h1 class="type-name">
 
   <span class="kind">
-    annotation
-  </span> ActionController::<wbr>Route::<wbr>DELETE
+    class
+  </span> ActionController::<wbr>MCPServer::<wbr>Endpoint
 
 </h1>
 
+
+  <ul class="superclass-hierarchy"><li class="superclass"><a href="../../ActionController/MCPServer/Endpoint.html">ActionController::MCPServer::Endpoint</a></li><li class="superclass">Reference</li><li class="superclass">Object</li></ul>
 
 
 
@@ -450,11 +452,8 @@
     Overview
   </h2>
 
-  <p>define a new route that responds to &quot;DELETE&quot; requests</p>
-<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="s">&quot;DELETE&quot;</span>(<span class="s">&quot;/my/route/:name&quot;</span>)]
-<span class="k">def</span> <span class="m">my_route_name</span>(name : <span class="t">String</span>) : <span class="t">String</span>
-  name
-<span class="k">end</span></code></pre>
+  <p>a controller served as its own MCP server, <code>@[<a href="../../ActionController/MCP.html">AC::MCP</a>(endpoint: true)]</code>.
+Every tool and prompt is listed, there are no toolboxes to open</p>
 
 
 
@@ -462,7 +461,37 @@
 
 
 
+  <h2>
+    <a id="included-modules" class="anchor" href="#included-modules">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Included Modules
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type">JSON::Serializable</li>
+    
+      <li class="other-type">YAML::Serializable</li>
+    
+  </ul>
 
+
+
+  <h2>
+    <a id="extended-modules" class="anchor" href="#extended-modules">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Extended Modules
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type">JSON::Schema</li>
+    
+  </ul>
 
 
 
@@ -481,8 +510,8 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/router/builder.cr#L6" target="_blank">
-        action-controller/router/builder.cr
+      <a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L259" target="_blank">
+        action-controller/mcp/description.cr
       </a>
     
     <br/>
@@ -493,25 +522,444 @@
 
 
   
+  <h2>
+    <a id="constructors" class="anchor" href="#constructors">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructors
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#new%28path%3AString%2Cbound%3AArray%28String%29%2Ctoolbox%3AActionController%3A%3AMCPServer%3A%3AToolbox%29-class-method" class="signature"><strong>.new</strong>(path : String, bound : Array(String), toolbox : ActionController::MCPServer::Toolbox)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#new%28ctx%3AYAML%3A%3AParseContext%2Cnode%3AYAML%3A%3ANodes%3A%3ANode%29-class-method" class="signature"><strong>.new</strong>(ctx : YAML::ParseContext, node : YAML::Nodes::Node)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#new%28pull%3AJSON%3A%3APullParser%29-class-method" class="signature"><strong>.new</strong>(pull : JSON::PullParser)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#new%28%2A%2C__pull_for_json_serializablepull%3AJSON%3A%3APullParser%29-class-method" class="signature"><strong>.new</strong>(*, __pull_for_json_serializable pull : JSON::PullParser)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#new%28%2A%2C__context_for_yaml_serializablectx%3AYAML%3A%3AParseContext%2C__node_for_yaml_serializablenode%3AYAML%3A%3ANodes%3A%3ANode%29-class-method" class="signature"><strong>.new</strong>(*, __context_for_yaml_serializable ctx : YAML::ParseContext, __node_for_yaml_serializable node : YAML::Nodes::Node)</a>
+        
+      </li>
+    
+  </ul>
+
+
+  
+  <h2>
+    <a id="class-method-summary" class="anchor" href="#class-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#bound_params%28path%3AString%29%3AArray%28String%29-class-method" class="signature"><strong>.bound_params</strong>(path : String) : Array(String)</a>
+        
+          <div class="summary"><p>the path params in a path template</p></div>
+        
+      </li>
+    
+  </ul>
+
 
   
 
   
+  <h2>
+    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#bound%3AArray%28String%29-instance-method" class="signature"><strong>#bound</strong> : Array(String)</a>
+        
+          <div class="summary"><p>the path params bound from the endpoint URL, removed from the tool arguments</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#description%3ADescription-instance-method" class="signature"><strong>#description</strong> : Description</a>
+        
+          <div class="summary"><p>the endpoint as a description with a single toolbox of root items</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#instructions%3AString%7CNil-instance-method" class="signature"><strong>#instructions</strong> : String | Nil</a>
+        
+          <div class="summary"><p>the controller doc comment, used as the server instructions</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#name%3AString-instance-method" class="signature"><strong>#name</strong> : String</a>
+        
+          <div class="summary"><p>the toolbox name, used as the server name</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#path%3AString-instance-method" class="signature"><strong>#path</strong> : String</a>
+        
+          <div class="summary"><p>the path template the endpoint is served at, i.e.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#toolbox%3AToolbox-instance-method" class="signature"><strong>#toolbox</strong> : Toolbox</a>
+        
+          <div class="summary"><p>the endpoint's tools and prompts, all of them root items</p></div>
+        
+      </li>
+    
+  </ul>
 
-  
 
 
   <div class="methods-inherited">
     
+      
+
+
+      
+
+
+      
+
+
+      
+
+
+    
+      
+
+
+      
+
+
+      
+
+
+      
+
+
+    
+      
+
+
+      
+
+
+      
+
+
+      
+
+
+    
+      
+
+
+      
+
+
+      
+
+
+      
+
+
+    
   </div>
 
   
+  <h2>
+    <a id="constructor-detail" class="anchor" href="#constructor-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructor Detail
+  </h2>
+  
+    <div class="entry-detail" id="new(path:String,bound:Array(String),toolbox:ActionController::MCPServer::Toolbox)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(path : String, bound : Array(String), toolbox : <a href="../../ActionController/MCPServer/Toolbox.html">ActionController::MCPServer::Toolbox</a>)
+
+        <a class="method-permalink" href="#new%28path%3AString%2Cbound%3AArray%28String%29%2Ctoolbox%3AActionController%3A%3AMCPServer%3A%3AToolbox%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L272" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="new(ctx:YAML::ParseContext,node:YAML::Nodes::Node)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(ctx : YAML::ParseContext, node : YAML::Nodes::Node)
+
+        <a class="method-permalink" href="#new%28ctx%3AYAML%3A%3AParseContext%2Cnode%3AYAML%3A%3ANodes%3A%3ANode%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L261" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="new(pull:JSON::PullParser)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(pull : JSON::PullParser)
+
+        <a class="method-permalink" href="#new%28pull%3AJSON%3A%3APullParser%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L260" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="new(*,__pull_for_json_serializablepull:JSON::PullParser)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(*, __pull_for_json_serializable pull : JSON::PullParser)
+
+        <a class="method-permalink" href="#new%28%2A%2C__pull_for_json_serializablepull%3AJSON%3A%3APullParser%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L260" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="new(*,__context_for_yaml_serializablectx:YAML::ParseContext,__node_for_yaml_serializablenode:YAML::Nodes::Node)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(*, __context_for_yaml_serializable ctx : YAML::ParseContext, __node_for_yaml_serializable node : YAML::Nodes::Node)
+
+        <a class="method-permalink" href="#new%28%2A%2C__context_for_yaml_serializablectx%3AYAML%3A%3AParseContext%2C__node_for_yaml_serializablenode%3AYAML%3A%3ANodes%3A%3ANode%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L261" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
+
+  
+  <h2>
+    <a id="class-method-detail" class="anchor" href="#class-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Class Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="bound_params(path:String):Array(String)-class-method">
+      <div class="signature">
+        
+        def self.<strong>bound_params</strong>(path : String) : Array(String)
+
+        <a class="method-permalink" href="#bound_params%28path%3AString%29%3AArray%28String%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the path params in a path template</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L295" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
 
   
 
   
-
+  <h2>
+    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Detail
+  </h2>
   
+    <div class="entry-detail" id="bound:Array(String)-instance-method">
+      <div class="signature">
+        
+        def <strong>bound</strong> : Array(String)
+
+        <a class="method-permalink" href="#bound%3AArray%28String%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the path params bound from the endpoint URL, removed from the tool arguments</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L267" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="description:Description-instance-method">
+      <div class="signature">
+        
+        def <strong>description</strong> : <a href="../../ActionController/MCPServer/Description.html">Description</a>
+
+        <a class="method-permalink" href="#description%3ADescription-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the endpoint as a description with a single toolbox of root items</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L290" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="instructions:String|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>instructions</strong> : String | Nil
+
+        <a class="method-permalink" href="#instructions%3AString%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the controller doc comment, used as the server instructions</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L281" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="name:String-instance-method">
+      <div class="signature">
+        
+        def <strong>name</strong> : String
+
+        <a class="method-permalink" href="#name%3AString-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the toolbox name, used as the server name</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L276" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="path:String-instance-method">
+      <div class="signature">
+        
+        def <strong>path</strong> : String
+
+        <a class="method-permalink" href="#path%3AString-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the path template the endpoint is served at, i.e. <code>/accounts/:account_id/mcp</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L264" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="toolbox:Toolbox-instance-method">
+      <div class="signature">
+        
+        def <strong>toolbox</strong> : <a href="../../ActionController/MCPServer/Toolbox.html">Toolbox</a>
+
+        <a class="method-permalink" href="#toolbox%3AToolbox-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the endpoint's tools and prompts, all of them root items</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L270" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
 
 
 </div>

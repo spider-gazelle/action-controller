@@ -157,6 +157,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Endpoint" data-name="actioncontroller::mcpserver::endpoint">
+      <a href="../../ActionController/MCPServer/Endpoint.html">Endpoint</a>
+      
+    </li>
+  
   <li class="parent open current" data-id="action-controller/ActionController/MCPServer/Invoker" data-name="actioncontroller::mcpserver::invoker">
       <a href="../../ActionController/MCPServer/Invoker.html">Invoker</a>
       
@@ -474,7 +479,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/invoker.cr#L7" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/invoker.cr#L7" target="_blank">
         action-controller/mcp/invoker.cr
       </a>
     
@@ -522,7 +527,7 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#call%28tool%3ATool%2Carguments%3AHash%28String%2CJSON%3A%3AAny%29%2Corigin%3AHTTP%3A%3ARequest%29%3AString-instance-method" class="signature"><strong>#call</strong>(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : String</a>
+        <a href="#call%28tool%3ATool%2Carguments%3AHash%28String%2CJSON%3A%3AAny%29%2Corigin%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method" class="signature"><strong>#call</strong>(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String</a>
         
           <div class="summary"><p>runs the route and returns a <code>CallToolResult</code> JSON string.</p></div>
         
@@ -543,7 +548,7 @@
       </li>
     
       <li class="entry-summary">
-        <a href="#get_prompt%28prompt%3APrompt%2Carguments%3AHash%28String%2CJSON%3A%3AAny%29%2Corigin%3AHTTP%3A%3ARequest%29%3AString-instance-method" class="signature"><strong>#get_prompt</strong>(prompt : Prompt, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : String</a>
+        <a href="#get_prompt%28prompt%3APrompt%2Carguments%3AHash%28String%2CJSON%3A%3AAny%29%2Corigin%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method" class="signature"><strong>#get_prompt</strong>(prompt : Prompt, arguments : Hash(String, JSON::Any), origin : HTTP::Request, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String</a>
         
           <div class="summary"><p>renders the prompt and returns a <code>GetPromptResult</code> JSON string</p></div>
         
@@ -616,7 +621,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/invoker.cr#L9" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/invoker.cr#L9" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -637,24 +642,25 @@
     Instance Method Detail
   </h2>
   
-    <div class="entry-detail" id="call(tool:Tool,arguments:Hash(String,JSON::Any),origin:HTTP::Request):String-instance-method">
+    <div class="entry-detail" id="call(tool:Tool,arguments:Hash(String,JSON::Any),origin:HTTP::Request,bound:Hash(String,String)={}ofString=&gt;String):String-instance-method">
       <div class="signature">
         
-        def <strong>call</strong>(tool : <a href="../../ActionController/MCPServer/Tool.html">Tool</a>, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : String
+        def <strong>call</strong>(tool : <a href="../../ActionController/MCPServer/Tool.html">Tool</a>, arguments : Hash(String, JSON::Any), origin : HTTP::Request, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String
 
-        <a class="method-permalink" href="#call%28tool%3ATool%2Carguments%3AHash%28String%2CJSON%3A%3AAny%29%2Corigin%3AHTTP%3A%3ARequest%29%3AString-instance-method">#</a>
+        <a class="method-permalink" href="#call%28tool%3ATool%2Carguments%3AHash%28String%2CJSON%3A%3AAny%29%2Corigin%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method">#</a>
       </div>
       
         <div class="doc">
           
           <p>runs the route and returns a <code>CallToolResult</code> JSON string.</p>
 <p>raises <code><a href="../../ActionController/MCPServer/Unauthorized.html">Unauthorized</a></code> if authentication is enabled and the route responds with a 401</p>
+<p><code>bound</code> path params, from an endpoint URL, take precedence over the arguments</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/invoker.cr#L19" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/invoker.cr#L21" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -675,7 +681,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/invoker.cr#L112" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/invoker.cr#L115" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -696,17 +702,17 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/invoker.cr#L122" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/invoker.cr#L125" target="_blank">View source</a>]
         
       </div>
     </div>
   
-    <div class="entry-detail" id="get_prompt(prompt:Prompt,arguments:Hash(String,JSON::Any),origin:HTTP::Request):String-instance-method">
+    <div class="entry-detail" id="get_prompt(prompt:Prompt,arguments:Hash(String,JSON::Any),origin:HTTP::Request,bound:Hash(String,String)={}ofString=&gt;String):String-instance-method">
       <div class="signature">
         
-        def <strong>get_prompt</strong>(prompt : <a href="../../ActionController/MCPServer/Prompt.html">Prompt</a>, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : String
+        def <strong>get_prompt</strong>(prompt : <a href="../../ActionController/MCPServer/Prompt.html">Prompt</a>, arguments : Hash(String, JSON::Any), origin : HTTP::Request, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String
 
-        <a class="method-permalink" href="#get_prompt%28prompt%3APrompt%2Carguments%3AHash%28String%2CJSON%3A%3AAny%29%2Corigin%3AHTTP%3A%3ARequest%29%3AString-instance-method">#</a>
+        <a class="method-permalink" href="#get_prompt%28prompt%3APrompt%2Carguments%3AHash%28String%2CJSON%3A%3AAny%29%2Corigin%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method">#</a>
       </div>
       
         <div class="doc">
@@ -719,7 +725,7 @@ authentication is enabled and the prompt responds with a 401</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/invoker.cr#L51" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/invoker.cr#L53" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -740,7 +746,7 @@ authentication is enabled and the prompt responds with a 401</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/invoker.cr#L36" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/invoker.cr#L38" target="_blank">View source</a>]
         
       </div>
     </div>

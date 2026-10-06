@@ -157,6 +157,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Endpoint" data-name="actioncontroller::mcpserver::endpoint">
+      <a href="../../ActionController/MCPServer/Endpoint.html">Endpoint</a>
+      
+    </li>
+  
   <li class="parent " data-id="action-controller/ActionController/MCPServer/Invoker" data-name="actioncontroller::mcpserver::invoker">
       <a href="../../ActionController/MCPServer/Invoker.html">Invoker</a>
       
@@ -504,7 +509,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L188" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L188" target="_blank">
         action-controller/mcp/description.cr
       </a>
     
@@ -537,7 +542,7 @@
       </li>
     
       <li class="entry-summary">
-        <a href="#new%28toolboxes%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolbox%29%3D%5B%5DofToolbox%29-class-method" class="signature"><strong>.new</strong>(toolboxes : Array(ActionController::MCPServer::Toolbox) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Toolbox</span>)</a>
+        <a href="#new%28toolboxes%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolbox%29%3D%5B%5DofToolbox%2Cendpoints%3AArray%28ActionController%3A%3AMCPServer%3A%3AEndpoint%29%3D%5B%5DofEndpoint%29-class-method" class="signature"><strong>.new</strong>(toolboxes : Array(ActionController::MCPServer::Toolbox) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Toolbox</span>, endpoints : Array(ActionController::MCPServer::Endpoint) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Endpoint</span>)</a>
         
       </li>
     
@@ -568,6 +573,20 @@
     Instance Method Summary
   </h2>
   <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#endpoint%3F%28path%3AString%29%3AEndpoint%7CNil-instance-method" class="signature"><strong>#endpoint?</strong>(path : String) : Endpoint | Nil</a>
+        
+          <div class="summary"><p>the endpoint served at the path template, i.e.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#endpoints%3AArray%28Endpoint%29-instance-method" class="signature"><strong>#endpoints</strong> : Array(Endpoint)</a>
+        
+          <div class="summary"><p>controllers served as their own MCP server, see <code><a href="../../ActionController/MCP.html">ActionController::MCP</a></code></p></div>
+        
+      </li>
     
       <li class="entry-summary">
         <a href="#prompt%3F%28name%3AString%29%3ATuple%28Toolbox%2CPrompt%29%7CNil-instance-method" class="signature"><strong>#prompt?</strong>(name : String) : Tuple(Toolbox, Prompt) | Nil</a>
@@ -693,7 +712,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L190" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L190" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -709,23 +728,23 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L189" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L189" target="_blank">View source</a>]
         
       </div>
     </div>
   
-    <div class="entry-detail" id="new(toolboxes:Array(ActionController::MCPServer::Toolbox)=[]ofToolbox)-class-method">
+    <div class="entry-detail" id="new(toolboxes:Array(ActionController::MCPServer::Toolbox)=[]ofToolbox,endpoints:Array(ActionController::MCPServer::Endpoint)=[]ofEndpoint)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(toolboxes : Array(<a href="../../ActionController/MCPServer/Toolbox.html">ActionController::MCPServer::Toolbox</a>) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Toolbox</span>)
+        def self.<strong>new</strong>(toolboxes : Array(<a href="../../ActionController/MCPServer/Toolbox.html">ActionController::MCPServer::Toolbox</a>) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Toolbox</span>, endpoints : Array(<a href="../../ActionController/MCPServer/Endpoint.html">ActionController::MCPServer::Endpoint</a>) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Endpoint</span>)
 
-        <a class="method-permalink" href="#new%28toolboxes%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolbox%29%3D%5B%5DofToolbox%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28toolboxes%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolbox%29%3D%5B%5DofToolbox%2Cendpoints%3AArray%28ActionController%3A%3AMCPServer%3A%3AEndpoint%29%3D%5B%5DofEndpoint%29-class-method">#</a>
       </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L194" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L197" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -741,7 +760,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L189" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L189" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -757,7 +776,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L190" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L190" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -778,6 +797,48 @@
     Instance Method Detail
   </h2>
   
+    <div class="entry-detail" id="endpoint?(path:String):Endpoint|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>endpoint?</strong>(path : String) : <a href="../../ActionController/MCPServer/Endpoint.html">Endpoint</a> | Nil
+
+        <a class="method-permalink" href="#endpoint%3F%28path%3AString%29%3AEndpoint%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the endpoint served at the path template, i.e. <code>/accounts/:account_id/mcp</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L201" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="endpoints:Array(Endpoint)-instance-method">
+      <div class="signature">
+        
+        def <strong>endpoints</strong> : Array(<a href="../../ActionController/MCPServer/Endpoint.html">Endpoint</a>)
+
+        <a class="method-permalink" href="#endpoints%3AArray%28Endpoint%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>controllers served as their own MCP server, see <code><a href="../../ActionController/MCP.html">ActionController::MCP</a></code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L195" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
     <div class="entry-detail" id="prompt?(name:String):Tuple(Toolbox,Prompt)|Nil-instance-method">
       <div class="signature">
         
@@ -794,7 +855,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L225" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L233" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -810,7 +871,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L234" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L242" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -831,7 +892,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L244" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L252" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -852,7 +913,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L239" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L247" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -873,7 +934,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L215" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L223" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -889,7 +950,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L209" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L217" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -905,7 +966,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/description.cr#L192" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/description.cr#L192" target="_blank">View source</a>]
         
       </div>
     </div>

@@ -157,6 +157,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Endpoint" data-name="actioncontroller::mcpserver::endpoint">
+      <a href="ActionController/MCPServer/Endpoint.html">Endpoint</a>
+      
+    </li>
+  
   <li class="parent " data-id="action-controller/ActionController/MCPServer/Invoker" data-name="actioncontroller::mcpserver::invoker">
       <a href="ActionController/MCPServer/Invoker.html">Invoker</a>
       
@@ -695,6 +700,49 @@ the handful of tools or prompts that most sessions need:</p>
 <span class="k">end</span></code></pre>
 <p>Root items keep their <code>&lt;toolbox&gt;_&lt;method&gt;</code> names. Toolboxes that only contain root items
 are not listed by <code>list_toolboxes</code>.</p>
+<h3><a id="controller-endpoints" class="anchor" href="#controller-endpoints">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Controller endpoints</h3>
+<p>A controller can also be served as its own MCP server, for example one per account or
+room. Annotate the class with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(endpoint: true)]</code> and it's served at
+<code>&lt;base&gt;/mcp</code> (or a sub path, <code>endpoint: &quot;/assistant&quot;</code>):</p>
+<pre><code class="language-crystal"><span class="c"># Controls a room, look up its state before changing it</span>
+@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(endpoint: <span class="n">true</span>)]
+<span class="k">class</span> <span class="t">Room</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
+  base <span class="s">&quot;/rooms/:room_id&quot;</span>
+
+  <span class="c"># the room state</span>
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/state&quot;</span>)]
+  <span class="k">def</span> <span class="m">state</span>(room_id : <span class="t">String</span>) : <span class="t">State</span>
+    <span class="t">State</span>.<span class="k">for</span>(room_id)
+  <span class="k">end</span>
+
+  <span class="c"># turns the lights on or off</span>
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/lights&quot;</span>)]
+  <span class="k">def</span> <span class="m">lights</span>(room_id : <span class="t">String</span>, on : <span class="t">Bool</span>) : <span class="t">Nil</span>
+    <span class="t">Lights</span>.set(room_id, on)
+  <span class="k">end</span>
+<span class="k">end</span></code></pre>
+<p>Connecting to <code>/rooms/boardroom/mcp</code> lists <code>state</code> and <code>lights</code> directly:</p>
+<ul>
+<li><strong>Bound path params:</strong> the base path params (<code>room_id</code>) come from the endpoint URL.
+They're left out of the tool arguments, and a session can only be used at the URL it
+was created at.</li>
+<li><strong>No toolboxes:</strong> there are no meta tools or proxies, every tool and prompt is listed,
+named by its method.</li>
+<li><strong>Instructions:</strong> the controller's doc comment is given to the model as the server's
+instructions, and the server is named after the controller.</li>
+<li><strong>Visibility:</strong> the controller is hidden from the global server unless it's also
+annotated <code>hide: false</code>. A method annotated <code>hide: true</code> is hidden from both.</li>
+<li><strong>Shared configuration:</strong> authentication, forwarded headers and tool results use the
+<code>MCPServer</code> configuration, and tool calls run the controller's filters, so check access
+to the room (or account) in a <code>before_action</code>. The protected resource metadata is
+served for each endpoint URL.</li>
+</ul>
+<p><code>MCPServer.mount</code> mounts the endpoints too (<code>endpoints: false</code> skips them), and
+<code>write_description</code> includes them in <code>mcp.yml</code>.</p>
 <h3><a id="connecting-a-client" class="anchor" href="#connecting-a-client">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
@@ -784,6 +832,7 @@ annotation takes precedence:</p>
 |--------|-------------|
 | <code>hide: true</code> | excludes the routes / prompts from MCP |
 | <code>root: true</code> | always available, without opening the toolbox |
+| <code>endpoint: true</code> | serves the controller as its own MCP server at <code>&lt;base&gt;/mcp</code> (controllers only), see <a href="#controller-endpoints">controller endpoints</a> |
 | <code>read_only: Bool</code> | whether the tool only reads data (default: GET routes). Sets <code>readOnlyHint</code> and whether <code>call_read_only</code> runs it. Use <code>false</code> for a GET with side effects, <code>true</code> for a POST search |
 | <code>prompt: true</code> | the method is an MCP prompt (methods only) |</p>
 <pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(hide: <span class="n">true</span>)] <span class="c"># hide every route in the controller</span>

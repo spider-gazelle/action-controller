@@ -157,6 +157,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Endpoint" data-name="actioncontroller::mcpserver::endpoint">
+      <a href="../../ActionController/MCPServer/Endpoint.html">Endpoint</a>
+      
+    </li>
+  
   <li class="parent " data-id="action-controller/ActionController/MCPServer/Invoker" data-name="actioncontroller::mcpserver::invoker">
       <a href="../../ActionController/MCPServer/Invoker.html">Invoker</a>
       
@@ -474,7 +479,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L16" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L16" target="_blank">
         action-controller/mcp/transport.cr
       </a>
     
@@ -531,7 +536,9 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#new%28route_handler%3ARouter%3A%3ARouteHandler%2Cpath%3AString%3D%22/mcp%22%29-class-method" class="signature"><strong>.new</strong>(route_handler : Router::RouteHandler, path : String = <span class="s">&quot;/mcp&quot;</span>)</a>
+        <a href="#new%28route_handler%3ARouter%3A%3ARouteHandler%2Cpath%3AString%3D%22/mcp%22%2Cendpoint%3ABool%3Dfalse%29-class-method" class="signature"><strong>.new</strong>(route_handler : Router::RouteHandler, path : String = <span class="s">&quot;/mcp&quot;</span>, endpoint : Bool = <span class="n">false</span>)</a>
+        
+          <div class="summary"><p><code>endpoint: true</code> serves the controller endpoint mounted at <code><a href="../../ActionController/MCPServer/Transport.html#path%3AString-instance-method">#path</a></code></p></div>
         
       </li>
     
@@ -559,6 +566,13 @@
       </li>
     
       <li class="entry-summary">
+        <a href="#bound%3AArray%28String%29-instance-method" class="signature"><strong>#bound</strong> : Array(String)</a>
+        
+          <div class="summary"><p>the path params bound from the URL, for controller endpoints</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#delete%28context%3AHTTP%3A%3AServer%3A%3AContext%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method" class="signature"><strong>#delete</strong>(context : HTTP::Server::Context) : HTTP::Server::Context</a>
         
           <div class="summary"><p>terminates the session</p></div>
@@ -575,7 +589,7 @@
       <li class="entry-summary">
         <a href="#path%3AString-instance-method" class="signature"><strong>#path</strong> : String</a>
         
-          <div class="summary"><p>the path the transport is mounted at</p></div>
+          <div class="summary"><p>the path the transport is mounted at, a template for controller endpoints</p></div>
         
       </li>
     
@@ -647,18 +661,23 @@
     Constructor Detail
   </h2>
   
-    <div class="entry-detail" id="new(route_handler:Router::RouteHandler,path:String=&quot;/mcp&quot;)-class-method">
+    <div class="entry-detail" id="new(route_handler:Router::RouteHandler,path:String=&quot;/mcp&quot;,endpoint:Bool=false)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(route_handler : Router::RouteHandler, path : String = <span class="s">&quot;/mcp&quot;</span>)
+        def self.<strong>new</strong>(route_handler : Router::RouteHandler, path : String = <span class="s">&quot;/mcp&quot;</span>, endpoint : Bool = <span class="n">false</span>)
 
-        <a class="method-permalink" href="#new%28route_handler%3ARouter%3A%3ARouteHandler%2Cpath%3AString%3D%22/mcp%22%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28route_handler%3ARouter%3A%3ARouteHandler%2Cpath%3AString%3D%22/mcp%22%2Cendpoint%3ABool%3Dfalse%29-class-method">#</a>
       </div>
+      
+        <div class="doc">
+          
+          <p><code>endpoint: true</code> serves the controller endpoint mounted at <code><a href="../../ActionController/MCPServer/Transport.html#path%3AString-instance-method">#path</a></code></p>
+        </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L29" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L33" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -690,7 +709,28 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L23" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L23" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="bound:Array(String)-instance-method">
+      <div class="signature">
+        
+        def <strong>bound</strong> : Array(String)
+
+        <a class="method-permalink" href="#bound%3AArray%28String%29-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the path params bound from the URL, for controller endpoints</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L30" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -711,7 +751,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L118" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L123" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -732,7 +772,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L85" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L90" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -747,13 +787,13 @@
       
         <div class="doc">
           
-          <p>the path the transport is mounted at</p>
+          <p>the path the transport is mounted at, a template for controller endpoints</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L27" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L27" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -774,7 +814,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L35" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L40" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -790,7 +830,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L24" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L24" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -811,7 +851,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L127" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L132" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -827,7 +867,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/transport.cr#L22" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/a580a27236878b4eb1e408eb7c46d62a6b296a37/src/action-controller/mcp/transport.cr#L22" target="_blank">View source</a>]
         
       </div>
     </div>
