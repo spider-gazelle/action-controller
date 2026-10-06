@@ -194,6 +194,8 @@ module ActionController::OpenAPI
 
       # Class => Schema (and request types)
       response_types = {} of String => String
+      # nested JSON::Serializable types and enums are referenced, defined once as components
+      definitions = ::JSON::Schema::Definitions.new("#/components/schemas/") { |name| normalise_schema_reference(name) }
       # Route => {array?, Class} => Response code
       route_response = Hash(String, Hash(Tuple(Bool, String), Int32)).new do |hash, key|
         hash[key] = {} of Tuple(Bool, String) => Int32
@@ -210,7 +212,7 @@ module ActionController::OpenAPI
 
         {% request_body = details[:request_body].id %}
         {% if request_body.stringify != "Nil" %}
-          response_types[{{request_body.stringify}}] = ::JSON::Schema.introspect({{ request_body }}, openapi: true).to_json
+          add_schema(response_types, definitions, {{request_body.stringify}}, ::JSON::Schema.introspect({{ request_body }}, openapi: true, refs: definitions))
         {% end %}
 
         {% responses = {} of Nil => Nil %}
@@ -246,7 +248,7 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            response_types[{{resolved_klass.stringify}}] = ::JSON::Schema.introspect({{ resolved_klass }}, openapi: true).to_json
+            add_schema(response_types, definitions, {{resolved_klass.stringify}}, ::JSON::Schema.introspect({{ resolved_klass }}, openapi: true, refs: definitions))
           {% end %}
           route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
         {% end %}
@@ -287,7 +289,7 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            response_types[{{resolved_klass.stringify}}] = ::JSON::Schema.introspect({{ resolved_klass }}, openapi: true).to_json
+            add_schema(response_types, definitions, {{resolved_klass.stringify}}, ::JSON::Schema.introspect({{ resolved_klass }}, openapi: true, refs: definitions))
           {% end %}
           route_response[{{exception_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
         {% end %}
@@ -308,7 +310,7 @@ module ActionController::OpenAPI
                   name: {{ param_name }},
                   in: {{ param[:in] }},
                   required: ({{ param[:required] ? true : nil }}).as(Bool?),
-                  schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json,
+                  schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true, refs: definitions).to_json,
                   docs: {{ param[:docs] }}.as(String?),
                   example: {{ param[:example] }}.as(String?),
                 },
@@ -359,7 +361,7 @@ module ActionController::OpenAPI
                 name: {{ param[:header] || param_name }},
                 in: {{ param[:in] }},
                 required: ({{ param[:required] ? true : nil }}).as(Bool?),
-                schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true).to_json,
+                schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true, refs: definitions).to_json,
                 docs: {{ param[:docs] }}.as(String?),
                 example: {{ param[:example] }}.as(String?),
               },
@@ -385,8 +387,14 @@ module ActionController::OpenAPI
       accepts = {{ ActionController::Route::Builder::PARSERS.keys }}
       responders = {{ ActionController::Route::Builder::RESPONDERS.keys }}
 
-      generate_openapi_doc(title, version, info, descriptions, routes, exceptions, filters, response_types, accepts, responders)
+      generate_openapi_doc(title, version, info, descriptions, routes, exceptions, filters, response_types, accepts, responders, definitions)
       {% end %}
+  end
+
+  # :nodoc:
+  # referenced types are defined by `definitions`, the rest are components in their own right
+  def add_schema(response_types : Hash(String, String), definitions : JSON::Schema::Definitions, klass : String, schema) : Nil
+    response_types[klass] = schema.to_json unless definitions.reference?(schema)
   end
 
   # :nodoc:
@@ -412,7 +420,7 @@ module ActionController::OpenAPI
   end
 
   # :nodoc:
-  def generate_openapi_doc(title : String, version : String, info, descriptions, routes, exceptions, filters, response_types, accepts, responders)
+  def generate_openapi_doc(title : String, version : String, info, descriptions, routes, exceptions, filters, response_types, accepts, responders, definitions : JSON::Schema::Definitions = JSON::Schema::Definitions.new("#/components/schemas/"))
     info = info.merge({
       title:   title,
       version: version,
@@ -423,6 +431,13 @@ module ActionController::OpenAPI
     operation_id = Hash(String, Int32).new { |hash, key| hash[key] = 0 }
 
     # add all the schemas
+    definitions.resolve.each do |name, schema|
+      if (schema_docs = definitions.type_name(name).try { |klass| descriptions[klass]?.try(&.docs) }) && (properties = schema.as_h?)
+        schema = JSON::Any.new(properties.merge({"description" => JSON::Any.new(schema_docs)}))
+      end
+      schemas[name] = schema
+    end
+
     response_types.each do |klass, schema|
       if schema_docs = descriptions[klass]?.try(&.docs)
         schema = %(#{schema[0..-2]},"description":#{schema_docs.to_json}})
