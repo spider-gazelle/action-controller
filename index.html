@@ -533,17 +533,23 @@
 Streamable HTTP transport.</p>
 <p>Controllers are presented as <strong>toolboxes</strong>, their route methods as <strong>tools</strong>, and methods
 annotated with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(prompt: true)]</code> as <strong>prompts</strong>. To keep the model's context
-lean, a session starts with just four tools, plus any <a href="#root-tools-and-prompts">root items</a>:</p>
+lean, a session starts with just five tools, plus any <a href="#root-tools-and-prompts">root items</a>:</p>
 <p>| tool | description |
 |------|-------------|
 | <code>list_toolboxes</code> | lists the controllers, their descriptions (the class comment), and their tool and prompt counts |
 | <code>open_toolbox(name)</code> | adds the controller's tools and prompts to the session, sends <code>notifications/tools/list_changed</code> and/or <code>notifications/prompts/list_changed</code>, and returns the tool definitions |
 | <code>close_toolbox(name)</code> | removes them again and sends the same notifications |
-| <code>call_tool(name, arguments)</code> | runs a tool from an open toolbox (or a root tool), for clients that don't refresh their tools when notified |</p>
+| <code>call_read_only(name, arguments)</code> | runs a read only tool from an open toolbox (or a root tool), for clients that don't refresh their tools when notified |
+| <code>call_tool(name, arguments)</code> | runs any tool from an open toolbox (or a root tool), the same way |</p>
 <p>Some MCP clients (currently including Claude and ChatGPT) don't re-fetch their tools when
 notified, so the opened tools never appear. <code>open_toolbox</code> returns each tool's name,
-description and <code>inputSchema</code>, and the model runs them with <code>call_tool</code> instead. Calls
-through the proxy behave exactly like direct calls. Disable it with
+description, <code>inputSchema</code>, annotations and <code>proxy</code> (the proxy tool to run it with), and
+the model runs them through the proxies instead. Calls through a proxy behave exactly
+like direct calls.</p>
+<p>There are two proxies so clients can tell reads from writes: <code>call_read_only</code> is hinted
+<code>readOnlyHint: true</code> (so ChatGPT, for example, doesn't ask the user to confirm each call)
+and refuses tools that aren't read only. A tool is read only if it's a GET route,
+unless overridden with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(read_only:)]</code>. Disable both proxies with
 <code>MCPServer.tool_proxy = false</code> once your clients support <code>list_changed</code>.</p>
 <p>Tool calls and prompts are dispatched in-process through the application router, so
 filters, authentication, controller exception handlers and responders behave exactly
@@ -778,6 +784,7 @@ annotation takes precedence:</p>
 |--------|-------------|
 | <code>hide: true</code> | excludes the routes / prompts from MCP |
 | <code>root: true</code> | always available, without opening the toolbox |
+| <code>read_only: Bool</code> | whether the tool only reads data (default: GET routes). Sets <code>readOnlyHint</code> and whether <code>call_read_only</code> runs it. Use <code>false</code> for a GET with side effects, <code>true</code> for a POST search |
 | <code>prompt: true</code> | the method is an MCP prompt (methods only) |</p>
 <pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(hide: <span class="n">true</span>)] <span class="c"># hide every route in the controller</span>
 <span class="k">class</span> <span class="t">Internal</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
@@ -797,7 +804,7 @@ annotation takes precedence:</p>
   mcp.server_name <span class="o">=</span> <span class="s">&quot;my-app&quot;</span>
   mcp.server_version <span class="o">=</span> <span class="s">&quot;1.2.0&quot;</span>
   mcp.instructions <span class="o">=</span> <span class="s">&quot;About my-app. </span><span class="i">#{</span>mcp.toolbox_instructions<span class="i">}</span><span class="s">&quot;</span> <span class="c"># nil (default): toolbox usage only, &quot;&quot;: none</span>
-  mcp.tool_proxy <span class="o">=</span> <span class="n">true</span>                           <span class="c"># the call_tool meta tool</span>
+  mcp.tool_proxy <span class="o">=</span> <span class="n">true</span>                           <span class="c"># the call_read_only and call_tool meta tools</span>
   mcp.forward_headers <span class="o">=</span> [<span class="s">&quot;Authorization&quot;</span>, <span class="s">&quot;Cookie&quot;</span>, <span class="s">&quot;X-API-Key&quot;</span>] <span class="c"># copied onto tool requests</span>
   mcp.allowed_origins <span class="o">=</span> [<span class="s">&quot;https://app.example.com&quot;</span>]              <span class="c"># &quot;*&quot; allows any origin</span>
   mcp.session_timeout <span class="o">=</span> <span class="n">30</span>.minutes
@@ -827,7 +834,7 @@ accepts <code>text/event-stream</code>. In that case the notifications are strea
 Sessions are not credentials: when authentication is enabled every request must be authenticated.</li>
 <li>Unhandled exceptions raised by a route are logged and returned as a generic <code>500</code> tool error.</li>
 <li>Clients that support <code>notifications/tools/list_changed</code> see the tools added by
-<code>open_toolbox</code> directly, others use <code>call_tool</code>. Prompts added by a toolbox need
+<code>open_toolbox</code> directly, others use <code>call_read_only</code> and <code>call_tool</code>. Prompts added by a toolbox need
 <code>notifications/prompts/list_changed</code>. Root items don't require either.</li>
 </ul>
 <h3><a id="tool-results" class="anchor" href="#tool-results">

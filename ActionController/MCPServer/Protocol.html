@@ -474,7 +474,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/0e832fd871448c1d76d5bec6cda34623a68329ed/src/action-controller/mcp/protocol.cr#L18" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/protocol.cr#L18" target="_blank">
         action-controller/mcp/protocol.cr
       </a>
     
@@ -495,11 +495,6 @@
   
   <dl>
     
-      <dt class="entry-const" id="CALL_TOOL">
-        <strong>CALL_TOOL</strong> = <code><span class="s">&quot;{\&quot;name\&quot;:\&quot;call_tool\&quot;,\&quot;description\&quot;:\&quot;Runs a tool from an open toolbox, use it when the tools returned by open_toolbox aren&#39;t in your available tools\&quot;,\&quot;inputSchema\&quot;:{\&quot;type\&quot;:\&quot;object\&quot;,\&quot;properties\&quot;:{\&quot;name\&quot;:{\&quot;type\&quot;:\&quot;string\&quot;,\&quot;description\&quot;:\&quot;the tool name, as returned by open_toolbox\&quot;},\&quot;arguments\&quot;:{\&quot;type\&quot;:\&quot;object\&quot;,\&quot;description\&quot;:\&quot;the tool arguments, matching its inputSchema\&quot;}},\&quot;required\&quot;:[\&quot;name\&quot;]},\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:false,\&quot;openWorldHint\&quot;:false}}&quot;</span></code>
-      </dt>
-      
-    
       <dt class="entry-const" id="META_TOOLS">
         <strong>META_TOOLS</strong> = <code>{<span class="s">&quot;{\&quot;name\&quot;:\&quot;list_toolboxes\&quot;,\&quot;description\&quot;:\&quot;Lists the available toolboxes, each groups related tools and prompts\&quot;,\&quot;inputSchema\&quot;:{\&quot;type\&quot;:\&quot;object\&quot;,\&quot;properties\&quot;:{}},\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;open_toolbox\&quot;,\&quot;description\&quot;:\&quot;Adds the tools and prompts in a toolbox to your available tools and prompts, returning the definitions of its tools\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">TOOLBOX_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;idempotentHint\&quot;:true}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;close_toolbox\&quot;,\&quot;description\&quot;:\&quot;Removes the tools and prompts in a toolbox, close toolboxes you are no longer using\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">TOOLBOX_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;idempotentHint\&quot;:true}}&quot;</span>}</code>
       </dt>
@@ -507,6 +502,16 @@
     
       <dt class="entry-const" id="PROMPTS_CHANGED">
         <strong>PROMPTS_CHANGED</strong> = <code><span class="s">&quot;{\&quot;jsonrpc\&quot;:\&quot;2.0\&quot;,\&quot;method\&quot;:\&quot;notifications/prompts/list_changed\&quot;}&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="PROXY_ARGS">
+        <strong>PROXY_ARGS</strong> = <code><span class="s">&quot;{\&quot;type\&quot;:\&quot;object\&quot;,\&quot;properties\&quot;:{\&quot;name\&quot;:{\&quot;type\&quot;:\&quot;string\&quot;,\&quot;description\&quot;:\&quot;the tool name, as returned by open_toolbox\&quot;},\&quot;arguments\&quot;:{\&quot;type\&quot;:\&quot;object\&quot;,\&quot;description\&quot;:\&quot;the tool arguments, matching its inputSchema\&quot;}},\&quot;required\&quot;:[\&quot;name\&quot;]}&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="PROXY_TOOLS">
+        <strong>PROXY_TOOLS</strong> = <code>{<span class="s">&quot;{\&quot;name\&quot;:\&quot;call_read_only\&quot;,\&quot;description\&quot;:\&quot;Runs a tool that only reads data (proxy: call_read_only) from an open toolbox, use it when the tools returned by open_toolbox aren&#39;t in your available tools\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">PROXY_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;openWorldHint\&quot;:false}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;call_tool\&quot;,\&quot;description\&quot;:\&quot;Runs a tool that can change data (proxy: call_tool) from an open toolbox, use it when the tools returned by open_toolbox aren&#39;t in your available tools. Prefer call_read_only for tools that only read data\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">PROXY_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:false,\&quot;openWorldHint\&quot;:false}}&quot;</span>}</code>
       </dt>
       
     
@@ -627,7 +632,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/0e832fd871448c1d76d5bec6cda34623a68329ed/src/action-controller/mcp/protocol.cr#L32" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/protocol.cr#L37" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -665,7 +670,7 @@ appended to <code>emitted</code> for delivery before the result</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/0e832fd871448c1d76d5bec6cda34623a68329ed/src/action-controller/mcp/protocol.cr#L67" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/protocol.cr#L72" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -686,7 +691,7 @@ appended to <code>emitted</code> for delivery before the result</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/0e832fd871448c1d76d5bec6cda34623a68329ed/src/action-controller/mcp/protocol.cr#L36" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/mcp/protocol.cr#L41" target="_blank">View source</a>]
         
       </div>
     </div>

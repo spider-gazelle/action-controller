@@ -450,6 +450,10 @@ optional MCP server (see <code><a href="../ActionController/MCPServer.html">Acti
 <ul>
 <li><code>hide: true</code> excludes the route(s) from the MCP toolboxes</li>
 <li><code>root: true</code> always lists the tool(s) or prompt(s), without opening the toolbox</li>
+<li><code>read_only: Bool</code> overrides whether a tool only reads data, which defaults to
+<code>true</code> for GET routes. Read only tools are hinted as such to clients and can be run
+with the <code>call_read_only</code> proxy, e.g. <code>false</code> for a GET with side effects or <code>true</code>
+for a POST search</li>
 <li><code>prompt: true</code> exposes a method as an MCP prompt (not as a HTTP route).
 The method must return <code>String</code> or <code>Array(<a href="../ActionController/PromptMessage.html">AC::PromptMessage</a>)</code></li>
 </ul>
@@ -500,7 +504,7 @@ The method must return <code>String</code> or <code>Array(<a href="../ActionCont
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/0e832fd871448c1d76d5bec6cda34623a68329ed/src/action-controller/router/builder.cr#L95" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/c29f98cc17ff8a70af5b81df4373a26a3c778074/src/action-controller/router/builder.cr#L99" target="_blank">
         action-controller/router/builder.cr
       </a>
     
