@@ -533,12 +533,18 @@
 Streamable HTTP transport.</p>
 <p>Controllers are presented as <strong>toolboxes</strong>, their route methods as <strong>tools</strong>, and methods
 annotated with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(prompt: true)]</code> as <strong>prompts</strong>. To keep the model's context
-lean, a session starts with just three tools, plus any <a href="#root-tools-and-prompts">root items</a>:</p>
+lean, a session starts with just four tools, plus any <a href="#root-tools-and-prompts">root items</a>:</p>
 <p>| tool | description |
 |------|-------------|
 | <code>list_toolboxes</code> | lists the controllers, their descriptions (the class comment), and their tool and prompt counts |
-| <code>open_toolbox(name)</code> | adds the controller's tools and prompts to the session and sends <code>notifications/tools/list_changed</code> and/or <code>notifications/prompts/list_changed</code> |
-| <code>close_toolbox(name)</code> | removes them again and sends the same notifications |</p>
+| <code>open_toolbox(name)</code> | adds the controller's tools and prompts to the session, sends <code>notifications/tools/list_changed</code> and/or <code>notifications/prompts/list_changed</code>, and returns the tool definitions |
+| <code>close_toolbox(name)</code> | removes them again and sends the same notifications |
+| <code>call_tool(name, arguments)</code> | runs a tool from an open toolbox (or a root tool), for clients that don't refresh their tools when notified |</p>
+<p>Some MCP clients (currently including Claude and ChatGPT) don't re-fetch their tools when
+notified, so the opened tools never appear. <code>open_toolbox</code> returns each tool's name,
+description and <code>inputSchema</code>, and the model runs them with <code>call_tool</code> instead. Calls
+through the proxy behave exactly like direct calls. Disable it with
+<code>MCPServer.tool_proxy = false</code> once your clients support <code>list_changed</code>.</p>
 <p>Tool calls and prompts are dispatched in-process through the application router, so
 filters, authentication, controller exception handlers and responders behave exactly
 as they would for a regular HTTP request. (<code>Server.before</code> handlers are not run.)</p>
@@ -790,7 +796,8 @@ annotation takes precedence:</p>
   mcp.description_path <span class="o">=</span> <span class="s">&quot;mcp.yml&quot;</span>                 <span class="c"># relative to the working directory</span>
   mcp.server_name <span class="o">=</span> <span class="s">&quot;my-app&quot;</span>
   mcp.server_version <span class="o">=</span> <span class="s">&quot;1.2.0&quot;</span>
-  mcp.instructions <span class="o">=</span> <span class="s">&quot;...&quot;</span>                         <span class="c"># guidance provided to the model</span>
+  mcp.instructions <span class="o">=</span> <span class="s">&quot;About my-app. </span><span class="i">#{</span>mcp.toolbox_instructions<span class="i">}</span><span class="s">&quot;</span> <span class="c"># nil (default): toolbox usage only, &quot;&quot;: none</span>
+  mcp.tool_proxy <span class="o">=</span> <span class="n">true</span>                           <span class="c"># the call_tool meta tool</span>
   mcp.forward_headers <span class="o">=</span> [<span class="s">&quot;Authorization&quot;</span>, <span class="s">&quot;Cookie&quot;</span>, <span class="s">&quot;X-API-Key&quot;</span>] <span class="c"># copied onto tool requests</span>
   mcp.allowed_origins <span class="o">=</span> [<span class="s">&quot;https://app.example.com&quot;</span>]              <span class="c"># &quot;*&quot; allows any origin</span>
   mcp.session_timeout <span class="o">=</span> <span class="n">30</span>.minutes
@@ -819,8 +826,9 @@ accepts <code>text/event-stream</code>. In that case the notifications are strea
 <li>Sessions are stored in memory per process. Multi-node deployments need sticky sessions.
 Sessions are not credentials: when authentication is enabled every request must be authenticated.</li>
 <li>Unhandled exceptions raised by a route are logged and returned as a generic <code>500</code> tool error.</li>
-<li>Clients must support <code>notifications/tools/list_changed</code> and <code>notifications/prompts/list_changed</code>
-to see the tools and prompts added by <code>open_toolbox</code>. Root items don't require them.</li>
+<li>Clients that support <code>notifications/tools/list_changed</code> see the tools added by
+<code>open_toolbox</code> directly, others use <code>call_tool</code>. Prompts added by a toolbox need
+<code>notifications/prompts/list_changed</code>. Root items don't require either.</li>
 </ul>
 <h3><a id="tool-results" class="anchor" href="#tool-results">
   <svg class="octicon-link" aria-hidden="true">
