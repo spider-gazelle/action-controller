@@ -48,6 +48,12 @@ module ActionController::MCPServer
     open_toolbox to load the tools in a toolbox and close_toolbox once you no longer need them.
     TEXT
 
+  PROXY_INSTRUCTIONS = <<-TEXT
+    #{DEFAULT_INSTRUCTIONS}
+    open_toolbox returns the definitions of the tools it loads. If they don't appear in your
+    available tools, run them with call_tool, passing the tool name and its arguments.
+    TEXT
+
   # location of the MCP description file, generated using `write_description`
   class_property description_path : String = "mcp.yml"
 
@@ -57,8 +63,22 @@ module ActionController::MCPServer
   # :ditto:
   class_property server_version : String = "1.0.0"
 
-  # usage instructions provided to the model
-  class_property instructions : String? = DEFAULT_INSTRUCTIONS
+  # adds a `call_tool` meta tool that runs the tools in open toolboxes, for clients
+  # that don't refresh their tools when notified with `tools/list_changed`
+  class_property? tool_proxy : Bool = true
+
+  # usage instructions provided to the model, `nil` uses `toolbox_instructions` and an
+  # empty string provides none. Include `toolbox_instructions` when describing your domain
+  class_setter instructions : String? = nil
+
+  def self.instructions : String
+    @@instructions || toolbox_instructions
+  end
+
+  # explains how to use toolboxes, taking `tool_proxy` into account
+  def self.toolbox_instructions : String
+    tool_proxy? ? PROXY_INSTRUCTIONS : DEFAULT_INSTRUCTIONS
+  end
 
   # request headers copied from the MCP request to the route being invoked,
   # typically used for authentication

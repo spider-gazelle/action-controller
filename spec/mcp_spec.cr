@@ -61,7 +61,7 @@ class MCPTestClient
 end
 
 # meta tools followed by the root tools
-DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "mcp_widgets_colours", "mcp_root_time", "mcp_root_pixel"]
+DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "call_tool", "mcp_widgets_colours", "mcp_root_time", "mcp_root_pixel"]
 
 MCP_INIT = {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}
 
@@ -185,6 +185,7 @@ describe ActionController::MCPServer do
       result["protocolVersion"].should eq "2025-11-25"
       result["capabilities"]["tools"]["listChanged"].should be_true
       result["instructions"].as_s.should contain "list_toolboxes"
+      result["instructions"].as_s.should contain "call_tool"
     end
 
     it "negotiates the protocol version" do
@@ -457,6 +458,109 @@ describe ActionController::MCPServer do
       result = JSON.parse(response.body)["result"]
       result["isError"].should be_true
       result["structuredContent"]["status"].should eq 401
+    end
+  end
+
+  describe "call_tool proxy" do
+    it "returns tool definitions when opening a toolbox" do
+      client = MCPTestClient.new
+      client.initialize_session
+
+      result = client.call("open_toolbox", {name: "mcp_widgets"})
+      contents = result["structuredContent"]
+      contents["toolbox"].should eq "mcp_widgets"
+      contents["status"].should eq "opened"
+      show = contents["tools"].as_a.find! { |tool| tool["name"] == "mcp_widgets_show" }
+      show["inputSchema"]["required"].as_a.should contain "id"
+      show["annotations"]["readOnlyHint"].should be_true
+      contents["prompts"].as_a.should_not be_empty
+      contents["usage"].as_s.should contain "call_tool"
+      JSON.parse(result["content"][0]["text"].as_s).should eq contents
+
+      # opening again still returns the definitions, for a model that lost track of them
+      again = client.call("open_toolbox", {name: "mcp_widgets"})["structuredContent"]
+      again["status"].should eq "already open"
+      again["tools"].should eq contents["tools"]
+    end
+
+    it "runs tools from open toolboxes" do
+      client = MCPTestClient.new
+      client.initialize_session
+
+      closed = client.call("call_tool", {name: "mcp_widgets_show", arguments: {id: 12}})
+      closed["isError"].should be_true
+      closed["content"][0]["text"].as_s.should contain "open the mcp_widgets toolbox first"
+
+      client.call("open_toolbox", {name: "mcp_widgets"})
+      result = client.call("call_tool", {name: "mcp_widgets_show", arguments: {"id" => 12, "X-Tenant" => "acme"}})
+      result["isError"].should be_false
+      result["structuredContent"].should eq JSON.parse(%({"status":200,"body":{"name":"widget-12-acme"}}))
+
+      # the same result as calling it directly
+      client.call("mcp_widgets_show", {"id" => 12, "X-Tenant" => "acme"}).should eq result
+
+      # route errors come back as they would directly
+      client.call("call_tool", {name: "mcp_widgets_show", arguments: {id: "not-a-number"}})["isError"].should be_true
+    end
+
+    it "runs root tools without opening a toolbox" do
+      client = MCPTestClient.new
+      client.initialize_session
+      client.call("call_tool", {name: "mcp_root_time"})["structuredContent"]["body"].should eq "noon"
+    end
+
+    it "reports mistakes as tool errors" do
+      client = MCPTestClient.new
+      client.initialize_session
+
+      missing = client.call("call_tool", {arguments: {} of String => String})
+      missing["isError"].should be_true
+      missing["content"][0]["text"].as_s.should contain "Missing the name"
+
+      unknown = client.call("call_tool", {name: "nope"})
+      unknown["isError"].should be_true
+      unknown["content"][0]["text"].as_s.should contain "Unknown tool"
+
+      # meta tools aren't proxied
+      meta = client.call("call_tool", {name: "open_toolbox", arguments: {name: "mcp_widgets"}})
+      meta["isError"].should be_true
+      client.call("list_toolboxes")["structuredContent"]["toolboxes"].as_a.find!(&.["name"].==("mcp_widgets"))["open"].should be_false
+    end
+
+    it "can be disabled" do
+      ActionController::MCPServer.tool_proxy = false
+      begin
+        client = MCPTestClient.new
+        result = client.initialize_session["result"]
+        result["instructions"].as_s.should_not contain "call_tool"
+        client.tool_names.should_not contain "call_tool"
+        client.call("open_toolbox", {name: "mcp_widgets"})["structuredContent"]["usage"]?.should be_nil
+
+        response = client.post({jsonrpc: "2.0", id: 9, method: "tools/call", params: {name: "call_tool", arguments: {name: "mcp_root_time"}}}, "application/json")
+        JSON.parse(response.body)["error"]["message"].should eq "Unknown tool: call_tool"
+      ensure
+        ActionController::MCPServer.tool_proxy = true
+      end
+    end
+
+    it "keeps custom instructions" do
+      ActionController::MCPServer.instructions = "Widgets! #{ActionController::MCPServer.toolbox_instructions}"
+      begin
+        instructions = MCPTestClient.new.initialize_session["result"]["instructions"].as_s
+        instructions.should start_with "Widgets! "
+        instructions.should contain "call_tool"
+      ensure
+        ActionController::MCPServer.instructions = nil
+      end
+    end
+
+    it "can omit instructions" do
+      ActionController::MCPServer.instructions = ""
+      begin
+        MCPTestClient.new.initialize_session["result"]["instructions"]?.should be_nil
+      ensure
+        ActionController::MCPServer.instructions = nil
+      end
     end
   end
 

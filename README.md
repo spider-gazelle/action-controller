@@ -105,13 +105,20 @@ Streamable HTTP transport.
 
 Controllers are presented as **toolboxes**, their route methods as **tools**, and methods
 annotated with `@[AC::MCP(prompt: true)]` as **prompts**. To keep the model's context
-lean, a session starts with just three tools, plus any [root items](#root-tools-and-prompts):
+lean, a session starts with just four tools, plus any [root items](#root-tools-and-prompts):
 
 | tool | description |
 |------|-------------|
 | `list_toolboxes` | lists the controllers, their descriptions (the class comment), and their tool and prompt counts |
-| `open_toolbox(name)` | adds the controller's tools and prompts to the session and sends `notifications/tools/list_changed` and/or `notifications/prompts/list_changed` |
+| `open_toolbox(name)` | adds the controller's tools and prompts to the session, sends `notifications/tools/list_changed` and/or `notifications/prompts/list_changed`, and returns the tool definitions |
 | `close_toolbox(name)` | removes them again and sends the same notifications |
+| `call_tool(name, arguments)` | runs a tool from an open toolbox (or a root tool), for clients that don't refresh their tools when notified |
+
+Some MCP clients (currently including Claude and ChatGPT) don't re-fetch their tools when
+notified, so the opened tools never appear. `open_toolbox` returns each tool's name,
+description and `inputSchema`, and the model runs them with `call_tool` instead. Calls
+through the proxy behave exactly like direct calls. Disable it with
+`MCPServer.tool_proxy = false` once your clients support `list_changed`.
 
 Tool calls and prompts are dispatched in-process through the application router, so
 filters, authentication, controller exception handlers and responders behave exactly
@@ -394,7 +401,8 @@ ActionController::MCPServer.tap do |mcp|
   mcp.description_path = "mcp.yml"                 # relative to the working directory
   mcp.server_name = "my-app"
   mcp.server_version = "1.2.0"
-  mcp.instructions = "..."                         # guidance provided to the model
+  mcp.instructions = "About my-app. #{mcp.toolbox_instructions}" # nil (default): toolbox usage only, "": none
+  mcp.tool_proxy = true                           # the call_tool meta tool
   mcp.forward_headers = ["Authorization", "Cookie", "X-API-Key"] # copied onto tool requests
   mcp.allowed_origins = ["https://app.example.com"]              # "*" allows any origin
   mcp.session_timeout = 30.minutes
@@ -421,8 +429,9 @@ end
 * Sessions are stored in memory per process. Multi-node deployments need sticky sessions.
   Sessions are not credentials: when authentication is enabled every request must be authenticated.
 * Unhandled exceptions raised by a route are logged and returned as a generic `500` tool error.
-* Clients must support `notifications/tools/list_changed` and `notifications/prompts/list_changed`
-  to see the tools and prompts added by `open_toolbox`. Root items don't require them.
+* Clients that support `notifications/tools/list_changed` see the tools added by
+  `open_toolbox` directly, others use `call_tool`. Prompts added by a toolbox need
+  `notifications/prompts/list_changed`. Root items don't require either.
 
 ### Tool results
 

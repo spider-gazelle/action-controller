@@ -23,9 +23,11 @@ module ActionController::MCPServer
 
     META_TOOLS = {
       %({"name":"list_toolboxes","description":"Lists the available toolboxes, each groups related tools and prompts","inputSchema":{"type":"object","properties":{}},"annotations":{"readOnlyHint":true}}),
-      %({"name":"open_toolbox","description":"Adds the tools and prompts in a toolbox to your available tools and prompts","inputSchema":#{TOOLBOX_ARGS},"annotations":{"readOnlyHint":true,"idempotentHint":true}}),
+      %({"name":"open_toolbox","description":"Adds the tools and prompts in a toolbox to your available tools and prompts, returning the definitions of its tools","inputSchema":#{TOOLBOX_ARGS},"annotations":{"readOnlyHint":true,"idempotentHint":true}}),
       %({"name":"close_toolbox","description":"Removes the tools and prompts in a toolbox, close toolboxes you are no longer using","inputSchema":#{TOOLBOX_ARGS},"annotations":{"readOnlyHint":true,"idempotentHint":true}}),
     }
+
+    CALL_TOOL = %({"name":"call_tool","description":"Runs a tool from an open toolbox, use it when the tools returned by open_toolbox aren't in your available tools","inputSchema":{"type":"object","properties":{"name":{"type":"string","description":"the tool name, as returned by open_toolbox"},"arguments":{"type":"object","description":"the tool arguments, matching its inputSchema"}},"required":["name"]},"annotations":{"readOnlyHint":false,"openWorldHint":false}})
 
     def initialize(@invoker : Invoker)
     end
@@ -53,7 +55,7 @@ module ActionController::MCPServer
               json.field "version", MCPServer.server_version
             end
           end
-          if instructions = MCPServer.instructions
+          if instructions = MCPServer.instructions.presence
             json.field "instructions", instructions
           end
         end
@@ -84,6 +86,7 @@ module ActionController::MCPServer
           json.field "tools" do
             json.array do
               META_TOOLS.each { |tool| json.raw tool }
+              json.raw CALL_TOOL if MCPServer.tool_proxy?
               description.root_tools.each(&.to_mcp_json(json))
               session.open_toolboxes.each do |name|
                 description.toolbox?(name).try &.toolbox_tools.each(&.to_mcp_json(json))
@@ -112,6 +115,9 @@ module ActionController::MCPServer
         else
           close_toolbox(session, toolbox, emitted)
         end
+      when "call_tool"
+        raise RPCError.new(RPCError::INVALID_PARAMS, "Unknown tool: #{name}") unless MCPServer.tool_proxy?
+        proxy_call(arguments, session, request)
       else
         found = description.tool?(name)
         raise RPCError.new(RPCError::INVALID_PARAMS, "Unknown tool: #{name}") unless found
@@ -120,6 +126,21 @@ module ActionController::MCPServer
 
         @invoker.call(tool, arguments, request)
       end
+    end
+
+    # runs a tool on behalf of a client that can't see it, mistakes are tool errors so
+    # the model can correct itself
+    private def proxy_call(arguments : Hash(String, JSON::Any), session : Session, request : HTTP::Request) : String
+      name = arguments["name"]?.try(&.as_s?)
+      return MCPServer.tool_result("Missing the name of the tool to call", error: true) unless name
+      tool_arguments = arguments["arguments"]?.try(&.as_h?) || {} of String => JSON::Any
+
+      found = description.tool?(name)
+      return MCPServer.tool_result("Unknown tool: #{name.inspect}, use open_toolbox to find the available tools", error: true) unless found
+      toolbox, tool = found
+      return MCPServer.tool_result("Tool #{name} is not available, open the #{toolbox.name} toolbox first", error: true) unless tool.root? || session.open?(toolbox.name)
+
+      @invoker.call(tool, tool_arguments, request)
     end
 
     private def list_prompts(session : Session) : String
@@ -169,11 +190,28 @@ module ActionController::MCPServer
       MCPServer.tool_result(toolboxes, structured: {"toolboxes" => JSON.parse(toolboxes)})
     end
 
+    # returns the toolbox contents, so clients that don't refresh their tools when
+    # notified still learn what's available
     private def open_toolbox(session : Session, toolbox : Toolbox, emitted : Array(String)) : String
-      return MCPServer.tool_result("Toolbox #{toolbox.name} is already open") unless session.open(toolbox.name)
+      opened = session.open(toolbox.name)
+      notify_changes(toolbox, emitted) if opened
 
-      changes = notify_changes(toolbox, emitted)
-      MCPServer.tool_result("Opened toolbox #{toolbox.name}, #{changes.join(", ")}")
+      contents = JSON.build do |json|
+        json.object do
+          json.field "toolbox", toolbox.name
+          json.field "status", opened ? "opened" : "already open"
+          json.field "tools" do
+            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json)) }
+          end
+          json.field "prompts" do
+            json.array { toolbox.toolbox_prompts.each { |prompt| json.string prompt.name } }
+          end
+          if MCPServer.tool_proxy?
+            json.field "usage", "call these tools directly if they are in your available tools, otherwise use call_tool"
+          end
+        end
+      end
+      MCPServer.tool_result(contents, structured: JSON.parse(contents).as_h)
     end
 
     private def close_toolbox(session : Session, toolbox : Toolbox, emitted : Array(String)) : String
@@ -183,20 +221,10 @@ module ActionController::MCPServer
       MCPServer.tool_result("Closed toolbox #{toolbox.name}")
     end
 
-    # emits the list changed notifications for the toolbox, returning a summary of the changes
-    private def notify_changes(toolbox : Toolbox, emitted : Array(String)) : Array(String)
-      changes = [] of String
-      tools = toolbox.toolbox_tools
-      unless tools.empty?
-        emitted << TOOLS_CHANGED
-        changes << "tools: #{tools.join(", ", &.name)}"
-      end
-      prompts = toolbox.toolbox_prompts
-      unless prompts.empty?
-        emitted << PROMPTS_CHANGED
-        changes << "prompts: #{prompts.join(", ", &.name)}"
-      end
-      changes
+    # emits the list changed notifications for the toolbox
+    private def notify_changes(toolbox : Toolbox, emitted : Array(String)) : Nil
+      emitted << TOOLS_CHANGED unless toolbox.toolbox_tools.empty?
+      emitted << PROMPTS_CHANGED unless toolbox.toolbox_prompts.empty?
     end
   end
 end
