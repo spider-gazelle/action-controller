@@ -52,7 +52,7 @@ module ActionController::MCPServer
     end
 
     # the `initialize` result for the negotiated protocol version
-    def initialize_result(protocol_version : String) : String
+    def initialize_result(protocol_version : String, request : HTTP::Request? = nil) : String
       JSON.build do |json|
         json.object do
           json.field "protocolVersion", protocol_version
@@ -80,6 +80,7 @@ module ActionController::MCPServer
             json.object do
               json.field "name", flat? ? endpoint.name : MCPServer.server_name
               json.field "version", MCPServer.server_version
+              Icons.to_json(json, flat? ? endpoint.toolbox.icons : MCPServer.icons, request.try { |req| host(req) })
             end
           end
           if instructions = (flat? ? endpoint.instructions : MCPServer.instructions).presence
@@ -94,9 +95,9 @@ module ActionController::MCPServer
     def handle(method : String, params : Hash(String, JSON::Any), session : Session, request : HTTP::Request, emitted : Array(String)) : String
       case method
       when "ping"           then "{}"
-      when "tools/list"     then list_tools(session)
+      when "tools/list"     then list_tools(session, request)
       when "tools/call"     then call_tool(params, session, request, emitted)
-      when "prompts/list"   then list_prompts(session)
+      when "prompts/list"   then list_prompts(session, request)
       when "prompts/get"    then get_prompt(params, session, request)
       when "resources/list" then list_resources(session)
       when "resources/read" then read_resource(params)
@@ -152,7 +153,12 @@ module ActionController::MCPServer
       UI.read(uri) || raise RPCError.new(RPCError::RESOURCE_NOT_FOUND, "Resource not found: #{uri}")
     end
 
-    private def list_tools(session : Session) : String
+    # the host icon paths are relative to
+    private def host(request : HTTP::Request) : String?
+      request.headers["Host"]?
+    end
+
+    private def list_tools(session : Session, request : HTTP::Request) : String
       JSON.build do |json|
         json.object do
           json.field "tools" do
@@ -161,7 +167,7 @@ module ActionController::MCPServer
                 META_TOOLS.each { |tool| json.raw tool }
                 PROXY_TOOLS.each { |tool| json.raw tool } if MCPServer.tool_proxy?
               end
-              available_tools(session).each(&.to_mcp_json(json, ui: ui?))
+              available_tools(session).each(&.to_mcp_json(json, ui: ui?, host: host(request)))
             end
           end
         end
@@ -176,14 +182,14 @@ module ActionController::MCPServer
 
       case name
       when "list_toolboxes"
-        list_toolboxes(session)
+        list_toolboxes(session, request)
       when "open_toolbox", "close_toolbox"
         toolbox_name = arguments["name"]?.try(&.as_s?)
         toolbox = toolbox_name.try { |box_name| description.toolbox?(box_name) }.try { |box| box if box.openable? }
         return MCPServer.tool_result("Unknown toolbox: #{toolbox_name.inspect}, use list_toolboxes to find the available toolboxes", error: true) unless toolbox
 
         if name == "open_toolbox"
-          open_toolbox(session, toolbox, emitted)
+          open_toolbox(session, toolbox, emitted, request)
         else
           close_toolbox(session, toolbox, emitted)
         end
@@ -215,19 +221,20 @@ module ActionController::MCPServer
       return MCPServer.tool_result("Unknown tool: #{name.inspect}, use open_toolbox to find the available tools", error: true) unless found
       toolbox, tool = found
       return MCPServer.tool_result("Tool #{name} is not available, open the #{toolbox.name} toolbox first", error: true) unless tool.root? || session.open?(toolbox.name)
+      return MCPServer.tool_result("Unknown tool: #{name.inspect}, use open_toolbox to find the available tools", error: true) unless tool.model?
       return MCPServer.tool_result("Tool #{name} can change data, run it with call_tool", error: true) if read_only && !tool.read_only?
 
       @invoker.call(tool, tool_arguments, request, session.bound)
     end
 
-    private def list_prompts(session : Session) : String
+    private def list_prompts(session : Session, request : HTTP::Request) : String
       JSON.build do |json|
         json.object do
           json.field "prompts" do
             json.array do
-              description.root_prompts.each(&.to_mcp_json(json))
+              description.root_prompts.each(&.to_mcp_json(json, host(request)))
               session.open_toolboxes.each do |name|
-                description.toolbox?(name).try &.toolbox_prompts.each(&.to_mcp_json(json))
+                description.toolbox?(name).try &.toolbox_prompts.each(&.to_mcp_json(json, host(request)))
               end
             end
           end
@@ -248,7 +255,7 @@ module ActionController::MCPServer
       @invoker.get_prompt(prompt, arguments, request, session.bound)
     end
 
-    private def list_toolboxes(session : Session) : String
+    private def list_toolboxes(session : Session, request : HTTP::Request) : String
       open = session.open_toolboxes
       toolboxes = JSON.build do |json|
         json.array do
@@ -257,6 +264,7 @@ module ActionController::MCPServer
             json.object do
               json.field "name", toolbox.name
               json.field "description", toolbox.description if toolbox.description
+              Icons.to_json(json, toolbox.icons, host(request))
               json.field "tools", toolbox.toolbox_tools.size
               json.field "prompts", toolbox.toolbox_prompts.size
               json.field "open", open.includes?(toolbox.name)
@@ -269,7 +277,7 @@ module ActionController::MCPServer
 
     # returns the toolbox contents, so clients that don't refresh their tools when
     # notified still learn what's available
-    private def open_toolbox(session : Session, toolbox : Toolbox, emitted : Array(String)) : String
+    private def open_toolbox(session : Session, toolbox : Toolbox, emitted : Array(String), request : HTTP::Request) : String
       opened = session.open(toolbox.name)
       notify_changes(toolbox, emitted) if opened
 
@@ -278,7 +286,7 @@ module ActionController::MCPServer
           json.field "toolbox", toolbox.name
           json.field "status", opened ? "opened" : "already open"
           json.field "tools" do
-            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json, proxy: MCPServer.tool_proxy?, ui: ui?)) }
+            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json, proxy: MCPServer.tool_proxy?, ui: ui?, host: host(request))) }
           end
           json.field "prompts" do
             json.array { toolbox.toolbox_prompts.each { |prompt| json.string prompt.name } }

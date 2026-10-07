@@ -199,7 +199,7 @@ module ActionController::MCPServer
       version = PROTOCOL_VERSIONS.includes?(requested) ? requested.as(String) : PROTOCOL_VERSIONS.first
       session = @sessions.create(version, bound_values(context))
       context.response.headers[SESSION_HEADER] = session.id
-      respond(context, HTTP::Status::OK, "application/json", rpc_result(id, @protocol.initialize_result(version)))
+      respond(context, HTTP::Status::OK, "application/json", rpc_result(id, @protocol.initialize_result(version, context.request)))
     end
 
     private def find_session(context) : Session?

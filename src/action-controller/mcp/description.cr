@@ -11,6 +11,18 @@ module ActionController::MCPServer
     end
   end
 
+  # :nodoc:
+  # stores arrays of JSON values, such as icons, in YAML files
+  module JSONAnyArrayConverter
+    def self.from_yaml(ctx : YAML::ParseContext, node : YAML::Nodes::Node) : Array(JSON::Any)
+      JSON.parse(YAML::Any.new(ctx, node).to_json).as_a
+    end
+
+    def self.to_yaml(value : Array(JSON::Any), yaml : YAML::Nodes::Builder) : Nil
+      value.to_yaml(yaml)
+    end
+  end
+
   # a route argument and where it is placed in the request
   struct ToolParam
     include JSON::Serializable
@@ -48,22 +60,43 @@ module ActionController::MCPServer
     # always available, without opening the toolbox
     getter? root : Bool = false
 
-    # overrides whether the tool only reads data, see `read_only?`
-    getter read_only : Bool? = nil
+    # what the tool does, see `behaviours`. `nil` infers it from the HTTP verb
+    getter behaviour : Array(String)? = nil
+
+    # who can call the tool, `model` and/or `card`. `nil` is both
+    getter visibility : Array(String)? = nil
+
+    # the display name
+    getter title : String? = nil
+
+    # icons, `src` as written, see `Icons`
+    @[YAML::Field(converter: ActionController::MCPServer::JSONAnyArrayConverter)]
+    getter icons : Array(JSON::Any)? = nil
 
     # the MCP Apps card rendered for the tool, i.e. `ui://bookings/card.html`
     getter ui : String? = nil
 
-    # only callable by cards, hidden from the model
-    getter? card_only : Bool = false
-
-    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @read_only = nil, @ui = nil, @card_only = false)
+    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @behaviour = nil, @ui = nil, @visibility = nil, @title = nil, @icons = nil)
     end
 
-    # only reads data, GET routes unless overridden with `@[AC::MCP(read_only:)]`
+    # what the tool does, `@[AC::MCP(behaviour:)]` or inferred from the HTTP verb
+    def behaviours : Array(String)
+      @behaviour || case verb
+      when "get"    then ["read_only"]
+      when "put"    then ["idempotent"]
+      when "delete" then ["destructive", "idempotent"]
+      else               [] of String
+      end
+    end
+
+    # only reads data, can be run by `call_read_only`
     def read_only? : Bool
-      override = @read_only
-      override.nil? ? verb == "get" : override
+      behaviours.includes?("read_only")
+    end
+
+    # the model can call the tool, it's not for cards only
+    def model? : Bool
+      @visibility.nil? || @visibility.as(Array(String)).includes?("model")
     end
 
     # the proxy tool that runs this tool, for clients that can't see it
@@ -72,21 +105,21 @@ module ActionController::MCPServer
     end
 
     # the tool definition as returned by `tools/list`, `proxy: true` also names the
-    # proxy tool that runs it and `ui: true` includes the MCP Apps metadata
-    def to_mcp_json(json : JSON::Builder, proxy : Bool = false, ui : Bool = false) : Nil
+    # proxy tool that runs it and `ui: true` includes the MCP Apps metadata.
+    # `host` resolves icon paths
+    def to_mcp_json(json : JSON::Builder, proxy : Bool = false, ui : Bool = false, host : String? = nil) : Nil
       json.object do
         json.field "name", name
+        json.field "title", title if title
         json.field "description", description if description
         json.field "inputSchema", input_schema
         json.field "proxy", self.proxy if proxy
+        Icons.to_json(json, icons, host)
         ui_meta(json) if ui
         json.field "annotations" do
           json.object do
-            if read_only?
-              json.field "readOnlyHint", true
-            else
-              annotate_changes(json)
-            end
+            json.field "title", title if title
+            hints(json)
           end
         end
       end
@@ -95,14 +128,16 @@ module ActionController::MCPServer
     # the card the host renders for the results and who can call the tool
     private def ui_meta(json : JSON::Builder) : Nil
       resource = self.ui.try { |uri| UI.versioned(uri) }
-      return unless resource || card_only?
+      visible = visibility
+      return unless resource || visible
 
       json.field "_meta" do
         json.object do
           json.field "ui" do
             json.object do
               json.field "resourceUri", resource if resource
-              json.field "visibility", ["app"] if card_only?
+              # the spec calls cards apps
+              json.field "visibility", visible.map { |who| who == "card" ? "app" : who } if visible
             end
           end
           # deprecated, but still read by some hosts
@@ -111,17 +146,20 @@ module ActionController::MCPServer
       end
     end
 
-    private def annotate_changes(json : JSON::Builder) : Nil
-      case verb
-      when "delete"
-        json.field "readOnlyHint", false
+    # tool annotations, hosts use them to decide what to confirm with the user
+    private def hints(json : JSON::Builder) : Nil
+      behaviour = behaviours
+      json.field "readOnlyHint", behaviour.includes?("read_only")
+      if behaviour.includes?("destructive")
         json.field "destructiveHint", true
-        json.field "idempotentHint", true
-      when "put"
-        json.field "readOnlyHint", false
-        json.field "idempotentHint", true
-      else
-        json.field "readOnlyHint", false
+      elsif behaviour.includes?("additive")
+        json.field "destructiveHint", false
+      end
+      json.field "idempotentHint", true if behaviour.includes?("idempotent")
+      if behaviour.includes?("open_world")
+        json.field "openWorldHint", true
+      elsif behaviour.includes?("closed_world")
+        json.field "openWorldHint", false
       end
     end
   end
@@ -157,14 +195,23 @@ module ActionController::MCPServer
     # always available, without opening the toolbox
     getter? root : Bool = false
 
-    def initialize(@name, @description, @path, @arguments, @root = false)
+    # the display name
+    getter title : String? = nil
+
+    # icons, `src` as written, see `Icons`
+    @[YAML::Field(converter: ActionController::MCPServer::JSONAnyArrayConverter)]
+    getter icons : Array(JSON::Any)? = nil
+
+    def initialize(@name, @description, @path, @arguments, @root = false, @title = nil, @icons = nil)
     end
 
-    # the prompt definition as returned by `prompts/list`
-    def to_mcp_json(json : JSON::Builder) : Nil
+    # the prompt definition as returned by `prompts/list`, `host` resolves icon paths
+    def to_mcp_json(json : JSON::Builder, host : String? = nil) : Nil
       json.object do
         json.field "name", name
+        json.field "title", title if title
         json.field "description", description if description
+        Icons.to_json(json, icons, host)
         json.field "arguments" do
           json.array do
             arguments.each do |argument|
@@ -191,7 +238,11 @@ module ActionController::MCPServer
     getter tools : Array(Tool)
     getter prompts : Array(Prompt) = [] of Prompt
 
-    def initialize(@name, @controller, @description, @tools = [] of Tool, @prompts = [] of Prompt)
+    # the controller's icons, `src` as written, see `Icons`
+    @[YAML::Field(converter: ActionController::MCPServer::JSONAnyArrayConverter)]
+    getter icons : Array(JSON::Any)? = nil
+
+    def initialize(@name, @controller, @description, @tools = [] of Tool, @prompts = [] of Prompt, @icons = nil)
     end
 
     # the tools added when the toolbox is opened
@@ -271,7 +322,7 @@ module ActionController::MCPServer
 
     # true if any tool renders an MCP Apps card
     def ui? : Bool
-      toolboxes.any? { |box| box.tools.any? { |tool| tool.ui || tool.card_only? } }
+      toolboxes.any? { |box| box.tools.any? { |tool| tool.ui || tool.visibility } }
     end
 
     # the tools available without opening a toolbox
@@ -330,10 +381,10 @@ module ActionController::MCPServer
 
   # :nodoc:
   # `global`: listed by the global server, `endpoint`: the endpoint path it's served on
-  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, read_only: Bool?, global: Bool, endpoint: String?, ui: String?, card_only: Bool)
+  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, behaviour: Array(String)?, global: Bool, endpoint: String?, ui: String?, visibility: Array(String)?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
 
   # :nodoc:
-  alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), global: Bool, endpoint: String?)
+  alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), global: Bool, endpoint: String?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
 
   # generates the MCP description from the compiled routes.
   #
@@ -366,11 +417,14 @@ module ActionController::MCPServer
               verb: {{ details[:verb] }},
               route: {{ details[:route] }},
               root: {{ details[:mcp_root] == true }},
-              read_only: {{ details[:mcp_read_only] == nil ? nil : details[:mcp_read_only] }},
+              behaviour: {{ details[:mcp_behaviour] }}.as(Array(String)?),
               global: {{ !details[:mcp_hide] }},
               endpoint: {{ endpoint }}.as(String?),
               ui: {{ details[:mcp_ui] }}.as(String?),
-              card_only: {{ details[:mcp_card_only] == true }},
+              visibility: {{ details[:mcp_visibility] }}.as(Array(String)?),
+              title: {{ details[:mcp_title] }}.as(String?),
+              icons: {% if details[:mcp_icons] && !details[:mcp_icons].empty? %}[{% for icon in details[:mcp_icons] %}{{ icon }}.to_json, {% end %}].as(Array(String)?){% else %}nil.as(Array(String)?){% end %},
+              toolbox_icons: {% if details[:mcp_toolbox_icons] && !details[:mcp_toolbox_icons].empty? %}[{% for icon in details[:mcp_toolbox_icons] %}{{ icon }}.to_json, {% end %}].as(Array(String)?){% else %}nil.as(Array(String)?){% end %},
             },
           {% end %}
         {% end %}
@@ -397,6 +451,9 @@ module ActionController::MCPServer
               ] of PromptArgument,
               global: {{ !details[:mcp_hide] }},
               endpoint: {{ endpoint }}.as(String?),
+              title: {{ details[:mcp_title] }}.as(String?),
+              icons: {% if details[:mcp_icons] && !details[:mcp_icons].empty? %}[{% for icon in details[:mcp_icons] %}{{ icon }}.to_json, {% end %}].as(Array(String)?){% else %}nil.as(Array(String)?){% end %},
+              toolbox_icons: {% if details[:mcp_toolbox_icons] && !details[:mcp_toolbox_icons].empty? %}[{% for icon in details[:mcp_toolbox_icons] %}{{ icon }}.to_json, {% end %}].as(Array(String)?){% else %}nil.as(Array(String)?){% end %},
             },
           {% end %}
         {% end %}
@@ -459,7 +516,7 @@ module ActionController::MCPServer
                   end
       next unless operation
 
-      toolbox = toolbox_for(toolboxes, route[:controller], namespace, descriptions)
+      toolbox = toolbox_for(toolboxes, route[:controller], namespace, descriptions, route[:toolbox_icons])
       name = unique_name(tool_names, yield(toolbox, route[:method]))
       description = operation.description || operation.summary || "#{route[:verb].upcase} #{route[:route]}"
       route = route.merge(root: true) if root
@@ -468,22 +525,27 @@ module ActionController::MCPServer
     end
 
     prompts.each do |prompt|
-      toolbox = toolbox_for(toolboxes, prompt[:controller], namespace, descriptions)
+      toolbox = toolbox_for(toolboxes, prompt[:controller], namespace, descriptions, prompt[:toolbox_icons])
       name = unique_name(prompt_names, yield(toolbox, prompt[:method]))
       description = method_docs(descriptions, prompt[:controller], prompt[:method]).try(&.strip)
       arguments = prompt[:arguments].reject { |argument| argument.in == "path" && bound.includes?(argument.name) }
-      toolbox.prompts << Prompt.new(name, description, prompt[:route], arguments, root || prompt[:root])
+      toolbox.prompts << Prompt.new(name, description, prompt[:route], arguments, root || prompt[:root], prompt[:title], parse_icons(prompt[:icons]))
     end
 
     toolboxes.values
   end
 
-  private def toolbox_for(toolboxes : Hash(String, Toolbox), controller : String, namespace : Array(String), descriptions : Hash(String, OpenAPI::KlassDoc)) : Toolbox
+  private def toolbox_for(toolboxes : Hash(String, Toolbox), controller : String, namespace : Array(String), descriptions : Hash(String, OpenAPI::KlassDoc), icons : Array(String)?) : Toolbox
     toolboxes[controller] ||= Toolbox.new(
       toolbox_name(controller, namespace),
       controller,
       descriptions[controller]?.try(&.docs).try(&.strip).presence,
+      icons: parse_icons(icons),
     )
+  end
+
+  private def parse_icons(icons : Array(String)?) : Array(JSON::Any)?
+    icons.try &.map { |icon| JSON.parse(icon) }
   end
 
   # :nodoc:
@@ -574,7 +636,7 @@ module ActionController::MCPServer
     collect_definitions(JSON::Any.new(properties), schemas, definitions)
     input_schema["$defs"] = JSON::Any.new(definitions) unless definitions.empty?
 
-    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:read_only], route[:ui], route[:card_only])
+    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:behaviour], route[:ui], route[:visibility], route[:title], parse_icons(route[:icons]))
   end
 
   # :nodoc:

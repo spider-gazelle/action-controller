@@ -617,7 +617,7 @@ class McpHidden < ActionController::Base
 end
 
 # read only overrides: searching is read only, touching changes data
-@[AC::MCP(read_only: true)]
+@[AC::MCP(behaviour: :read_only)]
 class McpReadOnly < ActionController::Base
   base "/mcp_read_only"
 
@@ -628,7 +628,7 @@ class McpReadOnly < ActionController::Base
   end
 
   # records that the widgets were viewed
-  @[AC::MCP(read_only: false)]
+  @[AC::MCP(behaviour: :additive)]
   @[AC::Route::GET("/touch")]
   def touch : String
     "touched"
@@ -637,6 +637,7 @@ end
 
 # served as its own MCP server at /mcp_account/:account_id/mcp
 @[AC::MCP(endpoint: true)]
+@[AC::Icon(src: "icons/bell.svg", sizes: ["any"])]
 class McpAccount < ActionController::Base
   base "/mcp_account/:account_id"
 
@@ -690,10 +691,18 @@ class McpUi < ActionController::Base
   end
 
   # checks in to a booking, only the card calls this
-  @[AC::MCP(card_only: true)]
+  @[AC::MCP(visibility: :card)]
   @[AC::Route::POST("/bookings/:id/check_in")]
   def check_in(id : Int32) : NamedTuple(id: Int32, checked_in: Bool)
     {id: id, checked_in: true}
+  end
+
+  # the booking's summary, for the model only
+  @[AC::MCP(visibility: :model)]
+  @[AC::Icon(src: "data:image/png;base64,AAAA")]
+  @[AC::Route::GET("/bookings/:id/summary")]
+  def summary(id : Int32) : String
+    "booking #{id}"
   end
 
   # lists the rooms
@@ -708,6 +717,34 @@ class McpUi < ActionController::Base
   @[AC::Route::GET("/bookings/history")]
   def history : Array(Int32)
     [1, 2]
+  end
+end
+
+# behaviours, titles and icons
+@[AC::Icon(src: "icons/bell.svg", sizes: ["any"])]
+class McpOptions < ActionController::Base
+  base "/mcp_options"
+
+  # sends an email
+  @[AC::MCP(behaviour: [:additive, :open_world], title: "Send an email")]
+  @[AC::Icon(src: "https://example.com/mail.png", sizes: ["48x48"])]
+  @[AC::Icon(src: "mail-dark.png", theme: "dark", mimeType: "image/png")]
+  @[AC::Route::POST("/email")]
+  def email(to : String) : String
+    "sent to #{to}"
+  end
+
+  # lists the email templates
+  @[AC::MCP(behaviour: [:read_only, :closed_world])]
+  @[AC::Route::GET("/templates")]
+  def templates : Array(String)
+    ["welcome"]
+  end
+
+  # drafts an email
+  @[AC::MCP(prompt: true, title: "Draft an email")]
+  def draft(topic : String) : String
+    "Draft an email about #{topic}"
   end
 end
 

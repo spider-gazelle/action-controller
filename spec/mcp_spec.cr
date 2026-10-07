@@ -102,6 +102,7 @@ describe ActionController::MCPServer do
     ActionController::MCPServer.description = ActionController::MCPServer.generate_description({"McpWidgets" => widget_docs, "McpAccount" => account_docs})
     ActionController::MCPServer.ui_base = File.join(__DIR__, "cards")
     ActionController::MCPServer.ui_meta = ActionController::MCPServer::UIMeta.new(prefers_border: true)
+    ActionController::MCPServer.icon "logo.png", sizes: ["48x48"]
     bound = Channel(Nil).new
     spawn { server.run { bound.send nil } }
     bound.receive
@@ -187,13 +188,21 @@ describe ActionController::MCPServer do
       parsed = ActionController::MCPServer::Description.from_yaml(yaml)
       parsed.to_yaml.should eq yaml
 
-      # read_only is only stored when overridden
+      # behaviour is only stored when overridden
       tools = parsed.toolbox?("mcp_read_only").should_not be_nil
       tools = tools.tools
-      tools.find!(&.name.==("mcp_read_only_search")).read_only.should be_true
-      tools.find!(&.name.==("mcp_read_only_touch")).read_only.should be_false
+      tools.find!(&.name.==("mcp_read_only_search")).behaviour.should eq ["read_only"]
+      tools.find!(&.name.==("mcp_read_only_touch")).behaviour.should eq ["additive"]
       widgets = parsed.toolbox?("mcp_widgets").should_not be_nil
-      widgets.tools.all?(&.read_only.nil?).should be_true
+      widgets.tools.all?(&.behaviour.nil?).should be_true
+
+      # titles and icons too
+      options = parsed.toolbox?("mcp_options").should_not be_nil
+      options.icons.should eq [JSON.parse(%({"src": "icons/bell.svg", "sizes": ["any"]}))]
+      email = options.tools.find!(&.name.==("mcp_options_email"))
+      email.title.should eq "Send an email"
+      email.icons.try(&.size).should eq 2
+      options.prompts.first.title.should eq "Draft an email"
       original = ActionController::MCPServer.description.tool?("mcp_widgets_show").should_not be_nil
       loaded = parsed.tool?("mcp_widgets_show").should_not be_nil
       loaded[1].input_schema.should eq original[1].input_schema
@@ -809,7 +818,6 @@ describe ActionController::MCPServer do
       client = MCPTestClient.new
       client.initialize_session(ui: true)
       client.call("mcp_ui_check_in", {id: 7})["structuredContent"]["body"].should eq JSON.parse(%({"id":7,"checked_in":true}))
-      client.call("call_tool", {name: "mcp_ui_check_in", arguments: {id: 8}})["structuredContent"]["body"]["checked_in"].should be_true
     end
 
     it "versions cards by their content" do
@@ -836,7 +844,7 @@ describe ActionController::MCPServer do
       box.tools.find!(&.name.==("mcp_ui_show")).root?.should be_true
       box.tools.find!(&.name.==("mcp_ui_check_in")).root?.should be_true
       box.tools.find!(&.name.==("mcp_ui_history")).root?.should be_false
-      box.toolbox_tools.map(&.name).should eq ["mcp_ui_history"]
+      box.toolbox_tools.map(&.name).should eq ["mcp_ui_summary", "mcp_ui_history"]
     end
 
     it "stores cards in the description" do
@@ -844,7 +852,97 @@ describe ActionController::MCPServer do
       box = description.toolbox?("mcp_ui").should_not be_nil
       box.tools.find!(&.name.==("mcp_ui_show")).ui.should eq "ui://bookings/card.html"
       box.tools.find!(&.name.==("mcp_ui_rooms")).ui.should eq "ui://rooms/card.html"
-      box.tools.find!(&.name.==("mcp_ui_check_in")).card_only?.should be_true
+      box.tools.find!(&.name.==("mcp_ui_check_in")).visibility.should eq ["card"]
+    end
+  end
+
+  describe "annotation options" do
+    tool_json = ->(tool : ActionController::MCPServer::Tool) { JSON.parse(JSON.build { |json| tool.to_mcp_json(json, host: "example.com") }) }
+    tool_named = ->(name : String) {
+      ActionController::MCPServer.description.toolboxes.flat_map(&.tools).find!(&.name.==(name))
+    }
+
+    it "infers the behaviour from the HTTP verb" do
+      tool_json.call(tool_named.call("mcp_widgets_show"))["annotations"].should eq JSON.parse(%({"readOnlyHint": true}))
+      tool_json.call(tool_named.call("mcp_widgets_create"))["annotations"].should eq JSON.parse(%({"readOnlyHint": false}))
+      tool_json.call(tool_named.call("mcp_widgets_destroy"))["annotations"].should eq JSON.parse(%({"readOnlyHint": false, "destructiveHint": true, "idempotentHint": true}))
+      put = ActionController::MCPServer::Tool.new("put", nil, "put", "/", [] of ActionController::MCPServer::ToolParam, nil, JSON.parse("{}"))
+      tool_json.call(put)["annotations"].should eq JSON.parse(%({"readOnlyHint": false, "idempotentHint": true}))
+    end
+
+    it "replaces the inferred behaviour" do
+      email = tool_named.call("mcp_options_email")
+      tool_json.call(email)["annotations"].should eq JSON.parse(%({"title": "Send an email", "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true}))
+      email.read_only?.should be_false
+
+      templates = tool_named.call("mcp_options_templates")
+      tool_json.call(templates)["annotations"].should eq JSON.parse(%({"readOnlyHint": true, "openWorldHint": false}))
+      templates.proxy.should eq "call_read_only"
+
+      # a POST search can be run by call_read_only
+      client = MCPTestClient.new
+      client.initialize_session
+      client.call("open_toolbox", {name: "mcp_read_only"})
+      client.call("call_read_only", {name: "mcp_read_only_search", arguments: {body: "x"}})["isError"].should be_false
+    end
+
+    it "titles tools and prompts" do
+      json = tool_json.call(tool_named.call("mcp_options_email"))
+      json["title"].should eq "Send an email"
+      json["annotations"]["title"].should eq "Send an email"
+      tool_json.call(tool_named.call("mcp_options_templates"))["title"]?.should be_nil
+
+      client = MCPTestClient.new
+      client.initialize_session
+      client.call("open_toolbox", {name: "mcp_options"})
+      prompt = client.request("prompts/list").last["result"]["prompts"].as_a.find!(&.["name"].==("mcp_options_draft"))
+      prompt["title"].should eq "Draft an email"
+    end
+
+    it "resolves icons" do
+      svg = "data:image/svg+xml;base64,#{Base64.strict_encode(File.read(File.join(__DIR__, "cards/icons/bell.svg")))}"
+      tool_json.call(tool_named.call("mcp_options_email"))["icons"].should eq JSON.parse({
+        {src: "https://example.com/mail.png", sizes: ["48x48"]},
+        {src: "https://example.com/mail-dark.png", theme: "dark", mimeType: "image/png"},
+      }.to_json)
+      # the controller's icons are the default, files in ui_base are data URLs
+      tool_json.call(tool_named.call("mcp_options_templates"))["icons"].should eq JSON.parse([{src: svg, sizes: ["any"]}].to_json)
+      tool_json.call(tool_named.call("mcp_ui_summary"))["icons"].should eq JSON.parse(%([{"src": "data:image/png;base64,AAAA"}]))
+      tool_json.call(tool_named.call("mcp_widgets_show"))["icons"]?.should be_nil
+
+      client = MCPTestClient.new
+      client.initialize_session
+      toolbox = client.call("list_toolboxes")["structuredContent"]["toolboxes"].as_a.find!(&.["name"].==("mcp_options"))
+      toolbox["icons"].should eq JSON.parse([{src: svg, sizes: ["any"]}].to_json)
+
+      # paths relative to the host are resolved against the request's Host header
+      prompt = client.request("prompts/list").last["result"]["prompts"].as_a.find!(&.["name"].==("mcp_root_greet"))
+      prompt["icons"]?.should be_nil
+    end
+
+    it "icons the servers" do
+      client = MCPTestClient.new
+      client.initialize_session["result"]["serverInfo"]["icons"].should eq JSON.parse(%([{"src": "https://127.0.0.1:#{MCP_PORT}/logo.png", "sizes": ["48x48"]}]))
+
+      svg = "data:image/svg+xml;base64,#{Base64.strict_encode(File.read(File.join(__DIR__, "cards/icons/bell.svg")))}"
+      endpoint = MCPTestClient.new(URI.parse("http://127.0.0.1:#{MCP_PORT}/mcp_account/acme/mcp"))
+      endpoint.initialize_session["result"]["serverInfo"]["icons"].should eq JSON.parse([{src: svg, sizes: ["any"]}].to_json)
+    end
+
+    it "keeps card only tools from the model" do
+      client = MCPTestClient.new
+      client.initialize_session
+      summary = client.tools.find!(&.["name"].==("mcp_ui_check_in"))
+      summary["_meta"]["ui"]["visibility"].should eq JSON.parse(%(["app"]))
+
+      model = tool_json.call(tool_named.call("mcp_ui_summary"))
+      model["_meta"]?.should be_nil
+      JSON.parse(JSON.build { |json| tool_named.call("mcp_ui_summary").to_mcp_json(json, ui: true) })["_meta"]["ui"]["visibility"].should eq JSON.parse(%(["model"]))
+
+      # the model can't reach card only tools through the proxy
+      refused = client.call("call_tool", {name: "mcp_ui_check_in", arguments: {id: 1}})
+      refused["isError"].should be_true
+      refused["content"][0]["text"].as_s.should contain "Unknown tool"
     end
   end
 

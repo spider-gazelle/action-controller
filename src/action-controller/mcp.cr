@@ -97,6 +97,20 @@ module ActionController::MCPServer
   # with a `.meta.json` file next to it, i.e. `bookings/card.meta.json`
   class_property ui_meta : UIMeta? = nil
 
+  # the global server's icons, see `icon`
+  class_getter icons : Array(JSON::Any) = [] of JSON::Any
+
+  # adds an icon for the global server, `src` follows the `@[AC::Icon]` rules and every
+  # other argument is passed through as is
+  #
+  # ```
+  # ActionController::MCPServer.icon "icons/logo.svg", sizes: ["any"]
+  # ActionController::MCPServer.icon "https://example.com/logo-dark.png", sizes: ["48x48"], theme: "dark"
+  # ```
+  def icon(src : String, **fields) : Nil
+    @@icons << JSON.parse(fields.merge(src: src).to_json)
+  end
+
   # sessions inactive for this period are discarded
   class_property session_timeout : Time::Span = 30.minutes
 

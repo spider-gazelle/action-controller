@@ -72,14 +72,18 @@ end
 #   annotated `hide: true` is hidden from both
 # * `ui: "bookings/card.html"` renders the HTML card at that path, in `MCPServer.ui_base`,
 #   for the tool's results in clients that support MCP Apps (`ui://bookings/card.html`)
-# * `card_only: true` makes the tool callable by cards only, it's hidden from the model
+# * `visibility: :card` makes the tool callable by cards only, it's hidden from the model.
+#   `visibility: :model` stops cards calling it, the default is `[:model, :card]`
+# * `behaviour:` describes what the tool does, a symbol or an array of `:read_only`,
+#   `:additive`, `:destructive`, `:idempotent`, `:open_world` and `:closed_world`. It
+#   replaces the defaults inferred from the HTTP verb: GET is `:read_only`, PUT is
+#   `:idempotent` and DELETE is `[:destructive, :idempotent]`. Read only tools can be run
+#   with the `call_read_only` proxy
+# * `title: "Book a room"` is the tool or prompt's display name
 #
-# tools with `ui:` or `card_only: true` are `root: true` unless annotated `root: false`, as
-# hosts only render cards for, and let cards call, the tools in their tool list
-# * `read_only: Bool` overrides whether a tool only reads data, which defaults to
-#   `true` for GET routes. Read only tools are hinted as such to clients and can be run
-#   with the `call_read_only` proxy, e.g. `false` for a GET with side effects or `true`
-#   for a POST search
+# tools with `ui:` or `visibility: :card` are `root: true` unless annotated `root: false`,
+# as hosts only render cards for, and let cards call, the tools in their tool list.
+# Icons are added with `@[AC::Icon]`
 # * `prompt: true` exposes a method as an MCP prompt (not as a HTTP route).
 #   The method must return `String` or `Array(AC::PromptMessage)`
 #
@@ -108,6 +112,23 @@ end
 # end
 # ```
 annotation ActionController::MCP
+end
+
+# an icon for an MCP tool or prompt, repeatable for different sizes and themes. On a
+# controller it's the default for its tools and prompts, the toolbox's icon and, for
+# `@[AC::MCP(endpoint: true)]` controllers, the endpoint server's icon.
+#
+# `src` is used as is when it's an `https:` or `data:` URL, otherwise a file in
+# `MCPServer.ui_base` is sent as a `data:` URL, falling back to a path on the current host.
+# Every other argument is passed through as is (`sizes`, `theme`, `mimeType`)
+#
+# ```
+# @[AC::Icon(src: "icons/book.svg", sizes: ["any"])]
+# @[AC::Icon(src: "icons/book-dark.svg", sizes: ["any"], theme: "dark")]
+# @[AC::Route::POST("/")]
+# def create(booking : Booking) : Booking
+# ```
+annotation ActionController::Icon
 end
 
 # defines a custom parser for strong parameters
@@ -316,16 +337,53 @@ module ActionController::Route::Builder
         {% mcp_hide = true if mcp_hide == nil %}
       {% end %}
       {% mcp_endpoint_hide = mcp_method_ann && mcp_method_ann[:hide] == true %}
-      {% mcp_read_only = mcp_klass_ann ? mcp_klass_ann[:read_only] : nil %}
       {% if mcp_method_ann && mcp_method_ann[:hide] != nil %}
         {% mcp_hide = mcp_method_ann[:hide] %}
       {% end %}
       {% if mcp_method_ann && mcp_method_ann[:root] != nil %}
         {% mcp_root = mcp_method_ann[:root] %}
       {% end %}
-      {% if mcp_method_ann && mcp_method_ann[:read_only] != nil %}
-        {% mcp_read_only = mcp_method_ann[:read_only] %}
+
+      # replaced options
+      {% for ann, index in [mcp_klass_ann, mcp_method_ann] %}
+        {% if ann %}
+          {% location = index == 0 ? @type.name.stringify : "#{@type.name}##{method_name}" %}
+          {% raise "#{location.id}: @[AC::MCP(read_only:)] was replaced by behaviour:, i.e. `behaviour: :read_only`" if ann[:read_only] != nil %}
+          {% raise "#{location.id}: @[AC::MCP(card_only:)] was replaced by `visibility: :card`" if ann[:card_only] != nil %}
+          {% raise "#{location.id}: @[AC::MCP(app_only:)] was replaced by `visibility: :card`" if ann[:app_only] != nil %}
+        {% end %}
       {% end %}
+
+      # what the tool does, replacing the defaults inferred from the HTTP verb
+      {% mcp_behaviour = mcp_klass_ann ? mcp_klass_ann[:behaviour] : nil %}
+      {% mcp_behaviour = mcp_method_ann[:behaviour] if mcp_method_ann && mcp_method_ann[:behaviour] != nil %}
+      {% if mcp_behaviour != nil %}
+        {% mcp_behaviour = [mcp_behaviour] unless mcp_behaviour.is_a?(ArrayLiteral) || mcp_behaviour.is_a?(TupleLiteral) %}
+        {% mcp_behaviour = mcp_behaviour.map(&.id.stringify) %}
+        {% for behaviour in mcp_behaviour %}
+          {% raise "#{@type.name}##{method_name}: unknown MCP behaviour :#{behaviour.id}, expected :read_only, :additive, :destructive, :idempotent, :open_world or :closed_world" unless ["read_only", "additive", "destructive", "idempotent", "open_world", "closed_world"].includes?(behaviour) %}
+        {% end %}
+        {% for conflict in [["read_only", "destructive"], ["read_only", "additive"], ["additive", "destructive"], ["open_world", "closed_world"]] %}
+          {% raise "#{@type.name}##{method_name}: MCP behaviours :#{conflict[0].id} and :#{conflict[1].id} contradict each other" if mcp_behaviour.includes?(conflict[0]) && mcp_behaviour.includes?(conflict[1]) %}
+        {% end %}
+      {% end %}
+
+      # who can call the tool: the model, MCP Apps cards or both (the default)
+      {% mcp_visibility = mcp_klass_ann ? mcp_klass_ann[:visibility] : nil %}
+      {% mcp_visibility = mcp_method_ann[:visibility] if mcp_method_ann && mcp_method_ann[:visibility] != nil %}
+      {% if mcp_visibility != nil %}
+        {% mcp_visibility = [mcp_visibility] unless mcp_visibility.is_a?(ArrayLiteral) || mcp_visibility.is_a?(TupleLiteral) %}
+        {% mcp_visibility = mcp_visibility.map(&.id.stringify) %}
+        {% raise "#{@type.name}##{method_name}: MCP visibility must be :model, :card or [:model, :card]" if mcp_visibility.empty? || mcp_visibility.any? { |value| !["model", "card"].includes?(value) } %}
+        {% mcp_visibility = nil if mcp_visibility.includes?("model") && mcp_visibility.includes?("card") %}
+      {% end %}
+
+      {% mcp_title = mcp_method_ann ? mcp_method_ann[:title] : nil %}
+
+      # icons, the controller's icons are the default
+      {% mcp_toolbox_icons = @type.annotations(::ActionController::Icon).map(&.named_args) %}
+      {% mcp_icons = method.annotations(::ActionController::Icon).map(&.named_args) %}
+      {% mcp_icons = mcp_toolbox_icons if mcp_icons.empty? %}
 
       # MCP Apps: the card rendered for the tool, and tools only a card may call
       {% mcp_ui = mcp_klass_ann ? mcp_klass_ann[:ui] : nil %}
@@ -338,13 +396,10 @@ module ActionController::Route::Builder
         {% end %}
         {% mcp_ui = "ui://" + ui_path %}
       {% end %}
-      {% raise "#{@type.name}##{method_name}: @[AC::MCP(app_only:)] was renamed to card_only:" if (mcp_klass_ann && mcp_klass_ann[:app_only] != nil) || (mcp_method_ann && mcp_method_ann[:app_only] != nil) %}
-      {% mcp_card_only = mcp_klass_ann ? mcp_klass_ann[:card_only] : nil %}
-      {% mcp_card_only = mcp_method_ann[:card_only] if mcp_method_ann && mcp_method_ann[:card_only] != nil %}
 
       # hosts only render cards for (and let cards call) tools in their tool list, so these
       # are root items unless `root: false`
-      {% mcp_root = true if mcp_root == nil && (mcp_ui || mcp_card_only == true) %}
+      {% mcp_root = true if mcp_root == nil && (mcp_ui || (mcp_visibility && !mcp_visibility.includes?("model"))) %}
 
       # MCP prompts are implemented as internal GET routes so filters, error handlers and param parsing apply
       {% mcp_prompt = mcp_method_ann && mcp_method_ann[:prompt] == true %}
@@ -450,9 +505,12 @@ module ActionController::Route::Builder
 
             {% open_api_route[:mcp_hide] = mcp_hide == true %}
             {% open_api_route[:mcp_root] = mcp_root == true %}
-            {% open_api_route[:mcp_read_only] = mcp_read_only %}
+            {% open_api_route[:mcp_behaviour] = mcp_behaviour %}
+            {% open_api_route[:mcp_visibility] = mcp_visibility %}
+            {% open_api_route[:mcp_title] = mcp_title %}
+            {% open_api_route[:mcp_icons] = mcp_icons %}
+            {% open_api_route[:mcp_toolbox_icons] = mcp_toolbox_icons %}
             {% open_api_route[:mcp_ui] = mcp_ui %}
-            {% open_api_route[:mcp_card_only] = mcp_card_only == true %}
             {% open_api_route[:mcp_endpoint] = mcp_endpoint_path %}
             {% open_api_route[:mcp_endpoint_hide] = mcp_endpoint_hide %}
             {% open_api_route[:mcp_prompt] = ann[:internal] == true %}

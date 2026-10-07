@@ -124,7 +124,7 @@ like direct calls.
 There are two proxies so clients can tell reads from writes: `call_read_only` is hinted
 `readOnlyHint: true` (so ChatGPT, for example, doesn't ask the user to confirm each call)
 and refuses tools that aren't read only. A tool is read only if it's a GET route,
-unless overridden with `@[AC::MCP(read_only:)]`. Disable both proxies with
+unless overridden with `@[AC::MCP(behaviour:)]`. Disable both proxies with
 `MCPServer.tool_proxy = false` once your clients support `list_changed`.
 
 Tool calls and prompts are dispatched in-process through the application router, so
@@ -352,7 +352,7 @@ class Bookings < AC::Base
   end
 
   # Checks in to a booking, only the card can call this
-  @[AC::MCP(card_only: true)]
+  @[AC::MCP(visibility: :card)]
   @[AC::Route::POST("/:id/check_in")]
   def check_in(id : String) : Booking
   end
@@ -369,11 +369,11 @@ end
   `{"csp": {"resourceDomains": ["https://cdn.example.com"]}, "prefersBorder": false}`.
 * **Talking to the host:** cards use JSON-RPC over `postMessage` (`ui/initialize`, then
   `ui/notifications/tool-result`), with or without the `@modelcontextprotocol/ext-apps`
-  SDK. They can call tools too, such as `card_only` tools.
+  SDK. They can call tools too, such as `visibility: :card` tools.
 * **Caching:** hosts cache cards by URI, so tools advertise
   `ui://bookings/card.html?v=<content hash>`. A changed card gets a new URI.
 * **Root by default:** hosts only render cards for, and let cards call, the tools in
-  their tool list. So tools with `ui:` or `card_only: true` are root items, listed without
+  their tool list. So tools with `ui:` or `visibility: :card` are root items, listed without
   opening their toolbox, unless annotated `root: false`.
 * `ui:` paths are relative to `ui_base` and must be `.html` files (checked at compile
   time). Nothing outside `ui_base` is served. Hosts without MCP Apps support ignore the
@@ -482,13 +482,47 @@ annotation takes precedence:
 |--------|-------------|
 | `hide: true` | excludes the routes / prompts from MCP |
 | `root: true` | always available, without opening the toolbox |
-| `endpoint: true` | serves the controller as its own MCP server at `<base>/mcp` (controllers only), see [controller endpoints](#controller-endpoints) |
-| `ui: "bookings/card.html"` | renders this HTML card for the tool's results, see [UI cards](#ui-cards-mcp-apps) |
-| `card_only: true` | only cards can call the tool, it's hidden from the model |
-
-Tools with `ui:` or `card_only: true` default to `root: true`.
-| `read_only: Bool` | whether the tool only reads data (default: GET routes). Sets `readOnlyHint` and whether `call_read_only` runs it. Use `false` for a GET with side effects, `true` for a POST search |
 | `prompt: true` | the method is an MCP prompt (methods only) |
+| `title: "Book a room"` | the tool or prompt's display name (methods only) |
+| `behaviour: :read_only` | what the tool does, see below |
+| `visibility: :card` | who can call the tool: `:model`, `:card` or both (the default) |
+| `ui: "bookings/card.html"` | renders this HTML card for the tool's results, see [UI cards](#ui-cards-mcp-apps) |
+| `endpoint: true` | serves the controller as its own MCP server at `<base>/mcp` (controllers only), see [controller endpoints](#controller-endpoints) |
+
+Tools with `ui:` or `visibility: :card` default to `root: true`.
+
+**Behaviour** tells hosts what a tool does, which they use to decide what to confirm with
+the user. It's a symbol or an array of `:read_only`, `:additive`, `:destructive`,
+`:idempotent`, `:open_world` and `:closed_world`. By default it's inferred from the HTTP
+verb: GET is `:read_only`, PUT is `:idempotent` and DELETE is
+`[:destructive, :idempotent]`. Setting it replaces the default, and contradictions are
+compile errors. Read only tools can be run with the `call_read_only` proxy.
+
+```crystal
+@[AC::MCP(behaviour: :read_only)]                # a POST search
+@[AC::MCP(behaviour: [:additive, :open_world])]  # a POST that sends an email
+@[AC::MCP(behaviour: :destructive)]              # a PUT that replaces data
+```
+
+**Visibility** controls who can call a tool in hosts that support
+[UI cards](#ui-cards-mcp-apps): `:card` tools are hidden from the model, and `:model`
+tools can't be called by cards. Hosts enforce it, so it isn't access control.
+
+**Icons** are added with `@[AC::Icon]`, which you can repeat for different sizes and
+themes. On a controller they're the default for its tools and prompts, and the icon of
+its toolbox and [endpoint](#controller-endpoints):
+
+```crystal
+@[AC::Icon(src: "icons/book.svg", sizes: ["any"])]
+@[AC::Icon(src: "icons/book-dark.svg", sizes: ["any"], theme: "dark")]
+@[AC::Route::POST("/")]
+def create(booking : Booking) : Booking
+```
+
+`src` is sent as is when it's an `https:` or `data:` URL. A file in `MCPServer.ui_base`
+is sent as a `data:` URL, and anything else is a path on the current host. Every other
+argument is passed through as is. Use `MCPServer.icon "icons/logo.svg", sizes: ["any"]`
+for the server's own icon.
 
 ```crystal
 @[AC::MCP(hide: true)] # hide every route in the controller
