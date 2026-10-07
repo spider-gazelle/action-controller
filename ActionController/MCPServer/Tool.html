@@ -519,7 +519,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L29" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L29" target="_blank">
         action-controller/mcp/description.cr
       </a>
     
@@ -542,7 +542,7 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cverb%3AString%2Cpath%3AString%2Cparams%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolParam%29%2Cbody%3ANil%7CString%2Cinput_schema%3AJSON%3A%3AAny%2Croot%3ABool%3Dfalse%2Cread_only%3ABool%7CNil%3Dnil%2Cui%3ANil%7CString%3Dnil%2Capp_only%3ABool%3Dfalse%29-class-method" class="signature"><strong>.new</strong>(name : String, description : Nil | String, verb : String, path : String, params : Array(ActionController::MCPServer::ToolParam), body : Nil | String, input_schema : JSON::Any, root : Bool = <span class="n">false</span>, read_only : Bool | Nil = <span class="n">nil</span>, ui : Nil | String = <span class="n">nil</span>, app_only : Bool = <span class="n">false</span>)</a>
+        <a href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cverb%3AString%2Cpath%3AString%2Cparams%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolParam%29%2Cbody%3ANil%7CString%2Cinput_schema%3AJSON%3A%3AAny%2Croot%3ABool%3Dfalse%2Cread_only%3ABool%7CNil%3Dnil%2Cui%3ANil%7CString%3Dnil%2Ccard_only%3ABool%3Dfalse%29-class-method" class="signature"><strong>.new</strong>(name : String, description : Nil | String, verb : String, path : String, params : Array(ActionController::MCPServer::ToolParam), body : Nil | String, input_schema : JSON::Any, root : Bool = <span class="n">false</span>, read_only : Bool | Nil = <span class="n">nil</span>, ui : Nil | String = <span class="n">nil</span>, card_only : Bool = <span class="n">false</span>)</a>
         
       </li>
     
@@ -585,16 +585,16 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#app_only%3F%3ABool-instance-method" class="signature"><strong>#app_only?</strong> : Bool</a>
+        <a href="#body%3AString%7CNil-instance-method" class="signature"><strong>#body</strong> : String | Nil</a>
         
-          <div class="summary"><p>only callable by cards, hidden from the model</p></div>
+          <div class="summary"><p>the argument that holds the request body, if any</p></div>
         
       </li>
     
       <li class="entry-summary">
-        <a href="#body%3AString%7CNil-instance-method" class="signature"><strong>#body</strong> : String | Nil</a>
+        <a href="#card_only%3F%3ABool-instance-method" class="signature"><strong>#card_only?</strong> : Bool</a>
         
-          <div class="summary"><p>the argument that holds the request body, if any</p></div>
+          <div class="summary"><p>only callable by cards, hidden from the model</p></div>
         
       </li>
     
@@ -744,18 +744,18 @@
     Constructor Detail
   </h2>
   
-    <div class="entry-detail" id="new(name:String,description:Nil|String,verb:String,path:String,params:Array(ActionController::MCPServer::ToolParam),body:Nil|String,input_schema:JSON::Any,root:Bool=false,read_only:Bool|Nil=nil,ui:Nil|String=nil,app_only:Bool=false)-class-method">
+    <div class="entry-detail" id="new(name:String,description:Nil|String,verb:String,path:String,params:Array(ActionController::MCPServer::ToolParam),body:Nil|String,input_schema:JSON::Any,root:Bool=false,read_only:Bool|Nil=nil,ui:Nil|String=nil,card_only:Bool=false)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(name : String, description : Nil | String, verb : String, path : String, params : Array(<a href="../../ActionController/MCPServer/ToolParam.html">ActionController::MCPServer::ToolParam</a>), body : Nil | String, input_schema : JSON::Any, root : Bool = <span class="n">false</span>, read_only : Bool | Nil = <span class="n">nil</span>, ui : Nil | String = <span class="n">nil</span>, app_only : Bool = <span class="n">false</span>)
+        def self.<strong>new</strong>(name : String, description : Nil | String, verb : String, path : String, params : Array(<a href="../../ActionController/MCPServer/ToolParam.html">ActionController::MCPServer::ToolParam</a>), body : Nil | String, input_schema : JSON::Any, root : Bool = <span class="n">false</span>, read_only : Bool | Nil = <span class="n">nil</span>, ui : Nil | String = <span class="n">nil</span>, card_only : Bool = <span class="n">false</span>)
 
-        <a class="method-permalink" href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cverb%3AString%2Cpath%3AString%2Cparams%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolParam%29%2Cbody%3ANil%7CString%2Cinput_schema%3AJSON%3A%3AAny%2Croot%3ABool%3Dfalse%2Cread_only%3ABool%7CNil%3Dnil%2Cui%3ANil%7CString%3Dnil%2Capp_only%3ABool%3Dfalse%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cverb%3AString%2Cpath%3AString%2Cparams%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolParam%29%2Cbody%3ANil%7CString%2Cinput_schema%3AJSON%3A%3AAny%2Croot%3ABool%3Dfalse%2Cread_only%3ABool%7CNil%3Dnil%2Cui%3ANil%7CString%3Dnil%2Ccard_only%3ABool%3Dfalse%29-class-method">#</a>
       </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L60" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L60" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -771,7 +771,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L31" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L31" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -787,7 +787,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L30" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L30" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -803,7 +803,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L30" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L30" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -819,7 +819,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L31" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L31" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -840,27 +840,6 @@
     Instance Method Detail
   </h2>
   
-    <div class="entry-detail" id="app_only?:Bool-instance-method">
-      <div class="signature">
-        
-        def <strong>app_only?</strong> : Bool
-
-        <a class="method-permalink" href="#app_only%3F%3ABool-instance-method">#</a>
-      </div>
-      
-        <div class="doc">
-          
-          <p>only callable by cards, hidden from the model</p>
-        </div>
-      
-      <br/>
-      <div>
-        
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L58" target="_blank">View source</a>]
-        
-      </div>
-    </div>
-  
     <div class="entry-detail" id="body:String|Nil-instance-method">
       <div class="signature">
         
@@ -877,7 +856,28 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L42" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L42" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="card_only?:Bool-instance-method">
+      <div class="signature">
+        
+        def <strong>card_only?</strong> : Bool
+
+        <a class="method-permalink" href="#card_only%3F%3ABool-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>only callable by cards, hidden from the model</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L58" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -893,7 +893,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L34" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L34" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -914,7 +914,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L46" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L46" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -930,7 +930,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L33" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L33" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -946,7 +946,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L39" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L39" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -967,7 +967,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L38" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L38" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -988,7 +988,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L70" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L70" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1009,7 +1009,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L52" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L52" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1030,7 +1030,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L64" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L64" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1051,7 +1051,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L49" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L49" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1073,7 +1073,7 @@ proxy tool that runs it and <code>ui: true</code> includes the MCP Apps metadata
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L76" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L76" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1094,7 +1094,7 @@ proxy tool that runs it and <code>ui: true</code> includes the MCP Apps metadata
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L55" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L55" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1110,7 +1110,7 @@ proxy tool that runs it and <code>ui: true</code> includes the MCP Apps metadata
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/mcp/description.cr#L35" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L35" target="_blank">View source</a>]
         
       </div>
     </div>

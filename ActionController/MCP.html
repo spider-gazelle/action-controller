@@ -472,9 +472,9 @@ hidden from the global server unless it's annotated <code>hide: false</code>, an
 annotated <code>hide: true</code> is hidden from both</li>
 <li><code>ui: &quot;bookings/card.html&quot;</code> renders the HTML card at that path, in <code><a href="../ActionController/MCPServer.html#ui_base%3AString%7CNil-class-method">MCPServer.ui_base</a></code>,
 for the tool's results in clients that support MCP Apps (<code>ui://bookings/card.html</code>)</li>
-<li><code>app_only: true</code> makes the tool callable by cards only, it's hidden from the model</li>
+<li><code>card_only: true</code> makes the tool callable by cards only, it's hidden from the model</li>
 </ul>
-<p>tools with <code>ui:</code> or <code>app_only: true</code> are <code>root: true</code> unless annotated <code>root: false</code>, as
+<p>tools with <code>ui:</code> or <code>card_only: true</code> are <code>root: true</code> unless annotated <code>root: false</code>, as
 hosts only render cards for, and let cards call, the tools in their tool list</p>
 <ul>
 <li><code>read_only: Bool</code> overrides whether a tool only reads data, which defaults to
@@ -531,7 +531,7 @@ The method must return <code>String</code> or <code>Array(<a href="../ActionCont
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/a8a50b1d569e4f1c0e2ac9f193fc57fd5a01c653/src/action-controller/router/builder.cr#L110" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/router/builder.cr#L110" target="_blank">
         action-controller/router/builder.cr
       </a>
     

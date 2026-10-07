@@ -776,7 +776,7 @@ folder:</p>
   <span class="k">end</span>
 
   <span class="c"># Checks in to a booking, only the card can call this</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(app_only: <span class="n">true</span>)]
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(card_only: <span class="n">true</span>)]
   @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/:id/check_in&quot;</span>)]
   <span class="k">def</span> <span class="m">check_in</span>(id : <span class="t">String</span>) : <span class="t">Booking</span>
   <span class="k">end</span>
@@ -792,11 +792,11 @@ in <code>ui_meta</code>, or in a sidecar such as <code>bookings/card.meta.json</
 <code>{&quot;csp&quot;: {&quot;resourceDomains&quot;: [&quot;https://cdn.example.com&quot;]}, &quot;prefersBorder&quot;: false}</code>.</li>
 <li><strong>Talking to the host:</strong> cards use JSON-RPC over <code>postMessage</code> (<code>ui/initialize</code>, then
 <code>ui/notifications/tool-result</code>), with or without the <code>@modelcontextprotocol/ext-apps</code>
-SDK. They can call tools too, such as <code>app_only</code> tools.</li>
+SDK. They can call tools too, such as <code>card_only</code> tools.</li>
 <li><strong>Caching:</strong> hosts cache cards by URI, so tools advertise
 <code>ui://bookings/card.html?v=&lt;content hash&gt;</code>. A changed card gets a new URI.</li>
 <li><strong>Root by default:</strong> hosts only render cards for, and let cards call, the tools in
-their tool list. So tools with <code>ui:</code> or <code>app_only: true</code> are root items, listed without
+their tool list. So tools with <code>ui:</code> or <code>card_only: true</code> are root items, listed without
 opening their toolbox, unless annotated <code>root: false</code>.</li>
 <li><code>ui:</code> paths are relative to <code>ui_base</code> and must be <code>.html</code> files (checked at compile
 time). Nothing outside <code>ui_base</code> is served. Hosts without MCP Apps support ignore the
@@ -893,8 +893,8 @@ annotation takes precedence:</p>
 | <code>root: true</code> | always available, without opening the toolbox |
 | <code>endpoint: true</code> | serves the controller as its own MCP server at <code>&lt;base&gt;/mcp</code> (controllers only), see <a href="#controller-endpoints">controller endpoints</a> |
 | <code>ui: &quot;bookings/card.html&quot;</code> | renders this HTML card for the tool's results, see <a href="#ui-cards-mcp-apps">UI cards</a> |
-| <code>app_only: true</code> | only cards can call the tool, it's hidden from the model |</p>
-<p>Tools with <code>ui:</code> or <code>app_only: true</code> default to <code>root: true</code>.
+| <code>card_only: true</code> | only cards can call the tool, it's hidden from the model |</p>
+<p>Tools with <code>ui:</code> or <code>card_only: true</code> default to <code>root: true</code>.
 | <code>read_only: Bool</code> | whether the tool only reads data (default: GET routes). Sets <code>readOnlyHint</code> and whether <code>call_read_only</code> runs it. Use <code>false</code> for a GET with side effects, <code>true</code> for a POST search |
 | <code>prompt: true</code> | the method is an MCP prompt (methods only) |</p>
 <pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(hide: <span class="n">true</span>)] <span class="c"># hide every route in the controller</span>
