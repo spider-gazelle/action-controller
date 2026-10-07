@@ -178,16 +178,30 @@ module ActionController::OpenAPI
     {description, matched_filters, matched_errors}
   end
 
+  # the OpenAPI versions that can be generated, the first is the default
+  OPENAPI_VERSIONS = {"3.1.0", "3.0.3"}
+
   # returns a NamedTuple that represents the OpenAPI docs for the current application.
   #
+  # `openapi` is the version of the document, `"3.1.0"` (the default) or `"3.0.3"`.
   # the info hash splat accepts any of the keys from the [info object](https://swagger.io/specification/#info-object)
-  def generate_open_api_docs(title : String, version : String, **info)
-    generate_open_api_docs(extract_route_descriptions, title, version, **info)
+  def generate_open_api_docs(title : String, version : String, openapi : String = OPENAPI_VERSIONS[0], **info)
+    generate_open_api_docs(extract_route_descriptions, title, version, openapi, **info)
+  end
+
+  # :nodoc:
+  # the schema of a type, in the JSON Schema dialect of the OpenAPI version being generated
+  macro introspect_schema(type)
+    (openapi_3_0 ? ::JSON::Schema.introspect({{type}}, openapi: true, refs: definitions) : ::JSON::Schema.introspect({{type}}, refs: definitions))
   end
 
   # :nodoc:
   # generates the OpenAPI docs using the provided class and method descriptions
-  def generate_open_api_docs(descriptions : Hash(String, KlassDoc), title : String, version : String, **info)
+  def generate_open_api_docs(descriptions : Hash(String, KlassDoc), title : String, version : String, openapi : String = OPENAPI_VERSIONS[0], **info)
+    raise ArgumentError.new("unsupported OpenAPI version #{openapi}, expected #{OPENAPI_VERSIONS.join(" or ")}") unless openapi.in?(OPENAPI_VERSIONS)
+    # 3.0 uses its own dialect of JSON Schema, 3.1 uses JSON Schema 2020-12
+    openapi_3_0 = openapi == "3.0.3"
+
     # expanded when the method is used, once all the routes are known
     {% begin %}
       # build the OpenAPI document
@@ -212,7 +226,7 @@ module ActionController::OpenAPI
 
         {% request_body = details[:request_body].id %}
         {% if request_body.stringify != "Nil" %}
-          add_schema(response_types, definitions, {{request_body.stringify}}, ::JSON::Schema.introspect({{ request_body }}, openapi: true, refs: definitions))
+          add_schema(response_types, definitions, {{request_body.stringify}}, introspect_schema({{ request_body }}))
         {% end %}
 
         {% responses = {} of Nil => Nil %}
@@ -248,7 +262,7 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            add_schema(response_types, definitions, {{resolved_klass.stringify}}, ::JSON::Schema.introspect({{ resolved_klass }}, openapi: true, refs: definitions))
+            add_schema(response_types, definitions, {{resolved_klass.stringify}}, introspect_schema({{ resolved_klass }}))
           {% end %}
           route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
         {% end %}
@@ -289,7 +303,7 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            add_schema(response_types, definitions, {{resolved_klass.stringify}}, ::JSON::Schema.introspect({{ resolved_klass }}, openapi: true, refs: definitions))
+            add_schema(response_types, definitions, {{resolved_klass.stringify}}, introspect_schema({{ resolved_klass }}))
           {% end %}
           route_response[{{exception_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
         {% end %}
@@ -310,7 +324,7 @@ module ActionController::OpenAPI
                   name: {{ param_name }},
                   in: {{ param[:in] }},
                   required: ({{ param[:required] ? true : nil }}).as(Bool?),
-                  schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true, refs: definitions).to_json,
+                  schema: introspect_schema({{ param[:schema] }}).to_json,
                   docs: {{ param[:docs] }}.as(String?),
                   example: {{ param[:example] }}.as(String?),
                 },
@@ -361,7 +375,7 @@ module ActionController::OpenAPI
                 name: {{ param[:header] || param_name }},
                 in: {{ param[:in] }},
                 required: ({{ param[:required] ? true : nil }}).as(Bool?),
-                schema: ::JSON::Schema.introspect({{ param[:schema] }}, openapi: true, refs: definitions).to_json,
+                schema: introspect_schema({{ param[:schema] }}).to_json,
                 docs: {{ param[:docs] }}.as(String?),
                 example: {{ param[:example] }}.as(String?),
               },
@@ -387,7 +401,7 @@ module ActionController::OpenAPI
       accepts = {{ ActionController::Route::Builder::PARSERS.keys }}
       responders = {{ ActionController::Route::Builder::RESPONDERS.keys }}
 
-      generate_openapi_doc(title, version, info, descriptions, routes, exceptions, filters, response_types, accepts, responders, definitions)
+      generate_openapi_doc(title, version, info, descriptions, routes, exceptions, filters, response_types, accepts, responders, definitions, openapi)
       {% end %}
   end
 
@@ -421,7 +435,7 @@ module ActionController::OpenAPI
   end
 
   # :nodoc:
-  def generate_openapi_doc(title : String, version : String, info, descriptions, routes, exceptions, filters, response_types, accepts, responders, definitions : JSON::Schema::Definitions = JSON::Schema::Definitions.new("#/components/schemas/"))
+  def generate_openapi_doc(title : String, version : String, info, descriptions, routes, exceptions, filters, response_types, accepts, responders, definitions : JSON::Schema::Definitions = JSON::Schema::Definitions.new("#/components/schemas/"), openapi : String = OPENAPI_VERSIONS[0])
     info = info.merge({
       title:   title,
       version: version,
@@ -605,7 +619,7 @@ module ActionController::OpenAPI
     end
 
     {
-      openapi:    "3.0.3",
+      openapi:    openapi,
       info:       info,
       paths:      paths,
       components: components,
@@ -631,7 +645,7 @@ module ActionController::OpenAPI
   # the type of a schema, following references
   def schema_type(schema : JSON::Any?, schemas : Hash(String, JSON::Any), depth : Int32 = 0) : String?
     return unless schema && (hash = schema.as_h?) && depth < 16
-    if type = hash["type"]?.try(&.as_s?)
+    if type = json_type(hash)
       type
     elsif ref = hash["$ref"]?.try(&.as_s?)
       schema_type(schemas[ref.lchop(SCHEMA_REFERENCE)]?, schemas, depth + 1)
@@ -645,12 +659,19 @@ module ActionController::OpenAPI
   end
 
   # :nodoc:
+  # the `type` of a schema, the first that isn't null when it's a list (`["integer", "null"]`)
+  def json_type(schema : Hash(String, JSON::Any)) : String?
+    type = schema["type"]?
+    type.try(&.as_s?) || type.try(&.as_a?).try(&.compact_map(&.as_s?).find(&.!=("null")))
+  end
+
+  # :nodoc:
   # parameter examples are written as they appear in a URL, this converts them to the type
   # of the schema. `nil` if the example doesn't match the schema
   def typed_example(example : String, schema : JSON::Any?, schemas : Hash(String, JSON::Any), depth : Int32 = 0) : JSON::Any?
     return unless schema && (hash = schema.as_h?) && depth < 16
 
-    case hash["type"]?.try(&.as_s?)
+    case json_type(hash)
     when "integer"
       example.to_i64?.try { |value| JSON::Any.new(value) }
     when "number"

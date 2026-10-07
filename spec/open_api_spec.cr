@@ -152,15 +152,47 @@ describe ActionController::OpenAPI do
 
   it "generates openapi docs" do
     result = ActionController::OpenAPI.generate_open_api_docs("title", "version", description: "desc")
-    result[:openapi].should eq "3.0.3"
+    result[:openapi].should eq "3.1.0"
     # includes the controllers defined in other spec files, after the server is required
     result[:paths].size.should eq 77
     result[:info][:description].should eq "desc"
   end
 
-  describe "nested types" do
+  it "generates OpenAPI 3.0.3 on request" do
+    ActionController::OpenAPI.generate_open_api_docs({} of String => ActionController::OpenAPI::KlassDoc, "title", "version", openapi: "3.0.3")[:openapi].should eq "3.0.3"
+    expect_raises(ArgumentError, /3\.1\.0 or 3\.0\.3/) do
+      ActionController::OpenAPI.generate_open_api_docs({} of String => ActionController::OpenAPI::KlassDoc, "title", "version", openapi: "2.0")
+    end
+  end
+
+  describe "OpenAPI 3.1" do
     item_docs = ActionController::OpenAPI::KlassDoc.new("OpenAPIRefs::Item", "an item in a list")
     docs = JSON.parse(ActionController::OpenAPI.generate_open_api_docs({"OpenAPIRefs::Item" => item_docs}, "title", "version").to_json)
+    schemas = docs["components"]["schemas"]
+    ref = ->(name : String) { JSON.parse({"$ref" => "#/components/schemas/OpenAPIRefs.#{name}"}.to_json) }
+
+    it "uses null types rather than nullable" do
+      docs["openapi"].should eq "3.1.0"
+      docs.to_json.should_not contain %("nullable")
+      schemas["OpenAPIRefs.List"]["properties"]["primary"].should eq JSON.parse({"anyOf" => [ref.call("Item"), {"type" => "null"}]}.to_json)
+      docs["paths"]["/openapi_refs"]["get"]["parameters"][0]["schema"].should eq JSON.parse({"anyOf" => [ref.call("Status"), {"type" => "null"}]}.to_json)
+    end
+
+    it "keeps the doc comment and references of nested types" do
+      schemas["OpenAPIRefs.Item"]["description"].should eq "an item in a list"
+      schemas["OpenAPIRefs.List"]["properties"]["items"].should eq JSON.parse({"type" => "array", "items" => ref.call("Item")}.to_json)
+    end
+
+    it "types examples through null unions" do
+      search = docs["paths"]["/openapi_paths/{tenant}/search"]["get"]["parameters"].as_a.to_h { |param| {param["name"].as_s, param} }
+      search["limit"]["example"].should eq JSON::Any.new(10_i64)
+      search["query"]["example"].should eq JSON::Any.new("anything")
+    end
+  end
+
+  describe "nested types" do
+    item_docs = ActionController::OpenAPI::KlassDoc.new("OpenAPIRefs::Item", "an item in a list")
+    docs = JSON.parse(ActionController::OpenAPI.generate_open_api_docs({"OpenAPIRefs::Item" => item_docs}, "title", "version", openapi: "3.0.3").to_json)
     schemas = docs["components"]["schemas"]
     ref = ->(name : String) { JSON.parse({"$ref" => "#/components/schemas/OpenAPIRefs.#{name}"}.to_json) }
 
@@ -217,7 +249,7 @@ describe ActionController::OpenAPI do
   end
 
   describe "OpenAPI validity" do
-    docs = ActionController::OpenAPI.generate_open_api_docs({} of String => ActionController::OpenAPI::KlassDoc, "title", "version")
+    docs = ActionController::OpenAPI.generate_open_api_docs({} of String => ActionController::OpenAPI::KlassDoc, "title", "version", openapi: "3.0.3")
     paths = JSON.parse(docs[:paths].to_json)
     params = ->(path : String) { paths[path]["get"]["parameters"].as_a.to_h { |param| {param["name"].as_s, param} } }
 
