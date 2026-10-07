@@ -190,6 +190,71 @@ module CompositionInheritedEndpoint
   end
 end
 
+module CompositionLibrary
+  abstract class Base < AC::Base
+    base "/composition/library"
+
+    @[AC::Route::Filter(:before_action)]
+    def mark_library
+      response.headers["X-Library"] = "library"
+    end
+  end
+
+  @[AC::MCP(endpoint: true, hide: false)]
+  class Pages < Base
+    base "/composition/library/pages"
+
+    @[AC::Route::GET("/")]
+    def index : String
+      request.path
+    end
+
+    @[AC::MCP(prompt: true)]
+    def explain : String
+      base_route
+    end
+
+    def instructions : String
+      "Library at #{base_route}"
+    end
+  end
+
+  class External < Base
+    base "/composition/outside-library"
+
+    @[AC::Route::GET("/")]
+    def index : String
+      request.path
+    end
+  end
+end
+
+class CompositionLibraryHost < AC::Base
+  base "/composition/library-host"
+  mount "/app", CompositionLibrary::Base
+end
+
+class CompositionLibraryBorrower < AC::Base
+  base "/composition/library-borrower"
+  mount "/page", CompositionLibrary::Pages
+end
+
+module CompositionOwnedMount
+  abstract class Base < AC::Base
+    base "/composition/owned-mount"
+    mount "/auth", Auth
+  end
+
+  class Auth < Base
+    base "/composition/owned-mount/original"
+
+    @[AC::Route::GET("/token")]
+    def token : String
+      request.path
+    end
+  end
+end
+
 class CompositionCycleA < AC::Base
   mount "/b", CompositionCycleB
   mount "/conflicts", CompositionConflicts::Base
@@ -556,5 +621,61 @@ describe AC::Composition do
     HotTopic.new(composition).post("/custom-mcp/42").status_code.should eq 404
     AC::MCPServer.mount(composition, endpoints: false)
     expect_raises(ArgumentError, /conflicting MCP endpoint/) { AC::MCPServer.mount(composition, endpoints: false) }
+  end
+
+  it "keeps an explicitly selected subtree independent of mounts in other applications" do
+    composition = CompositionLibrary::Base.handler
+    composition.routes.map(&.[3]).sort!.should eq ["/composition/library/pages", "/composition/outside-library"]
+    HotTopic.new(composition).get("/composition/library/pages").status_code.should eq 200
+    docs = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    docs[:paths].keys.sort!.should eq ["/composition/library/pages", "/composition/outside-library"]
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    description.toolboxes.flat_map(&.tools).map(&.path).sort!.should eq docs[:paths].keys.sort!
+    description.endpoints.map(&.path).should eq ["/composition/library/pages/mcp"]
+  end
+
+  it "mounts a complete application subtree using paths relative to its root" do
+    composition = CompositionLibraryHost.handler
+    client = HotTopic.new(composition)
+    pages = client.get("/composition/library-host/app/pages")
+    pages.body.should eq %q("/composition/library-host/app/pages")
+    pages.headers["X-Library"].should eq "library"
+    client.get("/composition/library-host/app/composition/outside-library").status_code.should eq 200
+    client.get("/composition/library/pages").status_code.should eq 404
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    endpoint = description.endpoints.first
+    endpoint.path.should eq "/composition/library-host/app/pages/mcp"
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    prompt = endpoint.toolbox.prompts.first
+    request = HTTP::Request.new("POST", "/mcp")
+    invoker.get_prompt(prompt, {} of String => JSON::Any, request).should contain "/composition/library-host/app/pages"
+    instructions = endpoint.instructions_path.should_not be_nil
+    invoker.instructions(instructions, request, {} of String => String).should eq "Library at /composition/library-host/app/pages"
+  end
+
+  it "unifies independently selected and mounted instances of an application" do
+    composition = AC::Composition.new([CompositionLibrary::Base.name, CompositionLibraryHost.name])
+    docs = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    docs[:paths].keys.sort!.should eq ["/composition/library-host/app/composition/outside-library", "/composition/library-host/app/pages", "/composition/library/pages", "/composition/outside-library"]
+    ids = docs[:paths].values.compact_map(&.get.try(&.operation_id))
+    ids.uniq.size.should eq ids.size
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    tools = description.toolboxes.flat_map(&.tools)
+    tools.map(&.path).sort!.should eq docs[:paths].keys.sort!
+    tools.map(&.name).uniq!.size.should eq tools.size
+    description.endpoints.map(&.path).sort!.should eq ["/composition/library-host/app/pages/mcp", "/composition/library/pages/mcp"]
+    automatic = AC::Composition.new
+    automatic.routes.none? { |route| route[3] == "/composition/library/pages" || route[3] == "/composition/outside-library" }.should be_true
+    automatic.routes.select(&.[0].==(CompositionLibrary::Pages.name)).map(&.[3]).sort!.should eq ["/composition/library-borrower/page", "/composition/library-host/app/pages"]
+  end
+
+  it "still relocates a descendant mounted by the selected application's own base" do
+    composition = CompositionOwnedMount::Base.handler
+    composition.routes.map(&.[3]).should eq ["/composition/owned-mount/auth/token"]
+    client = HotTopic.new(composition)
+    client.get("/composition/owned-mount/auth/token").body.should eq %q("/composition/owned-mount/auth/token")
+    client.get("/composition/owned-mount/original/token").status_code.should eq 404
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    description.toolboxes.flat_map(&.tools).map(&.path).should eq ["/composition/owned-mount/auth/token"]
   end
 end

@@ -335,6 +335,10 @@ abstract class ActionController::Base
   # :nodoc:
   macro __create_route_methods__
     {% CONTROLLER_BASES[@type.name.id] = NAMESPACE[0] %}
+    # Resolve targets after all types are declared, in this controller's scope.
+    {% for mount, index in MOUNTS[@type.name.id] || [] of Nil %}
+      {% MOUNTS[@type.name.id][index] = {mount[0], mount[1].resolve} %}
+    {% end %}
     class_getter base_route = {{ NAMESPACE[0] }}
     def base_route : String
       context.controller_base || self.class.base_route

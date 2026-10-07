@@ -67,15 +67,20 @@ class ActionController::Composition
     end
     definition = controllers.find(&.name.==(root)) || raise ArgumentError.new("unknown application root #{root}")
     selected = controllers.select { |controller| controller.name == root || controller.ancestors.includes?(root) }
+    selected_names = selected.map(&.name)
+    local_mounts = mounts.select { |mount| selected_names.includes?(mount.owner) }
+    # Automatic standalone discovery hides all mount-only targets. Explicit roots
+    # and mounted subtrees depend only on declarations within that application.
+    exclusions = !explicit? && public_base.nil? ? mounts : local_mounts
     selected.reject! do |controller|
-      controller.name != root && mounts.any? do |mount|
+      controller.name != root && exclusions.any? do |mount|
         mount.target != root && (controller.name == mount.target || controller.ancestors.includes?(mount.target))
       end
     end
     selected.each do |controller|
       base = public_base ? self.class.join(public_base, self.class.relative(controller.base, definition.base)) : controller.base
       @placements << Placement.new(controller, base)
-      mounts.select(&.owner.==(controller.name)).each do |mount|
+      local_mounts.select(&.owner.==(controller.name)).each do |mount|
         expand(mount.target, self.class.join(base, mount.path), controllers, mounts, stack + [root])
       end
     end
@@ -162,7 +167,7 @@ class ActionController::Composition
       [
         {% for owner, mounts in Base::MOUNTS %}
           {% for mount in mounts %}
-            {% target = mount[1].resolve %}
+            {% target = mount[1] %}
             {% raise "#{owner}: mount target #{target} must inherit ActionController::Base" unless target < ::ActionController::Base %}
             Mount.new({{ owner.stringify }}, {{ mount[0] }}, {{ target.name.stringify }}),
           {% end %}
