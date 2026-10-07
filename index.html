@@ -560,7 +560,7 @@ lean, a session starts with just five tools, plus any <a href="#root-tools-and-p
 | <code>open_toolbox(name)</code> | adds the controller's tools and prompts to the session, sends <code>notifications/tools/list_changed</code> and/or <code>notifications/prompts/list_changed</code>, and returns the tool definitions |
 | <code>close_toolbox(name)</code> | removes them again and sends the same notifications |
 | <code>call_read_only(name, arguments)</code> | runs a read only tool from an open toolbox (or a root tool), for clients that don't refresh their tools when notified |
-| <code>call_tool(name, arguments)</code> | runs any tool from an open toolbox (or a root tool), the same way |</p>
+| <code>call_tool(name, arguments)</code> | runs any tool from an open toolbox (or a root tool), the same way. Both proxies refuse <code>visibility: :card</code> tools |</p>
 <p>Some MCP clients (currently including Claude and ChatGPT) don't re-fetch their tools when
 notified, so the opened tools never appear. <code>open_toolbox</code> returns each tool's name,
 description, <code>inputSchema</code>, annotations and <code>proxy</code> (the proxy tool to run it with), and
@@ -586,7 +586,9 @@ as they would for a regular HTTP request. (<code>Server.before</code> handlers a
 server <span class="o">=</span> <span class="t">ActionController</span><span class="t">::</span><span class="t">Server</span>.new
 <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.mount(server, <span class="s">&quot;/mcp&quot;</span>)
 server.run</code></pre>
-<p><code>mount</code> registers <code>POST</code>, <code>GET</code> and <code>DELETE</code> handlers at the path provided.</p>
+<p><code>mount</code> registers <code>POST</code>, <code>GET</code> and <code>DELETE</code> handlers at the path provided, the OAuth
+protected resource metadata at <code>/.well-known/oauth-protected-resource&lt;path&gt;</code>, and any
+<a href="#controller-endpoints">controller endpoints</a> (<code>endpoints: false</code> skips them).</p>
 <h3><a id="tool-descriptions-mcp.yml" class="anchor" href="#tool-descriptions-mcp.yml">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
@@ -643,7 +645,7 @@ params are top-level properties, and the request body is the <code>body</code> p
 <span class="k">end</span></code></pre>
 <p>Here the toolbox <code>widgets</code> contains the tool <code>widgets_show</code>, which takes the
 arguments <code>{&quot;id&quot;: 1, &quot;detailed&quot;: true}</code>.</p>
-<p>WebSocket routes and routes without annotations are not exposed.</p>
+<p>WebSocket and <code>OPTIONS</code> routes, and routes without annotations, are not exposed.</p>
 <h3><a id="prompts" class="anchor" href="#prompts">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
@@ -778,12 +780,14 @@ folder:</p>
   @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(ui: <span class="s">&quot;bookings/card.html&quot;</span>)] <span class="c"># ./cards/bookings/card.html</span>
   @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id&quot;</span>)]
   <span class="k">def</span> <span class="m">show</span>(id : <span class="t">String</span>) : <span class="t">Booking</span>
+    <span class="t">Booking</span>.find!(id)
   <span class="k">end</span>
 
   <span class="c"># Checks in to a booking, only the card can call this</span>
   @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(visibility: <span class="n">:card</span>)]
   @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/:id/check_in&quot;</span>)]
   <span class="k">def</span> <span class="m">check_in</span>(id : <span class="t">String</span>) : <span class="t">Booking</span>
+    <span class="t">Booking</span>.find!(id).check_in!
   <span class="k">end</span>
 <span class="k">end</span></code></pre>
 <ul>
@@ -914,7 +918,12 @@ compile errors. Read only tools can be run with the <code>call_read_only</code> 
 @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(behaviour: <span class="n">:destructive</span>)]              <span class="c"># a PUT that replaces data</span></code></pre>
 <p><strong>Visibility</strong> controls who can call a tool in hosts that support
 <a href="#ui-cards-mcp-apps">UI cards</a>: <code>:card</code> tools are hidden from the model, and <code>:model</code>
-tools can't be called by cards. Hosts enforce it, so it isn't access control.</p>
+tools can't be called by cards. Hosts enforce it, and the <code>call_tool</code> and
+<code>call_read_only</code> proxies refuse <code>:card</code> tools, but it isn't access control: a client can
+still call a tool by name.</p>
+<p><strong>Upgrading:</strong> <code>read_only:</code> was replaced by <code>behaviour:</code> (<code>read_only: true</code> is
+<code>behaviour: :read_only</code>), and <code>card_only:</code> by <code>visibility: :card</code>. The old names are
+compile errors. Regenerate <code>mcp.yml</code> after upgrading.</p>
 <p><strong>Icons</strong> are added with <code>@[<a href="ActionController/Icon.html">AC::Icon</a>]</code>, which you can repeat for different sizes and
 themes. On a controller they're the default for its tools and prompts, and the icon of
 its toolbox and <a href="#controller-endpoints">endpoint</a>:</p>
@@ -949,6 +958,11 @@ for the server's own icon.</p>
   mcp.allowed_origins <span class="o">=</span> [<span class="s">&quot;https://app.example.com&quot;</span>]              <span class="c"># &quot;*&quot; allows any origin</span>
   mcp.session_timeout <span class="o">=</span> <span class="n">30</span>.minutes
   mcp.excluded_response_headers <span class="o">+=</span> [<span class="s">&quot;X-Runtime&quot;</span>]  <span class="c"># left out of tool results, `*` matches a prefix</span>
+  mcp.icon <span class="s">&quot;icons/logo.svg&quot;</span>, sizes: [<span class="s">&quot;any&quot;</span>]       <span class="c"># the server&#39;s icon, see Icons above</span>
+
+  <span class="c"># UI cards (MCP Apps), see above</span>
+  mcp.ui_base <span class="o">=</span> <span class="s">&quot;./cards&quot;</span>
+  mcp.ui_meta <span class="o">=</span> <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span><span class="t">::</span><span class="t">UIMeta</span>.new(prefers_border: <span class="n">true</span>)
 
   <span class="c"># authentication, all optional (see above)</span>
   mcp.auth_probe <span class="o">=</span> <span class="s">&quot;/api/users/current&quot;</span>
