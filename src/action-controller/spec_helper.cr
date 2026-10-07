@@ -7,14 +7,8 @@ module ActionController
 
     getter route_handler = RouteHandler.new
 
-    def initialize
-      init_routes
-    end
-
-    private def init_routes
-      {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
-        {{klass}}.__init_routes__(self)
-      {% end %}
+    def initialize(composition : Composition = Composition.default)
+      @route_handler = composition.handler.route_handler
     end
 
     def hot_topic

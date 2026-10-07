@@ -10,9 +10,9 @@ One composition registry supplies HTTP routing, route listing, OpenAPI, MCP and 
 
 ## Delivery
 
-- [ ] Prove abstract application bases can implement HTTP::Handler as class objects, with independent `.handler` instances.
-- [ ] Refactor route metadata to preserve independent controller definitions.
-- [ ] Add controller subtree handlers and explicit server composition configuration.
+- [x] Prove handler construction: Crystal rejects class objects extending HTTP::Handler; independent `.handler` instances support abstract application bases.
+- [x] Refactor route metadata to preserve independent controller definitions.
+- [x] Add controller subtree handlers and explicit server composition configuration.
 - [ ] Add replacement-base mounting, cycles/conflict validation and placement-aware URL helpers.
 - [ ] Generate unified OpenAPI and global MCP catalogs, prompts and relocated endpoints from placements.
 - [ ] Scope and validate MCP descriptions against compositions.
@@ -29,4 +29,4 @@ One composition registry supplies HTTP routing, route listing, OpenAPI, MCP and 
 
 ## Review
 
-Implementation in progress. The first checkpoint is the Crystal handler compile spike; no release or merge is authorized by this tracking document.
+Implementation in progress. Subtree handlers, nested/repeated mounts, fallback and placement-aware instance URLs pass the current suite (233 examples). OpenAPI projection is implemented locally; MCP integration and broader mount validation are next. No release or merge is authorized by this tracking document.

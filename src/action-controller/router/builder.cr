@@ -436,7 +436,7 @@ module ActionController::Route::Builder
 
           # OpenAPI route lookup (note full route here is not valid for exceptions and filters)
           {% full_route = (NAMESPACE[0] + ann[0].id.stringify).split("/").reject(&.empty?) %}
-          {% verb_route = lower_route_method.stringify.upcase + "/" + full_route.join("/") %}
+          {% verb_route = @type.name.stringify + "#" + lower_route_method.stringify.upcase + "/" + full_route.join("/") %}
 
           {% if route_method == AC::Route::Filter && ann[0] == :around_action %}
             {% raise "#{@type.name}##{method_name} method must yield" unless method.accepts_block? %}
