@@ -125,7 +125,7 @@ describe ActionController::MCPServer do
       schema = show.input_schema
       schema["required"].as_a.should eq ["id"]
       schema["properties"]["detailed"]["description"].should eq "include the widget size"
-      schema["properties"]["detailed"]["examples"].as_a.should eq ["true"]
+      schema["properties"]["detailed"]["examples"].as_a.should eq [true]
       schema["properties"]["X-Tenant"]["type"].as_a.should eq ["string", "null"]
       schema["properties"]["X-Tenant"]["nullable"]?.should be_nil
     end

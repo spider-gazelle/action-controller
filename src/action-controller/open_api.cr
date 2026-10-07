@@ -429,7 +429,7 @@ module ActionController::OpenAPI
     components = Components.new
     schemas = components.schemas
 
-    operation_id = Hash(String, Int32).new { |hash, key| hash[key] = 0 }
+    operation_ids = Set(String).new
 
     # add all the schemas
     definitions.resolve.each do |name, schema|
@@ -453,22 +453,17 @@ module ActionController::OpenAPI
     paths = Hash(String, Path).new { |hash, key| hash[key] = Path.new }
 
     routes.each do |route_key, route|
-      path_key = route[:route]
       verb = route[:verb]
 
-      # ensure the path is in OpenAPI format
-      path_key = openapi_path(path_key)
-
-      # grab the path object
-      path = paths[path_key]
       operation = Operation.new
+      path_summary = path_description = nil
 
       # see if we have some documentation for the controller
       if controller_docs = descriptions[route[:controller]]?
         if docs = controller_docs.docs
           doc_lines = docs.split("\n", 2)
-          path.summary = doc_lines[0].strip
-          path.description = docs.strip if doc_lines.size > 1
+          path_summary = doc_lines[0].strip
+          path_description = docs.strip if doc_lines.size > 1
         end
 
         # grab the documentation for the route
@@ -489,11 +484,7 @@ module ActionController::OpenAPI
         end
       end
 
-      # ensure we have a unique operation id
       op_id = "#{route[:controller]}_#{route[:method]}"
-      index = operation_id[op_id] + 1
-      operation.operation_id = index > 1 ? "#{op_id}{#{index}}" : op_id
-      operation_id[op_id] = index
       operation.tags << route[:controller].split("::")[-1]
 
       # track request body, filter might be parsing it
@@ -507,7 +498,7 @@ module ActionController::OpenAPI
         param.required = raw_param[:required] ? true : nil
         param.schema = JSON.parse(raw_param[:schema])
         param.description = raw_param[:docs]
-        param.example = raw_param[:example]
+        param.example = raw_param[:example].try { |example| JSON::Any.new(example) }
         param
       end
 
@@ -526,7 +517,7 @@ module ActionController::OpenAPI
             if existing.schema.try(&.[]?("type")) == "null"
               existing.schema = JSON.parse(raw_param[:schema])
               existing.description ||= raw_param[:docs]
-              existing.example ||= raw_param[:example]
+              existing.example ||= raw_param[:example].try { |example| JSON::Any.new(example) }
             end
             next
           end
@@ -537,8 +528,25 @@ module ActionController::OpenAPI
           param.required = raw_param[:required] ? true : nil
           param.schema = JSON.parse(raw_param[:schema])
           param.description = raw_param[:docs]
-          param.example = raw_param[:example]
+          param.example = raw_param[:example].try { |example| JSON::Any.new(example) }
           params << param
+        end
+      end
+
+      params.each do |param|
+        schema = param.schema
+        if param.in == "path"
+          # path params are always required, an untyped one is a string
+          param.required = true
+          param.schema = JSON::Any.new({"type" => JSON::Any.new("string")}) if schema.nil? || schema["type"]? == "null"
+        elsif param.in == "query" && schema_type(schema, schemas) == "array"
+          # array params are a single comma separated value
+          param.style = "form"
+          param.explode = false
+        end
+
+        if example = param.example.try(&.as_s?)
+          param.example = typed_example(example, param.schema, schemas) || param.example
         end
       end
       operation.parameters = params
@@ -552,29 +560,47 @@ module ActionController::OpenAPI
 
       # assemble the list of responses
       route[:route_responses].each do |(is_array, klass_name), response_code|
-        operation.responses[response_code] = build_response(responders, is_array, klass_name, response_code)
+        operation.responses[response_code.to_s] = build_response(responders, is_array, klass_name, response_code)
       end
 
       route[:error_handlers].each do |error_handler|
         handler = exceptions[error_handler]
         handler[:responses]?.try &.each do |(is_array, klass_name), response_code|
-          operation.responses[response_code] = build_response(responders, is_array, klass_name, response_code)
+          operation.responses[response_code.to_s] = build_response(responders, is_array, klass_name, response_code)
         end
       end
 
-      case verb
-      when "get"
-        path.get = operation
-      when "put"
-        path.put = operation
-      when "post"
-        path.post = operation
-      when "patch"
-        path.patch = operation
-      when "delete"
-        path.delete = operation
-      when "websocket"
-        path.get = operation
+      # the full route keeps the operation id, the router also matches it without its optional segments
+      variants = route_variants(route[:route])
+      variants.sort_by! { |(_variant, omitted)| omitted ? 1 : 0 }
+      variants.each do |(variant, omitted)|
+        path_key = openapi_path(variant)
+        variant_operation = operation
+        if omitted
+          present = path_key.scan(/\{([^}]+)\}/).map(&.[1])
+          variant_operation = operation.dup
+          variant_operation.parameters = params.reject { |param| param.in == "path" && !present.includes?(param.name) }
+        end
+        variant_operation.operation_id = unique_operation_id(operation_ids, omitted ? "#{op_id}_without_#{omitted}" : op_id)
+
+        path = paths[path_key]
+        path.summary = path_summary if path_summary
+        path.description = path_description if path_description
+
+        case verb
+        when "get"
+          path.get = variant_operation
+        when "put"
+          path.put = variant_operation
+        when "post"
+          path.post = variant_operation
+        when "patch"
+          path.patch = variant_operation
+        when "delete"
+          path.delete = variant_operation
+        when "websocket"
+          path.get = variant_operation
+        end
       end
     end
 
@@ -584,6 +610,88 @@ module ActionController::OpenAPI
       paths:      paths,
       components: components,
     }
+  end
+
+  # :nodoc:
+  # the routes the router matches: without the optional (`?:`) and glob (`*:`) segments, then
+  # adding each in turn (they always follow the required segments, wherever they're written).
+  # Returns each route with the first optional segment it leaves out
+  def route_variants(route : String) : Array(Tuple(String, String?))
+    parts = route.split('/')
+    optional = parts.select { |part| part.starts_with?("?:") || part.starts_with?("*:") }
+    required = parts.reject { |part| part.starts_with?("?:") || part.starts_with?("*:") }
+    variants = optional.map_with_index do |part, index|
+      {(required + optional[0, index]).join('/'), part.split(':', 2)[1]}.as(Tuple(String, String?))
+    end
+    variants << {(required + optional).join('/'), nil}
+  end
+
+  # :nodoc:
+  # operation ids must be unique, a repeat gets the first free numbered suffix
+  def unique_operation_id(used : Set(String), operation_id : String) : String
+    unique = operation_id
+    index = 1
+    while used.includes?(unique)
+      index += 1
+      unique = "#{operation_id}_#{index}"
+    end
+    used << unique
+    unique
+  end
+
+  private SCHEMA_REFERENCE = "#/components/schemas/"
+
+  # :nodoc:
+  # the type of a schema, following references
+  def schema_type(schema : JSON::Any?, schemas : Hash(String, JSON::Any), depth : Int32 = 0) : String?
+    return unless schema && (hash = schema.as_h?) && depth < 16
+    if type = hash["type"]?.try(&.as_s?)
+      type
+    elsif ref = hash["$ref"]?.try(&.as_s?)
+      schema_type(schemas[ref.lchop(SCHEMA_REFERENCE)]?, schemas, depth + 1)
+    elsif members = (hash["allOf"]? || hash["anyOf"]?).try(&.as_a?)
+      members.each do |member|
+        type = schema_type(member, schemas, depth + 1)
+        return type if type
+      end
+      nil
+    end
+  end
+
+  # :nodoc:
+  # parameter examples are written as they appear in a URL, this converts them to the type
+  # of the schema. `nil` if the example doesn't match the schema
+  def typed_example(example : String, schema : JSON::Any?, schemas : Hash(String, JSON::Any), depth : Int32 = 0) : JSON::Any?
+    return unless schema && (hash = schema.as_h?) && depth < 16
+
+    case hash["type"]?.try(&.as_s?)
+    when "integer"
+      example.to_i64?.try { |value| JSON::Any.new(value) }
+    when "number"
+      example.to_f64?.try { |value| JSON::Any.new(value) }
+    when "boolean"
+      JSON::Any.new(example == "true") if example.in?("true", "false")
+    when "array"
+      items = [] of JSON::Any
+      example.split(',').each do |item|
+        next if (item = item.strip).empty?
+        return unless typed = typed_example(item, hash["items"]?, schemas, depth + 1)
+        items << typed
+      end
+      JSON::Any.new(items)
+    when "string"
+      JSON::Any.new(example)
+    else
+      if ref = hash["$ref"]?.try(&.as_s?)
+        typed_example(example, schemas[ref.lchop(SCHEMA_REFERENCE)]?, schemas, depth + 1)
+      elsif members = (hash["allOf"]? || hash["anyOf"]?).try(&.as_a?)
+        members.each do |member|
+          typed = typed_example(example, member, schemas, depth + 1)
+          return typed if typed
+        end
+        nil
+      end
+    end
   end
 
   # :nodoc:

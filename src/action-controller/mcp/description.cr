@@ -501,6 +501,9 @@ module ActionController::MCPServer
     required = [] of String
     params = [] of ToolParam
 
+    # optional (`?:`) and glob (`*:`) path segments can be left out
+    optional = route[:route].split('/').select { |part| part.starts_with?("?:") || part.starts_with?("*:") }.map(&.split(':', 2)[1])
+
     operation.parameters.try &.each do |param|
       param_name = param.name.as(String)
       in_path = param.in == "path"
@@ -510,9 +513,11 @@ module ActionController::MCPServer
 
       schema = param.schema.try(&.as_h?).try(&.dup) || {} of String => JSON::Any
       schema["description"] = JSON::Any.new(param.description.as(String)) if param.description
-      schema["examples"] = JSON::Any.new([JSON::Any.new(param.example.as(String))]) if param.example
+      if example = param.example
+        schema["examples"] = JSON::Any.new([example])
+      end
       properties[param_name] = JSON::Any.new(schema)
-      required << param_name if param.required
+      required << param_name if param.required && !optional.includes?(param_name)
     end
 
     body = nil

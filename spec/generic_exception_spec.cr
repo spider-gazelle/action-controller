@@ -26,8 +26,8 @@ describe "exception handlers for generic exceptions" do
   it "documents the handler responses in OpenAPI" do
     docs = ActionController::OpenAPI.generate_open_api_docs("title", "version")
     generic = docs[:paths]["/generic_errors/{code}"].get.should_not be_nil
-    generic.responses.keys.should contain 400
+    generic.responses.keys.should contain "400"
     specific = docs[:paths]["/specific_generic_error/{code}"].get.should_not be_nil
-    specific.responses.keys.should contain 418
+    specific.responses.keys.should contain "418"
   end
 end

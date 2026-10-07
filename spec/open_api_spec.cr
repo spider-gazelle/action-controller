@@ -88,6 +88,62 @@ class OpenAPIRefs < ActionController::Base
   end
 end
 
+# routes the OpenAPI specs use to check the document is valid OpenAPI 3.0
+class OpenAPIPaths < ActionController::Base
+  # an untyped path param, read from the route params
+  base "/openapi_paths/:tenant"
+
+  getter tenant : String { route_params["tenant"] }
+
+  struct CommaList
+    def convert(raw : String)
+      raw.split(',')
+    end
+  end
+
+  @[AC::Route::GET("/eink/:item_id/?:expires_after")]
+  def eink(item_id : String, expires_after : Int64? = nil) : String
+    "#{tenant} #{item_id} #{expires_after}"
+  end
+
+  # the router matches optional segments after the required ones: `/mid/groups/5`
+  @[AC::Route::GET("/mid/?:user_id/groups")]
+  def mid(user_id : Int64? = nil) : String
+    "#{user_id}"
+  end
+
+  @[AC::Route::GET("/files/:id/*:file_name")]
+  def file(id : String, file_name : String = "file") : String
+    "#{id} #{file_name}"
+  end
+
+  @[AC::Route::GET("/search", converters: {tags: CommaList})]
+  def search(
+    @[AC::Param::Info(example: "10")]
+    limit : Int32 = 10,
+    @[AC::Param::Info(example: "true")]
+    deep : Bool = false,
+    @[AC::Param::Info(example: "zone-1,zone-2")]
+    tags : Array(String) = [] of String,
+    @[AC::Param::Info(example: "anything")]
+    query : String? = nil,
+  ) : String
+    "#{limit} #{deep} #{tags} #{query}"
+  end
+
+  # two routes, the second needs a unique operationId that isn't `listing_2`'s
+  @[AC::Route::GET("/listing")]
+  @[AC::Route::GET("/listing/all")]
+  def listing : String
+    "listing"
+  end
+
+  @[AC::Route::GET("/listing_two")]
+  def listing_2 : String
+    "listing 2"
+  end
+end
+
 describe ActionController::OpenAPI do
   it "extracts route descriptions" do
     result = ActionController::OpenAPI.extract_route_descriptions
@@ -98,7 +154,7 @@ describe ActionController::OpenAPI do
     result = ActionController::OpenAPI.generate_open_api_docs("title", "version", description: "desc")
     result[:openapi].should eq "3.0.3"
     # includes the controllers defined in other spec files, after the server is required
-    result[:paths].size.should eq 66
+    result[:paths].size.should eq 77
     result[:info][:description].should eq "desc"
   end
 
@@ -157,6 +213,79 @@ describe ActionController::OpenAPI do
       create = tools.find!(&.name.==("open_api_refs_create"))
       create.input_schema["properties"]["body"].should eq JSON.parse({"$ref" => "#/$defs/OpenAPIRefs.List"}.to_json)
       create.input_schema["$defs"].as_h.keys.sort!.should eq ["OpenAPIRefs.Item", "OpenAPIRefs.List", "OpenAPIRefs.Status"]
+    end
+  end
+
+  describe "OpenAPI validity" do
+    docs = ActionController::OpenAPI.generate_open_api_docs({} of String => ActionController::OpenAPI::KlassDoc, "title", "version")
+    paths = JSON.parse(docs[:paths].to_json)
+    params = ->(path : String) { paths[path]["get"]["parameters"].as_a.to_h { |param| {param["name"].as_s, param} } }
+
+    it "writes response codes as strings" do
+      yaml = YAML.parse(docs.to_yaml)
+      yaml["paths"]["/openapi_paths/{tenant}/listing_two"]["get"]["responses"].as_h.keys.map(&.raw).should eq ["200"]
+    end
+
+    it "describes untyped path params as strings" do
+      tenant = params.call("/openapi_paths/{tenant}/listing_two")["tenant"]
+      tenant["in"].should eq "path"
+      tenant["required"].should be_true
+      tenant["schema"].should eq JSON.parse(%({"type":"string"}))
+    end
+
+    it "lists a path for each optional segment, as the router does" do
+      absent = params.call("/openapi_paths/{tenant}/eink/{item_id}")
+      absent.keys.should_not contain "expires_after"
+      paths["/openapi_paths/{tenant}/eink/{item_id}"]["get"]["operationId"].should eq "OpenAPIPaths_eink_without_expires_after"
+
+      present = params.call("/openapi_paths/{tenant}/eink/{item_id}/{expires_after}")
+      present["expires_after"]["in"].should eq "path"
+      present["expires_after"]["required"].should be_true
+      paths["/openapi_paths/{tenant}/eink/{item_id}/{expires_after}"]["get"]["operationId"].should eq "OpenAPIPaths_eink"
+
+      paths["/openapi_paths/{tenant}/mid/groups"]["get"]["operationId"].should eq "OpenAPIPaths_mid_without_user_id"
+      paths["/openapi_paths/{tenant}/mid/groups/{user_id}"]["get"]["operationId"].should eq "OpenAPIPaths_mid"
+      paths["/openapi_paths/{tenant}/mid/{user_id}/groups"]?.should be_nil
+
+      params.call("/openapi_paths/{tenant}/files/{id}").keys.should_not contain "file_name"
+      glob = params.call("/openapi_paths/{tenant}/files/{id}/{file_name}")["file_name"]
+      glob["in"].should eq "path"
+      glob["required"].should be_true
+    end
+
+    it "gives every operation a unique, URL safe operationId" do
+      ids = paths.as_h.values.flat_map { |path| path.as_h.values.compact_map { |op| op.as_h?.try(&.["operationId"]?.try(&.as_s)) } }
+      ids.uniq.size.should eq ids.size
+      ids.each(&.should(match(/\A[A-Za-z0-9_.:~-]+\z/)))
+      listing = ["/openapi_paths/{tenant}/listing", "/openapi_paths/{tenant}/listing/all", "/openapi_paths/{tenant}/listing_two"].map { |path| paths[path]["get"]["operationId"].as_s }
+      listing.uniq.size.should eq 3
+    end
+
+    it "types examples by their schema" do
+      search = params.call("/openapi_paths/{tenant}/search")
+      search["limit"]["example"].should eq JSON::Any.new(10_i64)
+      search["deep"]["example"].should eq JSON::Any.new(true)
+      search["tags"]["example"].should eq JSON.parse(%(["zone-1","zone-2"]))
+      search["query"]["example"].should eq JSON::Any.new("anything")
+    end
+
+    it "sends array query params as a single comma separated value" do
+      tags = params.call("/openapi_paths/{tenant}/search")["tags"]
+      tags["style"].should eq "form"
+      tags["explode"].should eq false
+      params.call("/openapi_paths/{tenant}/search")["limit"]["explode"]?.should be_nil
+    end
+
+    it "keeps optional path segments optional for MCP tools" do
+      description = ActionController::MCPServer.generate_description({} of String => ActionController::OpenAPI::KlassDoc)
+      toolbox = description.toolbox?("open_api_paths").should_not be_nil
+      eink = toolbox.tools.find!(&.name.==("open_api_paths_eink"))
+      eink.input_schema["required"].as_a.map(&.as_s).sort!.should eq ["item_id", "tenant"]
+      eink.input_schema["properties"]["expires_after"]["examples"]?.should be_nil
+      file = toolbox.tools.find!(&.name.==("open_api_paths_file"))
+      file.input_schema["required"].as_a.map(&.as_s).sort!.should eq ["id", "tenant"]
+      search = toolbox.tools.find!(&.name.==("open_api_paths_search"))
+      search.input_schema["properties"]["limit"]["examples"].should eq JSON.parse("[10]")
     end
   end
 end
