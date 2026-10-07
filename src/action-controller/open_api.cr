@@ -185,8 +185,8 @@ module ActionController::OpenAPI
   #
   # `openapi` is the version of the document, `"3.1.0"` (the default) or `"3.0.3"`.
   # the info hash splat accepts any of the keys from the [info object](https://swagger.io/specification/#info-object)
-  def generate_open_api_docs(title : String, version : String, openapi : String = OPENAPI_VERSIONS[0], **info)
-    generate_open_api_docs(extract_route_descriptions, title, version, openapi, **info)
+  def generate_open_api_docs(title : String, version : String, openapi : String = OPENAPI_VERSIONS[0], composition : Composition = Composition.default, **info)
+    generate_open_api_docs(extract_route_descriptions, title, version, openapi, composition, **info)
   end
 
   # :nodoc:
@@ -197,7 +197,7 @@ module ActionController::OpenAPI
 
   # :nodoc:
   # generates the OpenAPI docs using the provided class and method descriptions
-  def generate_open_api_docs(descriptions : Hash(String, KlassDoc), title : String, version : String, openapi : String = OPENAPI_VERSIONS[0], **info)
+  def generate_open_api_docs(descriptions : Hash(String, KlassDoc), title : String, version : String, openapi : String = OPENAPI_VERSIONS[0], composition : Composition = Composition.default, **info)
     raise ArgumentError.new("unsupported OpenAPI version #{openapi}, expected #{OPENAPI_VERSIONS.join(" or ")}") unless openapi.in?(OPENAPI_VERSIONS)
     # 3.0 uses its own dialect of JSON Schema, 3.1 uses JSON Schema 2020-12
     openapi_3_0 = openapi == "3.0.3"
@@ -219,7 +219,7 @@ module ActionController::OpenAPI
       # * default response will include all the other responses types (split up and differentiate)
       # * ignore array types (need to reference the internal type [if possible])
       {% for route_key, details in Route::Builder::OPENAPI_ROUTES %}
-        {% if !details[:mcp_prompt] %}
+        {% if !details[:mcp_prompt] && Base::CONCRETE_CONTROLLERS[details[:controller].id] %}
         {% default_type = details[:default_response][0].resolve %}
         {% default_code = details[:default_response][1] %}
         {% default_specified = details[:default_response][2] %}
@@ -353,7 +353,7 @@ module ActionController::OpenAPI
 
       routes = {} of String => RouteDetails
       {% for route_key, details in Route::Builder::OPENAPI_ROUTES %}
-        {% if !details[:mcp_prompt] %}
+        {% if !details[:mcp_prompt] && Base::CONCRETE_CONTROLLERS[details[:controller].id] %}
         # the filters applied to this route
         {% filters = Base::OPENAPI_FILTER_MAP[route_key] %}
         {% errors = Base::OPENAPI_ERRORS_MAP[route_key] %}
@@ -401,8 +401,36 @@ module ActionController::OpenAPI
       accepts = {{ ActionController::Route::Builder::PARSERS.keys }}
       responders = {{ ActionController::Route::Builder::RESPONDERS.keys }}
 
-      generate_openapi_doc(title, version, info, descriptions, routes, exceptions, filters, response_types, accepts, responders, definitions, openapi)
+      generate_openapi_doc(title, version, info, descriptions, placed_routes(routes, composition), exceptions, filters, response_types, accepts, responders, definitions, openapi)
       {% end %}
+  end
+
+  # :nodoc:
+  def placed_routes(routes : Hash(String, RouteDetails), composition : Composition) : Hash(String, RouteDetails)
+    placed = {} of String => RouteDetails
+    composition.placements.each_with_index do |placement, index|
+      routes.each do |key, route|
+        next unless route[:controller] == placement.controller.name
+        path = placement.path(route[:route])
+        path_names = path.split('/').select { |segment| segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:") }.map { |segment| segment.split(':', 2)[1] }
+        parameters = route[:params].reject { |param| param[:in] == :path && !path_names.includes?(param[:name]) }
+        path.split('/').each do |segment|
+          next unless segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:")
+          name = segment.split(':', 2)[1]
+          next if parameters.any? { |param| param[:in] == :path && param[:name] == name }
+          parameters << {
+            name:     name,
+            in:       :path,
+            required: segment.starts_with?(':') ? true.as(Bool?) : nil.as(Bool?),
+            schema:   %({"type":"string"}),
+            docs:     nil.as(String?),
+            example:  nil.as(String?),
+          }
+        end
+        placed["#{index}:#{key}"] = route.merge(route: path, params: parameters)
+      end
+    end
+    placed
   end
 
   # :nodoc:

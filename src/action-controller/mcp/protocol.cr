@@ -38,7 +38,7 @@ module ActionController::MCPServer
     }
 
     # `endpoint` is the path template of a controller endpoint, `nil` for the global server
-    def initialize(@invoker : Invoker, @endpoint : String? = nil)
+    def initialize(@invoker : Invoker, @endpoint : String? = nil, @composition : Composition = Composition.default)
     end
 
     # a controller endpoint lists every tool directly, there are no toolboxes
@@ -48,7 +48,7 @@ module ActionController::MCPServer
 
     private def endpoint : Endpoint
       path = @endpoint.as(String)
-      MCPServer.description.endpoint?(path) || raise RPCError.new(RPCError::INTERNAL_ERROR, "No MCP description for #{path}")
+      MCPServer.description(@composition).endpoint?(path) || raise RPCError.new(RPCError::INTERNAL_ERROR, "No MCP description for #{path}")
     end
 
     # the `initialize` result for the negotiated protocol version
@@ -120,7 +120,7 @@ module ActionController::MCPServer
     end
 
     private def description : Description
-      flat? ? endpoint.description : MCPServer.description
+      flat? ? endpoint.description : MCPServer.description(@composition)
     end
 
     # MCP Apps cards are described when there are cards to render. Every client is

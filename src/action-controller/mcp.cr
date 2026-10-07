@@ -172,27 +172,30 @@ module ActionController::MCPServer
     !!(authenticator || auth_probe || resource_metadata)
   end
 
-  @@description : Description? = nil
+  @@descriptions = {} of Tuple(String, String) => Description
   @@description_lock = Mutex.new
 
   # the tool descriptions, lazily loaded from `description_path`.
   #
   # if the file doesn't exist the description is generated from the compiled
   # routes, however it will not include the documentation comments
-  def description : Description
-    @@description || @@description_lock.synchronize do
-      @@description ||= load_description
+  def description(composition : Composition = Composition.default) : Description
+    @@description_lock.synchronize do
+      @@descriptions[{composition.signature, description_path}] ||= load_description(composition)
     end
   end
 
   # replaces the current description, `nil` will reload it on next use
   def description=(description : Description?)
-    @@description_lock.synchronize { @@description = description }
+    @@description_lock.synchronize do
+      @@descriptions.clear
+      @@descriptions[{Composition.default.signature, description_path}] = description if description
+    end
   end
 
   # generates the description, including source code comments, and saves it to a file
-  def write_description(path : String = description_path) : Nil
-    File.write(path, generate_description.to_yaml)
+  def write_description(path : String = description_path, composition : Composition = Composition.default) : Nil
+    File.write(path, generate_description(composition: composition).to_yaml)
   end
 
   # mounts the MCP endpoint at the path provided.
@@ -202,15 +205,31 @@ module ActionController::MCPServer
   #
   # `endpoints: true` also mounts the controller endpoints, `@[AC::MCP(endpoint: true)]`,
   # see `mount_endpoints`
-  def mount(router : Router, path : String = "/mcp", endpoints : Bool = true) : Transport
-    mount_endpoints(router) if endpoints
-    mount_transport(router, Transport.new(router.route_handler, path))
+  def mount(router : Router, path : String = "/mcp", endpoints : Bool = true, composition : Composition = composition_for(router)) : Transport
+    declarations = endpoints ? controller_endpoints(composition) : [] of Tuple(String, String)
+    validate_endpoints!(composition, declarations + [{"global MCP", path}])
+    declarations.each do |(_controller, endpoint_path)|
+      mount_transport(router, Transport.new(router.route_handler, endpoint_path, endpoint: true, composition: composition))
+    end
+    mount_transport(router, Transport.new(router.route_handler, path, composition: composition))
   end
 
   # mounts a server for each controller annotated `@[AC::MCP(endpoint: true)]`
-  def mount_endpoints(router : Router) : Array(Transport)
-    endpoint_paths.map do |path|
-      mount_transport(router, Transport.new(router.route_handler, path, endpoint: true))
+  def mount_endpoints(router : Router, composition : Composition = composition_for(router)) : Array(Transport)
+    declarations = controller_endpoints(composition)
+    validate_endpoints!(composition, declarations)
+    declarations.map do |(_controller, path)|
+      mount_transport(router, Transport.new(router.route_handler, path, endpoint: true, composition: composition))
+    end
+  end
+
+  private def composition_for(router : Router) : Composition
+    if router.is_a?(Composition)
+      router
+    elsif router.responds_to?(:composition)
+      router.composition
+    else
+      Composition.default
     end
   end
 
@@ -224,7 +243,11 @@ module ActionController::MCPServer
   end
 
   # the path templates of the controller endpoints, `@[AC::MCP(endpoint: true)]`
-  def endpoint_paths : Array(String)
+  def endpoint_paths(composition : Composition = Composition.default) : Array(String)
+    controller_endpoints(composition).map(&.[1]).uniq!
+  end
+
+  private def controller_endpoints(composition : Composition) : Array(Tuple(String, String))
     # expanded when the method is used, once all the routes are known
     {% begin %}
       concrete = [
@@ -241,21 +264,50 @@ module ActionController::MCPServer
         {% end %}
       ] of Tuple(String, String)
 
-      paths.select { |(controller, _path)| concrete.includes?(controller) }.map(&.[1]).uniq!
+      composition.placements.flat_map do |placement|
+        paths.select { |(controller, _path)| controller == placement.controller.name && concrete.includes?(controller) }.map { |(_, path)| {"#{placement.controller.name}@#{placement.base}", placement.path(path)} }
+      end.uniq!
     {% end %}
   end
 
-  protected def load_description : Description
+  private def validate_endpoints!(composition : Composition, declarations : Array(Tuple(String, String))) : Nil
+    seen = {} of Tuple(String, String) => String
+    composition.routes.each do |route|
+      Router::RouteHandler.optional_variants(route[3]).each do |(path, _)|
+        method = route[2].to_s.upcase
+        normalized = Composition.pattern(path)
+        seen[{method, normalized}] = "#{route[0]}##{route[1]}"
+        seen[{"HEAD", normalized}] = "#{route[0]}##{route[1]}" if method == "GET"
+      end
+    end
+    declarations.each do |(owner, path)|
+      [{path, %w(GET HEAD POST DELETE)}, {Transport::RESOURCE_METADATA_PATH + path, %w(GET HEAD)}].each do |(endpoint_path, methods)|
+        Router::RouteHandler.optional_variants(endpoint_path).each do |(variant, _)|
+          methods.each do |method|
+            key = {method, Composition.pattern(variant)}
+            if previous = seen[key]?
+              raise ArgumentError.new("conflicting MCP endpoint #{method} #{variant}: #{previous} and #{owner}")
+            end
+            seen[key] = owner
+          end
+        end
+      end
+    end
+  end
+
+  protected def load_description(composition : Composition) : Description
     if File.exists?(description_path)
       description = Description.from_yaml(File.read(description_path))
-      missing = endpoint_paths.reject { |path| description.endpoint?(path) }
-      return description if missing.empty?
+      missing = endpoint_paths(composition).reject { |path| description.endpoint?(path) }
+      compatible = description.composition_id == composition.signature ||
+                   (description.composition_id.nil? && !composition.explicit? && Composition.mounts.empty?)
+      return description if missing.empty? && compatible
 
-      Log.warn { "#{description_path} is out of date, it's missing the endpoints #{missing.join(", ")}. Regenerate it using `ActionController::MCPServer.write_description`" }
-      generate_description(docs: false)
+      Log.warn { "#{description_path} is out of date for this composition (missing endpoints: #{missing.join(", ")}). Regenerate it using `ActionController::MCPServer.write_description`" }
+      generate_description(docs: false, composition: composition)
     else
       Log.warn { "#{description_path} not found, tool descriptions will be missing. Generate it using `ActionController::MCPServer.write_description`" }
-      generate_description(docs: false)
+      generate_description(docs: false, composition: composition)
     end
   end
 end

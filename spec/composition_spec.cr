@@ -1,5 +1,6 @@
 require "./spec_helper"
 require "../src/action-controller/server"
+require "../src/action-controller/mcp"
 
 module ComposableFirst
   abstract class Base < AC::Base
@@ -48,6 +49,7 @@ private class CompositionFallback
   end
 end
 
+@[AC::MCP(endpoint: true, hide: false)]
 class CompositionOAuth < AC::Base
   base "/composition/oauth"
 
@@ -58,7 +60,21 @@ class CompositionOAuth < AC::Base
 
   @[AC::Route::GET("/redirect")]
   def redirect
-    redirect_to token_path
+    redirect_to route_path(:token)
+  end
+
+  @[AC::MCP(prompt: true)]
+  def explain : String
+    "OAuth at #{base_route}"
+  end
+
+  def instructions : String
+    "Use OAuth at #{base_route}"
+  end
+
+  @[AC::Route::WebSocket("/socket")]
+  def socket(socket)
+    socket.on_message { |message| socket.send(message) }
   end
 end
 
@@ -71,6 +87,33 @@ end
 class CompositionOuter < AC::Base
   base "/composition/outer"
   mount "/inner/", CompositionHost
+end
+
+class CompositionAccountHost < AC::Base
+  base "/composition/accounts/:account_id"
+  mount "/auth", CompositionOAuth
+end
+
+module CompositionInherited
+  abstract class Base < AC::Base
+    @[AC::Route::GET("/")]
+    def index : String
+      "inherited"
+    end
+  end
+
+  class Pages < Base
+    base "/composition/inherited"
+  end
+end
+
+class CompositionBound < AC::Base
+  base "/composition/bound/:id"
+
+  @[AC::Route::GET("/")]
+  def index(id : String) : String
+    id
+  end
 end
 
 class CompositionCycleA < AC::Base
@@ -109,7 +152,7 @@ describe AC::Composition do
     client = HotTopic.new(handler)
     client.get("/composition/first").body.should eq %q("first")
     client.get("/composition/second").status_code.should eq 404
-    handler.routes.map(&.[0]).uniq.should eq ["ComposableFirst::Pages"]
+    handler.routes.map(&.[0]).uniq!.should eq ["ComposableFirst::Pages"]
   end
 
   it "passes route misses through independent handlers" do
@@ -185,5 +228,146 @@ describe AC::Composition do
     expect_raises(ArgumentError, /mount cycle/) { CompositionCycleA.handler }
     expect_raises(ArgumentError, /conflicting route GET/) { CompositionConflicts::Base.handler }
     expect_raises(ArgumentError, /unknown application root/) { AC::Composition.new(["MissingApplication"]) }
+  end
+
+  it "binds parameterized mounts and builds public URLs outside a request" do
+    composition = CompositionAccountHost.handler
+    client = HotTopic.new(composition)
+    client.get("/composition/accounts/42/auth/token").status_code.should eq 200
+    client.get("/composition/accounts/42/auth/redirect").headers["Location"].should eq "/composition/accounts/42/auth/token"
+    composition.url_for(CompositionOAuth, :token, account_id: 42).should eq "/composition/accounts/42/auth/token"
+    repeated = CompositionHost.handler
+    expect_raises(AC::InvalidRoute, /mount_base/) { repeated.url_for(CompositionOAuth, :token) }
+    repeated.url_for(CompositionOAuth, :token, mount_base: "/composition/host/backup").should eq "/composition/host/backup/token"
+  end
+
+  it "generates unified OpenAPI using effective public paths and unique operations" do
+    composition = CompositionHost.handler
+    doc = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    doc[:paths].keys.sort!.should eq ["/composition/host/auth/redirect", "/composition/host/auth/socket", "/composition/host/auth/token", "/composition/host/backup/redirect", "/composition/host/backup/socket", "/composition/host/backup/token"]
+    ids = doc[:paths].values.compact_map(&.get.try(&.operation_id))
+    ids.uniq.size.should eq ids.size
+    account = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: CompositionAccountHost.handler)
+    operation = account[:paths]["/composition/accounts/{account_id}/auth/token"].get.should_not be_nil
+    param = (operation.parameters.should_not be_nil).first
+    param.name.should eq "account_id"
+    param.in.should eq "path"
+    param.required.should be_true
+  end
+
+  it "exposes repeated MCP tools, prompts and relocated controller endpoints" do
+    composition = CompositionHost.handler
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    description.toolboxes.size.should eq 2
+    description.toolboxes.map(&.name).uniq!.size.should eq 2
+    tools = description.toolboxes.flat_map(&.tools)
+    tools.map(&.name).uniq!.size.should eq tools.size
+    tools.select(&.path.ends_with?("/token")).map(&.path).sort!.should eq ["/composition/host/auth/token", "/composition/host/backup/token"]
+    description.endpoints.map(&.path).sort!.should eq ["/composition/host/auth/mcp", "/composition/host/backup/mcp"]
+    prompts = description.toolboxes.flat_map(&.prompts)
+    prompts.size.should eq 2
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    request = HTTP::Request.new("POST", "/mcp")
+    result = JSON.parse(invoker.call(tools.find!(&.path.==("/composition/host/auth/token")), {} of String => JSON::Any, request))
+    result.to_json.should contain "/composition/host/auth/token"
+    instructions_path = description.endpoints.first.instructions_path.should_not be_nil
+    invoker.instructions(instructions_path, request, {} of String => String).should contain "Use OAuth at /composition/host/"
+    composition.routes.none?(&.[3].includes?("__mcp_prompt__")).should be_true
+    invoker.get_prompt(prompts.first, {} of String => JSON::Any, request).should contain "OAuth at /composition/host/"
+  end
+
+  it "keeps inherited route metadata aligned with concrete controller dispatch" do
+    composition = CompositionInherited::Base.handler
+    HotTopic.new(composition).get("/composition/inherited").body.should eq %q("inherited")
+    doc = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    doc[:paths].keys.should eq ["/composition/inherited"]
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    description.toolboxes.flat_map(&.tools).map(&.path).should eq ["/composition/inherited"]
+  end
+
+  it "scopes cached descriptions to each composition" do
+    path = File.tempname("composition-mcp", ".yml")
+    previous = AC::MCPServer.description_path
+    begin
+      AC::MCPServer.description_path = path
+      first = ComposableFirst::Base.handler
+      second = ComposableSecond::Base.handler
+      File.write(path, AC::MCPServer.generate_description(docs: false, composition: first).to_yaml)
+      first_description = AC::MCPServer.description(first)
+      second_description = AC::MCPServer.description(second)
+      first_description.composition_id.should eq first.signature
+      second_description.composition_id.should eq second.signature
+      second_description.toolboxes.flat_map(&.tools).map(&.path).should eq ["/composition/second"]
+      AC::MCPServer.description(first).should be first_description
+    ensure
+      AC::MCPServer.description_path = previous
+      File.delete(path) if File.exists?(path)
+      AC::MCPServer.description = nil
+    end
+  end
+
+  it "serves a global MCP endpoint using the mounted app's composition" do
+    composition = CompositionAccountHost.handler
+    AC::MCPServer.mount(composition)
+    client = HotTopic.new(composition)
+    headers = HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json, text/event-stream"}
+    initialize = client.post("/mcp", headers: headers, body: {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}.to_json)
+    initialize.status_code.should eq 200
+    headers["Mcp-Session-Id"] = initialize.headers["Mcp-Session-Id"]
+    catalog = AC::MCPServer.description(composition)
+    box = catalog.toolboxes.first
+    client.post("/mcp", headers: headers, body: {jsonrpc: "2.0", id: 2, method: "tools/call", params: {name: "open_toolbox", arguments: {name: box.name}}}.to_json).status_code.should eq 200
+    tool = box.tools.find!(&.path.ends_with?("/token"))
+    response = client.post("/mcp", headers: headers, body: {jsonrpc: "2.0", id: 3, method: "tools/call", params: {name: tool.name, arguments: {account_id: "42"}}}.to_json)
+    response.status_code.should eq 200
+    JSON.parse(response.body)["result"].to_json.should contain "/composition/accounts/42/auth/token"
+    endpoint = client.post("/composition/accounts/42/auth/mcp", headers: HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json, text/event-stream"}, body: {jsonrpc: "2.0", id: 4, method: "initialize", params: {protocolVersion: "2025-11-25"}}.to_json)
+    endpoint.status_code.should eq 200
+    JSON.parse(endpoint.body)["result"]["instructions"].as_s.should contain "/composition/accounts/:account_id/auth"
+  end
+
+  it "preserves mounted HEAD and WebSocket handling" do
+    composition = CompositionHost.handler
+    client = AC::SpecHelper.new(composition).hot_topic
+    client.head("/composition/host/auth/token").body.should be_empty
+    socket = client.establish_ws("/composition/host/auth/socket")
+    done = Channel(String | Exception).new(1)
+    spawn do
+      socket.on_message do |message|
+        socket.close
+        done.send(message)
+      end
+      socket.send("echo")
+      socket.run
+    rescue error
+      done.send(error)
+    end
+    select
+    when result = done.receive
+      raise result if result.is_a?(Exception)
+      result.should eq "echo"
+    when timeout(5.seconds)
+      fail "mounted WebSocket timed out"
+    end
+  ensure
+    socket.try(&.close)
+  end
+
+  it "rejects MCP endpoints that compete with application routes" do
+    composition = ComposableFirst::Base.handler
+    expect_raises(ArgumentError, /conflicting MCP endpoint GET/) do
+      AC::MCPServer.mount(composition, "/composition/first", endpoints: false)
+    end
+    HotTopic.new(composition).get("/composition/first").body.should eq %q("first")
+  end
+
+  it "rejects placements with removed or duplicate required path parameters" do
+    controller = AC::Composition.controllers.find!(&.name.==(CompositionBound.name))
+    expect_raises(ArgumentError, /removes required path parameters id/) do
+      AC::Composition.new([AC::Composition::Placement.new(controller, "/bad")], true)
+    end
+    expect_raises(ArgumentError, /ambiguous path parameters/) do
+      AC::Composition.new([AC::Composition::Placement.new(controller, "/bad/:id/:id")], true)
+    end
   end
 end

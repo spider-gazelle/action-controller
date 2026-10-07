@@ -13,9 +13,9 @@ One composition registry supplies HTTP routing, route listing, OpenAPI, MCP and 
 - [x] Prove handler construction: Crystal rejects class objects extending HTTP::Handler; independent `.handler` instances support abstract application bases.
 - [x] Refactor route metadata to preserve independent controller definitions.
 - [x] Add controller subtree handlers and explicit server composition configuration.
-- [ ] Add replacement-base mounting, cycles/conflict validation and placement-aware URL helpers.
-- [ ] Generate unified OpenAPI and global MCP catalogs, prompts and relocated endpoints from placements.
-- [ ] Scope and validate MCP descriptions against compositions.
+- [x] Add replacement-base mounting, cycles/conflict validation and placement-aware URL helpers.
+- [x] Generate unified OpenAPI and global MCP catalogs, prompts and relocated endpoints from placements.
+- [x] Scope and validate MCP descriptions against compositions.
 - [ ] Verify unchanged template and composed fixtures; document the public APIs.
 
 ## Acceptance checks
@@ -29,4 +29,4 @@ One composition registry supplies HTTP routing, route listing, OpenAPI, MCP and 
 
 ## Review
 
-Implementation in progress. Subtree handlers, nested/repeated mounts, fallback and placement-aware instance URLs pass the current suite (233 examples). OpenAPI projection is implemented locally; MCP integration and broader mount validation are next. No release or merge is authorized by this tracking document.
+Routing, mounting, inherited metadata, OpenAPI and MCP integration are implemented. Validation: 243 examples pass with randomized order; 246 pass with preview_mt and execution_context. New source/spec files pass Ameba, and all source/spec files pass the formatter. The unchanged template builds and its routes/docs/MCP CLI options work with a local shard override. Final compatibility recheck and documentation review are in progress. No release or merge is authorized by this tracking document.
