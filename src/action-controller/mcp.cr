@@ -89,6 +89,14 @@ module ActionController::MCPServer
   # `"*"` permits any origin
   class_property allowed_origins : Array(String) = [] of String
 
+  # the folder of MCP Apps cards, `@[AC::MCP(ui: "bookings/card.html")]` renders
+  # `<ui_base>/bookings/card.html`. Cards aren't served when `nil`
+  class_property ui_base : String? = nil
+
+  # the default `_meta.ui` of every card (CSP domains, border...), a card can override it
+  # with a `.meta.json` file next to it, i.e. `bookings/card.meta.json`
+  class_property ui_meta : UIMeta? = nil
+
   # sessions inactive for this period are discarded
   class_property session_timeout : Time::Span = 30.minutes
 

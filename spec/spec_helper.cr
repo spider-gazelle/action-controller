@@ -678,6 +678,33 @@ class McpShared < ActionController::Base
   end
 end
 
+# MCP Apps cards, see spec/cards
+@[AC::MCP(root: true)]
+class McpUi < ActionController::Base
+  base "/mcp_ui"
+
+  # shows a booking
+  @[AC::MCP(ui: "bookings/card.html")]
+  @[AC::Route::GET("/bookings/:id")]
+  def show(id : Int32) : NamedTuple(id: Int32, title: String)
+    {id: id, title: "Booking #{id}"}
+  end
+
+  # checks in to a booking, only the card calls this
+  @[AC::MCP(app_only: true)]
+  @[AC::Route::POST("/bookings/:id/check_in")]
+  def check_in(id : Int32) : NamedTuple(id: Int32, checked_in: Bool)
+    {id: id, checked_in: true}
+  end
+
+  # lists the rooms
+  @[AC::MCP(ui: "ui://rooms/card.html")]
+  @[AC::Route::GET("/rooms")]
+  def rooms : Array(String)
+    ["boardroom"]
+  end
+end
+
 # a toolbox with prompts but no tools
 class McpPromptsOnly < ActionController::Base
   base "/mcp_prompts_only"

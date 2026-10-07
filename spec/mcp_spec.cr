@@ -1,5 +1,6 @@
 require "./spec_helper"
 require "../src/action-controller/mcp"
+require "file_utils"
 
 MCP_PORT = 6_123
 MCP_URI  = URI.parse("http://127.0.0.1:#{MCP_PORT}/mcp")
@@ -29,10 +30,12 @@ class MCPTestClient
     HTTP::Client.post(@uri, headers: headers(accept, origin), body: body.to_json)
   end
 
-  def initialize_session : JSON::Any
+  # `ui: true` advertises MCP Apps support
+  def initialize_session(ui : Bool = false) : JSON::Any
+    capabilities = ui ? JSON.parse(%({"extensions": {"io.modelcontextprotocol/ui": {"mimeTypes": ["text/html;profile=mcp-app"]}}})) : JSON.parse("{}")
     response = post({jsonrpc: "2.0", id: 1, method: "initialize", params: {
       protocolVersion: "2025-11-25",
-      capabilities:    {} of String => String,
+      capabilities:    capabilities,
       clientInfo:      {name: "spec", version: "1.0"},
     }})
     @session_id = response.headers["Mcp-Session-Id"]
@@ -68,7 +71,7 @@ class MCPTestClient
 end
 
 # meta tools followed by the root tools
-DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "call_read_only", "call_tool", "mcp_widgets_colours", "mcp_root_time", "mcp_root_pixel"]
+DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "call_read_only", "call_tool", "mcp_widgets_colours", "mcp_ui_show", "mcp_ui_check_in", "mcp_ui_rooms", "mcp_root_time", "mcp_root_pixel"]
 
 MCP_INIT = {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}
 
@@ -97,6 +100,8 @@ describe ActionController::MCPServer do
     widget_docs.methods["summarise"] = "summarise a widget for the user"
     account_docs = ActionController::OpenAPI::KlassDoc.new("McpAccount", "Manages an account, call show to look up its widgets")
     ActionController::MCPServer.description = ActionController::MCPServer.generate_description({"McpWidgets" => widget_docs, "McpAccount" => account_docs})
+    ActionController::MCPServer.ui_base = File.join(__DIR__, "cards")
+    ActionController::MCPServer.ui_meta = ActionController::MCPServer::UIMeta.new(prefers_border: true)
     bound = Channel(Nil).new
     spawn { server.run { bound.send nil } }
     bound.receive
@@ -104,6 +109,8 @@ describe ActionController::MCPServer do
 
   after_all do
     server.close
+    ActionController::MCPServer.ui_base = nil
+    ActionController::MCPServer.ui_meta = nil
     ActionController::MCPServer.description = nil
   end
 
@@ -711,6 +718,125 @@ describe ActionController::MCPServer do
         resource = JSON.parse(HTTP::Client.get(metadata_url).body)["resource"]
         resource.should eq "http://127.0.0.1:#{MCP_PORT}/mcp_account/acme/mcp"
       end
+    end
+  end
+
+  describe "UI cards" do
+    ui_tool = ->(client : MCPTestClient, name : String) { client.tools.find!(&.["name"].==(name)) }
+    read = ->(client : MCPTestClient, uri : String) {
+      response = client.post({jsonrpc: "2.0", id: 5, method: "resources/read", params: {uri: uri}}, "application/json")
+      JSON.parse(response.body)
+    }
+
+    it "describes the card and visibility of tools" do
+      client = MCPTestClient.new
+      capabilities = client.initialize_session(ui: true)["result"]["capabilities"]
+      capabilities["resources"].should eq JSON.parse("{}")
+      capabilities["extensions"]["io.modelcontextprotocol/ui"].should eq JSON.parse("{}")
+
+      show = ui_tool.call(client, "mcp_ui_show")
+      uri = show["_meta"]["ui"]["resourceUri"].as_s
+      uri.should match /^ui:\/\/bookings\/card\.html\?v=[0-9a-f]{12}$/
+      show["_meta"]["ui/resourceUri"].should eq uri
+      show["_meta"]["ui"]["visibility"]?.should be_nil
+
+      check_in = ui_tool.call(client, "mcp_ui_check_in")
+      check_in["_meta"]["ui"].should eq JSON.parse(%({"visibility": ["app"]}))
+      check_in["_meta"]["ui/resourceUri"]?.should be_nil
+
+      ui_tool.call(client, "mcp_widgets_colours")["_meta"]?.should be_nil
+
+      resources = client.request("resources/list").last["result"]["resources"].as_a
+      resources.map(&.["name"].as_s).sort!.should eq ["bookings/card.html", "rooms/card.html"]
+      resources.all?(&.["mimeType"].==("text/html;profile=mcp-app")).should be_true
+      resources.find!(&.["name"].==("bookings/card.html"))["uri"].should eq uri
+    end
+
+    it "describes cards to clients that don't advertise the extension" do
+      # hosts that render cards don't always advertise it, those that can't ignore `_meta`
+      client = MCPTestClient.new
+      client.initialize_session["result"]["capabilities"]["resources"].should eq JSON.parse("{}")
+      ui_tool.call(client, "mcp_ui_show")["_meta"]["ui"]["resourceUri"].as_s.should start_with "ui://bookings/card.html?v="
+      ui_tool.call(client, "mcp_ui_check_in")["_meta"]["ui"]["visibility"].should eq JSON.parse(%(["app"]))
+      client.request("resources/list").last["result"]["resources"].as_a.size.should eq 2
+
+      # the text content is the fallback for hosts without cards
+      result = client.call("mcp_ui_show", {id: 4})
+      JSON.parse(result["content"][0]["text"].as_s)["body"].should eq JSON.parse(%({"id":4,"title":"Booking 4"}))
+    end
+
+    it "only describes cards when there's a UI folder" do
+      ActionController::MCPServer.ui_base = nil
+      begin
+        client = MCPTestClient.new
+        client.initialize_session["result"]["capabilities"]["resources"]?.should be_nil
+        ui_tool.call(client, "mcp_ui_show")["_meta"]?.should be_nil
+        client.request("resources/list").last["result"]["resources"].as_a.should be_empty
+      ensure
+        ActionController::MCPServer.ui_base = File.join(__DIR__, "cards")
+      end
+    end
+
+    it "reads cards with their metadata" do
+      client = MCPTestClient.new
+      client.initialize_session(ui: true)
+      uri = ui_tool.call(client, "mcp_ui_show")["_meta"]["ui"]["resourceUri"].as_s
+
+      [uri, "ui://bookings/card.html"].each do |requested|
+        content = read.call(client, requested)["result"]["contents"][0]
+        content["uri"].should eq requested
+        content["mimeType"].should eq "text/html;profile=mcp-app"
+        content["text"].as_s.should contain %(<p id="booking">booking card</p>)
+        content["_meta"]["ui"].should eq JSON.parse(%({"prefersBorder": true}))
+      end
+
+      # a sidecar overrides the default
+      rooms = read.call(client, "ui://rooms/card.html")["result"]["contents"][0]
+      rooms["_meta"]["ui"].should eq JSON.parse(%({"csp": {"connectDomains": ["https://api.example.com"]}, "prefersBorder": false}))
+    end
+
+    it "only reads cards in the UI folder" do
+      client = MCPTestClient.new
+      client.initialize_session(ui: true)
+      ["ui://../mcp_spec.cr", "ui://bookings/../../spec_helper.cr", "ui:///etc/hosts", "ui://notes.txt", "ui://missing.html", "https://example.com/card.html"].each do |uri|
+        error = read.call(client, uri)["error"]
+        error["code"].should eq -32002
+        error["message"].should eq "Resource not found: #{uri}"
+      end
+    end
+
+    it "lets cards call app only tools" do
+      client = MCPTestClient.new
+      client.initialize_session(ui: true)
+      client.call("mcp_ui_check_in", {id: 7})["structuredContent"]["body"].should eq JSON.parse(%({"id":7,"checked_in":true}))
+      client.call("call_tool", {name: "mcp_ui_check_in", arguments: {id: 8}})["structuredContent"]["body"]["checked_in"].should be_true
+    end
+
+    it "versions cards by their content" do
+      original = ActionController::MCPServer.ui_base
+      dir = File.tempname("mcp-cards")
+      Dir.mkdir_p(dir)
+      begin
+        ActionController::MCPServer.ui_base = dir
+        File.write(File.join(dir, "card.html"), "<!DOCTYPE html><p>one</p>")
+        first = ActionController::MCPServer::UI.versioned("ui://card.html")
+        ActionController::MCPServer::UI.versioned("ui://card.html").should eq first
+
+        File.write(File.join(dir, "card.html"), "<!DOCTYPE html><p>two</p>")
+        File.touch(File.join(dir, "card.html"), Time.utc + 1.minute)
+        ActionController::MCPServer::UI.versioned("ui://card.html").should_not eq first
+      ensure
+        ActionController::MCPServer.ui_base = original
+        FileUtils.rm_rf(dir)
+      end
+    end
+
+    it "stores cards in the description" do
+      description = ActionController::MCPServer::Description.from_yaml(ActionController::MCPServer.description.to_yaml)
+      box = description.toolbox?("mcp_ui").should_not be_nil
+      box.tools.find!(&.name.==("mcp_ui_show")).ui.should eq "ui://bookings/card.html"
+      box.tools.find!(&.name.==("mcp_ui_rooms")).ui.should eq "ui://rooms/card.html"
+      box.tools.find!(&.name.==("mcp_ui_check_in")).app_only?.should be_true
     end
   end
 

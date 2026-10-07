@@ -51,7 +51,13 @@ module ActionController::MCPServer
     # overrides whether the tool only reads data, see `read_only?`
     getter read_only : Bool? = nil
 
-    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @read_only = nil)
+    # the MCP Apps card rendered for the tool, i.e. `ui://bookings/card.html`
+    getter ui : String? = nil
+
+    # only callable by cards, hidden from the model
+    getter? app_only : Bool = false
+
+    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @read_only = nil, @ui = nil, @app_only = false)
     end
 
     # only reads data, GET routes unless overridden with `@[AC::MCP(read_only:)]`
@@ -66,13 +72,14 @@ module ActionController::MCPServer
     end
 
     # the tool definition as returned by `tools/list`, `proxy: true` also names the
-    # proxy tool that runs it
-    def to_mcp_json(json : JSON::Builder, proxy : Bool = false) : Nil
+    # proxy tool that runs it and `ui: true` includes the MCP Apps metadata
+    def to_mcp_json(json : JSON::Builder, proxy : Bool = false, ui : Bool = false) : Nil
       json.object do
         json.field "name", name
         json.field "description", description if description
         json.field "inputSchema", input_schema
         json.field "proxy", self.proxy if proxy
+        ui_meta(json) if ui
         json.field "annotations" do
           json.object do
             if read_only?
@@ -81,6 +88,25 @@ module ActionController::MCPServer
               annotate_changes(json)
             end
           end
+        end
+      end
+    end
+
+    # the card the host renders for the results and who can call the tool
+    private def ui_meta(json : JSON::Builder) : Nil
+      resource = self.ui.try { |uri| UI.versioned(uri) }
+      return unless resource || app_only?
+
+      json.field "_meta" do
+        json.object do
+          json.field "ui" do
+            json.object do
+              json.field "resourceUri", resource if resource
+              json.field "visibility", ["app"] if app_only?
+            end
+          end
+          # deprecated, but still read by some hosts
+          json.field "ui/resourceUri", resource if resource
         end
       end
     end
@@ -243,6 +269,11 @@ module ActionController::MCPServer
       toolboxes.any? { |box| !box.prompts.empty? }
     end
 
+    # true if any tool renders an MCP Apps card
+    def ui? : Bool
+      toolboxes.any? { |box| box.tools.any? { |tool| tool.ui || tool.app_only? } }
+    end
+
     # the tools available without opening a toolbox
     def root_tools : Array(Tool)
       toolboxes.flat_map { |box| box.tools.select(&.root?) }
@@ -299,7 +330,7 @@ module ActionController::MCPServer
 
   # :nodoc:
   # `global`: listed by the global server, `endpoint`: the endpoint path it's served on
-  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, read_only: Bool?, global: Bool, endpoint: String?)
+  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, read_only: Bool?, global: Bool, endpoint: String?, ui: String?, app_only: Bool)
 
   # :nodoc:
   alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), global: Bool, endpoint: String?)
@@ -338,6 +369,8 @@ module ActionController::MCPServer
               read_only: {{ details[:mcp_read_only] == nil ? nil : details[:mcp_read_only] }},
               global: {{ !details[:mcp_hide] }},
               endpoint: {{ endpoint }}.as(String?),
+              ui: {{ details[:mcp_ui] }}.as(String?),
+              app_only: {{ details[:mcp_app_only] == true }},
             },
           {% end %}
         {% end %}
@@ -541,7 +574,7 @@ module ActionController::MCPServer
     collect_definitions(JSON::Any.new(properties), schemas, definitions)
     input_schema["$defs"] = JSON::Any.new(definitions) unless definitions.empty?
 
-    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:read_only])
+    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:read_only], route[:ui], route[:app_only])
   end
 
   # :nodoc:

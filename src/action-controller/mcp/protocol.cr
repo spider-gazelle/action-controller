@@ -7,6 +7,9 @@ module ActionController::MCPServer
     INVALID_PARAMS   = -32602
     INTERNAL_ERROR   = -32603
 
+    # MCP specific
+    RESOURCE_NOT_FOUND = -32002
+
     getter code : Int32
 
     def initialize(@code, message : String)
@@ -63,6 +66,14 @@ module ActionController::MCPServer
                   json.object { json.field "listChanged", !flat? }
                 end
               end
+              if ui?
+                json.field("resources") { json.object { } }
+                json.field "extensions" do
+                  json.object do
+                    json.field(UI::EXTENSION) { json.object { } }
+                  end
+                end
+              end
             end
           end
           json.field "serverInfo" do
@@ -82,11 +93,13 @@ module ActionController::MCPServer
     # appended to `emitted` for delivery before the result
     def handle(method : String, params : Hash(String, JSON::Any), session : Session, request : HTTP::Request, emitted : Array(String)) : String
       case method
-      when "ping"         then "{}"
-      when "tools/list"   then list_tools(session)
-      when "tools/call"   then call_tool(params, session, request, emitted)
-      when "prompts/list" then list_prompts(session)
-      when "prompts/get"  then get_prompt(params, session, request)
+      when "ping"           then "{}"
+      when "tools/list"     then list_tools(session)
+      when "tools/call"     then call_tool(params, session, request, emitted)
+      when "prompts/list"   then list_prompts(session)
+      when "prompts/get"    then get_prompt(params, session, request)
+      when "resources/list" then list_resources(session)
+      when "resources/read" then read_resource(params)
       else
         raise RPCError.new(RPCError::METHOD_NOT_FOUND, "Method not found: #{method}")
       end
@@ -94,6 +107,49 @@ module ActionController::MCPServer
 
     private def description : Description
       flat? ? endpoint.description : MCPServer.description
+    end
+
+    # MCP Apps cards are described when there are cards to render. Every client is
+    # sent the card metadata, hosts that can't render cards ignore it (and not every
+    # host that can advertises the `io.modelcontextprotocol/ui` extension)
+    private def ui? : Bool
+      !MCPServer.ui_base.nil? && description.ui?
+    end
+
+    # the tools listed for the session
+    private def available_tools(session : Session) : Array(Tool)
+      tools = description.root_tools.dup
+      session.open_toolboxes.each do |name|
+        description.toolbox?(name).try { |box| tools.concat box.toolbox_tools }
+      end
+      tools
+    end
+
+    # the cards of the tools available to the session
+    private def list_resources(session : Session) : String
+      cards = ui? ? available_tools(session).compact_map(&.ui).uniq! : [] of String
+      JSON.build do |json|
+        json.object do
+          json.field "resources" do
+            json.array do
+              cards.each do |uri|
+                next unless UI.resolve(uri)
+                json.object do
+                  json.field "uri", UI.versioned(uri)
+                  json.field "name", uri.lchop(UI::SCHEME)
+                  json.field "mimeType", UI::MIME_TYPE
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
+    private def read_resource(params : Hash(String, JSON::Any)) : String
+      uri = params["uri"]?.try(&.as_s?)
+      raise RPCError.new(RPCError::INVALID_PARAMS, "Missing resource uri") unless uri
+      UI.read(uri) || raise RPCError.new(RPCError::RESOURCE_NOT_FOUND, "Resource not found: #{uri}")
     end
 
     private def list_tools(session : Session) : String
@@ -105,10 +161,7 @@ module ActionController::MCPServer
                 META_TOOLS.each { |tool| json.raw tool }
                 PROXY_TOOLS.each { |tool| json.raw tool } if MCPServer.tool_proxy?
               end
-              description.root_tools.each(&.to_mcp_json(json))
-              session.open_toolboxes.each do |name|
-                description.toolbox?(name).try &.toolbox_tools.each(&.to_mcp_json(json))
-              end
+              available_tools(session).each(&.to_mcp_json(json, ui: ui?))
             end
           end
         end
@@ -225,7 +278,7 @@ module ActionController::MCPServer
           json.field "toolbox", toolbox.name
           json.field "status", opened ? "opened" : "already open"
           json.field "tools" do
-            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json, proxy: MCPServer.tool_proxy?)) }
+            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json, proxy: MCPServer.tool_proxy?, ui: ui?)) }
           end
           json.field "prompts" do
             json.array { toolbox.toolbox_prompts.each { |prompt| json.string prompt.name } }

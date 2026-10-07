@@ -330,6 +330,55 @@ Connecting to `/rooms/boardroom/mcp` lists `state` and `lights` directly:
 `MCPServer.mount` mounts the endpoints too (`endpoints: false` skips them), and
 `write_description` includes them in `mcp.yml`.
 
+### UI cards (MCP Apps)
+
+Tools can render an interactive HTML card in the conversation, using the
+[MCP Apps](https://github.com/modelcontextprotocol/ext-apps) extension supported by
+Claude, ChatGPT, VS Code and Microsoft 365 Copilot. Cards are static HTML files in a
+folder:
+
+```crystal
+ActionController::MCPServer.ui_base = "./cards"
+# the default card settings, a card can override them with a `<card>.meta.json` file
+ActionController::MCPServer.ui_meta = ActionController::MCPServer::UIMeta.new(prefers_border: true)
+
+class Bookings < AC::Base
+  base "/bookings"
+
+  # Shows a booking
+  @[AC::MCP(ui: "bookings/card.html")] # ./cards/bookings/card.html
+  @[AC::Route::GET("/:id")]
+  def show(id : String) : Booking
+  end
+
+  # Checks in to a booking, only the card can call this
+  @[AC::MCP(app_only: true)]
+  @[AC::Route::POST("/:id/check_in")]
+  def check_in(id : String) : Booking
+  end
+end
+```
+
+* **How it works:** the tool's `_meta.ui.resourceUri` points at the card
+  (`ui://bookings/card.html`). The host reads it with `resources/read` and renders it in a
+  sandboxed iframe. It sends the card the tool's arguments and its result, the
+  `{status, headers, body}` envelope as `structuredContent`.
+* **Cards** are self-contained HTML5 documents. By default hosts allow inline scripts and
+  styles, but no external resources or network requests. Declare any domains a card needs
+  in `ui_meta`, or in a sidecar such as `bookings/card.meta.json`:
+  `{"csp": {"resourceDomains": ["https://cdn.example.com"]}, "prefersBorder": false}`.
+* **Talking to the host:** cards use JSON-RPC over `postMessage` (`ui/initialize`, then
+  `ui/notifications/tool-result`), with or without the `@modelcontextprotocol/ext-apps`
+  SDK. They can call tools too, such as `app_only` tools.
+* **Caching:** hosts cache cards by URI, so tools advertise
+  `ui://bookings/card.html?v=<content hash>`. A changed card gets a new URI.
+* **Rendering:** hosts only render cards for tools in their tool list. Mark card tools
+  `root: true`, or serve them from a [controller endpoint](#controller-endpoints), so they
+  render in clients that don't refresh their tools when a toolbox opens.
+* `ui:` paths are relative to `ui_base` and must be `.html` files (checked at compile
+  time). Nothing outside `ui_base` is served. Hosts without MCP Apps support ignore the
+  card metadata and show the text result.
+
 ### Connecting a client
 
 Point any MCP client that supports Streamable HTTP at the mounted path, for example
@@ -434,6 +483,8 @@ annotation takes precedence:
 | `hide: true` | excludes the routes / prompts from MCP |
 | `root: true` | always available, without opening the toolbox |
 | `endpoint: true` | serves the controller as its own MCP server at `<base>/mcp` (controllers only), see [controller endpoints](#controller-endpoints) |
+| `ui: "bookings/card.html"` | renders this HTML card for the tool's results, see [UI cards](#ui-cards-mcp-apps) |
+| `app_only: true` | only cards can call the tool, it's hidden from the model |
 | `read_only: Bool` | whether the tool only reads data (default: GET routes). Sets `readOnlyHint` and whether `call_read_only` runs it. Use `false` for a GET with side effects, `true` for a POST search |
 | `prompt: true` | the method is an MCP prompt (methods only) |
 

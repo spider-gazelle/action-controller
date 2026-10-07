@@ -70,6 +70,9 @@ end
 #   (`base "/accounts/:account_id"`) are bound from the endpoint URL. The controller is
 #   hidden from the global server unless it's annotated `hide: false`, and a method
 #   annotated `hide: true` is hidden from both
+# * `ui: "bookings/card.html"` renders the HTML card at that path, in `MCPServer.ui_base`,
+#   for the tool's results in clients that support MCP Apps (`ui://bookings/card.html`)
+# * `app_only: true` makes the tool callable by cards only, it's hidden from the model
 # * `read_only: Bool` overrides whether a tool only reads data, which defaults to
 #   `true` for GET routes. Read only tools are hinted as such to clients and can be run
 #   with the `call_read_only` proxy, e.g. `false` for a GET with side effects or `true`
@@ -321,6 +324,20 @@ module ActionController::Route::Builder
         {% mcp_read_only = mcp_method_ann[:read_only] %}
       {% end %}
 
+      # MCP Apps: the card rendered for the tool, and tools only a card may call
+      {% mcp_ui = mcp_klass_ann ? mcp_klass_ann[:ui] : nil %}
+      {% mcp_ui = mcp_method_ann[:ui] if mcp_method_ann && mcp_method_ann[:ui] != nil %}
+      {% if mcp_ui %}
+        {% ui_path = mcp_ui.id.stringify %}
+        {% ui_path = ui_path[5..-1] if ui_path.starts_with?("ui://") %}
+        {% if ui_path.starts_with?("/") || ui_path.split("/").includes?("..") || !ui_path.ends_with?(".html") %}
+          {% raise "#{@type.name}##{method_name}: @[AC::MCP(ui: #{mcp_ui})] must be a relative path to an .html file in the UI folder, i.e. \"bookings/card.html\"" %}
+        {% end %}
+        {% mcp_ui = "ui://" + ui_path %}
+      {% end %}
+      {% mcp_app_only = mcp_klass_ann ? mcp_klass_ann[:app_only] : nil %}
+      {% mcp_app_only = mcp_method_ann[:app_only] if mcp_method_ann && mcp_method_ann[:app_only] != nil %}
+
       # MCP prompts are implemented as internal GET routes so filters, error handlers and param parsing apply
       {% mcp_prompt = mcp_method_ann && mcp_method_ann[:prompt] == true %}
       {% if mcp_prompt %}
@@ -426,6 +443,8 @@ module ActionController::Route::Builder
             {% open_api_route[:mcp_hide] = mcp_hide == true %}
             {% open_api_route[:mcp_root] = mcp_root == true %}
             {% open_api_route[:mcp_read_only] = mcp_read_only %}
+            {% open_api_route[:mcp_ui] = mcp_ui %}
+            {% open_api_route[:mcp_app_only] = mcp_app_only == true %}
             {% open_api_route[:mcp_endpoint] = mcp_endpoint_path %}
             {% open_api_route[:mcp_endpoint_hide] = mcp_endpoint_hide %}
             {% open_api_route[:mcp_prompt] = ann[:internal] == true %}
