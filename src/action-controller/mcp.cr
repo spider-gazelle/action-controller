@@ -207,7 +207,7 @@ module ActionController::MCPServer
   # see `mount_endpoints`
   def mount(router : Router, path : String = "/mcp", endpoints : Bool = true, composition : Composition = composition_for(router)) : Transport
     declarations = endpoints ? controller_endpoints(composition) : [] of Tuple(String, String)
-    validate_endpoints!(composition, declarations + [{"global MCP", path}])
+    validate_endpoints!(router, declarations + [{"global MCP", path}])
     declarations.each do |(_controller, endpoint_path)|
       mount_transport(router, Transport.new(router.route_handler, endpoint_path, endpoint: true, composition: composition))
     end
@@ -217,7 +217,7 @@ module ActionController::MCPServer
   # mounts a server for each controller annotated `@[AC::MCP(endpoint: true)]`
   def mount_endpoints(router : Router, composition : Composition = composition_for(router)) : Array(Transport)
     declarations = controller_endpoints(composition)
-    validate_endpoints!(composition, declarations)
+    validate_endpoints!(router, declarations)
     declarations.map do |(_controller, path)|
       mount_transport(router, Transport.new(router.route_handler, path, endpoint: true, composition: composition))
     end
@@ -270,19 +270,16 @@ module ActionController::MCPServer
     {% end %}
   end
 
-  private def validate_endpoints!(composition : Composition, declarations : Array(Tuple(String, String))) : Nil
+  private def validate_endpoints!(router : Router, declarations : Array(Tuple(String, String))) : Nil
     seen = {} of Tuple(String, String) => String
-    composition.routes.each do |route|
-      Router::RouteHandler.optional_variants(route[3]).each do |(path, _)|
-        method = route[2].to_s.upcase
-        normalized = Composition.pattern(path)
-        seen[{method, normalized}] = "#{route[0]}##{route[1]}"
-        seen[{"HEAD", normalized}] = "#{route[0]}##{route[1]}" if method == "GET"
+    router.route_handler.registered_routes.each do |(method, path)|
+      Router::RouteHandler.optional_variants(path, glob: true).each do |(variant, _)|
+        seen[{method, Composition.pattern(variant)}] = "registered #{method} #{path}"
       end
     end
     declarations.each do |(owner, path)|
       [{path, %w[GET HEAD POST DELETE]}, {Transport::RESOURCE_METADATA_PATH + path, %w[GET HEAD]}].each do |(endpoint_path, methods)|
-        Router::RouteHandler.optional_variants(endpoint_path).each do |(variant, _)|
+        Router::RouteHandler.optional_variants(endpoint_path, glob: true).each do |(variant, _)|
           methods.each do |method|
             key = {method, Composition.pattern(variant)}
             if previous = seen[key]?

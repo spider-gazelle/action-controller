@@ -202,7 +202,8 @@ class ActionController::Composition
           raise ArgumentError.new("ambiguous path parameters in #{route[3]}")
         end
         required = original[3].split('/').select(&.starts_with?(':')).map { |part| part.split(':', 2)[1] }
-        missing = required - parameters
+        public_required = route[3].split('/').select(&.starts_with?(':')).map { |part| part.split(':', 2)[1] }
+        missing = required - public_required
         unless missing.empty?
           raise ArgumentError.new("mount #{route[3]} removes required path parameters #{missing.join(", ")}")
         end

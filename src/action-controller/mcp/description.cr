@@ -382,7 +382,7 @@ module ActionController::MCPServer
 
     # the path params in a path template
     def self.bound_params(path : String) : Array(String)
-      path.split('/').compact_map(&.lchop?(':'))
+      path.split('/').select { |segment| segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:") }.map { |segment| segment.split(':', 2)[1] }
     end
   end
 
@@ -500,7 +500,14 @@ module ActionController::MCPServer
       end
       prompts.select(&.[:controller].==(controller)).each do |prompt|
         path = placement.path(prompt[:route])
-        arguments = prompt[:arguments].dup
+        path_names = path.split('/').select { |segment| segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:") }.map { |segment| segment.split(':', 2)[1] }
+        arguments = prompt[:arguments].map do |argument|
+          if argument.in == "query" && path_names.includes?(argument.name)
+            PromptArgument.new(argument.name, "path", argument.description, path.split('/').includes?(":#{argument.name}"))
+          else
+            argument
+          end
+        end
         path.split('/').each do |segment|
           next unless segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:")
           name = segment.split(':', 2)[1]

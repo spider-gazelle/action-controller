@@ -39,7 +39,7 @@ The mount replaces the target's base. If `OAuth2` has `base "/oauth2"` and a `/t
 
 Mounts can be nested or repeated. Mount-only targets are excluded from standalone automatic discovery; explicitly select a target as a root to expose it independently too. Mounted controllers keep their own filters and exception handlers. Parent controllers' filters apply to their own actions. Requests retain their public path, and unmatched mounted routes continue downstream.
 
-Parameterized mounts such as `mount "/accounts/:account_id/auth", OAuth2` bind those parameters for controller filters and actions, OpenAPI and MCP. Mounts must preserve any required parameters from the target's original routes. Cycles, ambiguous parameter names and conflicting public operations are rejected. Explicit composition also checks equivalent parameterized routes and generated HEAD operations. MCP endpoint conflicts are checked before endpoints are registered.
+Parameterized mounts such as `mount "/accounts/:account_id/auth", OAuth2` bind those parameters for controller filters and actions, OpenAPI and MCP. Mounts must preserve any required parameters from the target's original routes as required parameters. Cycles, ambiguous parameter names and conflicting public operations are rejected. Explicit composition also checks equivalent parameterized routes and generated HEAD operations. MCP endpoint conflicts are checked against the actual router before endpoints are registered.
 
 Use `route_path(:action, ...)` inside an action to generate a URL using the current mounted base and bound path parameters:
 
@@ -47,7 +47,7 @@ Use `route_path(:action, ...)` inside an action to generate a URL using the curr
 redirect_to route_path(:token)
 ```
 
-Existing class URL helpers such as `OAuth2.token` retain their original URLs. Outside a request, use `composition.url_for(OAuth2, :token, ...)`; supply `mount_base:` to choose between repeated mounts.
+Explicit URL arguments override bound path values. Helpers encode individual path segments and support optional (`?:`) and glob (`*:`) segments; later optional segments require earlier ones. Existing class URL helpers such as `OAuth2.token` retain their original URLs. Outside a request, use `composition.url_for(OAuth2, :token, ...)`; supply `mount_base:` to choose between repeated mounts.
 
 ### Independent compositions and catalogs
 

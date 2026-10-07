@@ -4,6 +4,9 @@ require "lucky_router"
 class ActionController::Router::RouteHandler
   include HTTP::Handler
 
+  # Used to validate additional endpoints before mutating the router.
+  getter registered_routes : Set(Tuple(String, String)) = Set(Tuple(String, String)).new
+
   def initialize
     @matcher = LuckyRouter::Matcher(Tuple(Action, Bool)).new
     # keyed on {method, path} rather than a concatenation of the two so that
@@ -70,6 +73,7 @@ class ActionController::Router::RouteHandler
   # Determines if routes are static or require decomposition and stores them appropriately
   private def add_path(method : String, path : String, action : Tuple(Action, Bool))
     @matcher.add(method, path, action)
+    @registered_routes << {method, path}
 
     unless path.includes?(':') || path.includes?('*')
       @static_routes[{method, path}] = action

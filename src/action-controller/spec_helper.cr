@@ -6,8 +6,9 @@ module ActionController
     include Router
 
     getter route_handler = RouteHandler.new
+    getter composition : Composition
 
-    def initialize(composition : Composition = Composition.default)
+    def initialize(@composition : Composition = Composition.default)
       @route_handler = composition.handler.route_handler
     end
 

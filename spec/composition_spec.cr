@@ -116,6 +116,80 @@ class CompositionBound < AC::Base
   end
 end
 
+@[AC::MCP(endpoint: true, hide: false)]
+class CompositionTyped < AC::Base
+  base "/composition/typed"
+
+  @[AC::Route::GET("/")]
+  def show(tenant_id : Int64) : Int64
+    tenant_id
+  end
+
+  @[AC::Route::GET("/redirect")]
+  def redirect(tenant_id : Int64)
+    redirect_to route_path(:show, tenant_id: tenant_id + 1)
+  end
+
+  @[AC::MCP(prompt: true)]
+  def describe_tenant(tenant_id : Int64) : String
+    "Tenant #{tenant_id}"
+  end
+end
+
+class CompositionTypedHost < AC::Base
+  base "/composition/typed-host/:tenant_id"
+  mount "/auth", CompositionTyped
+end
+
+class CompositionOptionalHost < AC::Base
+  base "/composition/optional/?:tenant_id"
+  mount "/auth", CompositionOAuth
+end
+
+class CompositionFiltered < AC::Base
+  base "/composition/filtered"
+
+  @[AC::Route::Filter(:before_action)]
+  def account(tenant_id : Int64)
+    response.headers["X-Tenant"] = tenant_id.to_s
+  end
+
+  @[AC::Route::GET("/")]
+  def index : String
+    "filtered"
+  end
+end
+
+class CompositionFilteredHost < AC::Base
+  base "/composition/filtered-host/:tenant_id"
+  mount "/auth", CompositionFiltered
+end
+
+module CompositionInheritedEndpoint
+  @[AC::MCP(endpoint: true, hide: false)]
+  abstract class Base < AC::Base
+    base "/composition/inherited-original"
+
+    @[AC::Route::GET("/token")]
+    def token : String
+      request.path
+    end
+
+    @[AC::MCP(prompt: true)]
+    def explain : String
+      base_route
+    end
+
+    def instructions : String
+      "Inherited at #{base_route}"
+    end
+  end
+
+  class Pages < Base
+    base "/composition/inherited-endpoint"
+  end
+end
+
 class CompositionCycleA < AC::Base
   mount "/b", CompositionCycleB
   mount "/conflicts", CompositionConflicts::Base
@@ -369,5 +443,118 @@ describe AC::Composition do
     expect_raises(ArgumentError, /ambiguous path parameters/) do
       AC::Composition.new([AC::Composition::Placement.new(controller, "/bad/:id/:id")], true)
     end
+    expect_raises(ArgumentError, /removes required path parameters id/) do
+      AC::Composition.new([AC::Composition::Placement.new(controller, "/bad/?:id")], true)
+    end
+  end
+
+  it "allows route_path arguments to override parameters bound by the mount" do
+    client = HotTopic.new(CompositionTypedHost.handler)
+    client.get("/composition/typed-host/42/auth/redirect").headers["Location"].should eq "/composition/typed-host/43/auth"
+  end
+
+  it "relocates typed query parameters into the mounted path" do
+    composition = CompositionTypedHost.handler
+    docs = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    operation = docs[:paths]["/composition/typed-host/{tenant_id}/auth"].get.should_not be_nil
+    parameters = operation.parameters.should_not be_nil
+    parameters.size.should eq 1
+    parameter = parameters.first
+    parameter.in.should eq "path"
+    parameter.required.should be_true
+    (parameter.schema.should_not be_nil)["type"].as_s.should eq "integer"
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    prompt = description.toolboxes.first.prompts.first
+    prompt.arguments.size.should eq 1
+    prompt.arguments.first.in.should eq "path"
+    endpoint = description.endpoints.first
+    endpoint.toolbox.prompts.first.arguments.should be_empty
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    invoker.get_prompt(endpoint.toolbox.prompts.first, {} of String => JSON::Any, HTTP::Request.new("POST", "/mcp"), {"tenant_id" => "42"}).should contain "Tenant 42"
+  end
+
+  it "builds optional and glob paths with encoded parameter overrides" do
+    AC::Support.build_route("/root/?:id/detail/*:rest", id: "a/b", rest: "one two/file").should eq "/root/a%2Fb/detail/one%20two/file"
+    AC::Support.build_route("/root/?:id/detail/*:rest").should eq "/root/detail"
+    parts = {"id" => "old", :page => 1} of (String | Symbol) => (Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol)?
+    AC::Support.build_route("/root/:id", parts, id: "new", page: 2).should eq "/root/new?page=2"
+    expect_raises(AC::InvalidRoute, /optional route parameter/) do
+      AC::Support.build_route("/root/?:id/detail/*:rest", rest: "file")
+    end
+  end
+
+  it "keeps optional mount parameters aligned across HTTP, OpenAPI and MCP" do
+    composition = CompositionOptionalHost.handler
+    client = HotTopic.new(composition)
+    client.get("/composition/optional/auth/redirect").headers["Location"].should eq "/composition/optional/auth/token"
+    client.get("/composition/optional/42/auth/redirect").headers["Location"].should eq "/composition/optional/42/auth/token"
+    docs = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    docs[:paths].has_key?("/composition/optional/auth/token").should be_true
+    docs[:paths].has_key?("/composition/optional/{tenant_id}/auth/token").should be_true
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    prompt = description.toolboxes.first.prompts.first
+    prompt.arguments.first.required?.should be_false
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    invoker.get_prompt(prompt, {} of String => JSON::Any, HTTP::Request.new("POST", "/mcp")).to_json.should contain "/composition/optional/?:tenant_id/auth"
+    endpoint = description.endpoints.first
+    endpoint.bound.should eq ["tenant_id"]
+    endpoint.toolbox.prompts.first.arguments.should be_empty
+    transports = AC::MCPServer.mount_endpoints(composition)
+    transport = transports.first
+    headers = HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json, text/event-stream"}
+    body = {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}.to_json
+    omitted = client.post("/composition/optional/auth/mcp", headers: headers, body: body)
+    included = client.post("/composition/optional/42/auth/mcp", headers: headers, body: body)
+    omitted_session = transport.sessions[omitted.headers["Mcp-Session-Id"]]?.should_not be_nil
+    included_session = transport.sessions[included.headers["Mcp-Session-Id"]]?.should_not be_nil
+    omitted_session.bound.should be_empty
+    included_session.bound.should eq({"tenant_id" => "42"})
+  end
+
+  it "relocates inherited tools, prompts and MCP instructions to the subclass base" do
+    composition = CompositionInheritedEndpoint::Base.handler
+    AC::MCPServer.endpoint_paths(composition).should eq ["/composition/inherited-endpoint/mcp"]
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    endpoint = description.endpoints.first
+    endpoint.path.should eq "/composition/inherited-endpoint/mcp"
+    description.toolboxes.first.tools.first.path.should eq "/composition/inherited-endpoint/token"
+    endpoint.toolbox.prompts.size.should eq 1
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    instructions = endpoint.instructions_path.should_not be_nil
+    invoker.instructions(instructions, HTTP::Request.new("POST", "/mcp"), {} of String => String).should eq "Inherited at /composition/inherited-endpoint"
+  end
+
+  it "uses the spec helper's selected composition for MCP discovery" do
+    helper = AC::SpecHelper.new(ComposableFirst::Base.handler)
+    transport = AC::MCPServer.mount(helper, endpoints: false)
+    response = transport.protocol.handle("tools/call", JSON.parse(%({"name":"list_toolboxes"})).as_h, AC::MCPServer::Session.new("2025-11-25"), HTTP::Request.new("POST", "/mcp"), [] of String)
+    result = JSON.parse(response)["structuredContent"]["toolboxes"].as_a
+    result.size.should eq 1
+    result.first["name"].as_s.should eq "pages"
+  end
+
+  it "preserves filter parameter schemas when a mount binds them in the path" do
+    composition = CompositionFilteredHost.handler
+    HotTopic.new(composition).get("/composition/filtered-host/42/auth").headers["X-Tenant"].should eq "42"
+    docs = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    operation = docs[:paths]["/composition/filtered-host/{tenant_id}/auth"].get.should_not be_nil
+    parameters = operation.parameters.should_not be_nil
+    parameters.size.should eq 1
+    parameters.first.in.should eq "path"
+    schema = parameters.first.schema.should_not be_nil
+    schema["type"].as_s.should eq "integer"
+  end
+
+  it "rejects MCP endpoints that overwrite manually registered routes or earlier mounts" do
+    composition = ComposableFirst::Base.handler
+    composition.get("/custom-mcp/:id") do |context, _head|
+      context.response.print "custom"
+      context
+    end
+    expect_raises(ArgumentError, /conflicting MCP endpoint/) { AC::MCPServer.mount(composition, "/custom-mcp/:name", endpoints: false) }
+    HotTopic.new(composition).get("/custom-mcp/42").body.should eq "custom"
+    HotTopic.new(composition).post("/custom-mcp/42").status_code.should eq 404
+    AC::MCPServer.mount(composition, endpoints: false)
+    expect_raises(ArgumentError, /conflicting MCP endpoint/) { AC::MCPServer.mount(composition, endpoints: false) }
   end
 end

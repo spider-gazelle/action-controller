@@ -224,7 +224,13 @@ module ActionController::MCPServer
     private def bound_values(context) : Hash(String, String)
       return {} of String => String if @bound.empty?
       params = context.route_params
-      @bound.to_h { |name| {name, params[name]? || ""} }
+      values = {} of String => String
+      @bound.each do |name|
+        if value = params[name]?
+          values[name] = value
+        end
+      end
+      values
     end
 
     # protects against DNS rebinding attacks

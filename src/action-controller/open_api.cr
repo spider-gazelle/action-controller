@@ -413,7 +413,13 @@ module ActionController::OpenAPI
         next unless route[:controller] == placement.controller.name
         path = placement.path(route[:route])
         path_names = path.split('/').select { |segment| segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:") }.map { |segment| segment.split(':', 2)[1] }
-        parameters = route[:params].reject { |param| param[:in] == :path && !path_names.includes?(param[:name]) }
+        parameters = route[:params].reject { |param| param[:in] == :path && !path_names.includes?(param[:name]) }.map do |param|
+          if param[:in] == :query && path_names.includes?(param[:name])
+            {name: param[:name], in: :path, required: param[:required], schema: param[:schema], docs: param[:docs], example: param[:example]}
+          else
+            param
+          end
+        end
         path.split('/').each do |segment|
           next unless segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:")
           name = segment.split(':', 2)[1]
@@ -422,7 +428,7 @@ module ActionController::OpenAPI
             name:     name,
             in:       :path,
             required: segment.starts_with?(':') ? true.as(Bool?) : nil.as(Bool?),
-            schema:   %({"type":"string"}),
+            schema:   %({"type":"null"}),
             docs:     nil.as(String?),
             example:  nil.as(String?),
           }

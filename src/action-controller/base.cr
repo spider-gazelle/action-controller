@@ -470,12 +470,14 @@ abstract class ActionController::Base
         # Inherited annotated actions need their own identity and public route metadata.
         {% unless ::ActionController::Route::Builder::OPENAPI_ROUTES[verb_route] %}
           {% inherited_metadata = nil %}
+          {% inherited_base = nil %}
           {% for ancestor in @type.ancestors %}
             {% ancestor_base = CONTROLLER_BASES[ancestor.name.id] %}
             {% if ancestor_base && !inherited_metadata %}
               {% inherited_path = (ancestor_base + route_path.id.stringify).split("/").reject(&.empty?).join("/") %}
               {% inherited_key = ancestor.name.stringify + "#" + (is_websocket ? "WEBSOCKET" : http_method.id.stringify.upcase) + "/" + inherited_path %}
               {% inherited_metadata = ::ActionController::Route::Builder::OPENAPI_ROUTES[inherited_key] %}
+              {% inherited_base = ancestor_base if inherited_metadata %}
             {% end %}
           {% end %}
           {% if inherited_metadata %}
@@ -485,6 +487,11 @@ abstract class ActionController::Base
             {% end %}
             {% metadata[:controller] = @type.name.stringify %}
             {% metadata[:route] = "/" + full_route.join("/") %}
+            {% if metadata[:mcp_endpoint] %}
+              {% original_base = inherited_base.split("/").reject(&.empty?) %}
+              {% endpoint = metadata[:mcp_endpoint].split("/").reject(&.empty?) %}
+              {% metadata[:mcp_endpoint] = "/" + (NAMESPACE[0].split("/").reject(&.empty?) + endpoint[original_base.size..-1]).join("/") %}
+            {% end %}
             {% ::ActionController::Route::Builder::OPENAPI_ROUTES[verb_route] = metadata %}
           {% end %}
         {% end %}
@@ -832,7 +839,7 @@ abstract class ActionController::Base
   # Mount a controller subtree with a replacement base relative to this controller.
   macro mount(path, target)
     {% raise "mount path must be a string starting with /" unless path.is_a?(StringLiteral) && path.starts_with?("/") %}
-    {% raise "mount path cannot contain query strings, fragments or dot segments" if path.includes?("?") && !path.includes?("?:") || path.includes?("#") || path.split("/").any? { |part| part == "." || part == ".." } %}
+    {% raise "mount path cannot contain query strings, fragments or dot segments" if path.includes?("#") || path.split("/").any? { |part| part == "." || part == ".." || (part.starts_with?("?:") ? part[2..-1].includes?("?") : part.includes?("?")) } %}
     {% MOUNTS[@type.name.id] = [] of Nil unless MOUNTS[@type.name.id] %}
     {% MOUNTS[@type.name.id] << {path, target} %}
   end
