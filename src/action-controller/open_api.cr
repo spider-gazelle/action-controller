@@ -195,7 +195,7 @@ module ActionController::OpenAPI
       # Class => Schema (and request types)
       response_types = {} of String => String
       # nested JSON::Serializable types and enums are referenced, defined once as components
-      definitions = ::JSON::Schema::Definitions.new("#/components/schemas/") { |name| normalise_schema_reference(name) }
+      definitions = ::JSON::Schema::Definitions.new("#/components/schemas/")
       # Route => {array?, Class} => Response code
       route_response = Hash(String, Hash(Tuple(Bool, String), Int32)).new do |hash, key|
         hash[key] = {} of Tuple(Bool, String) => Int32
@@ -398,8 +398,9 @@ module ActionController::OpenAPI
   end
 
   # :nodoc:
+  # the component name of a type, shared with the referenced definitions so names never clash
   def normalise_schema_reference(class_name)
-    class_name.gsub(' ', '.').gsub(/[^0-9a-zA-Z_]/, '_')
+    JSON::Schema::Definitions.normalise(class_name)
   end
 
   # :nodoc:
