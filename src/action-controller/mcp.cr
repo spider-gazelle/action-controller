@@ -281,7 +281,7 @@ module ActionController::MCPServer
       end
     end
     declarations.each do |(owner, path)|
-      [{path, %w(GET HEAD POST DELETE)}, {Transport::RESOURCE_METADATA_PATH + path, %w(GET HEAD)}].each do |(endpoint_path, methods)|
+      [{path, %w[GET HEAD POST DELETE]}, {Transport::RESOURCE_METADATA_PATH + path, %w[GET HEAD]}].each do |(endpoint_path, methods)|
         Router::RouteHandler.optional_variants(endpoint_path).each do |(variant, _)|
           methods.each do |method|
             key = {method, Composition.pattern(variant)}

@@ -16,7 +16,7 @@ One composition registry supplies HTTP routing, route listing, OpenAPI, MCP and 
 - [x] Add replacement-base mounting, cycles/conflict validation and placement-aware URL helpers.
 - [x] Generate unified OpenAPI and global MCP catalogs, prompts and relocated endpoints from placements.
 - [x] Scope and validate MCP descriptions against compositions.
-- [ ] Verify unchanged template and composed fixtures; document the public APIs.
+- [x] Verify unchanged template and composed fixtures; document the public APIs.
 
 ## Acceptance checks
 
@@ -29,4 +29,4 @@ One composition registry supplies HTTP routing, route listing, OpenAPI, MCP and 
 
 ## Review
 
-Routing, mounting, inherited metadata, OpenAPI and MCP integration are implemented. Validation: 243 examples pass with randomized order; 246 pass with preview_mt and execution_context. New source/spec files pass Ameba, and all source/spec files pass the formatter. The unchanged template builds and its routes/docs/MCP CLI options work with a local shard override. Final compatibility recheck and documentation review are in progress. No release or merge is authorized by this tracking document.
+Routing, mounting, inherited metadata, OpenAPI and MCP integration are implemented. Validation: 243 examples pass with randomized order; 246 pass with preview_mt and execution_context. New source/spec files pass Ameba, and all source/spec files pass the formatter. The unchanged template builds, its seven specs pass, and its routes/docs/MCP CLI options work with a local shard override; no template source files were modified. A separate compiled fixture verifies composition selection before config initialization. README documents the APIs and compatibility behavior. Repository-wide Ameba reports pre-existing findings; added lines are checked separately. The PR remains a draft pending review and CI. No release or merge is authorized by this tracking document.

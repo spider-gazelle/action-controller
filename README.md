@@ -4,6 +4,69 @@
 
 Extending [lucky_router](https://github.com/luckyframework/lucky_router) for a Rails like DSL without the overhead. See the [docs site](https://spider-gazelle.net/) for usage details
 
+## Composable applications
+
+Every controller class provides `.handler`, which returns a fresh `HTTP::Handler` serving that class and its concrete descendants. It also works on an abstract application base such as the template's `App::Base`:
+
+```crystal
+HTTP::Server.new([
+  App::Base.handler,
+  OtherAC::App::Base.handler,
+  HTTP::StaticFileHandler.new("www", directory_listing: false),
+])
+```
+
+A route miss calls the next handler. A matched action keeps its response, including a deliberate 404 or an authentication failure. Application filters run only when one of that application's routes matches. Use a fresh handler for each server or chain; request controllers still take an `HTTP::Server::Context` in their constructor.
+
+For one server with unified route listing, OpenAPI and MCP, select application roots in `config.cr`, after requiring their controllers:
+
+```crystal
+ActionController::Server.compose(App::Base, OtherAC::App::Base)
+```
+
+This is a compile-time declaration, so it also applies to the template's `--routes`, `--docs` and `--mcp` options, which execute before configuration initialization. Declare it once. Existing `Server.new`, `Server.before`, `Server.after`, OpenAPI and MCP calls work unchanged. Without a declaration, controllers are discovered automatically as before. Reusable apps should expose their controllers in a library entry point; require their executable startup and global configuration only when running them standalone.
+
+### Mounting controllers and apps
+
+```crystal
+class MyApp < AC::Base
+  base "/myapp/"
+  mount "/auth/", OtherAC::App::OAuth2
+end
+```
+
+The mount replaces the target's base. If `OAuth2` has `base "/oauth2"` and a `/token` action, the public URL is `/myapp/auth/token`. A mounted application base includes its descendants, preserving their paths relative to that base. For example, an app with `base "/api"` and a descendant controller with `base "/api/users"` mounted at `/service` exposes that controller at `/service/users`. Controller bases outside the app base retain their whole path beneath the mount. `base` continues to set each controller's own path; it does not implicitly prefix descendants.
+
+Mounts can be nested or repeated. Mount-only targets are excluded from standalone automatic discovery; explicitly select a target as a root to expose it independently too. Mounted controllers keep their own filters and exception handlers. Parent controllers' filters apply to their own actions. Requests retain their public path, and unmatched mounted routes continue downstream.
+
+Parameterized mounts such as `mount "/accounts/:account_id/auth", OAuth2` bind those parameters for controller filters and actions, OpenAPI and MCP. Mounts must preserve any required parameters from the target's original routes. Cycles, ambiguous parameter names and conflicting public operations are rejected. Explicit composition also checks equivalent parameterized routes and generated HEAD operations. MCP endpoint conflicts are checked before endpoints are registered.
+
+Use `route_path(:action, ...)` inside an action to generate a URL using the current mounted base and bound path parameters:
+
+```crystal
+redirect_to route_path(:token)
+```
+
+Existing class URL helpers such as `OAuth2.token` retain their original URLs. Outside a request, use `composition.url_for(OAuth2, :token, ...)`; supply `mount_base:` to choose between repeated mounts.
+
+### Independent compositions and catalogs
+
+```crystal
+composition = AC::Composition.new([MyApp.name, AnotherApp::Base.name])
+server = AC::Server.new(composition: composition)
+AC::MCPServer.mount(server, "/mcp")
+
+docs = AC::OpenAPI.generate_open_api_docs(
+  title: "Combined API", version: "1.0", composition: composition,
+)
+AC::MCPServer.write_description("combined-mcp.yml", composition: composition)
+client = AC::SpecHelper.new(composition).hot_topic
+```
+
+OpenAPI uses public mounted paths and distinct operation IDs. MCP uses the same composition for tool calls, prompts, internal instructions, and relocated controller endpoints. Repeated mounts receive separate toolboxes and unique tool/prompt names. Existing visibility annotations and authentication settings still apply; the host owns global MCP configuration, session settings and UI asset locations.
+
+MCP description caches are scoped to the composition and description file. Generated files include a composition identity; a mismatched file is regenerated from compiled metadata without source comments. Regenerate descriptions with `--mcp` or `write_description` to retain those comments. Legacy description files remain supported for ordinary apps without explicit composition or mounts.
+
 ## Strong Parameter Usage
 
 ```crystal
