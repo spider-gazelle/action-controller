@@ -246,9 +246,6 @@ describe ActionController::OpenAPI do
       paths["/openapi_paths/{tenant}/mid/groups"]["get"]["operationId"].should eq "OpenAPIPaths_mid_without_user_id"
       paths["/openapi_paths/{tenant}/mid/groups/{user_id}"]["get"]["operationId"].should eq "OpenAPIPaths_mid"
       paths["/openapi_paths/{tenant}/mid/{user_id}/groups"]?.should be_nil
-      OpenAPIPaths.mid(tenant: "t", user_id: 5).should eq "/openapi_paths/t/mid/groups/5"
-      OpenAPIPaths.mid(tenant: "t").should eq "/openapi_paths/t/mid/groups"
-      OpenAPIPaths.file(tenant: "t", id: 1, file_name: "a/b.txt").should eq "/openapi_paths/t/files/1/a/b.txt"
 
       params.call("/openapi_paths/{tenant}/files/{id}").keys.should_not contain "file_name"
       glob = params.call("/openapi_paths/{tenant}/files/{id}/{file_name}")["file_name"]

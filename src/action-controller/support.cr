@@ -36,57 +36,45 @@ module ActionController::Support
   end
 
   # Used in base.cr to build routes for the redirect_to helpers
-  #
-  # Segments follow the router: `:name` is required, and optional `?:name` and glob `*:name`
-  # segments come after the required ones (wherever they're written), each added in turn while
-  # a value is provided. A glob keeps its slashes. Any other values become query params.
   def self.build_route(route, hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
+    keys = route.split("/:")[1..-1].map &.split("/")[0]
+    params = {} of String => String
+
+    if hash_parts
+      hash_parts.each do |key, value|
+        key = key.to_s
+        value = value.to_s
+
+        if keys.includes?(key)
+          route = route.sub(":#{key}", URI.encode_path(value))
+          keys.delete(key)
+        else
+          params[key] = value
+        end
+      end
+    end
+
     # Tuple overwrites hash parts (so safe to use a user generated hash)
-    values = {} of String => String?
-    hash_parts.try &.each { |key, value| values[key.to_s] = value.try(&.to_s) }
-    tuple_parts.each { |key, value| values[key.to_s] = value.try(&.to_s) }
+    tuple_parts.each do |key, value|
+      key = key.to_s
+      value = value.to_s
 
-    parts = route.split('/')
-    optional = parts.select { |part| part.starts_with?("?:") || part.starts_with?("*:") }
-    optional_names = optional.map(&.[2..])
-    missing = [] of String
-
-    segments = parts.reject { |part| part.starts_with?("?:") || part.starts_with?("*:") }.map do |segment|
-      next segment unless segment.starts_with?(':')
-      name = segment.lchop(':')
-      if value = values.delete(name)
-        URI.encode_path_segment(value)
+      if keys.includes?(key)
+        route = route.sub(":#{key}", URI.encode_path(value))
+        keys.delete(key)
       else
-        missing << name
-        segment
+        params[key] = value
       end
     end
 
     # Raise error if not all parts are substituted
-    raise ActionController::InvalidRoute.new("route parameters missing :#{missing.join(", :")} for #{route}") unless missing.empty?
+    raise ActionController::InvalidRoute.new("route parameters missing :#{keys.join(", :")} for #{route}") unless keys.empty?
 
-    unless optional.empty?
-      segments.pop if segments.size > 1 && segments.last.empty?
-      optional.each do |segment|
-        name = segment[2..]
-        break unless value = values[name]?.presence
-        values.delete(name)
-        segments << (segment.starts_with?('*') ? URI.encode_path(value) : URI.encode_path_segment(value))
-      end
-    end
-    path = segments.join('/')
-
-    # Add any remaining values as query params, an optional segment without a value is left out
-    params = {} of String => String
-    values.each do |key, value|
-      next if value.nil? && optional_names.includes?(key)
-      params[key] = value || ""
-    end
-
+    # Add any remaining values as query params
     if params.empty?
-      path
+      route
     else
-      "#{path}?#{URI::Params.encode(params)}"
+      "#{route}?#{URI::Params.encode(params)}"
     end
   end
 
