@@ -525,7 +525,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L341" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L341" target="_blank">
         action-controller/mcp/description.cr
       </a>
     
@@ -548,7 +548,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#new%28path%3AString%2Cbound%3AArray%28String%29%2Ctoolbox%3AActionController%3A%3AMCPServer%3A%3AToolbox%29-class-method" class="signature"><strong>.new</strong>(path : String, bound : Array(String), toolbox : ActionController::MCPServer::Toolbox)</a>
+        <a href="#new%28path%3AString%2Cbound%3AArray%28String%29%2Ctoolbox%3AActionController%3A%3AMCPServer%3A%3AToolbox%2Cinstructions_path%3ANil%7CString%3Dnil%29-class-method" class="signature"><strong>.new</strong>(path : String, bound : Array(String), toolbox : ActionController::MCPServer::Toolbox, instructions_path : Nil | String = <span class="n">nil</span>)</a>
         
       </li>
     
@@ -627,6 +627,13 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
         <a href="#instructions%3AString%7CNil-instance-method" class="signature"><strong>#instructions</strong> : String | Nil</a>
         
           <div class="summary"><p>the controller doc comment, used as the server instructions</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#instructions_path%3AString%7CNil-instance-method" class="signature"><strong>#instructions_path</strong> : String | Nil</a>
+        
+          <div class="summary"><p>the internal route of the controller's <code><a href="../../ActionController/MCPServer/Endpoint.html#instructions%3AString%7CNil-instance-method">#instructions</a></code> method, which builds the instructions for each session, i.e.</p></div>
         
       </li>
     
@@ -721,18 +728,18 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
     Constructor Detail
   </h2>
   
-    <div class="entry-detail" id="new(path:String,bound:Array(String),toolbox:ActionController::MCPServer::Toolbox)-class-method">
+    <div class="entry-detail" id="new(path:String,bound:Array(String),toolbox:ActionController::MCPServer::Toolbox,instructions_path:Nil|String=nil)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(path : String, bound : Array(String), toolbox : <a href="../../ActionController/MCPServer/Toolbox.html">ActionController::MCPServer::Toolbox</a>)
+        def self.<strong>new</strong>(path : String, bound : Array(String), toolbox : <a href="../../ActionController/MCPServer/Toolbox.html">ActionController::MCPServer::Toolbox</a>, instructions_path : Nil | String = <span class="n">nil</span>)
 
-        <a class="method-permalink" href="#new%28path%3AString%2Cbound%3AArray%28String%29%2Ctoolbox%3AActionController%3A%3AMCPServer%3A%3AToolbox%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28path%3AString%2Cbound%3AArray%28String%29%2Ctoolbox%3AActionController%3A%3AMCPServer%3A%3AToolbox%2Cinstructions_path%3ANil%7CString%3Dnil%29-class-method">#</a>
       </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L354" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L358" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -748,7 +755,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L343" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L343" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -764,7 +771,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L342" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L342" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -780,7 +787,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L342" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L342" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -796,7 +803,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L343" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L343" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -829,7 +836,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L377" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L381" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -864,7 +871,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L349" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L349" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -885,7 +892,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L372" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L376" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -906,7 +913,29 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L363" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L367" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="instructions_path:String|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>instructions_path</strong> : String | Nil
+
+        <a class="method-permalink" href="#instructions_path%3AString%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the internal route of the controller's <code><a href="../../ActionController/MCPServer/Endpoint.html#instructions%3AString%7CNil-instance-method">#instructions</a></code> method, which builds the
+instructions for each session, i.e. <code>/accounts/:account_id/__mcp_instructions__</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L356" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -927,7 +956,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L358" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L362" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -948,7 +977,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L346" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L346" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -969,7 +998,7 @@ Every tool and prompt is listed, there are no toolboxes to open</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/description.cr#L352" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/description.cr#L352" target="_blank">View source</a>]
         
       </div>
     </div>

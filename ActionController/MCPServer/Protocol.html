@@ -494,7 +494,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/protocol.cr#L21" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L21" target="_blank">
         action-controller/mcp/protocol.cr
       </a>
     
@@ -600,7 +600,7 @@
       </li>
     
       <li class="entry-summary">
-        <a href="#initialize_result%28protocol_version%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%29%3AString-instance-method" class="signature"><strong>#initialize_result</strong>(protocol_version : String, request : HTTP::Request | Nil = <span class="n">nil</span>) : String</a>
+        <a href="#initialize_result%28protocol_version%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method" class="signature"><strong>#initialize_result</strong>(protocol_version : String, request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String</a>
         
           <div class="summary"><p>the <code>initialize</code> result for the negotiated protocol version</p></div>
         
@@ -666,7 +666,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/protocol.cr#L41" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L41" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -703,7 +703,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/protocol.cr#L45" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L45" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -725,28 +725,30 @@ appended to <code>emitted</code> for delivery before the result</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/protocol.cr#L95" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L99" target="_blank">View source</a>]
         
       </div>
     </div>
   
-    <div class="entry-detail" id="initialize_result(protocol_version:String,request:HTTP::Request|Nil=nil):String-instance-method">
+    <div class="entry-detail" id="initialize_result(protocol_version:String,request:HTTP::Request|Nil=nil,bound:Hash(String,String)={}ofString=&gt;String):String-instance-method">
       <div class="signature">
         
-        def <strong>initialize_result</strong>(protocol_version : String, request : HTTP::Request | Nil = <span class="n">nil</span>) : String
+        def <strong>initialize_result</strong>(protocol_version : String, request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String
 
-        <a class="method-permalink" href="#initialize_result%28protocol_version%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%29%3AString-instance-method">#</a>
+        <a class="method-permalink" href="#initialize_result%28protocol_version%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method">#</a>
       </div>
       
         <div class="doc">
           
           <p>the <code>initialize</code> result for the negotiated protocol version</p>
+<p>an endpoint's <code>instructions</code> method is run with the session's <code>bound</code> path params,
+raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError</a></code> or <code><a href="../../ActionController/MCPServer/Unauthorized.html">Unauthorized</a></code> if it fails</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/protocol.cr#L55" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L58" target="_blank">View source</a>]
         
       </div>
     </div>

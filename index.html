@@ -744,19 +744,37 @@ room. Annotate the class with <code>@[<a href="ActionController/MCP.html">AC::MC
 <span class="k">end</span></code></pre>
 <p>Connecting to <code>/rooms/boardroom/mcp</code> lists <code>state</code> and <code>lights</code> directly:</p>
 <ul>
-<li><strong>Bound path params:</strong> the base path params (<code>room_id</code>) come from the endpoint URL.
+<li>
+<p><strong>Bound path params:</strong> the base path params (<code>room_id</code>) come from the endpoint URL.
 They're left out of the tool arguments, and a session can only be used at the URL it
-was created at.</li>
-<li><strong>No toolboxes:</strong> there are no meta tools or proxies, every tool and prompt is listed,
-named by its method.</li>
-<li><strong>Instructions:</strong> the controller's doc comment is given to the model as the server's
-instructions, and the server is named after the controller.</li>
-<li><strong>Visibility:</strong> the controller is hidden from the global server unless it's also
-annotated <code>hide: false</code>. A method annotated <code>hide: true</code> is hidden from both.</li>
-<li><strong>Shared configuration:</strong> authentication, forwarded headers and tool results use the
+was created at.</p>
+</li>
+<li>
+<p><strong>No toolboxes:</strong> there are no meta tools or proxies, every tool and prompt is listed,
+named by its method.</p>
+</li>
+<li>
+<p><strong>Instructions:</strong> the controller's doc comment is given to the model as the server's
+instructions, and the server is named after the controller. Define an <code>instructions</code>
+method to build them for each session instead:</p>
+<pre><code class="language-crystal"><span class="c"># runs like a route when a client connects: filters run and path params are available</span>
+<span class="k">def</span> <span class="m">instructions</span>(room_id : <span class="t">String</span>) : <span class="t">String</span>
+  <span class="s">&quot;You control the </span><span class="i">#{</span><span class="t">Room</span>.find!(room_id).name<span class="i">}</span><span class="s">, look up its state before changing it.&quot;</span>
+<span class="k">end</span></code></pre>
+<p>It isn't an HTTP route or a tool. If it fails, for example the filters respond 403 or
+the room doesn't exist, the client can't connect: <code>initialize</code> returns the error (a 401
+challenges the client to sign in again).</p>
+</li>
+<li>
+<p><strong>Visibility:</strong> the controller is hidden from the global server unless it's also
+annotated <code>hide: false</code>. A method annotated <code>hide: true</code> is hidden from both.</p>
+</li>
+<li>
+<p><strong>Shared configuration:</strong> authentication, forwarded headers and tool results use the
 <code>MCPServer</code> configuration, and tool calls run the controller's filters, so check access
 to the room (or account) in a <code>before_action</code>. The protected resource metadata is
-served for each endpoint URL.</li>
+served for each endpoint URL.</p>
+</li>
 </ul>
 <p><code>MCPServer.mount</code> mounts the endpoints too (<code>endpoints: false</code> skips them), and
 <code>write_description</code> includes them in <code>mcp.yml</code>.</p>

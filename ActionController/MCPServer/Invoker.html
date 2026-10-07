@@ -494,7 +494,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/invoker.cr#L7" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/invoker.cr#L7" target="_blank">
         action-controller/mcp/invoker.cr
       </a>
     
@@ -570,6 +570,13 @@
       </li>
     
       <li class="entry-summary">
+        <a href="#instructions%28path%3AString%2Corigin%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%29%3AString-instance-method" class="signature"><strong>#instructions</strong>(path : String, origin : HTTP::Request, bound : Hash(String, String)) : String</a>
+        
+          <div class="summary"><p>runs an endpoint controller's <code><a href="../../ActionController/MCPServer/Invoker.html#instructions%28path%3AString%2Corigin%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%29%3AString-instance-method">#instructions</a></code> method, an internal route, returning the instructions for the session</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#probe%28path%3AString%2Corigin%3AHTTP%3A%3ARequest%29%3ABool-instance-method" class="signature"><strong>#probe</strong>(path : String, origin : HTTP::Request) : Bool</a>
         
           <div class="summary"><p>requests the route provided with the forwarded credentials, returning <code>true</code> on success</p></div>
@@ -636,7 +643,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/invoker.cr#L9" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/invoker.cr#L9" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -675,7 +682,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/invoker.cr#L21" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/invoker.cr#L21" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -696,7 +703,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/invoker.cr#L115" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/invoker.cr#L143" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -717,7 +724,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/invoker.cr#L125" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/invoker.cr#L153" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -740,7 +747,31 @@ authentication is enabled and the prompt responds with a 401</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/invoker.cr#L53" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/invoker.cr#L81" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="instructions(path:String,origin:HTTP::Request,bound:Hash(String,String)):String-instance-method">
+      <div class="signature">
+        
+        def <strong>instructions</strong>(path : String, origin : HTTP::Request, bound : Hash(String, String)) : String
+
+        <a class="method-permalink" href="#instructions%28path%3AString%2Corigin%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%29%3AString-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>runs an endpoint controller's <code><a href="../../ActionController/MCPServer/Invoker.html#instructions%28path%3AString%2Corigin%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%29%3AString-instance-method">#instructions</a></code> method, an internal route, returning the
+instructions for the session</p>
+<p>raises <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError</a></code> if it fails and <code><a href="../../ActionController/MCPServer/Unauthorized.html">Unauthorized</a></code> if authentication is enabled and it
+responds with a 401</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/invoker.cr#L54" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -761,7 +792,7 @@ authentication is enabled and the prompt responds with a 401</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/42580564add1796461812ca629f363978baa35f9/src/action-controller/mcp/invoker.cr#L38" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/invoker.cr#L38" target="_blank">View source</a>]
         
       </div>
     </div>
