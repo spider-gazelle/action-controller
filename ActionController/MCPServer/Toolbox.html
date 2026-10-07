@@ -127,6 +127,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/Icon" data-name="actioncontroller::icon">
+      <a href="../../ActionController/Icon.html">Icon</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/InvalidRoute" data-name="actioncontroller::invalidroute">
       <a href="../../ActionController/InvalidRoute.html">InvalidRoute</a>
       
@@ -519,7 +524,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L184" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L231" target="_blank">
         action-controller/mcp/description.cr
       </a>
     
@@ -542,7 +547,7 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#new%28name%3AString%2Ccontroller%3AString%2Cdescription%3ANil%7CString%2Ctools%3AArray%28ActionController%3A%3AMCPServer%3A%3ATool%29%3D%5B%5DofTool%2Cprompts%3AArray%28ActionController%3A%3AMCPServer%3A%3APrompt%29%3D%5B%5DofPrompt%29-class-method" class="signature"><strong>.new</strong>(name : String, controller : String, description : Nil | String, tools : Array(ActionController::MCPServer::Tool) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Tool</span>, prompts : Array(ActionController::MCPServer::Prompt) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Prompt</span>)</a>
+        <a href="#new%28name%3AString%2Ccontroller%3AString%2Cdescription%3ANil%7CString%2Ctools%3AArray%28ActionController%3A%3AMCPServer%3A%3ATool%29%3D%5B%5DofTool%2Cprompts%3AArray%28ActionController%3A%3AMCPServer%3A%3APrompt%29%3D%5B%5DofPrompt%2Cicons%3ANil%7CArray%28JSON%3A%3AAny%29%3Dnil%29-class-method" class="signature"><strong>.new</strong>(name : String, controller : String, description : Nil | String, tools : Array(ActionController::MCPServer::Tool) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Tool</span>, prompts : Array(ActionController::MCPServer::Prompt) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Prompt</span>, icons : Nil | Array(JSON::Any) = <span class="n">nil</span>)</a>
         
       </li>
     
@@ -591,6 +596,13 @@
     
       <li class="entry-summary">
         <a href="#description%3AString%7CNil-instance-method" class="signature"><strong>#description</strong> : String | Nil</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#icons%3AArray%28JSON%3A%3AAny%29%7CNil-instance-method" class="signature"><strong>#icons</strong> : Array(JSON::Any) | Nil</a>
+        
+          <div class="summary"><p>the controller's icons, <code>src</code> as written, see <code>Icons</code></p></div>
         
       </li>
     
@@ -700,18 +712,18 @@
     Constructor Detail
   </h2>
   
-    <div class="entry-detail" id="new(name:String,controller:String,description:Nil|String,tools:Array(ActionController::MCPServer::Tool)=[]ofTool,prompts:Array(ActionController::MCPServer::Prompt)=[]ofPrompt)-class-method">
+    <div class="entry-detail" id="new(name:String,controller:String,description:Nil|String,tools:Array(ActionController::MCPServer::Tool)=[]ofTool,prompts:Array(ActionController::MCPServer::Prompt)=[]ofPrompt,icons:Nil|Array(JSON::Any)=nil)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(name : String, controller : String, description : Nil | String, tools : Array(<a href="../../ActionController/MCPServer/Tool.html">ActionController::MCPServer::Tool</a>) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Tool</span>, prompts : Array(<a href="../../ActionController/MCPServer/Prompt.html">ActionController::MCPServer::Prompt</a>) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Prompt</span>)
+        def self.<strong>new</strong>(name : String, controller : String, description : Nil | String, tools : Array(<a href="../../ActionController/MCPServer/Tool.html">ActionController::MCPServer::Tool</a>) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Tool</span>, prompts : Array(<a href="../../ActionController/MCPServer/Prompt.html">ActionController::MCPServer::Prompt</a>) = <span class="o">[]</span> <span class="k">of</span> <span class="t">Prompt</span>, icons : Nil | Array(JSON::Any) = <span class="n">nil</span>)
 
-        <a class="method-permalink" href="#new%28name%3AString%2Ccontroller%3AString%2Cdescription%3ANil%7CString%2Ctools%3AArray%28ActionController%3A%3AMCPServer%3A%3ATool%29%3D%5B%5DofTool%2Cprompts%3AArray%28ActionController%3A%3AMCPServer%3A%3APrompt%29%3D%5B%5DofPrompt%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28name%3AString%2Ccontroller%3AString%2Cdescription%3ANil%7CString%2Ctools%3AArray%28ActionController%3A%3AMCPServer%3A%3ATool%29%3D%5B%5DofTool%2Cprompts%3AArray%28ActionController%3A%3AMCPServer%3A%3APrompt%29%3D%5B%5DofPrompt%2Cicons%3ANil%7CArray%28JSON%3A%3AAny%29%3Dnil%29-class-method">#</a>
       </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L194" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L245" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -727,7 +739,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L186" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L233" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -743,7 +755,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L185" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L232" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -759,7 +771,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L185" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L232" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -775,7 +787,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L186" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L233" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -807,7 +819,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L189" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L236" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -823,7 +835,28 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L190" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L237" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="icons:Array(JSON::Any)|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>icons</strong> : Array(JSON::Any) | Nil
+
+        <a class="method-permalink" href="#icons%3AArray%28JSON%3A%3AAny%29%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the controller's icons, <code>src</code> as written, see <code>Icons</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L243" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -839,7 +872,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L188" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L235" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -860,7 +893,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L208" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L259" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -876,7 +909,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L192" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L239" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -897,7 +930,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L203" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L254" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -918,7 +951,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L198" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L249" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -934,7 +967,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L191" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L238" target="_blank">View source</a>]
         
       </div>
     </div>

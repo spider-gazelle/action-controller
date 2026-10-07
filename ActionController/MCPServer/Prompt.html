@@ -127,6 +127,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/Icon" data-name="actioncontroller::icon">
+      <a href="../../ActionController/Icon.html">Icon</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/InvalidRoute" data-name="actioncontroller::invalidroute">
       <a href="../../ActionController/InvalidRoute.html">InvalidRoute</a>
       
@@ -519,7 +524,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L146" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L184" target="_blank">
         action-controller/mcp/description.cr
       </a>
     
@@ -542,7 +547,7 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cpath%3AString%2Carguments%3AArray%28ActionController%3A%3AMCPServer%3A%3APromptArgument%29%2Croot%3ABool%3Dfalse%29-class-method" class="signature"><strong>.new</strong>(name : String, description : Nil | String, path : String, arguments : Array(ActionController::MCPServer::PromptArgument), root : Bool = <span class="n">false</span>)</a>
+        <a href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cpath%3AString%2Carguments%3AArray%28ActionController%3A%3AMCPServer%3A%3APromptArgument%29%2Croot%3ABool%3Dfalse%2Ctitle%3ANil%7CString%3Dnil%2Cicons%3ANil%7CArray%28JSON%3A%3AAny%29%3Dnil%29-class-method" class="signature"><strong>.new</strong>(name : String, description : Nil | String, path : String, arguments : Array(ActionController::MCPServer::PromptArgument), root : Bool = <span class="n">false</span>, title : Nil | String = <span class="n">nil</span>, icons : Nil | Array(JSON::Any) = <span class="n">nil</span>)</a>
         
       </li>
     
@@ -595,6 +600,13 @@
       </li>
     
       <li class="entry-summary">
+        <a href="#icons%3AArray%28JSON%3A%3AAny%29%7CNil-instance-method" class="signature"><strong>#icons</strong> : Array(JSON::Any) | Nil</a>
+        
+          <div class="summary"><p>icons, <code>src</code> as written, see <code>Icons</code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#name%3AString-instance-method" class="signature"><strong>#name</strong> : String</a>
         
       </li>
@@ -614,9 +626,16 @@
       </li>
     
       <li class="entry-summary">
-        <a href="#to_mcp_json%28json%3AJSON%3A%3ABuilder%29%3ANil-instance-method" class="signature"><strong>#to_mcp_json</strong>(json : JSON::Builder) : Nil</a>
+        <a href="#title%3AString%7CNil-instance-method" class="signature"><strong>#title</strong> : String | Nil</a>
         
-          <div class="summary"><p>the prompt definition as returned by <code>prompts/list</code></p></div>
+          <div class="summary"><p>the display name</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#to_mcp_json%28json%3AJSON%3A%3ABuilder%2Chost%3AString%7CNil%3Dnil%29%3ANil-instance-method" class="signature"><strong>#to_mcp_json</strong>(json : JSON::Builder, host : String | Nil = <span class="n">nil</span>) : Nil</a>
+        
+          <div class="summary"><p>the prompt definition as returned by <code>prompts/list</code>, <code>host</code> resolves icon paths</p></div>
         
       </li>
     
@@ -690,18 +709,18 @@
     Constructor Detail
   </h2>
   
-    <div class="entry-detail" id="new(name:String,description:Nil|String,path:String,arguments:Array(ActionController::MCPServer::PromptArgument),root:Bool=false)-class-method">
+    <div class="entry-detail" id="new(name:String,description:Nil|String,path:String,arguments:Array(ActionController::MCPServer::PromptArgument),root:Bool=false,title:Nil|String=nil,icons:Nil|Array(JSON::Any)=nil)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(name : String, description : Nil | String, path : String, arguments : Array(<a href="../../ActionController/MCPServer/PromptArgument.html">ActionController::MCPServer::PromptArgument</a>), root : Bool = <span class="n">false</span>)
+        def self.<strong>new</strong>(name : String, description : Nil | String, path : String, arguments : Array(<a href="../../ActionController/MCPServer/PromptArgument.html">ActionController::MCPServer::PromptArgument</a>), root : Bool = <span class="n">false</span>, title : Nil | String = <span class="n">nil</span>, icons : Nil | Array(JSON::Any) = <span class="n">nil</span>)
 
-        <a class="method-permalink" href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cpath%3AString%2Carguments%3AArray%28ActionController%3A%3AMCPServer%3A%3APromptArgument%29%2Croot%3ABool%3Dfalse%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cpath%3AString%2Carguments%3AArray%28ActionController%3A%3AMCPServer%3A%3APromptArgument%29%2Croot%3ABool%3Dfalse%2Ctitle%3ANil%7CString%3Dnil%2Cicons%3ANil%7CArray%28JSON%3A%3AAny%29%3Dnil%29-class-method">#</a>
       </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L160" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L205" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -717,7 +736,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L148" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L186" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -733,7 +752,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L147" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L185" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -749,7 +768,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L147" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L185" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -765,7 +784,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L148" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L186" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -797,7 +816,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L155" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L193" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -813,7 +832,28 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L151" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L189" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="icons:Array(JSON::Any)|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>icons</strong> : Array(JSON::Any) | Nil
+
+        <a class="method-permalink" href="#icons%3AArray%28JSON%3A%3AAny%29%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>icons, <code>src</code> as written, see <code>Icons</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L203" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -829,7 +869,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L150" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L188" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -850,7 +890,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L154" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L192" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -871,28 +911,49 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L158" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L196" target="_blank">View source</a>]
         
       </div>
     </div>
   
-    <div class="entry-detail" id="to_mcp_json(json:JSON::Builder):Nil-instance-method">
+    <div class="entry-detail" id="title:String|Nil-instance-method">
       <div class="signature">
         
-        def <strong>to_mcp_json</strong>(json : JSON::Builder) : Nil
+        def <strong>title</strong> : String | Nil
 
-        <a class="method-permalink" href="#to_mcp_json%28json%3AJSON%3A%3ABuilder%29%3ANil-instance-method">#</a>
+        <a class="method-permalink" href="#title%3AString%7CNil-instance-method">#</a>
       </div>
       
         <div class="doc">
           
-          <p>the prompt definition as returned by <code>prompts/list</code></p>
+          <p>the display name</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/mcp/description.cr#L164" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L199" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="to_mcp_json(json:JSON::Builder,host:String|Nil=nil):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>to_mcp_json</strong>(json : JSON::Builder, host : String | Nil = <span class="n">nil</span>) : Nil
+
+        <a class="method-permalink" href="#to_mcp_json%28json%3AJSON%3A%3ABuilder%2Chost%3AString%7CNil%3Dnil%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the prompt definition as returned by <code>prompts/list</code>, <code>host</code> resolves icon paths</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/mcp/description.cr#L209" target="_blank">View source</a>]
         
       </div>
     </div>

@@ -127,6 +127,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/Icon" data-name="actioncontroller::icon">
+      <a href="../ActionController/Icon.html">Icon</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/InvalidRoute" data-name="actioncontroller::invalidroute">
       <a href="../ActionController/InvalidRoute.html">InvalidRoute</a>
       
@@ -472,15 +477,19 @@ hidden from the global server unless it's annotated <code>hide: false</code>, an
 annotated <code>hide: true</code> is hidden from both</li>
 <li><code>ui: &quot;bookings/card.html&quot;</code> renders the HTML card at that path, in <code><a href="../ActionController/MCPServer.html#ui_base%3AString%7CNil-class-method">MCPServer.ui_base</a></code>,
 for the tool's results in clients that support MCP Apps (<code>ui://bookings/card.html</code>)</li>
-<li><code>card_only: true</code> makes the tool callable by cards only, it's hidden from the model</li>
+<li><code>visibility: :card</code> makes the tool callable by cards only, it's hidden from the model.
+<code>visibility: :model</code> stops cards calling it, the default is <code>[:model, :card]</code></li>
+<li><code>behaviour:</code> describes what the tool does, a symbol or an array of <code>:read_only</code>,
+<code>:additive</code>, <code>:destructive</code>, <code>:idempotent</code>, <code>:open_world</code> and <code>:closed_world</code>. It
+replaces the defaults inferred from the HTTP verb: GET is <code>:read_only</code>, PUT is
+<code>:idempotent</code> and DELETE is <code>[:destructive, :idempotent]</code>. Read only tools can be run
+with the <code>call_read_only</code> proxy</li>
+<li><code>title: &quot;Book a room&quot;</code> is the tool or prompt's display name</li>
 </ul>
-<p>tools with <code>ui:</code> or <code>card_only: true</code> are <code>root: true</code> unless annotated <code>root: false</code>, as
-hosts only render cards for, and let cards call, the tools in their tool list</p>
+<p>tools with <code>ui:</code> or <code>visibility: :card</code> are <code>root: true</code> unless annotated <code>root: false</code>,
+as hosts only render cards for, and let cards call, the tools in their tool list.
+Icons are added with <code>@[<a href="../ActionController/Icon.html">AC::Icon</a>]</code></p>
 <ul>
-<li><code>read_only: Bool</code> overrides whether a tool only reads data, which defaults to
-<code>true</code> for GET routes. Read only tools are hinted as such to clients and can be run
-with the <code>call_read_only</code> proxy, e.g. <code>false</code> for a GET with side effects or <code>true</code>
-for a POST search</li>
 <li><code>prompt: true</code> exposes a method as an MCP prompt (not as a HTTP route).
 The method must return <code>String</code> or <code>Array(<a href="../ActionController/PromptMessage.html">AC::PromptMessage</a>)</code></li>
 </ul>
@@ -531,7 +540,7 @@ The method must return <code>String</code> or <code>Array(<a href="../ActionCont
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/e727f9900449b762c082c3a9c3b40663e58157bb/src/action-controller/router/builder.cr#L110" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/f3985b8e3621301177956d1f744f8a6c6127cb15/src/action-controller/router/builder.cr#L114" target="_blank">
         action-controller/router/builder.cr
       </a>
     

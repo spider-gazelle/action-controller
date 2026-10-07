@@ -127,6 +127,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/Icon" data-name="actioncontroller::icon">
+      <a href="ActionController/Icon.html">Icon</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/InvalidRoute" data-name="actioncontroller::invalidroute">
       <a href="ActionController/InvalidRoute.html">InvalidRoute</a>
       
@@ -564,7 +569,7 @@ like direct calls.</p>
 <p>There are two proxies so clients can tell reads from writes: <code>call_read_only</code> is hinted
 <code>readOnlyHint: true</code> (so ChatGPT, for example, doesn't ask the user to confirm each call)
 and refuses tools that aren't read only. A tool is read only if it's a GET route,
-unless overridden with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(read_only:)]</code>. Disable both proxies with
+unless overridden with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(behaviour:)]</code>. Disable both proxies with
 <code>MCPServer.tool_proxy = false</code> once your clients support <code>list_changed</code>.</p>
 <p>Tool calls and prompts are dispatched in-process through the application router, so
 filters, authentication, controller exception handlers and responders behave exactly
@@ -776,7 +781,7 @@ folder:</p>
   <span class="k">end</span>
 
   <span class="c"># Checks in to a booking, only the card can call this</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(card_only: <span class="n">true</span>)]
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(visibility: <span class="n">:card</span>)]
   @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/:id/check_in&quot;</span>)]
   <span class="k">def</span> <span class="m">check_in</span>(id : <span class="t">String</span>) : <span class="t">Booking</span>
   <span class="k">end</span>
@@ -792,11 +797,11 @@ in <code>ui_meta</code>, or in a sidecar such as <code>bookings/card.meta.json</
 <code>{&quot;csp&quot;: {&quot;resourceDomains&quot;: [&quot;https://cdn.example.com&quot;]}, &quot;prefersBorder&quot;: false}</code>.</li>
 <li><strong>Talking to the host:</strong> cards use JSON-RPC over <code>postMessage</code> (<code>ui/initialize</code>, then
 <code>ui/notifications/tool-result</code>), with or without the <code>@modelcontextprotocol/ext-apps</code>
-SDK. They can call tools too, such as <code>card_only</code> tools.</li>
+SDK. They can call tools too, such as <code>visibility: :card</code> tools.</li>
 <li><strong>Caching:</strong> hosts cache cards by URI, so tools advertise
 <code>ui://bookings/card.html?v=&lt;content hash&gt;</code>. A changed card gets a new URI.</li>
 <li><strong>Root by default:</strong> hosts only render cards for, and let cards call, the tools in
-their tool list. So tools with <code>ui:</code> or <code>card_only: true</code> are root items, listed without
+their tool list. So tools with <code>ui:</code> or <code>visibility: :card</code> are root items, listed without
 opening their toolbox, unless annotated <code>root: false</code>.</li>
 <li><code>ui:</code> paths are relative to <code>ui_base</code> and must be <code>.html</code> files (checked at compile
 time). Nothing outside <code>ui_base</code> is served. Hosts without MCP Apps support ignore the
@@ -891,12 +896,36 @@ annotation takes precedence:</p>
 |--------|-------------|
 | <code>hide: true</code> | excludes the routes / prompts from MCP |
 | <code>root: true</code> | always available, without opening the toolbox |
-| <code>endpoint: true</code> | serves the controller as its own MCP server at <code>&lt;base&gt;/mcp</code> (controllers only), see <a href="#controller-endpoints">controller endpoints</a> |
+| <code>prompt: true</code> | the method is an MCP prompt (methods only) |
+| <code>title: &quot;Book a room&quot;</code> | the tool or prompt's display name (methods only) |
+| <code>behaviour: :read_only</code> | what the tool does, see below |
+| <code>visibility: :card</code> | who can call the tool: <code>:model</code>, <code>:card</code> or both (the default) |
 | <code>ui: &quot;bookings/card.html&quot;</code> | renders this HTML card for the tool's results, see <a href="#ui-cards-mcp-apps">UI cards</a> |
-| <code>card_only: true</code> | only cards can call the tool, it's hidden from the model |</p>
-<p>Tools with <code>ui:</code> or <code>card_only: true</code> default to <code>root: true</code>.
-| <code>read_only: Bool</code> | whether the tool only reads data (default: GET routes). Sets <code>readOnlyHint</code> and whether <code>call_read_only</code> runs it. Use <code>false</code> for a GET with side effects, <code>true</code> for a POST search |
-| <code>prompt: true</code> | the method is an MCP prompt (methods only) |</p>
+| <code>endpoint: true</code> | serves the controller as its own MCP server at <code>&lt;base&gt;/mcp</code> (controllers only), see <a href="#controller-endpoints">controller endpoints</a> |</p>
+<p>Tools with <code>ui:</code> or <code>visibility: :card</code> default to <code>root: true</code>.</p>
+<p><strong>Behaviour</strong> tells hosts what a tool does, which they use to decide what to confirm with
+the user. It's a symbol or an array of <code>:read_only</code>, <code>:additive</code>, <code>:destructive</code>,
+<code>:idempotent</code>, <code>:open_world</code> and <code>:closed_world</code>. By default it's inferred from the HTTP
+verb: GET is <code>:read_only</code>, PUT is <code>:idempotent</code> and DELETE is
+<code>[:destructive, :idempotent]</code>. Setting it replaces the default, and contradictions are
+compile errors. Read only tools can be run with the <code>call_read_only</code> proxy.</p>
+<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(behaviour: <span class="n">:read_only</span>)]                <span class="c"># a POST search</span>
+@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(behaviour: [<span class="n">:additive</span>, <span class="n">:open_world</span>])]  <span class="c"># a POST that sends an email</span>
+@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(behaviour: <span class="n">:destructive</span>)]              <span class="c"># a PUT that replaces data</span></code></pre>
+<p><strong>Visibility</strong> controls who can call a tool in hosts that support
+<a href="#ui-cards-mcp-apps">UI cards</a>: <code>:card</code> tools are hidden from the model, and <code>:model</code>
+tools can't be called by cards. Hosts enforce it, so it isn't access control.</p>
+<p><strong>Icons</strong> are added with <code>@[<a href="ActionController/Icon.html">AC::Icon</a>]</code>, which you can repeat for different sizes and
+themes. On a controller they're the default for its tools and prompts, and the icon of
+its toolbox and <a href="#controller-endpoints">endpoint</a>:</p>
+<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Icon</span>(src: <span class="s">&quot;icons/book.svg&quot;</span>, sizes: [<span class="s">&quot;any&quot;</span>])]
+@[<span class="t">AC</span><span class="t">::</span><span class="t">Icon</span>(src: <span class="s">&quot;icons/book-dark.svg&quot;</span>, sizes: [<span class="s">&quot;any&quot;</span>], theme: <span class="s">&quot;dark&quot;</span>)]
+@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/&quot;</span>)]
+<span class="k">def</span> <span class="m">create</span>(booking : <span class="t">Booking</span>) : <span class="t">Booking</span></code></pre>
+<p><code>src</code> is sent as is when it's an <code>https:</code> or <code>data:</code> URL. A file in <code>MCPServer.ui_base</code>
+is sent as a <code>data:</code> URL, and anything else is a path on the current host. Every other
+argument is passed through as is. Use <code>MCPServer.icon &quot;icons/logo.svg&quot;, sizes: [&quot;any&quot;]</code>
+for the server's own icon.</p>
 <pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(hide: <span class="n">true</span>)] <span class="c"># hide every route in the controller</span>
 <span class="k">class</span> <span class="t">Internal</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
   @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(hide: <span class="n">false</span>)] <span class="c"># method annotations take precedence</span>
