@@ -411,9 +411,6 @@ module ActionController::Route::Builder
           {% else %}
             # annotation based route
 
-            # the route in the order the router matches it, optional and glob segments go last
-            {% router_route = "/" + (full_route.reject { |part| part.starts_with?("?:") || part.starts_with?("*:") } + full_route.select { |part| part.starts_with?("?:") || part.starts_with?("*:") }).join("/") %}
-
             # Grab the param parts
             {% required_params = full_route.select(&.starts_with?(":")).map { |part| part.split(":")[1] } %}
             # optional and glob segments, the router also matches the route without them
@@ -423,7 +420,7 @@ module ActionController::Route::Builder
             {% open_api_route[:controller] = @type.name.stringify %}
             {% open_api_route[:responses] = {} of Nil => Nil %}
             {% open_api_route[:method] = method_name.stringify %}
-            {% open_api_route[:route] = router_route %}
+            {% open_api_route[:route] = "/" + full_route.join("/") %}
             {% open_api_route[:verb] = lower_route_method.stringify %}
 
             {% open_api_route[:mcp_hide] = mcp_hide == true %}

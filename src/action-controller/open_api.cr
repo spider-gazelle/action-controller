@@ -571,7 +571,7 @@ module ActionController::OpenAPI
       end
 
       # the full route keeps the operation id, the router also matches it without its optional segments
-      variants = route_variants(route[:route])
+      variants = Router::RouteHandler.optional_variants(route[:route], glob: true)
       variants.sort_by! { |(_variant, omitted)| omitted ? 1 : 0 }
       variants.each do |(variant, omitted)|
         path_key = openapi_path(variant)
@@ -610,20 +610,6 @@ module ActionController::OpenAPI
       paths:      paths,
       components: components,
     }
-  end
-
-  # :nodoc:
-  # the routes the router matches: without the optional (`?:`) and glob (`*:`) segments, then
-  # adding each in turn (they always follow the required segments, wherever they're written).
-  # Returns each route with the first optional segment it leaves out
-  def route_variants(route : String) : Array(Tuple(String, String?))
-    parts = route.split('/')
-    optional = parts.select { |part| part.starts_with?("?:") || part.starts_with?("*:") }
-    required = parts.reject { |part| part.starts_with?("?:") || part.starts_with?("*:") }
-    variants = optional.map_with_index do |part, index|
-      {(required + optional[0, index]).join('/'), part.split(':', 2)[1]}.as(Tuple(String, String?))
-    end
-    variants << {(required + optional).join('/'), nil}
   end
 
   # :nodoc:

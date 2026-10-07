@@ -99,6 +99,20 @@ describe ActionController::Router::RouteHandler do
     optional.search_route("GET", "/items/7", with_id).should_not be_nil
     with_id.route_params.should eq({"id" => "7"})
 
+    # optional segments match where they're written, one after another
+    middle = ActionController::Router::RouteHandler.new
+    middle.add_route("GET", "/users/?:user_id/groups/?:group_id", {route_action, false})
+    {
+      "/users/groups"     => {} of String => String,
+      "/users/5/groups"   => {"user_id" => "5"},
+      "/users/5/groups/9" => {"user_id" => "5", "group_id" => "9"},
+    }.each do |path, params|
+      context = route_context(path)
+      middle.search_route("GET", path, context).should_not be_nil
+      context.route_params.should eq params
+    end
+    middle.search_route("GET", "/users/groups/5", route_context("/users/groups/5")).should be_nil
+
     {"*" => "glob", "*:rest" => "rest"}.each do |pattern, name|
       handler = ActionController::Router::RouteHandler.new
       handler.add_route("GET", "/files/#{pattern}", {route_action, false})

@@ -106,7 +106,7 @@ class OpenAPIPaths < ActionController::Base
     "#{tenant} #{item_id} #{expires_after}"
   end
 
-  # the router matches optional segments after the required ones: `/mid/groups/5`
+  # optional segments are matched where they're written: `/mid/groups` and `/mid/5/groups`
   @[AC::Route::GET("/mid/?:user_id/groups")]
   def mid(user_id : Int64? = nil) : String
     "#{user_id}"
@@ -244,8 +244,8 @@ describe ActionController::OpenAPI do
       paths["/openapi_paths/{tenant}/eink/{item_id}/{expires_after}"]["get"]["operationId"].should eq "OpenAPIPaths_eink"
 
       paths["/openapi_paths/{tenant}/mid/groups"]["get"]["operationId"].should eq "OpenAPIPaths_mid_without_user_id"
-      paths["/openapi_paths/{tenant}/mid/groups/{user_id}"]["get"]["operationId"].should eq "OpenAPIPaths_mid"
-      paths["/openapi_paths/{tenant}/mid/{user_id}/groups"]?.should be_nil
+      paths["/openapi_paths/{tenant}/mid/{user_id}/groups"]["get"]["operationId"].should eq "OpenAPIPaths_mid"
+      paths["/openapi_paths/{tenant}/mid/groups/{user_id}"]?.should be_nil
 
       params.call("/openapi_paths/{tenant}/files/{id}").keys.should_not contain "file_name"
       glob = params.call("/openapi_paths/{tenant}/files/{id}/{file_name}")["file_name"]
