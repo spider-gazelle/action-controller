@@ -14,7 +14,7 @@
 <script type="text/javascript" src="../../js/doc.js"></script>
 
   <meta name="repository-name" content="action-controller">
-  <title>ActionController::Route::NotAcceptable - action-controller master</title>
+  <title>ActionController::MCPServer::UIMeta - action-controller master</title>
   <script type="text/javascript">
     CrystalDocs.base_path = "../../";
   </script>
@@ -142,7 +142,7 @@
       
     </li>
   
-  <li class="parent " data-id="action-controller/ActionController/MCPServer" data-name="actioncontroller::mcpserver">
+  <li class="parent open current" data-id="action-controller/ActionController/MCPServer" data-name="actioncontroller::mcpserver">
       <a href="../../ActionController/MCPServer.html">MCPServer</a>
       
         <ul>
@@ -237,7 +237,7 @@
       
     </li>
   
-  <li class=" " data-id="action-controller/ActionController/MCPServer/UIMeta" data-name="actioncontroller::mcpserver::uimeta">
+  <li class=" current" data-id="action-controller/ActionController/MCPServer/UIMeta" data-name="actioncontroller::mcpserver::uimeta">
       <a href="../../ActionController/MCPServer/UIMeta.html">UIMeta</a>
       
     </li>
@@ -297,7 +297,7 @@
       
     </li>
   
-  <li class="parent open current" data-id="action-controller/ActionController/Route" data-name="actioncontroller::route">
+  <li class="parent " data-id="action-controller/ActionController/Route" data-name="actioncontroller::route">
       <a href="../../ActionController/Route.html">Route</a>
       
         <ul>
@@ -332,7 +332,7 @@
       
     </li>
   
-  <li class=" current" data-id="action-controller/ActionController/Route/NotAcceptable" data-name="actioncontroller::route::notacceptable">
+  <li class=" " data-id="action-controller/ActionController/Route/NotAcceptable" data-name="actioncontroller::route::notacceptable">
       <a href="../../ActionController/Route/NotAcceptable.html">NotAcceptable</a>
       
     </li>
@@ -442,13 +442,13 @@
 <h1 class="type-name">
 
   <span class="kind">
-    class
-  </span> ActionController::<wbr>Route::<wbr>NotAcceptable
+    struct
+  </span> ActionController::<wbr>MCPServer::<wbr>UIMeta
 
 </h1>
 
 
-  <ul class="superclass-hierarchy"><li class="superclass"><a href="../../ActionController/Route/NotAcceptable.html">ActionController::Route::NotAcceptable</a></li><li class="superclass"><a href="../../ActionController/Route/Error.html">ActionController::Route::Error</a></li><li class="superclass">Exception</li><li class="superclass">Reference</li><li class="superclass">Object</li></ul>
+  <ul class="superclass-hierarchy"><li class="superclass"><a href="../../ActionController/MCPServer/UIMeta.html">ActionController::MCPServer::UIMeta</a></li><li class="superclass">Struct</li><li class="superclass">Value</li><li class="superclass">Object</li></ul>
 
 
 
@@ -462,7 +462,9 @@
     Overview
   </h2>
 
-  <p>we don't support any of the accepted response content types</p>
+  <p>How hosts render a card, the <code>_meta.ui</code> of an MCP Apps resource.
+Set a default with <code><a href="../../ActionController/MCPServer.html#ui_meta%3AUIMeta%7CNil-class-method">MCPServer.ui_meta</a></code>, or override it for a card with a
+<code>&lt;card&gt;.meta.json</code> file next to it, i.e. <code>bookings/card.meta.json</code></p>
 
 
 
@@ -470,7 +472,35 @@
 
 
 
+  <h2>
+    <a id="included-modules" class="anchor" href="#included-modules">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Included Modules
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type">JSON::Serializable</li>
+    
+  </ul>
 
+
+
+  <h2>
+    <a id="extended-modules" class="anchor" href="#extended-modules">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Extended Modules
+  </h2>
+  <ul class="other-types-list">
+    
+      <li class="other-type">JSON::Schema</li>
+    
+  </ul>
 
 
 
@@ -489,8 +519,8 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/router/builder.cr#L143" target="_blank">
-        action-controller/router/builder.cr
+      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/ui.cr#L31" target="_blank">
+        action-controller/mcp/ui.cr
       </a>
     
     <br/>
@@ -501,38 +531,87 @@
 
 
   
+  <h2>
+    <a id="constructors" class="anchor" href="#constructors">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructors
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#new%28pull%3AJSON%3A%3APullParser%29-class-method" class="signature"><strong>.new</strong>(pull : JSON::PullParser)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#new%28csp%3AActionController%3A%3AMCPServer%3A%3AUICSP%7CNil%3Dnil%2Cpermissions%3ANil%7CHash%28String%2CJSON%3A%3AAny%29%3Dnil%2Cdomain%3ANil%7CString%3Dnil%2Cprefers_border%3ABool%7CNil%3Dnil%29-class-method" class="signature"><strong>.new</strong>(csp : ActionController::MCPServer::UICSP | Nil = <span class="n">nil</span>, permissions : Nil | Hash(String, JSON::Any) = <span class="n">nil</span>, domain : Nil | String = <span class="n">nil</span>, prefers_border : Bool | Nil = <span class="n">nil</span>)</a>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#new%28%2A%2C__pull_for_json_serializablepull%3AJSON%3A%3APullParser%29-class-method" class="signature"><strong>.new</strong>(*, __pull_for_json_serializable pull : JSON::PullParser)</a>
+        
+      </li>
+    
+  </ul>
+
 
   
 
   
 
   
+  <h2>
+    <a id="instance-method-summary" class="anchor" href="#instance-method-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Summary
+  </h2>
+  <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#csp%3AUICSP%7CNil-instance-method" class="signature"><strong>#csp</strong> : UICSP | Nil</a>
+        
+          <div class="summary"><p>domains the card needs, by default it can't load external resources</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#domain%3AString%7CNil-instance-method" class="signature"><strong>#domain</strong> : String | Nil</a>
+        
+          <div class="summary"><p>a dedicated sandbox origin, host specific</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#permissions%3AHash%28String%2CJSON%3A%3AAny%29%7CNil-instance-method" class="signature"><strong>#permissions</strong> : Hash(String, JSON::Any) | Nil</a>
+        
+          <div class="summary"><p>browser permissions requested, i.e.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#prefers_border%3ABool%7CNil-instance-method" class="signature"><strong>#prefers_border</strong> : Bool | Nil</a>
+        
+          <div class="summary"><p>whether the host should draw a border around the card</p></div>
+        
+      </li>
+    
+  </ul>
+
 
 
   <div class="methods-inherited">
     
       
 
-  <h3>Instance methods inherited from class <code><a href="../../ActionController/Route/Error.html">ActionController::Route::Error</a></code></h3>
-  
-  
-    <a href="../../ActionController/Route/Error.html#accepts%3AArray%28String%29%7CNil-instance-method" class="tooltip">
-      <span>accepts : Array(String) | Nil</span>
-    accepts</a>
-    
-  
-
 
       
-
-  <h3>Constructor methods inherited from class <code><a href="../../ActionController/Route/Error.html">ActionController::Route::Error</a></code></h3>
-  
-  
-    <a href="../../ActionController/Route/Error.html#new%28message%3AString%7CNil%3Dnil%2Caccepts%3AArray%28String%29%7CNil%3Dnil%29-class-method" class="tooltip">
-      <span>new(message : String | Nil = <span class="n">nil</span>, accepts : Array(String) | Nil = <span class="n">nil</span>)</span>
-    new</a>
-    
-  
 
 
       
@@ -584,12 +663,164 @@
   </div>
 
   
+  <h2>
+    <a id="constructor-detail" class="anchor" href="#constructor-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Constructor Detail
+  </h2>
+  
+    <div class="entry-detail" id="new(pull:JSON::PullParser)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(pull : JSON::PullParser)
+
+        <a class="method-permalink" href="#new%28pull%3AJSON%3A%3APullParser%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/ui.cr#L32" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="new(csp:ActionController::MCPServer::UICSP|Nil=nil,permissions:Nil|Hash(String,JSON::Any)=nil,domain:Nil|String=nil,prefers_border:Bool|Nil=nil)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(csp : <a href="../../ActionController/MCPServer/UICSP.html">ActionController::MCPServer::UICSP</a> | Nil = <span class="n">nil</span>, permissions : Nil | Hash(String, JSON::Any) = <span class="n">nil</span>, domain : Nil | String = <span class="n">nil</span>, prefers_border : Bool | Nil = <span class="n">nil</span>)
+
+        <a class="method-permalink" href="#new%28csp%3AActionController%3A%3AMCPServer%3A%3AUICSP%7CNil%3Dnil%2Cpermissions%3ANil%7CHash%28String%2CJSON%3A%3AAny%29%3Dnil%2Cdomain%3ANil%7CString%3Dnil%2Cprefers_border%3ABool%7CNil%3Dnil%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/ui.cr#L47" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="new(*,__pull_for_json_serializablepull:JSON::PullParser)-class-method">
+      <div class="signature">
+        
+        def self.<strong>new</strong>(*, __pull_for_json_serializable pull : JSON::PullParser)
+
+        <a class="method-permalink" href="#new%28%2A%2C__pull_for_json_serializablepull%3AJSON%3A%3APullParser%29-class-method">#</a>
+      </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/ui.cr#L32" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
 
   
 
   
 
   
+  <h2>
+    <a id="instance-method-detail" class="anchor" href="#instance-method-detail">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+    Instance Method Detail
+  </h2>
+  
+    <div class="entry-detail" id="csp:UICSP|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>csp</strong> : <a href="../../ActionController/MCPServer/UICSP.html">UICSP</a> | Nil
+
+        <a class="method-permalink" href="#csp%3AUICSP%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>domains the card needs, by default it can't load external resources</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/ui.cr#L35" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="domain:String|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>domain</strong> : String | Nil
+
+        <a class="method-permalink" href="#domain%3AString%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>a dedicated sandbox origin, host specific</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/ui.cr#L41" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="permissions:Hash(String,JSON::Any)|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>permissions</strong> : Hash(String, JSON::Any) | Nil
+
+        <a class="method-permalink" href="#permissions%3AHash%28String%2CJSON%3A%3AAny%29%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>browser permissions requested, i.e. <code>{&quot;camera&quot;: {}, &quot;clipboardWrite&quot;: {}}</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/ui.cr#L38" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="prefers_border:Bool|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>prefers_border</strong> : Bool | Nil
+
+        <a class="method-permalink" href="#prefers_border%3ABool%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>whether the host should draw a border around the card</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/ui.cr#L45" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+
 
 
 </div>

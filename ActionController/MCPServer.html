@@ -232,6 +232,16 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/UICSP" data-name="actioncontroller::mcpserver::uicsp">
+      <a href="../ActionController/MCPServer/UICSP.html">UICSP</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/UIMeta" data-name="actioncontroller::mcpserver::uimeta">
+      <a href="../ActionController/MCPServer/UIMeta.html">UIMeta</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/MCPServer/Unauthorized" data-name="actioncontroller::mcpserver::unauthorized">
       <a href="../ActionController/MCPServer/Unauthorized.html">Unauthorized</a>
       
@@ -512,50 +522,57 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L37" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L37" target="_blank">
         action-controller/mcp.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp/auth.cr#L3" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/auth.cr#L3" target="_blank">
         action-controller/mcp/auth.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp/description.cr#L1" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/description.cr#L1" target="_blank">
         action-controller/mcp/description.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp/invoker.cr#L5" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/invoker.cr#L5" target="_blank">
         action-controller/mcp/invoker.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp/protocol.cr#L1" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/protocol.cr#L1" target="_blank">
         action-controller/mcp/protocol.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp/session.cr#L3" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/session.cr#L3" target="_blank">
         action-controller/mcp/session.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp/transport.cr#L1" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/transport.cr#L1" target="_blank">
         action-controller/mcp/transport.cr
+      </a>
+    
+    <br/>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/ui.cr#L3" target="_blank">
+        action-controller/mcp/ui.cr
       </a>
     
     <br/>
@@ -798,6 +815,34 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
         
       </li>
     
+      <li class="entry-summary">
+        <a href="#ui_base%3AString%7CNil-class-method" class="signature"><strong>.ui_base</strong> : String | Nil</a>
+        
+          <div class="summary"><p>the folder of MCP Apps cards, <code>@[<a href="../ActionController/MCP.html">AC::MCP</a>(ui: &quot;bookings/card.html&quot;)]</code> renders <code>&lt;ui_base&gt;/bookings/card.html</code>.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#ui_base%3D%28ui_base%3AString%7CNil%29-class-method" class="signature"><strong>.ui_base=</strong>(ui_base : String | Nil)</a>
+        
+          <div class="summary"><p>the folder of MCP Apps cards, <code>@[<a href="../ActionController/MCP.html">AC::MCP</a>(ui: &quot;bookings/card.html&quot;)]</code> renders <code>&lt;ui_base&gt;/bookings/card.html</code>.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#ui_meta%3AUIMeta%7CNil-class-method" class="signature"><strong>.ui_meta</strong> : UIMeta | Nil</a>
+        
+          <div class="summary"><p>the default <code>_meta.ui</code> of every card (CSP domains, border...), a card can override it with a <code>.meta.json</code> file next to it, i.e.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#ui_meta%3D%28ui_meta%3AUIMeta%7CNil%29-class-method" class="signature"><strong>.ui_meta=</strong>(ui_meta : UIMeta | Nil)</a>
+        
+          <div class="summary"><p>the default <code>_meta.ui</code> of every card (CSP domains, border...), a card can override it with a <code>.meta.json</code> file next to it, i.e.</p></div>
+        
+      </li>
+    
   </ul>
 
 
@@ -907,7 +952,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L90" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L90" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -929,7 +974,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L90" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L90" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -950,7 +995,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L136" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L144" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -971,7 +1016,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L136" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L144" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -994,7 +1039,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L133" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L141" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1017,7 +1062,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L133" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L141" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1039,7 +1084,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L127" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L135" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1061,7 +1106,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L127" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L135" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1082,7 +1127,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L59" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L59" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1103,7 +1148,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L59" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L59" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1126,7 +1171,7 @@ ending in <code>*</code> matches by prefix. Everything else (<code>Link</code>, 
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L98" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L106" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1149,7 +1194,7 @@ ending in <code>*</code> matches by prefix. Everything else (<code>Link</code>, 
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L98" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L106" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1171,7 +1216,7 @@ typically used for authentication</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L86" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L86" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1193,7 +1238,7 @@ typically used for authentication</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L86" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L86" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1209,7 +1254,7 @@ typically used for authentication</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L75" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L75" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1231,7 +1276,7 @@ empty string provides none. Include <code><a href="../ActionController/MCPServer
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L73" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L73" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1253,7 +1298,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L140" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L148" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1275,7 +1320,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L140" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L148" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1296,7 +1341,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L62" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L62" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1317,7 +1362,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L62" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L62" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1338,7 +1383,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L65" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L65" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1359,7 +1404,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L65" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L65" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1380,7 +1425,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L93" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L101" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1401,7 +1446,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L93" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L101" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1423,7 +1468,7 @@ that don't refresh their tools when notified with <code>tools/list_changed</code
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L69" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L69" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1445,7 +1490,7 @@ that don't refresh their tools when notified with <code>tools/list_changed</code
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L69" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L69" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1466,7 +1511,95 @@ that don't refresh their tools when notified with <code>tools/list_changed</code
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L80" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L80" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="ui_base:String|Nil-class-method">
+      <div class="signature">
+        
+        def self.<strong>ui_base</strong> : String | Nil
+
+        <a class="method-permalink" href="#ui_base%3AString%7CNil-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the folder of MCP Apps cards, <code>@[<a href="../ActionController/MCP.html">AC::MCP</a>(ui: &quot;bookings/card.html&quot;)]</code> renders
+<code>&lt;ui_base&gt;/bookings/card.html</code>. Cards aren't served when <code>nil</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L94" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="ui_base=(ui_base:String|Nil)-class-method">
+      <div class="signature">
+        
+        def self.<strong>ui_base=</strong>(ui_base : String | Nil)
+
+        <a class="method-permalink" href="#ui_base%3D%28ui_base%3AString%7CNil%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the folder of MCP Apps cards, <code>@[<a href="../ActionController/MCP.html">AC::MCP</a>(ui: &quot;bookings/card.html&quot;)]</code> renders
+<code>&lt;ui_base&gt;/bookings/card.html</code>. Cards aren't served when <code>nil</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L94" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="ui_meta:UIMeta|Nil-class-method">
+      <div class="signature">
+        
+        def self.<strong>ui_meta</strong> : <a href="../ActionController/MCPServer/UIMeta.html">UIMeta</a> | Nil
+
+        <a class="method-permalink" href="#ui_meta%3AUIMeta%7CNil-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the default <code>_meta.ui</code> of every card (CSP domains, border...), a card can override it
+with a <code>.meta.json</code> file next to it, i.e. <code>bookings/card.meta.json</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L98" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="ui_meta=(ui_meta:UIMeta|Nil)-class-method">
+      <div class="signature">
+        
+        def self.<strong>ui_meta=</strong>(ui_meta : <a href="../ActionController/MCPServer/UIMeta.html">UIMeta</a> | Nil)
+
+        <a class="method-permalink" href="#ui_meta%3D%28ui_meta%3AUIMeta%7CNil%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the default <code>_meta.ui</code> of every card (CSP domains, border...), a card can override it
+with a <code>.meta.json</code> file next to it, i.e. <code>bookings/card.meta.json</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L98" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1502,7 +1635,7 @@ that don't refresh their tools when notified with <code>tools/list_changed</code
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L144" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L152" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1525,7 +1658,7 @@ routes, however it will not include the documentation comments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L155" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L163" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1546,7 +1679,7 @@ routes, however it will not include the documentation comments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L162" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L170" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1567,7 +1700,7 @@ routes, however it will not include the documentation comments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L200" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L208" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1590,7 +1723,7 @@ which requires access to the source code</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp/description.cr#L311" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp/description.cr#L342" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1615,7 +1748,7 @@ see <code><a href="../ActionController/MCPServer.html#mount_endpoints%28router%3
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L178" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L186" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1636,7 +1769,7 @@ see <code><a href="../ActionController/MCPServer.html#mount_endpoints%28router%3
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L184" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L192" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1657,7 +1790,7 @@ see <code><a href="../ActionController/MCPServer.html#mount_endpoints%28router%3
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/mcp.cr#L167" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/65091773daf6ce248ba635c9ce957accb8afacf2/src/action-controller/mcp.cr#L175" target="_blank">View source</a>]
         
       </div>
     </div>

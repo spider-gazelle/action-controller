@@ -232,6 +232,16 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/UICSP" data-name="actioncontroller::mcpserver::uicsp">
+      <a href="ActionController/MCPServer/UICSP.html">UICSP</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/UIMeta" data-name="actioncontroller::mcpserver::uimeta">
+      <a href="ActionController/MCPServer/UIMeta.html">UIMeta</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/MCPServer/Unauthorized" data-name="actioncontroller::mcpserver::unauthorized">
       <a href="ActionController/MCPServer/Unauthorized.html">Unauthorized</a>
       
@@ -743,6 +753,55 @@ served for each endpoint URL.</li>
 </ul>
 <p><code>MCPServer.mount</code> mounts the endpoints too (<code>endpoints: false</code> skips them), and
 <code>write_description</code> includes them in <code>mcp.yml</code>.</p>
+<h3><a id="ui-cards-mcp-apps" class="anchor" href="#ui-cards-mcp-apps">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>UI cards (MCP Apps)</h3>
+<p>Tools can render an interactive HTML card in the conversation, using the
+<a href="https://github.com/modelcontextprotocol/ext-apps">MCP Apps</a> extension supported by
+Claude, ChatGPT, VS Code and Microsoft 365 Copilot. Cards are static HTML files in a
+folder:</p>
+<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.ui_base <span class="o">=</span> <span class="s">&quot;./cards&quot;</span>
+<span class="c"># the default card settings, a card can override them with a `&lt;card&gt;.meta.json` file</span>
+<span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.ui_meta <span class="o">=</span> <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span><span class="t">::</span><span class="t">UIMeta</span>.new(prefers_border: <span class="n">true</span>)
+
+<span class="k">class</span> <span class="t">Bookings</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
+  base <span class="s">&quot;/bookings&quot;</span>
+
+  <span class="c"># Shows a booking</span>
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(ui: <span class="s">&quot;bookings/card.html&quot;</span>)] <span class="c"># ./cards/bookings/card.html</span>
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id&quot;</span>)]
+  <span class="k">def</span> <span class="m">show</span>(id : <span class="t">String</span>) : <span class="t">Booking</span>
+  <span class="k">end</span>
+
+  <span class="c"># Checks in to a booking, only the card can call this</span>
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(app_only: <span class="n">true</span>)]
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/:id/check_in&quot;</span>)]
+  <span class="k">def</span> <span class="m">check_in</span>(id : <span class="t">String</span>) : <span class="t">Booking</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre>
+<ul>
+<li><strong>How it works:</strong> the tool's <code>_meta.ui.resourceUri</code> points at the card
+(<code>ui://bookings/card.html</code>). The host reads it with <code>resources/read</code> and renders it in a
+sandboxed iframe. It sends the card the tool's arguments and its result, the
+<code>{status, headers, body}</code> envelope as <code>structuredContent</code>.</li>
+<li><strong>Cards</strong> are self-contained HTML5 documents. By default hosts allow inline scripts and
+styles, but no external resources or network requests. Declare any domains a card needs
+in <code>ui_meta</code>, or in a sidecar such as <code>bookings/card.meta.json</code>:
+<code>{&quot;csp&quot;: {&quot;resourceDomains&quot;: [&quot;https://cdn.example.com&quot;]}, &quot;prefersBorder&quot;: false}</code>.</li>
+<li><strong>Talking to the host:</strong> cards use JSON-RPC over <code>postMessage</code> (<code>ui/initialize</code>, then
+<code>ui/notifications/tool-result</code>), with or without the <code>@modelcontextprotocol/ext-apps</code>
+SDK. They can call tools too, such as <code>app_only</code> tools.</li>
+<li><strong>Caching:</strong> hosts cache cards by URI, so tools advertise
+<code>ui://bookings/card.html?v=&lt;content hash&gt;</code>. A changed card gets a new URI.</li>
+<li><strong>Rendering:</strong> hosts only render cards for tools in their tool list. Mark card tools
+<code>root: true</code>, or serve them from a <a href="#controller-endpoints">controller endpoint</a>, so they
+render in clients that don't refresh their tools when a toolbox opens.</li>
+<li><code>ui:</code> paths are relative to <code>ui_base</code> and must be <code>.html</code> files (checked at compile
+time). Nothing outside <code>ui_base</code> is served. Hosts without MCP Apps support ignore the
+card metadata and show the text result.</li>
+</ul>
 <h3><a id="connecting-a-client" class="anchor" href="#connecting-a-client">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
@@ -833,6 +892,8 @@ annotation takes precedence:</p>
 | <code>hide: true</code> | excludes the routes / prompts from MCP |
 | <code>root: true</code> | always available, without opening the toolbox |
 | <code>endpoint: true</code> | serves the controller as its own MCP server at <code>&lt;base&gt;/mcp</code> (controllers only), see <a href="#controller-endpoints">controller endpoints</a> |
+| <code>ui: &quot;bookings/card.html&quot;</code> | renders this HTML card for the tool's results, see <a href="#ui-cards-mcp-apps">UI cards</a> |
+| <code>app_only: true</code> | only cards can call the tool, it's hidden from the model |
 | <code>read_only: Bool</code> | whether the tool only reads data (default: GET routes). Sets <code>readOnlyHint</code> and whether <code>call_read_only</code> runs it. Use <code>false</code> for a GET with side effects, <code>true</code> for a POST search |
 | <code>prompt: true</code> | the method is an MCP prompt (methods only) |</p>
 <pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(hide: <span class="n">true</span>)] <span class="c"># hide every route in the controller</span>
