@@ -37,6 +37,25 @@ describe ActionController::Base do
     ).should eq("/hello/Weird%25%21?param1=woot+woot%21&param2=false")
   end
 
+  it "builds paths with optional and glob segments, in the order the router matches them" do
+    build = ActionController::Support
+    build.build_route("/users/?:user_id/groups").should eq "/users/groups"
+    build.build_route("/users/?:user_id/groups", user_id: 5).should eq "/users/groups/5"
+    build.build_route("/users/?:user_id/groups", {"user_id" => nil}).should eq "/users/groups"
+
+    # optional segments match cumulatively, a later one without the earlier is a query param
+    build.build_route("/x/?:a/?:b", a: 1, b: 2).should eq "/x/1/2"
+    build.build_route("/x/?:a/?:b", b: 2).should eq "/x?b=2"
+
+    # a glob keeps its slashes
+    build.build_route("/files/:id/*:path", id: 1, path: "docs/read me.md").should eq "/files/1/docs/read%20me.md"
+    build.build_route("/files/:id/*:path", id: 1).should eq "/files/1"
+
+    # segments are replaced whole, and a value can't add a segment
+    build.build_route("/items/:id/:id_two", id: 1, id_two: 2).should eq "/items/1/2"
+    build.build_route("/items/:id", id: "a/b").should eq "/items/a%2Fb"
+  end
+
   it "should raise a BadRoute error if a route param is missing" do
     expect_raises(ActionController::InvalidRoute, "route parameters missing :id") do
       HelloWorld.show
