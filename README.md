@@ -352,7 +352,7 @@ class Bookings < AC::Base
   end
 
   # Checks in to a booking, only the card can call this
-  @[AC::MCP(app_only: true)]
+  @[AC::MCP(card_only: true)]
   @[AC::Route::POST("/:id/check_in")]
   def check_in(id : String) : Booking
   end
@@ -369,11 +369,11 @@ end
   `{"csp": {"resourceDomains": ["https://cdn.example.com"]}, "prefersBorder": false}`.
 * **Talking to the host:** cards use JSON-RPC over `postMessage` (`ui/initialize`, then
   `ui/notifications/tool-result`), with or without the `@modelcontextprotocol/ext-apps`
-  SDK. They can call tools too, such as `app_only` tools.
+  SDK. They can call tools too, such as `card_only` tools.
 * **Caching:** hosts cache cards by URI, so tools advertise
   `ui://bookings/card.html?v=<content hash>`. A changed card gets a new URI.
 * **Root by default:** hosts only render cards for, and let cards call, the tools in
-  their tool list. So tools with `ui:` or `app_only: true` are root items, listed without
+  their tool list. So tools with `ui:` or `card_only: true` are root items, listed without
   opening their toolbox, unless annotated `root: false`.
 * `ui:` paths are relative to `ui_base` and must be `.html` files (checked at compile
   time). Nothing outside `ui_base` is served. Hosts without MCP Apps support ignore the
@@ -484,9 +484,9 @@ annotation takes precedence:
 | `root: true` | always available, without opening the toolbox |
 | `endpoint: true` | serves the controller as its own MCP server at `<base>/mcp` (controllers only), see [controller endpoints](#controller-endpoints) |
 | `ui: "bookings/card.html"` | renders this HTML card for the tool's results, see [UI cards](#ui-cards-mcp-apps) |
-| `app_only: true` | only cards can call the tool, it's hidden from the model |
+| `card_only: true` | only cards can call the tool, it's hidden from the model |
 
-Tools with `ui:` or `app_only: true` default to `root: true`.
+Tools with `ui:` or `card_only: true` default to `root: true`.
 | `read_only: Bool` | whether the tool only reads data (default: GET routes). Sets `readOnlyHint` and whether `call_read_only` runs it. Use `false` for a GET with side effects, `true` for a POST search |
 | `prompt: true` | the method is an MCP prompt (methods only) |
 

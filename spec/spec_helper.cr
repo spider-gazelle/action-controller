@@ -678,7 +678,7 @@ class McpShared < ActionController::Base
   end
 end
 
-# MCP Apps cards, see spec/cards. Card and app only tools are root items by default
+# MCP Apps cards, see spec/cards. Card and card only tools are root items by default
 class McpUi < ActionController::Base
   base "/mcp_ui"
 
@@ -690,7 +690,7 @@ class McpUi < ActionController::Base
   end
 
   # checks in to a booking, only the card calls this
-  @[AC::MCP(app_only: true)]
+  @[AC::MCP(card_only: true)]
   @[AC::Route::POST("/bookings/:id/check_in")]
   def check_in(id : Int32) : NamedTuple(id: Int32, checked_in: Bool)
     {id: id, checked_in: true}

@@ -55,9 +55,9 @@ module ActionController::MCPServer
     getter ui : String? = nil
 
     # only callable by cards, hidden from the model
-    getter? app_only : Bool = false
+    getter? card_only : Bool = false
 
-    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @read_only = nil, @ui = nil, @app_only = false)
+    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @read_only = nil, @ui = nil, @card_only = false)
     end
 
     # only reads data, GET routes unless overridden with `@[AC::MCP(read_only:)]`
@@ -95,14 +95,14 @@ module ActionController::MCPServer
     # the card the host renders for the results and who can call the tool
     private def ui_meta(json : JSON::Builder) : Nil
       resource = self.ui.try { |uri| UI.versioned(uri) }
-      return unless resource || app_only?
+      return unless resource || card_only?
 
       json.field "_meta" do
         json.object do
           json.field "ui" do
             json.object do
               json.field "resourceUri", resource if resource
-              json.field "visibility", ["app"] if app_only?
+              json.field "visibility", ["app"] if card_only?
             end
           end
           # deprecated, but still read by some hosts
@@ -271,7 +271,7 @@ module ActionController::MCPServer
 
     # true if any tool renders an MCP Apps card
     def ui? : Bool
-      toolboxes.any? { |box| box.tools.any? { |tool| tool.ui || tool.app_only? } }
+      toolboxes.any? { |box| box.tools.any? { |tool| tool.ui || tool.card_only? } }
     end
 
     # the tools available without opening a toolbox
@@ -330,7 +330,7 @@ module ActionController::MCPServer
 
   # :nodoc:
   # `global`: listed by the global server, `endpoint`: the endpoint path it's served on
-  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, read_only: Bool?, global: Bool, endpoint: String?, ui: String?, app_only: Bool)
+  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, read_only: Bool?, global: Bool, endpoint: String?, ui: String?, card_only: Bool)
 
   # :nodoc:
   alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), global: Bool, endpoint: String?)
@@ -370,7 +370,7 @@ module ActionController::MCPServer
               global: {{ !details[:mcp_hide] }},
               endpoint: {{ endpoint }}.as(String?),
               ui: {{ details[:mcp_ui] }}.as(String?),
-              app_only: {{ details[:mcp_app_only] == true }},
+              card_only: {{ details[:mcp_card_only] == true }},
             },
           {% end %}
         {% end %}
@@ -574,7 +574,7 @@ module ActionController::MCPServer
     collect_definitions(JSON::Any.new(properties), schemas, definitions)
     input_schema["$defs"] = JSON::Any.new(definitions) unless definitions.empty?
 
-    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:read_only], route[:ui], route[:app_only])
+    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:read_only], route[:ui], route[:card_only])
   end
 
   # :nodoc:

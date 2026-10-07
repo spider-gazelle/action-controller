@@ -805,7 +805,7 @@ describe ActionController::MCPServer do
       end
     end
 
-    it "lets cards call app only tools" do
+    it "lets cards call card only tools" do
       client = MCPTestClient.new
       client.initialize_session(ui: true)
       client.call("mcp_ui_check_in", {id: 7})["structuredContent"]["body"].should eq JSON.parse(%({"id":7,"checked_in":true}))
@@ -831,7 +831,7 @@ describe ActionController::MCPServer do
       end
     end
 
-    it "makes card and app only tools root items unless root: false" do
+    it "makes card and card only tools root items unless root: false" do
       box = ActionController::MCPServer.description.toolbox?("mcp_ui").should_not be_nil
       box.tools.find!(&.name.==("mcp_ui_show")).root?.should be_true
       box.tools.find!(&.name.==("mcp_ui_check_in")).root?.should be_true
@@ -844,7 +844,7 @@ describe ActionController::MCPServer do
       box = description.toolbox?("mcp_ui").should_not be_nil
       box.tools.find!(&.name.==("mcp_ui_show")).ui.should eq "ui://bookings/card.html"
       box.tools.find!(&.name.==("mcp_ui_rooms")).ui.should eq "ui://rooms/card.html"
-      box.tools.find!(&.name.==("mcp_ui_check_in")).app_only?.should be_true
+      box.tools.find!(&.name.==("mcp_ui_check_in")).card_only?.should be_true
     end
   end
 
