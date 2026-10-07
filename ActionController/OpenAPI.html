@@ -480,14 +480,14 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/3abf8f0da54d78973111f27220e4f35c4036883b/src/action-controller/open_api.cr#L5" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/open_api.cr#L5" target="_blank">
         action-controller/open_api.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/3abf8f0da54d78973111f27220e4f35c4036883b/src/action-controller/open_api/components.cr#L2" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/open_api/components.cr#L2" target="_blank">
         action-controller/open_api/components.cr
       </a>
     
@@ -495,6 +495,29 @@
   
 
 
+
+  
+    <h2>
+      <a id="constant-summary" class="anchor" href="#constant-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+      Constant Summary
+    </h2>
+  
+  <dl>
+    
+      <dt class="entry-const" id="OPENAPI_VERSIONS">
+        <strong>OPENAPI_VERSIONS</strong> = <code>{<span class="s">&quot;3.1.0&quot;</span>, <span class="s">&quot;3.0.3&quot;</span>}</code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>the OpenAPI versions that can be generated, the first is the default</p>
+      </dd>
+      
+    
+  </dl>
 
 
 
@@ -516,7 +539,7 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#generate_open_api_docs%28title%3AString%2Cversion%3AString%2C%2A%2Ainfo%29-instance-method" class="signature"><strong>#generate_open_api_docs</strong>(title : String, version : String, **info)</a>
+        <a href="#generate_open_api_docs%28title%3AString%2Cversion%3AString%2Copenapi%3AString%3DOPENAPI_VERSIONS%5B0%5D%2C%2A%2Ainfo%29-instance-method" class="signature"><strong>#generate_open_api_docs</strong>(title : String, version : String, openapi : String = <span class="t">OPENAPI_VERSIONS</span>[<span class="n">0</span>], **info)</a>
         
           <div class="summary"><p>returns a NamedTuple that represents the OpenAPI docs for the current application.</p></div>
         
@@ -546,24 +569,25 @@
     Instance Method Detail
   </h2>
   
-    <div class="entry-detail" id="generate_open_api_docs(title:String,version:String,**info)-instance-method">
+    <div class="entry-detail" id="generate_open_api_docs(title:String,version:String,openapi:String=OPENAPI_VERSIONS[0],**info)-instance-method">
       <div class="signature">
         
-        def <strong>generate_open_api_docs</strong>(title : String, version : String, **info)
+        def <strong>generate_open_api_docs</strong>(title : String, version : String, openapi : String = <span class="t">OPENAPI_VERSIONS</span>[<span class="n">0</span>], **info)
 
-        <a class="method-permalink" href="#generate_open_api_docs%28title%3AString%2Cversion%3AString%2C%2A%2Ainfo%29-instance-method">#</a>
+        <a class="method-permalink" href="#generate_open_api_docs%28title%3AString%2Cversion%3AString%2Copenapi%3AString%3DOPENAPI_VERSIONS%5B0%5D%2C%2A%2Ainfo%29-instance-method">#</a>
       </div>
       
         <div class="doc">
           
           <p>returns a NamedTuple that represents the OpenAPI docs for the current application.</p>
-<p>the info hash splat accepts any of the keys from the <a href="https://swagger.io/specification/#info-object">info object</a></p>
+<p><code>openapi</code> is the version of the document, <code>&quot;3.1.0&quot;</code> (the default) or <code>&quot;3.0.3&quot;</code>.
+the info hash splat accepts any of the keys from the <a href="https://swagger.io/specification/#info-object">info object</a></p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/3abf8f0da54d78973111f27220e4f35c4036883b/src/action-controller/open_api.cr#L184" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/9d39180e7a2c0809bacd3801da139dc7a9ae38ea/src/action-controller/open_api.cr#L188" target="_blank">View source</a>]
         
       </div>
     </div>
