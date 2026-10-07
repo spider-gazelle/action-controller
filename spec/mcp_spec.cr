@@ -831,6 +831,14 @@ describe ActionController::MCPServer do
       end
     end
 
+    it "makes card and app only tools root items unless root: false" do
+      box = ActionController::MCPServer.description.toolbox?("mcp_ui").should_not be_nil
+      box.tools.find!(&.name.==("mcp_ui_show")).root?.should be_true
+      box.tools.find!(&.name.==("mcp_ui_check_in")).root?.should be_true
+      box.tools.find!(&.name.==("mcp_ui_history")).root?.should be_false
+      box.toolbox_tools.map(&.name).should eq ["mcp_ui_history"]
+    end
+
     it "stores cards in the description" do
       description = ActionController::MCPServer::Description.from_yaml(ActionController::MCPServer.description.to_yaml)
       box = description.toolbox?("mcp_ui").should_not be_nil

@@ -73,6 +73,9 @@ end
 # * `ui: "bookings/card.html"` renders the HTML card at that path, in `MCPServer.ui_base`,
 #   for the tool's results in clients that support MCP Apps (`ui://bookings/card.html`)
 # * `app_only: true` makes the tool callable by cards only, it's hidden from the model
+#
+# tools with `ui:` or `app_only: true` are `root: true` unless annotated `root: false`, as
+# hosts only render cards for, and let cards call, the tools in their tool list
 # * `read_only: Bool` overrides whether a tool only reads data, which defaults to
 #   `true` for GET routes. Read only tools are hinted as such to clients and can be run
 #   with the `call_read_only` proxy, e.g. `false` for a GET with side effects or `true`
@@ -337,6 +340,10 @@ module ActionController::Route::Builder
       {% end %}
       {% mcp_app_only = mcp_klass_ann ? mcp_klass_ann[:app_only] : nil %}
       {% mcp_app_only = mcp_method_ann[:app_only] if mcp_method_ann && mcp_method_ann[:app_only] != nil %}
+
+      # hosts only render cards for (and let cards call) tools in their tool list, so these
+      # are root items unless `root: false`
+      {% mcp_root = true if mcp_root == nil && (mcp_ui || mcp_app_only == true) %}
 
       # MCP prompts are implemented as internal GET routes so filters, error handlers and param parsing apply
       {% mcp_prompt = mcp_method_ann && mcp_method_ann[:prompt] == true %}

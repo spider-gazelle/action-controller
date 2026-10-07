@@ -678,8 +678,7 @@ class McpShared < ActionController::Base
   end
 end
 
-# MCP Apps cards, see spec/cards
-@[AC::MCP(root: true)]
+# MCP Apps cards, see spec/cards. Card and app only tools are root items by default
 class McpUi < ActionController::Base
   base "/mcp_ui"
 
@@ -702,6 +701,13 @@ class McpUi < ActionController::Base
   @[AC::Route::GET("/rooms")]
   def rooms : Array(String)
     ["boardroom"]
+  end
+
+  # the booking history, only listed once the toolbox is open
+  @[AC::MCP(ui: "bookings/card.html", root: false)]
+  @[AC::Route::GET("/bookings/history")]
+  def history : Array(Int32)
+    [1, 2]
   end
 end
 
