@@ -113,7 +113,7 @@ lean, a session starts with just five tools, plus any [root items](#root-tools-a
 | `open_toolbox(name)` | adds the controller's tools and prompts to the session, sends `notifications/tools/list_changed` and/or `notifications/prompts/list_changed`, and returns the tool definitions |
 | `close_toolbox(name)` | removes them again and sends the same notifications |
 | `call_read_only(name, arguments)` | runs a read only tool from an open toolbox (or a root tool), for clients that don't refresh their tools when notified |
-| `call_tool(name, arguments)` | runs any tool from an open toolbox (or a root tool), the same way |
+| `call_tool(name, arguments)` | runs any tool from an open toolbox (or a root tool), the same way. Both proxies refuse `visibility: :card` tools |
 
 Some MCP clients (currently including Claude and ChatGPT) don't re-fetch their tools when
 notified, so the opened tools never appear. `open_toolbox` returns each tool's name,
@@ -144,7 +144,9 @@ ActionController::MCPServer.mount(server, "/mcp")
 server.run
 ```
 
-`mount` registers `POST`, `GET` and `DELETE` handlers at the path provided.
+`mount` registers `POST`, `GET` and `DELETE` handlers at the path provided, the OAuth
+protected resource metadata at `/.well-known/oauth-protected-resource<path>`, and any
+[controller endpoints](#controller-endpoints) (`endpoints: false` skips them).
 
 ### Tool descriptions (`mcp.yml`)
 
@@ -210,7 +212,7 @@ end
 Here the toolbox `widgets` contains the tool `widgets_show`, which takes the
 arguments `{"id": 1, "detailed": true}`.
 
-WebSocket routes and routes without annotations are not exposed.
+WebSocket and `OPTIONS` routes, and routes without annotations, are not exposed.
 
 ### Prompts
 
@@ -349,12 +351,14 @@ class Bookings < AC::Base
   @[AC::MCP(ui: "bookings/card.html")] # ./cards/bookings/card.html
   @[AC::Route::GET("/:id")]
   def show(id : String) : Booking
+    Booking.find!(id)
   end
 
   # Checks in to a booking, only the card can call this
   @[AC::MCP(visibility: :card)]
   @[AC::Route::POST("/:id/check_in")]
   def check_in(id : String) : Booking
+    Booking.find!(id).check_in!
   end
 end
 ```
@@ -506,7 +510,13 @@ compile errors. Read only tools can be run with the `call_read_only` proxy.
 
 **Visibility** controls who can call a tool in hosts that support
 [UI cards](#ui-cards-mcp-apps): `:card` tools are hidden from the model, and `:model`
-tools can't be called by cards. Hosts enforce it, so it isn't access control.
+tools can't be called by cards. Hosts enforce it, and the `call_tool` and
+`call_read_only` proxies refuse `:card` tools, but it isn't access control: a client can
+still call a tool by name.
+
+**Upgrading:** `read_only:` was replaced by `behaviour:` (`read_only: true` is
+`behaviour: :read_only`), and `card_only:` by `visibility: :card`. The old names are
+compile errors. Regenerate `mcp.yml` after upgrading.
 
 **Icons** are added with `@[AC::Icon]`, which you can repeat for different sizes and
 themes. On a controller they're the default for its tools and prompts, and the icon of
@@ -548,6 +558,11 @@ ActionController::MCPServer.tap do |mcp|
   mcp.allowed_origins = ["https://app.example.com"]              # "*" allows any origin
   mcp.session_timeout = 30.minutes
   mcp.excluded_response_headers += ["X-Runtime"]  # left out of tool results, `*` matches a prefix
+  mcp.icon "icons/logo.svg", sizes: ["any"]       # the server's icon, see Icons above
+
+  # UI cards (MCP Apps), see above
+  mcp.ui_base = "./cards"
+  mcp.ui_meta = ActionController::MCPServer::UIMeta.new(prefers_border: true)
 
   # authentication, all optional (see above)
   mcp.auth_probe = "/api/users/current"

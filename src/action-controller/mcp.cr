@@ -7,11 +7,16 @@ require "./router"
 # using the Streamable HTTP transport.
 #
 # Controllers are presented as toolboxes and their routes as tools. To keep the
-# model's context lean only three tools are listed by default:
+# model's context lean a session starts with these tools, plus any root tools:
 #
 # * `list_toolboxes` lists the controllers and their descriptions
 # * `open_toolbox(name)` adds the controller's routes to the session's tool set
 # * `close_toolbox(name)` removes them again
+# * `call_read_only(name, arguments)` and `call_tool(name, arguments)` run tools from open
+#   toolboxes, for clients that don't refresh their tools (when `tool_proxy` is enabled)
+#
+# Controllers can also be served as their own MCP server (`@[AC::MCP(endpoint: true)]`),
+# and tools can render MCP Apps cards (`@[AC::MCP(ui:)]`), see `ActionController::MCP`.
 #
 # Tool calls are dispatched in-process through the application router, so
 # filters, authentication and error handlers apply exactly as they would for a
