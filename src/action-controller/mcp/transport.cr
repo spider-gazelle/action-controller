@@ -197,9 +197,20 @@ module ActionController::MCPServer
     private def initialize_session(context, id : JSON::Any, params : Hash(String, JSON::Any)) : HTTP::Server::Context
       requested = params["protocolVersion"]?.try(&.as_s?)
       version = PROTOCOL_VERSIONS.includes?(requested) ? requested.as(String) : PROTOCOL_VERSIONS.first
-      session = @sessions.create(version, bound_values(context))
+      bound = bound_values(context)
+      # built first, an endpoint's instructions can fail, i.e. for an unknown resource
+      result = begin
+        @protocol.initialize_result(version, context.request, bound)
+      rescue error : RPCError
+        return rpc_error(context, id, error.code, error.message.as(String))
+      rescue Unauthorized
+        AuthCache.fingerprint(context.request).try { |fingerprint| @auth_cache.delete(fingerprint) }
+        return unauthorized(context, invalid_token: true)
+      end
+
+      session = @sessions.create(version, bound)
       context.response.headers[SESSION_HEADER] = session.id
-      respond(context, HTTP::Status::OK, "application/json", rpc_result(id, @protocol.initialize_result(version, context.request)))
+      respond(context, HTTP::Status::OK, "application/json", rpc_result(id, result))
     end
 
     private def find_session(context) : Session?

@@ -46,6 +46,34 @@ module ActionController::MCPServer
       false
     end
 
+    # runs an endpoint controller's `instructions` method, an internal route, returning the
+    # instructions for the session
+    #
+    # raises `RPCError` if it fails and `Unauthorized` if authentication is enabled and it
+    # responds with a 401
+    def instructions(path : String, origin : HTTP::Request, bound : Hash(String, String)) : String
+      response = begin
+        dispatch build("GET", path, [] of ToolParam, nil, bind({} of String => JSON::Any, bound), origin), @prompt_handler
+      rescue error
+        Log.error(exception: error) { "MCP instructions #{path} failed" }
+        raise RPCError.new(RPCError::INTERNAL_ERROR, "Failed to generate instructions")
+      end
+
+      status = response.status
+      body = response.body
+      if status.unauthorized? && MCPServer.auth_enabled?
+        raise Unauthorized.new("instructions responded with 401")
+      end
+      unless status.success?
+        raise RPCError.new(RPCError::INVALID_REQUEST, body.empty? ? "#{status.code} #{status.description}" : "#{status.code} #{status.description}: #{body}")
+      end
+
+      JSON.parse(body).as_s
+    rescue error : JSON::ParseException | TypeCastError
+      Log.error(exception: error) { "MCP instructions #{path} rendered an invalid response" }
+      raise RPCError.new(RPCError::INTERNAL_ERROR, "Failed to generate instructions")
+    end
+
     # renders the prompt and returns a `GetPromptResult` JSON string
     #
     # raises `RPCError` if the prompt can't be rendered and `Unauthorized` if

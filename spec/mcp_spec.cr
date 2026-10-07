@@ -654,6 +654,8 @@ describe ActionController::MCPServer do
       endpoint.name.should eq "mcp_account"
       endpoint.bound.should eq ["account_id"]
       endpoint.instructions.should eq "Manages an account, call show to look up its widgets"
+      endpoint.instructions_path.should eq "/mcp_account/:account_id/__mcp_instructions__"
+      description.endpoint?("/mcp_shared/assistant").try(&.instructions_path).should be_nil
       endpoint.toolbox.tools.map(&.name).sort!.should eq ["rename", "show"]
       endpoint.toolbox.tools.all?(&.root?).should be_true
       show = endpoint.toolbox.tools.find!(&.name.==("show"))
@@ -676,7 +678,7 @@ describe ActionController::MCPServer do
       client = MCPTestClient.new(account_uri.call("acme"))
       result = client.initialize_session["result"]
       result["serverInfo"]["name"].should eq "mcp_account"
-      result["instructions"].should eq "Manages an account, call show to look up its widgets"
+      result["instructions"].should eq "Account acme: call show to look up its widgets"
       result["capabilities"]["tools"]["listChanged"].should be_false
 
       client.tool_names.sort.should eq ["rename", "show"]
@@ -688,6 +690,41 @@ describe ActionController::MCPServer do
 
       prompt = client.request("prompts/get", {name: "describe", arguments: {tone: "casual"}}).last["result"]
       prompt["messages"][0]["content"]["text"].should eq "Describe account acme in a casual tone"
+    end
+
+    it "builds the instructions for each session" do
+      ["acme", "globex"].each do |account|
+        MCPTestClient.new(account_uri.call(account)).initialize_session["result"]["instructions"].should eq "Account #{account}: call show to look up its widgets"
+      end
+
+      # endpoints without an instructions method use the controller's doc comment
+      shared = MCPTestClient.new(URI.parse("http://127.0.0.1:#{MCP_PORT}/mcp_shared/assistant"))
+      shared.initialize_session["result"]["instructions"]?.should be_nil
+
+      # it's not an HTTP route, a tool or a prompt
+      HTTP::Client.get("http://127.0.0.1:#{MCP_PORT}/mcp_account/acme/__mcp_instructions__").status_code.should eq 404
+      client = MCPTestClient.new(account_uri.call("acme"))
+      client.initialize_session
+      client.tool_names.should_not contain "instructions"
+      client.request("prompts/list").last["result"]["prompts"].as_a.map(&.["name"].as_s).should_not contain "instructions"
+    end
+
+    it "fails to initialize when the instructions can't be built" do
+      response = HTTP::Client.post(account_uri.call("forbidden"), headers: HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json"}, body: MCP_INIT.to_json)
+      response.status_code.should eq 200
+      response.headers["Mcp-Session-Id"]?.should be_nil
+      error = JSON.parse(response.body)["error"]
+      error["code"].should eq -32600
+      error["message"].as_s.should start_with "403 Forbidden"
+    end
+
+    it "challenges the client when the instructions respond with 401" do
+      with_mcp_auth(transport, authenticator: ->(_request : HTTP::Request) { true }) do
+        response = HTTP::Client.post(account_uri.call("unauthorized"), headers: HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json", "Authorization" => "Bearer token"}, body: MCP_INIT.to_json)
+        response.status_code.should eq 401
+        response.headers["WWW-Authenticate"].should contain %(error="invalid_token")
+        response.headers["Mcp-Session-Id"]?.should be_nil
+      end
     end
 
     it "has no toolboxes or proxies" do

@@ -321,7 +321,19 @@ Connecting to `/rooms/boardroom/mcp` lists `state` and `lights` directly:
 * **No toolboxes:** there are no meta tools or proxies, every tool and prompt is listed,
   named by its method.
 * **Instructions:** the controller's doc comment is given to the model as the server's
-  instructions, and the server is named after the controller.
+  instructions, and the server is named after the controller. Define an `instructions`
+  method to build them for each session instead:
+
+  ```crystal
+  # runs like a route when a client connects: filters run and path params are available
+  def instructions(room_id : String) : String
+    "You control the #{Room.find!(room_id).name}, look up its state before changing it."
+  end
+  ```
+
+  It isn't an HTTP route or a tool. If it fails, for example the filters respond 403 or
+  the room doesn't exist, the client can't connect: `initialize` returns the error (a 401
+  challenges the client to sign in again).
 * **Visibility:** the controller is hidden from the global server unless it's also
   annotated `hide: false`. A method annotated `hide: true` is hidden from both.
 * **Shared configuration:** authentication, forwarded headers and tool results use the

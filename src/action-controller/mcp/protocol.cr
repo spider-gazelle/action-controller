@@ -52,7 +52,11 @@ module ActionController::MCPServer
     end
 
     # the `initialize` result for the negotiated protocol version
-    def initialize_result(protocol_version : String, request : HTTP::Request? = nil) : String
+    #
+    # an endpoint's `instructions` method is run with the session's `bound` path params,
+    # raising `RPCError` or `Unauthorized` if it fails
+    def initialize_result(protocol_version : String, request : HTTP::Request? = nil, bound : Hash(String, String) = {} of String => String) : String
+      instructions = session_instructions(request, bound)
       JSON.build do |json|
         json.object do
           json.field "protocolVersion", protocol_version
@@ -83,8 +87,8 @@ module ActionController::MCPServer
               Icons.to_json(json, flat? ? endpoint.toolbox.icons : MCPServer.icons, request.try { |req| host(req) })
             end
           end
-          if instructions = (flat? ? endpoint.instructions : MCPServer.instructions).presence
-            json.field "instructions", instructions
+          if text = instructions.presence
+            json.field "instructions", text
           end
         end
       end
@@ -104,6 +108,15 @@ module ActionController::MCPServer
       else
         raise RPCError.new(RPCError::METHOD_NOT_FOUND, "Method not found: #{method}")
       end
+    end
+
+    # the endpoint's `instructions` method, otherwise its doc comment, or the global instructions
+    private def session_instructions(request : HTTP::Request?, bound : Hash(String, String)) : String?
+      return MCPServer.instructions unless flat?
+      if (path = endpoint.instructions_path) && request
+        return @invoker.instructions(path, request, bound)
+      end
+      endpoint.instructions
     end
 
     private def description : Description

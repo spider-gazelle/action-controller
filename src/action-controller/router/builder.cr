@@ -414,12 +414,24 @@ module ActionController::Route::Builder
         {% prompt_annotation = {0 => "/__mcp_prompt__/" + method_name.stringify, :content_type => "application/json", :internal => true} %}
       {% end %}
 
+      # an endpoint's `instructions` method provides its MCP instructions, built per
+      # session from the route params. Like prompts, it's an internal GET route
+      {% mcp_instructions = mcp_endpoint && method_name.stringify == "instructions" %}
+      {% if mcp_instructions %}
+        {% raise "#{@type.name}#instructions provides the MCP endpoint instructions, it can't also be a prompt" if mcp_prompt %}
+        {% for route_method in {AC::Route::WebSocket, AC::Route::GET, AC::Route::POST, AC::Route::PUT, AC::Route::PATCH, AC::Route::DELETE, AC::Route::OPTIONS, AC::Route::Filter, AC::Route::Exception} %}
+          {% raise "#{@type.name}#instructions provides the MCP endpoint instructions, it can't also be a route, filter or exception handler" unless method.annotations(route_method).empty? %}
+        {% end %}
+        {% raise "#{@type.name}#instructions provides the MCP endpoint instructions and must declare a return type of String" unless method.return_type && method.return_type.resolve == String %}
+        {% prompt_annotation = {0 => "/__mcp_instructions__", :content_type => "application/json", :internal => true} %}
+      {% end %}
+
       # Run through the various route annotations
       {% for route_method in {AC::Route::WebSocket, AC::Route::GET, AC::Route::POST, AC::Route::PUT, AC::Route::PATCH, AC::Route::DELETE, AC::Route::OPTIONS, AC::Route::Filter, AC::Route::Exception} %}
         {% lower_route_method = route_method.stringify.split("::")[-1].downcase.id %}
 
         # Multiple routes can be applied to a single method
-        {% for ann, idx in (mcp_prompt && route_method == AC::Route::GET) ? [prompt_annotation] : method.annotations(route_method) %}
+        {% for ann, idx in ((mcp_prompt || mcp_instructions) && route_method == AC::Route::GET) ? [prompt_annotation] : method.annotations(route_method) %}
           {% annotation_found = true %}
 
           # OpenAPI route lookup (note full route here is not valid for exceptions and filters)
@@ -513,7 +525,9 @@ module ActionController::Route::Builder
             {% open_api_route[:mcp_ui] = mcp_ui %}
             {% open_api_route[:mcp_endpoint] = mcp_endpoint_path %}
             {% open_api_route[:mcp_endpoint_hide] = mcp_endpoint_hide %}
+            # internal MCP routes (prompts and endpoint instructions) aren't HTTP routes or tools
             {% open_api_route[:mcp_prompt] = ann[:internal] == true %}
+            {% open_api_route[:mcp_instructions] = mcp_instructions == true %}
             {% OPENAPI_ROUTES[verb_route] = open_api_route %}
 
             # initial recording of path params

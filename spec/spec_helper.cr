@@ -641,6 +641,17 @@ end
 class McpAccount < ActionController::Base
   base "/mcp_account/:account_id"
 
+  @[AC::Route::Filter(:before_action)]
+  def check_account(account_id : String)
+    head :forbidden if account_id == "forbidden"
+    head :unauthorized if account_id == "unauthorized"
+  end
+
+  # the MCP instructions, built for each session
+  def instructions(account_id : String) : String
+    "Account #{account_id}: call show to look up its widgets"
+  end
+
   # shows a widget in the account
   @[AC::Route::GET("/widgets/:id")]
   def show(account_id : String, id : Int32) : NamedTuple(account: String, id: Int32)

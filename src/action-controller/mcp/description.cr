@@ -351,7 +351,11 @@ module ActionController::MCPServer
     # the endpoint's tools and prompts, all of them root items
     getter toolbox : Toolbox
 
-    def initialize(@path, @bound, @toolbox)
+    # the internal route of the controller's `instructions` method, which builds the
+    # instructions for each session, i.e. `/accounts/:account_id/__mcp_instructions__`
+    getter instructions_path : String? = nil
+
+    def initialize(@path, @bound, @toolbox, @instructions_path = nil)
     end
 
     # the toolbox name, used as the server name
@@ -433,7 +437,7 @@ module ActionController::MCPServer
       prompts = [
         {% for _route_key, details in ::ActionController::Route::Builder::OPENAPI_ROUTES %}
           {% endpoint = details[:mcp_endpoint_hide] ? nil : details[:mcp_endpoint] %}
-          {% if details[:mcp_prompt] && (!details[:mcp_hide] || endpoint) %}
+          {% if details[:mcp_prompt] && !details[:mcp_instructions] && (!details[:mcp_hide] || endpoint) %}
             {
               controller: {{ details[:controller] }},
               method: {{ details[:method] }},
@@ -459,17 +463,27 @@ module ActionController::MCPServer
         {% end %}
       ] of PromptInfo
 
+      # controller => the internal route of its `instructions` method
+      instructions = {
+        {% for _route_key, details in ::ActionController::Route::Builder::OPENAPI_ROUTES %}
+          {% if details[:mcp_instructions] %}
+            {{ details[:controller] }} => {{ details[:route] }},
+          {% end %}
+        {% end %}
+      } of String => String
+
       build_description(
         open_api,
         descriptions,
         routes.select { |route| concrete.includes?(route[:controller]) },
         prompts.select { |prompt| concrete.includes?(prompt[:controller]) },
+        instructions,
       )
     {% end %}
   end
 
   # :nodoc:
-  def build_description(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo), prompts : Array(PromptInfo) = [] of PromptInfo) : Description
+  def build_description(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo), prompts : Array(PromptInfo) = [] of PromptInfo, instructions : Hash(String, String) = {} of String => String) : Description
     namespace = common_namespace(routes.map(&.[:controller]) + prompts.map(&.[:controller]))
 
     toolboxes = build_toolboxes(open_api, descriptions, routes.select(&.[:global]), prompts.select(&.[:global]), namespace) do |toolbox, method|
@@ -485,7 +499,7 @@ module ActionController::MCPServer
       boxes = build_toolboxes(open_api, descriptions, endpoint_routes.select(&.[:endpoint].==(path)), endpoint_prompts.select(&.[:endpoint].==(path)), namespace, root: true, bound: bound) do |_toolbox, method|
         method
       end
-      boxes.first?.try { |box| Endpoint.new(path, bound, box) }
+      boxes.first?.try { |box| Endpoint.new(path, bound, box, instructions[box.controller]?) }
     end
 
     Description.new(toolboxes, endpoints)
