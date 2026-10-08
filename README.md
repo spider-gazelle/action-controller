@@ -113,7 +113,9 @@ registration. See [the benchmark comparison](benchmarks/README.md) for measureme
 The compiled API is currently available in LuckyRouter's performance branch.
 Released versions without it retain AC's previous matcher; versions with snapshots
 but without the static-index option still compile with their default settings.
-CI tests both the released dependency and the snapshot implementation.
+The committed `shard.override.yml` selects the performance branch until the
+upstream LuckyRouter PR is merged. CI uses that override with the existing test
+matrix; the released-dependency fallback is also covered by local validation.
 
 ## Strong Parameter Usage
 

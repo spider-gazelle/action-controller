@@ -286,5 +286,6 @@ for compilation permit concurrent warmed readers; concurrent route registration
 remains outside the supported setup lifecycle. Catalogs, OpenAPI and MCP still
 use the live definitions. Snapshot memory and compilation time are startup costs.
 Released LuckyRouter versions without compilation retain the previous matcher;
-CI covers both that fallback and compiled routing with normal and multithreaded
-execution.
+The committed dependency override selects compiled routing for the existing CI
+matrix, including normal and multithreaded execution. Local validation also
+covers the released-dependency fallback.
