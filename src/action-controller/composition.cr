@@ -62,7 +62,7 @@ class ActionController::Composition
     @placements = [] of Placement
     roots.each { |root| expand(root, nil, controllers, mounts, [] of String) }
     validate_routes!
-    @placements.each { |placement| placement.controller.register.call(self, placement.base) }
+    register_routes
   end
 
   private def expand(root : String, public_base : String?, controllers : Array(Controller), mounts : Array(Mount), stack : Array(String)) : Nil
@@ -98,6 +98,13 @@ class ActionController::Composition
   # :nodoc:
   def initialize(@placements : Array(Placement), @explicit : Bool)
     validate_routes!
+    register_routes
+  end
+
+  private def register_routes : Nil
+    @route_handler.isolate_path_params = explicit? || placements.any? do |placement|
+      self.class.join("/", placement.base) != self.class.join("/", placement.controller.base)
+    end
     @placements.each { |placement| placement.controller.register.call(self, placement.base) }
   end
 

@@ -7,6 +7,10 @@ class ActionController::Router::RouteHandler
   # Used to validate additional endpoints before mutating the router.
   getter registered_routes : Set(Tuple(String, String)) = Set(Tuple(String, String)).new
 
+  # Explicit compositions isolate matched routes from upstream path bindings.
+  # Ordinary routers retain their historical static-route behavior.
+  property? isolate_path_params : Bool = false
+
   def initialize
     @matcher = LuckyRouter::Matcher(Tuple(Action, Bool)).new
     # keyed on {method, path} rather than a concatenation of the two so that
@@ -16,11 +20,12 @@ class ActionController::Router::RouteHandler
 
   # Searches static routes before checking the matcher
   def search_route(method, req_path, context : HTTP::Server::Context) : Tuple(Action, Bool)?
-    @static_routes.fetch({method, req_path}) do
-      if match = @matcher.match(method, req_path)
-        context.route_params = match.params
-        match.payload
-      end
+    if action = @static_routes[{method, req_path}]?
+      context.reset_route_params if isolate_path_params?
+      action
+    elsif match = @matcher.match(method, req_path)
+      context.route_params = match.params
+      match.payload
     end
   end
 

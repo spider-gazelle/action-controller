@@ -49,6 +49,15 @@ private class CompositionFallback
   end
 end
 
+private class CompositionUpstream
+  include HTTP::Handler
+
+  def call(context : HTTP::Server::Context)
+    context.route_params = {"tenant_id" => "99"}
+    call_next(context)
+  end
+end
+
 @[AC::MCP(endpoint: true, hide: false)]
 class CompositionOAuth < AC::Base
   base "/composition/oauth"
@@ -987,5 +996,56 @@ describe AC::Composition do
       tool.behaviours.should eq ["idempotent"]
       tool.input_schema["properties"]["value"]["type"].as_s.should eq "integer"
     end
+  end
+
+  it "constructs controller spec instances with the selected repeated mount's base" do
+    composition = CompositionHost.handler
+    request = HTTP::Request.new("GET", "/composition/host/backup/token")
+    instance = CompositionOAuth.spec_instance(request, composition: composition)
+    instance.base_route.should eq "/composition/host/backup"
+    instance.route_path(:token).should eq "/composition/host/backup/token"
+    instance.response.output.pos.should eq 0
+    CompositionOAuth.base_route.should eq "/composition/oauth"
+  end
+
+  it "binds mounted parameters for direct controller specs without running filters" do
+    composition = CompositionFilteredHost.handler
+    instance = CompositionFiltered.spec_instance(HTTP::Request.new("GET", "/composition/filtered-host/42/auth"), composition: composition)
+    instance.route_params.should eq({"tenant_id" => "42"})
+    instance.route_path(:index).should eq "/composition/filtered-host/42/auth"
+    instance.route_path(:index, tenant_id: 43).should eq "/composition/filtered-host/43/auth"
+    instance.response.headers.has_key?("X-Tenant").should be_false
+  end
+
+  it "uses the configured default composition for existing controller spec calls" do
+    previous = AC::Composition.default
+    begin
+      AC::Composition.default = CompositionHost.handler
+      instance = CompositionOAuth.spec_instance(HTTP::Request.new("GET", "/composition/host/auth/token"))
+      instance.route_path(:token).should eq "/composition/host/auth/token"
+    ensure
+      AC::Composition.default = previous
+    end
+  end
+
+  it "isolates static controller routes from upstream handler path parameters" do
+    upstream = CompositionUpstream.new
+    upstream.next = CompositionFiltered.handler
+    response = HotTopic.new(upstream).get("/composition/filtered?tenant_id=42")
+    response.headers["X-Tenant"].should eq "42"
+  end
+
+  it "preserves ordinary routing behavior and isolates automatic mounted placements after cloning" do
+    controller = AC::Composition.controllers.find!(&.name.==(CompositionFiltered.name))
+    ordinary = AC::Composition.new([AC::Composition::Placement.new(controller, controller.base)], false)
+    ordinary.route_handler.isolate_path_params?.should be_false
+    ordinary.handler.route_handler.isolate_path_params?.should be_false
+    upstream = CompositionUpstream.new
+    upstream.next = ordinary
+    HotTopic.new(upstream).get("/composition/filtered?tenant_id=42").headers["X-Tenant"].should eq "99"
+    mounted = AC::Composition.new([AC::Composition::Placement.new(controller, "/composition/automatic-mount")], false)
+    mounted.route_handler.isolate_path_params?.should be_true
+    upstream.next = mounted.handler
+    HotTopic.new(upstream).get("/composition/automatic-mount?tenant_id=42").headers["X-Tenant"].should eq "42"
   end
 end

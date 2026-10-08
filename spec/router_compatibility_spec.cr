@@ -23,6 +23,20 @@ private class RouteCompatibilityRouter
 end
 
 describe ActionController::Router::RouteHandler do
+  it "replaces upstream path bindings on a static match while preserving them on a miss" do
+    handler = ActionController::Router::RouteHandler.new
+    handler.isolate_path_params = true
+    handler.add_route("GET", "/static", {route_action, false})
+    context = route_context("/static")
+    upstream = {"id" => "upstream"}
+    context.route_params = upstream
+    handler.search_route("GET", "/missing", context).should be_nil
+    context.route_params.should eq({"id" => "upstream"})
+    handler.search_route("GET", "/static", context).should_not be_nil
+    context.route_params.should be_empty
+    upstream.should eq({"id" => "upstream"})
+  end
+
   it "prefers an exact static route and accepts its trailing slash alias" do
     handler = ActionController::Router::RouteHandler.new
     static = {marked_route("static"), false}

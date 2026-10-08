@@ -7,4 +7,10 @@ class HTTP::Server::Context
   property route_params : Hash(String, String) do
     {} of String => String
   end
+
+  # :nodoc:
+  # Keep empty path bindings lazy and avoid mutating an upstream handler's hash.
+  def reset_route_params : Nil
+    @route_params = nil
+  end
 end

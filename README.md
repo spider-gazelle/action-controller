@@ -18,6 +18,8 @@ HTTP::Server.new([
 
 A route miss calls the next handler. A matched action keeps its response, including a deliberate 404 or an authentication failure. Application filters run only when one of that application's routes matches. Use a fresh handler for each server or chain; request controllers still take an `HTTP::Server::Context` in their constructor.
 
+Explicit compositions and apps with mounts isolate matched routes from path parameters set by upstream handlers. Route misses preserve the context for the next handler. Ordinary automatic routing retains its existing path parameter behavior.
+
 For one server with unified route listing, OpenAPI and MCP, select application roots in `config.cr`, after requiring their controllers:
 
 ```crystal
@@ -63,6 +65,15 @@ docs = AC::OpenAPI.generate_open_api_docs(
 )
 AC::MCPServer.write_description("combined-mcp.yml", composition: composition)
 client = AC::SpecHelper.new(composition).hot_topic
+```
+
+For direct controller tests, `spec_instance` accepts the same composition and binds the requested mount's base and path parameters without executing actions or filters. Existing calls use the configured default composition:
+
+```crystal
+instance = OtherAC::App::OAuth2.spec_instance(
+  HTTP::Request.new("GET", "/myapp/auth/token"), composition: composition,
+)
+instance.route_path(:token) # => "/myapp/auth/token"
 ```
 
 OpenAPI uses public mounted paths and distinct operation IDs. MCP uses the same composition for tool calls, prompts, internal instructions, and relocated controller endpoints. Repeated mounts receive separate toolboxes and unique tool/prompt names. Existing visibility annotations and authentication settings still apply; the host owns global MCP configuration, session settings and UI asset locations.
