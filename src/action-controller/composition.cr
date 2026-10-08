@@ -109,8 +109,10 @@ class ActionController::Composition
   end
 
   def call(context : HTTP::Server::Context) : Nil
-    if action = route_handler.search_route(context.request.method, context.request.path, context)
-      route_handler.process_request(context.request.method, context.request.path, context, action[0], action[1])
+    method = context.request.method
+    path = context.request.path
+    if action = route_handler.search_route(method, path, context)
+      route_handler.process_request(method, path, context, action[0], action[1])
     else
       call_next(context)
     end
