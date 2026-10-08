@@ -437,6 +437,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/String" data-name="string">
+      <a href="../../String.html">String</a>
+      
+    </li>
+  
 </ul>
 
   </div>
@@ -494,7 +499,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L21" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/f031f7febbc0f42e67e7971229985532d769311d/src/action-controller/mcp/protocol.cr#L21" target="_blank">
         action-controller/mcp/protocol.cr
       </a>
     
@@ -561,7 +566,7 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#new%28invoker%3AInvoker%2Cendpoint%3AString%7CNil%3Dnil%29-class-method" class="signature"><strong>.new</strong>(invoker : Invoker, endpoint : String | Nil = <span class="n">nil</span>)</a>
+        <a href="#new%28invoker%3AInvoker%2Cendpoint%3AString%7CNil%3Dnil%2Ccomposition%3AComposition%3DComposition.default%29-class-method" class="signature"><strong>.new</strong>(invoker : Invoker, endpoint : String | Nil = <span class="n">nil</span>, composition : Composition = <span class="t">Composition</span>.default)</a>
         
           <div class="summary"><p><code>endpoint</code> is the path template of a controller endpoint, <code>nil</code> for the global server</p></div>
         
@@ -650,12 +655,12 @@
     Constructor Detail
   </h2>
   
-    <div class="entry-detail" id="new(invoker:Invoker,endpoint:String|Nil=nil)-class-method">
+    <div class="entry-detail" id="new(invoker:Invoker,endpoint:String|Nil=nil,composition:Composition=Composition.default)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(invoker : <a href="../../ActionController/MCPServer/Invoker.html">Invoker</a>, endpoint : String | Nil = <span class="n">nil</span>)
+        def self.<strong>new</strong>(invoker : <a href="../../ActionController/MCPServer/Invoker.html">Invoker</a>, endpoint : <a href="../../String.html">String</a> | Nil = <span class="n">nil</span>, composition : Composition = <span class="t">Composition</span>.default)
 
-        <a class="method-permalink" href="#new%28invoker%3AInvoker%2Cendpoint%3AString%7CNil%3Dnil%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28invoker%3AInvoker%2Cendpoint%3AString%7CNil%3Dnil%2Ccomposition%3AComposition%3DComposition.default%29-class-method">#</a>
       </div>
       
         <div class="doc">
@@ -666,7 +671,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L41" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f031f7febbc0f42e67e7971229985532d769311d/src/action-controller/mcp/protocol.cr#L41" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -703,7 +708,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L45" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f031f7febbc0f42e67e7971229985532d769311d/src/action-controller/mcp/protocol.cr#L45" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -711,7 +716,7 @@
     <div class="entry-detail" id="handle(method:String,params:Hash(String,JSON::Any),session:Session,request:HTTP::Request,emitted:Array(String)):String-instance-method">
       <div class="signature">
         
-        def <strong>handle</strong>(method : String, params : Hash(String, JSON::Any), session : <a href="../../ActionController/MCPServer/Session.html">Session</a>, request : HTTP::Request, emitted : Array(String)) : String
+        def <strong>handle</strong>(method : <a href="../../String.html">String</a>, params : Hash(<a href="../../String.html">String</a>, JSON::Any), session : <a href="../../ActionController/MCPServer/Session.html">Session</a>, request : HTTP::Request, emitted : Array(<a href="../../String.html">String</a>)) : <a href="../../String.html">String</a>
 
         <a class="method-permalink" href="#handle%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%2Csession%3ASession%2Crequest%3AHTTP%3A%3ARequest%2Cemitted%3AArray%28String%29%29%3AString-instance-method">#</a>
       </div>
@@ -725,7 +730,7 @@ appended to <code>emitted</code> for delivery before the result</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L99" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f031f7febbc0f42e67e7971229985532d769311d/src/action-controller/mcp/protocol.cr#L99" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -733,7 +738,7 @@ appended to <code>emitted</code> for delivery before the result</p>
     <div class="entry-detail" id="initialize_result(protocol_version:String,request:HTTP::Request|Nil=nil,bound:Hash(String,String)={}ofString=&gt;String):String-instance-method">
       <div class="signature">
         
-        def <strong>initialize_result</strong>(protocol_version : String, request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String
+        def <strong>initialize_result</strong>(protocol_version : <a href="../../String.html">String</a>, request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(<a href="../../String.html">String</a>, <a href="../../String.html">String</a>) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : <a href="../../String.html">String</a>
 
         <a class="method-permalink" href="#initialize_result%28protocol_version%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method">#</a>
       </div>
@@ -748,7 +753,7 @@ raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError<
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/mcp/protocol.cr#L58" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f031f7febbc0f42e67e7971229985532d769311d/src/action-controller/mcp/protocol.cr#L58" target="_blank">View source</a>]
         
       </div>
     </div>

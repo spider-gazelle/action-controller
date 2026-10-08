@@ -437,6 +437,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/String" data-name="string">
+      <a href="String.html">String</a>
+      
+    </li>
+  
 </ul>
 
   </div>
@@ -450,6 +455,61 @@
 </a>Spider-Gazelle Action Controller</h1>
 <p><a href="https://github.com/spider-gazelle/action-controller/actions/workflows/ci.yml"><img src="https://github.com/spider-gazelle/action-controller/actions/workflows/ci.yml/badge.svg" alt="CI" /></a></p>
 <p>Extending <a href="https://github.com/luckyframework/lucky_router">lucky_router</a> for a Rails like DSL without the overhead. See the <a href="https://spider-gazelle.net/">docs site</a> for usage details</p>
+<h2><a id="composable-applications" class="anchor" href="#composable-applications">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Composable applications</h2>
+<p>Every controller class provides <code>.handler</code>, which returns a fresh <code>HTTP::Handler</code> serving that class and its concrete descendants. It also works on an abstract application base such as the template's <code>App::Base</code>:</p>
+<pre><code class="language-crystal"><span class="t">HTTP</span><span class="t">::</span><span class="t">Server</span>.new([
+  <span class="t">App</span><span class="t">::</span><span class="t">Base</span>.handler,
+  <span class="t">OtherAC</span><span class="t">::</span><span class="t">App</span><span class="t">::</span><span class="t">Base</span>.handler,
+  <span class="t">HTTP</span><span class="t">::</span><span class="t">StaticFileHandler</span>.new(<span class="s">&quot;www&quot;</span>, directory_listing: <span class="n">false</span>),
+])</code></pre>
+<p>A route miss calls the next handler. A matched action keeps its response, including a deliberate 404 or an authentication failure. Application filters run only when one of that application's routes matches. Use a fresh handler for each server or chain; request controllers still take an <code><a href="HTTP/Server/Context.html">HTTP::Server::Context</a></code> in their constructor.</p>
+<p>Explicit compositions and apps with mounts isolate matched routes from path parameters set by upstream handlers. Route misses preserve the context for the next handler. Ordinary automatic routing retains its existing path parameter behavior.</p>
+<p>For one server with unified route listing, OpenAPI and MCP, select application roots in <code>config.cr</code>, after requiring their controllers:</p>
+<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">Server</span>.compose(<span class="t">App</span><span class="t">::</span><span class="t">Base</span>, <span class="t">OtherAC</span><span class="t">::</span><span class="t">App</span><span class="t">::</span><span class="t">Base</span>)</code></pre>
+<p>This is a compile-time declaration, so it also applies to the template's <code>--routes</code>, <code>--docs</code> and <code>--mcp</code> options, which execute before configuration initialization. Declare it once. Existing <code>Server.new</code>, <code>Server.before</code>, <code>Server.after</code>, OpenAPI and MCP calls work unchanged. Without a declaration, controllers are discovered automatically as before. Reusable apps should expose their controllers in a library entry point; require their executable startup and global configuration only when running them standalone.</p>
+<h3><a id="mounting-controllers-and-apps" class="anchor" href="#mounting-controllers-and-apps">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Mounting controllers and apps</h3>
+<pre><code class="language-crystal"><span class="k">class</span> <span class="t">MyApp</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
+  base <span class="s">&quot;/myapp/&quot;</span>
+  mount <span class="s">&quot;/auth/&quot;</span>, <span class="t">OtherAC</span><span class="t">::</span><span class="t">App</span><span class="t">::</span><span class="t">OAuth2</span>
+<span class="k">end</span></code></pre>
+<p>The mount replaces the target's base. If <code>OAuth2</code> has <code>base &quot;/oauth2&quot;</code> and a <code>/token</code> action, the public URL is <code>/myapp/auth/token</code>. Targets can use names relative to the declaring controller's namespace and can be declared later. A mounted application base includes its descendants, preserving their paths relative to that base. For example, an app with <code>base &quot;/api&quot;</code> and a descendant controller with <code>base &quot;/api/users&quot;</code> mounted at <code>/service</code> exposes that controller at <code>/service/users</code>. Controller bases outside the app base retain their whole path beneath the mount. <code>base</code> continues to set each controller's own path; it does not implicitly prefix descendants.</p>
+<p>Mounts can be nested or repeated. Mount-only targets are excluded from standalone automatic discovery. Explicitly selecting an application includes its descendants independently of mounts declared in other applications; its own mount declarations determine which descendants are relocated. Mounting a whole application likewise includes its complete subtree. Mounted controllers keep their own filters and exception handlers. Parent controllers' filters apply to their own actions. Requests retain their public path, and unmatched mounted routes continue downstream.</p>
+<p>Parameterized mounts such as <code>mount &quot;/accounts/:account_id/auth&quot;, OAuth2</code> bind those parameters for controller filters and actions, OpenAPI and MCP. Mounts must preserve any required parameters from the target's original routes as required parameters. Cycles, ambiguous parameter names and conflicting public operations are rejected. Explicit composition also checks equivalent parameterized routes and generated HEAD operations. MCP endpoint conflicts are checked against the actual router before endpoints are registered.</p>
+<p>Optional mount segments retain the action's argument requirements. If a query argument becomes an optional path segment, OpenAPI describes its query form on URLs that omit the segment; required action and filter arguments stay required in MCP. Replacing a base that contains an optional parameter moves declared arguments back to queries. If the replacement makes that segment mandatory, tools and prompts require its value. MCP endpoint listings omit only arguments bound by the current session URL, so sessions without an optional segment can still supply that argument.</p>
+<p>Use <code>route_path(:action, ...)</code> inside an action to generate a URL using the current mounted base and bound path parameters:</p>
+<pre><code class="language-crystal">redirect_to route_path(<span class="n">:token</span>)</code></pre>
+<p>Explicit URL arguments override bound path values. Helpers encode individual path segments and support optional (<code>?:</code>) and glob (<code>*:</code>) segments; later optional segments require earlier ones. Existing class URL helpers such as <code>OAuth2.token</code> retain their original URLs. Outside a request, use <code>composition.url_for(OAuth2, :token, ...)</code>; supply <code>mount_base:</code> to choose between repeated mounts.</p>
+<h3><a id="independent-compositions-and-catalogs" class="anchor" href="#independent-compositions-and-catalogs">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Independent compositions and catalogs</h3>
+<pre><code class="language-crystal">composition <span class="o">=</span> <span class="t">AC</span><span class="t">::</span><span class="t">Composition</span>.new([<span class="t">MyApp</span>.name, <span class="t">AnotherApp</span><span class="t">::</span><span class="t">Base</span>.name])
+server <span class="o">=</span> <span class="t">AC</span><span class="t">::</span><span class="t">Server</span>.new(composition: composition)
+<span class="t">AC</span><span class="t">::</span><span class="t">MCPServer</span>.mount(server, <span class="s">&quot;/mcp&quot;</span>)
+
+docs <span class="o">=</span> <span class="t">AC</span><span class="t">::</span><span class="t">OpenAPI</span>.generate_open_api_docs(
+  title: <span class="s">&quot;Combined API&quot;</span>, version: <span class="s">&quot;1.0&quot;</span>, composition: composition,
+)
+<span class="t">AC</span><span class="t">::</span><span class="t">MCPServer</span>.write_description(<span class="s">&quot;combined-mcp.yml&quot;</span>, composition: composition)
+client <span class="o">=</span> <span class="t">AC</span><span class="t">::</span><span class="t">SpecHelper</span>.new(composition).hot_topic</code></pre>
+<p>For direct controller tests, <code>spec_instance</code> accepts the same composition and binds the requested mount's base and path parameters without executing actions or filters. Existing calls use the configured default composition:</p>
+<pre><code class="language-crystal">instance <span class="o">=</span> <span class="t">OtherAC</span><span class="t">::</span><span class="t">App</span><span class="t">::</span><span class="t">OAuth2</span>.spec_instance(
+  <span class="t">HTTP</span><span class="t">::</span><span class="t">Request</span>.new(<span class="s">&quot;GET&quot;</span>, <span class="s">&quot;/myapp/auth/token&quot;</span>), composition: composition,
+)
+instance.route_path(<span class="n">:token</span>) <span class="c"># =&gt; &quot;/myapp/auth/token&quot;</span></code></pre>
+<p>OpenAPI uses public mounted paths and distinct operation IDs. MCP uses the same composition for tool calls, prompts, internal instructions, and relocated controller endpoints. Repeated mounts receive separate toolboxes and unique tool/prompt names. Existing visibility annotations and authentication settings still apply; the host owns global MCP configuration, session settings and UI asset locations.</p>
+<p>For controller inheritance, the nearest controller with an <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(...)]</code> annotation supplies defaults for both inherited and newly declared actions. A child controller annotation replaces those defaults; method annotations take precedence. Icons use the nearest controller that declares them; a method's icons take precedence. Children can change or disable inherited endpoints, enable an endpoint using inherited instructions, and override the instructions method.</p>
+<p>MCP description caches are scoped to the composition and description file. Generated files include a composition identity incorporating the catalog version; a mismatched file is regenerated from compiled metadata without source comments. Regenerate descriptions with <code>--mcp</code> or <code>write_description</code> to retain those comments. Legacy description files remain supported for ordinary apps without explicit composition or mounts.</p>
+<p>Controller selection, mount expansion, conflict validation and catalog projection run during compilation or initialization. <code>Server</code> registers all placements in one routing table. Exact static routes use the existing allocation-free lookup; dynamic routes traverse LuckyRouter's trie using temporary byte views, copying captures only after a successful match. Escaped paths retain its original decoder. Ordinary controller routes retain direct dispatch procs, which outperform the tested callable-object and integer dispatch alternatives with mixed targets. Relocated routes bind their public base on the request context, without allocating a placement or rewriting the request. Warmed MCP descriptions use atomic cache snapshots, without taking the catalog lock or hashing the composition. Explicit handler chains perform another lookup for every handler that misses. See <a href="benchmarks/README.md">the performance benchmark</a> for repeatable comparisons and their limits.</p>
 <h2><a id="strong-parameter-usage" class="anchor" href="#strong-parameter-usage">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
@@ -653,7 +713,7 @@ arguments <code>{&quot;id&quot;: 1, &quot;detailed&quot;: true}</code>.</p>
 </a>Prompts</h3>
 <p><a href="https://modelcontextprotocol.io/specification/2025-11-25/server/prompts">Prompts</a> are
 reusable message templates that users select in their MCP client. Mark a controller
-method with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(prompt: true)]</code>. It must return a <code>String</code>, which becomes a single
+method with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(prompt: true)]</code>. It must return a <code><a href="String.html">String</a></code>, which becomes a single
 user message, or an <code>Array(<a href="ActionController/PromptMessage.html">AC::PromptMessage</a>)</code> for a conversation:</p>
 <pre><code class="language-crystal"><span class="k">class</span> <span class="t">Widgets</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
   base <span class="s">&quot;/widgets&quot;</span>

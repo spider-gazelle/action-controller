@@ -437,6 +437,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/String" data-name="string">
+      <a href="../String.html">String</a>
+      
+    </li>
+  
 </ul>
 
   </div>
@@ -495,14 +500,14 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/open_api.cr#L5" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/f031f7febbc0f42e67e7971229985532d769311d/src/action-controller/open_api.cr#L5" target="_blank">
         action-controller/open_api.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/open_api/components.cr#L2" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/f031f7febbc0f42e67e7971229985532d769311d/src/action-controller/open_api/components.cr#L2" target="_blank">
         action-controller/open_api/components.cr
       </a>
     
@@ -554,7 +559,7 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#generate_open_api_docs%28title%3AString%2Cversion%3AString%2Copenapi%3AString%3DOPENAPI_VERSIONS%5B0%5D%2C%2A%2Ainfo%29-instance-method" class="signature"><strong>#generate_open_api_docs</strong>(title : String, version : String, openapi : String = <span class="t">OPENAPI_VERSIONS</span>[<span class="n">0</span>], **info)</a>
+        <a href="#generate_open_api_docs%28title%3AString%2Cversion%3AString%2Copenapi%3AString%3DOPENAPI_VERSIONS%5B0%5D%2Ccomposition%3AComposition%3DComposition.default%2C%2A%2Ainfo%29-instance-method" class="signature"><strong>#generate_open_api_docs</strong>(title : String, version : String, openapi : String = <span class="t">OPENAPI_VERSIONS</span>[<span class="n">0</span>], composition : Composition = <span class="t">Composition</span>.default, **info)</a>
         
           <div class="summary"><p>returns a NamedTuple that represents the OpenAPI docs for the current application.</p></div>
         
@@ -584,12 +589,12 @@
     Instance Method Detail
   </h2>
   
-    <div class="entry-detail" id="generate_open_api_docs(title:String,version:String,openapi:String=OPENAPI_VERSIONS[0],**info)-instance-method">
+    <div class="entry-detail" id="generate_open_api_docs(title:String,version:String,openapi:String=OPENAPI_VERSIONS[0],composition:Composition=Composition.default,**info)-instance-method">
       <div class="signature">
         
-        def <strong>generate_open_api_docs</strong>(title : String, version : String, openapi : String = <span class="t">OPENAPI_VERSIONS</span>[<span class="n">0</span>], **info)
+        def <strong>generate_open_api_docs</strong>(title : <a href="../String.html">String</a>, version : <a href="../String.html">String</a>, openapi : <a href="../String.html">String</a> = <span class="t">OPENAPI_VERSIONS</span>[<span class="n">0</span>], composition : Composition = <span class="t">Composition</span>.default, **info)
 
-        <a class="method-permalink" href="#generate_open_api_docs%28title%3AString%2Cversion%3AString%2Copenapi%3AString%3DOPENAPI_VERSIONS%5B0%5D%2C%2A%2Ainfo%29-instance-method">#</a>
+        <a class="method-permalink" href="#generate_open_api_docs%28title%3AString%2Cversion%3AString%2Copenapi%3AString%3DOPENAPI_VERSIONS%5B0%5D%2Ccomposition%3AComposition%3DComposition.default%2C%2A%2Ainfo%29-instance-method">#</a>
       </div>
       
         <div class="doc">
@@ -602,7 +607,7 @@ the info hash splat accepts any of the keys from the <a href="https://swagger.io
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ef242ec048b3adffcbe0a5c7289f7aad73151de/src/action-controller/open_api.cr#L188" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/f031f7febbc0f42e67e7971229985532d769311d/src/action-controller/open_api.cr#L189" target="_blank">View source</a>]
         
       </div>
     </div>
