@@ -82,40 +82,7 @@ For controller inheritance, the nearest controller with an `@[AC::MCP(...)]` ann
 
 MCP description caches are scoped to the composition and description file. Generated files include a composition identity incorporating the catalog version; a mismatched file is regenerated from compiled metadata without source comments. Regenerate descriptions with `--mcp` or `write_description` to retain those comments. Legacy description files remain supported for ordinary apps without explicit composition or mounts.
 
-Controller selection, mount expansion, conflict validation and catalog projection run during compilation or initialization. `Server` registers all placements in one routing table. Exact static routes use the existing allocation-free lookup; other routes use LuckyRouter's compiled trie, copying captures only after a successful match and decoding escaped segments as required. Ordinary controller routes retain direct dispatch procs, which outperform the tested callable-object and integer dispatch alternatives with mixed targets. Relocated routes bind their public base on the request context, without allocating a placement or rewriting the request. Warmed MCP descriptions use atomic cache snapshots, without taking the catalog lock or hashing the composition. Explicit handler chains perform another lookup for every handler that misses. See [the performance benchmark](benchmarks/README.md) for repeatable comparisons and their limits.
-
-### Compiled route snapshots
-
-`Server.run` compiles the registered routes before binding/listening. Its binding
-callback can register more endpoints; the updated routes are compiled again
-before listening. This includes MCP endpoints added after server construction.
-No template or configuration changes are required.
-
-For a custom `HTTP::Server` setup, prepare a handler explicitly during startup:
-
-```crystal
-handler = MyApp.handler
-handler.compile_routes
-server = HTTP::Server.new([handler] of HTTP::Handler)
-```
-
-Handlers used directly also compile lazily on their first non-static lookup.
-Adding a route invalidates the snapshot, which is rebuilt before the next trie
-lookup. Warmed requests read an immutable snapshot without taking the compilation
-lock. Exact static matches keep AC's existing lookup and path-binding behavior.
-
-AC disables LuckyRouter's duplicate static index when that compile option is
-available. Its static cache avoids allocating the empty parameter hash returned
-by LuckyRouter's `match`. Snapshot compilation adds initialization time and
-memory, and route definitions remain live for catalog generation and further
-registration. See [the benchmark comparison](benchmarks/README.md) for measurements.
-
-The compiled API is currently available in LuckyRouter's performance branch.
-Released versions without it retain AC's previous matcher; versions with snapshots
-but without the static-index option still compile with their default settings.
-The committed `shard.override.yml` selects the performance branch until the
-upstream LuckyRouter PR is merged. CI uses that override with the existing test
-matrix; the released-dependency fallback is also covered by local validation.
+Controller selection, mount expansion, conflict validation and catalog projection run during compilation or initialization. `Server` registers all placements in one routing table. Exact static routes use the existing allocation-free lookup; dynamic routes traverse LuckyRouter's trie using temporary byte views, copying captures only after a successful match. Escaped paths retain its original decoder. Ordinary controller routes retain direct dispatch procs, which outperform the tested callable-object and integer dispatch alternatives with mixed targets. Relocated routes bind their public base on the request context, without allocating a placement or rewriting the request. Warmed MCP descriptions use atomic cache snapshots, without taking the catalog lock or hashing the composition. Explicit handler chains perform another lookup for every handler that misses. See [the performance benchmark](benchmarks/README.md) for repeatable comparisons and their limits.
 
 ## Strong Parameter Usage
 

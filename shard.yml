@@ -1,6 +1,5 @@
 name: action-controller
-version: 9.0.0
-crystal: ">= 1.21.0"
+version: 9.1.0
 
 dependencies:
   habitat:
