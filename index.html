@@ -437,11 +437,6 @@
       
     </li>
   
-  <li class=" " data-id="action-controller/String" data-name="string">
-      <a href="String.html">String</a>
-      
-    </li>
-  
 </ul>
 
   </div>
@@ -713,7 +708,7 @@ arguments <code>{&quot;id&quot;: 1, &quot;detailed&quot;: true}</code>.</p>
 </a>Prompts</h3>
 <p><a href="https://modelcontextprotocol.io/specification/2025-11-25/server/prompts">Prompts</a> are
 reusable message templates that users select in their MCP client. Mark a controller
-method with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(prompt: true)]</code>. It must return a <code><a href="String.html">String</a></code>, which becomes a single
+method with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(prompt: true)]</code>. It must return a <code>String</code>, which becomes a single
 user message, or an <code>Array(<a href="ActionController/PromptMessage.html">AC::PromptMessage</a>)</code> for a conversation:</p>
 <pre><code class="language-crystal"><span class="k">class</span> <span class="t">Widgets</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
   base <span class="s">&quot;/widgets&quot;</span>
