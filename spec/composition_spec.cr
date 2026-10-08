@@ -233,6 +233,99 @@ module CompositionInheritedEndpoint
   class Pages < Base
     base "/composition/inherited-endpoint"
   end
+
+  @[AC::MCP(endpoint: "/assistant", hide: false)]
+  class Custom < Base
+    base "/composition/inherited-custom"
+  end
+
+  @[AC::MCP(endpoint: false, hide: true)]
+  class Disabled < Base
+    base "/composition/inherited-disabled"
+  end
+
+  @[AC::MCP(endpoint: "/assistant")]
+  class Overrides < Base
+    base "/composition/inherited-overrides"
+
+    @[AC::MCP(hide: false, root: false)]
+    def token : String
+      "custom token"
+    end
+
+    def instructions : String
+      "Custom at #{base_route}"
+    end
+  end
+end
+
+module CompositionInheritedSettings
+  abstract class Base < AC::Base
+    @[AC::Route::GET("/")]
+    def index : String
+      "inherited"
+    end
+
+    @[AC::MCP(hide: false, root: false, behaviour: :read_only)]
+    @[AC::Icon(src: "method.svg")]
+    @[AC::Route::GET("/public")]
+    def public_route : String
+      "public"
+    end
+
+    @[AC::MCP(hide: true)]
+    @[AC::Route::GET("/private")]
+    def private_route : String
+      "private"
+    end
+
+    @[AC::MCP(prompt: true)]
+    def explain : String
+      base_route
+    end
+
+    def instructions : String
+      "Settings at #{base_route}"
+    end
+  end
+
+  @[AC::MCP(hide: true, root: true, behaviour: :destructive, visibility: :card, ui: "inherited/card.html")]
+  @[AC::Icon(src: "child.svg")]
+  class Hidden < Base
+    base "/composition/inherited-hidden"
+  end
+
+  @[AC::MCP(endpoint: "/assistant", root: true)]
+  class Endpoint < Base
+    base "/composition/inherited-settings"
+  end
+
+  class Descendant < Endpoint
+    base "/composition/inherited-descendant"
+
+    @[AC::Route::GET("/own")]
+    def own : String
+      "own"
+    end
+  end
+
+  class Overloaded < AC::Base
+    base "/composition/overloaded"
+
+    def show(value : String) : String
+      value
+    end
+
+    @[AC::MCP(behaviour: :idempotent)]
+    @[AC::Route::GET("/")]
+    def show(value : Int64) : Int64
+      value
+    end
+  end
+
+  class InheritedOverload < Overloaded
+    base "/composition/inherited-overload"
+  end
 end
 
 module CompositionLibrary
@@ -622,7 +715,7 @@ describe AC::Composition do
   end
 
   it "relocates inherited tools, prompts and MCP instructions to the subclass base" do
-    composition = CompositionInheritedEndpoint::Base.handler
+    composition = CompositionInheritedEndpoint::Pages.handler
     AC::MCPServer.endpoint_paths(composition).should eq ["/composition/inherited-endpoint/mcp"]
     description = AC::MCPServer.generate_description(docs: false, composition: composition)
     endpoint = description.endpoints.first
@@ -819,5 +912,80 @@ describe AC::Composition do
       invoker.get_prompt(prompt, {} of String => JSON::Any, HTTP::Request.new("POST", "/mcp"))
     end
     description.endpoints.first.toolbox.prompts.find!(&.path.ends_with?("/explain")).arguments.should be_empty
+  end
+
+  it "applies child MCP defaults to inherited actions while preserving method overrides" do
+    composition = CompositionInheritedSettings::Hidden.handler
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    box = description.toolboxes.first
+    box.tools.map(&.path).should eq ["/composition/inherited-hidden/public"]
+    tool = box.tools.first
+    tool.root?.should be_false
+    tool.behaviours.should eq ["read_only"]
+    tool.visibility.should eq ["card"]
+    tool.ui.should eq "ui://inherited/card.html"
+    (tool.icons.should_not be_nil).first["src"].as_s.should eq "method.svg"
+    (box.icons.should_not be_nil).first["src"].as_s.should eq "child.svg"
+    box.prompts.should be_empty
+    description.endpoints.should be_empty
+    HotTopic.new(composition).get("/composition/inherited-hidden").body.should eq %q("inherited")
+  end
+
+  it "uses child endpoint configuration and can disable an inherited endpoint" do
+    composition = CompositionInheritedEndpoint::Custom.handler
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    endpoint = description.endpoints.first
+    endpoint.path.should eq "/composition/inherited-custom/assistant"
+    AC::MCPServer.endpoint_paths(composition).should eq [endpoint.path]
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    instructions = endpoint.instructions_path.should_not be_nil
+    invoker.instructions(instructions, HTTP::Request.new("POST", "/mcp"), {} of String => String).should eq "Inherited at /composition/inherited-custom"
+    disabled = CompositionInheritedEndpoint::Disabled.handler
+    description = AC::MCPServer.generate_description(docs: false, composition: disabled)
+    description.endpoints.should be_empty
+    description.toolboxes.should be_empty
+    AC::MCPServer.endpoint_paths(disabled).should be_empty
+    HotTopic.new(disabled).get("/composition/inherited-disabled/token").status_code.should eq 200
+  end
+
+  it "inherits endpoint defaults consistently for inherited and newly declared actions" do
+    composition = CompositionInheritedSettings::Descendant.handler
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    endpoint = description.endpoints.first
+    endpoint.path.should eq "/composition/inherited-descendant/assistant"
+    endpoint.toolbox.tools.map(&.path).sort!.should eq ["/composition/inherited-descendant", "/composition/inherited-descendant/own", "/composition/inherited-descendant/public"]
+    endpoint.toolbox.prompts.first.root?.should be_true
+    box = description.toolboxes.first
+    box.tools.map(&.path).should eq ["/composition/inherited-descendant/public"]
+    box.tools.find!(&.path.ends_with?("/public")).root?.should be_false
+    box.prompts.should be_empty
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    instructions = endpoint.instructions_path.should_not be_nil
+    invoker.instructions(instructions, HTTP::Request.new("POST", "/mcp"), {} of String => String).should eq "Settings at /composition/inherited-descendant"
+    invoker.get_prompt(endpoint.toolbox.prompts.first, {} of String => JSON::Any, HTTP::Request.new("POST", "/mcp")).should contain "/composition/inherited-descendant"
+  end
+
+  it "uses overridden action annotations and instructions without duplicating inherited routes" do
+    composition = CompositionInheritedEndpoint::Overrides.handler
+    HotTopic.new(composition).get("/composition/inherited-overrides/token").body.should eq %q("custom token")
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    description.toolboxes.first.tools.map(&.path).should eq ["/composition/inherited-overrides/token"]
+    description.toolboxes.first.tools.first.root?.should be_false
+    endpoint = description.endpoints.first
+    endpoint.path.should eq "/composition/inherited-overrides/assistant"
+    instructions = endpoint.instructions_path.should_not be_nil
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    invoker.instructions(instructions, HTTP::Request.new("POST", "/mcp"), {} of String => String).should eq "Custom at /composition/inherited-overrides"
+  end
+
+  it "preserves annotated overload metadata for declared and inherited actions" do
+    [CompositionInheritedSettings::Overloaded.handler, CompositionInheritedSettings::InheritedOverload.handler].each do |composition|
+      path = composition.routes.first[3]
+      HotTopic.new(composition).get("#{path}?value=42").body.should eq "42"
+      description = AC::MCPServer.generate_description(docs: false, composition: composition)
+      tool = description.toolboxes.first.tools.first
+      tool.behaviours.should eq ["idempotent"]
+      tool.input_schema["properties"]["value"]["type"].as_s.should eq "integer"
+    end
   end
 end

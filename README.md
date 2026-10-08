@@ -67,6 +67,8 @@ client = AC::SpecHelper.new(composition).hot_topic
 
 OpenAPI uses public mounted paths and distinct operation IDs. MCP uses the same composition for tool calls, prompts, internal instructions, and relocated controller endpoints. Repeated mounts receive separate toolboxes and unique tool/prompt names. Existing visibility annotations and authentication settings still apply; the host owns global MCP configuration, session settings and UI asset locations.
 
+For controller inheritance, the nearest controller with an `@[AC::MCP(...)]` annotation supplies defaults for both inherited and newly declared actions. A child controller annotation replaces those defaults; method annotations take precedence. Icons use the nearest controller that declares them; a method's icons take precedence. Children can change or disable inherited endpoints, enable an endpoint using inherited instructions, and override the instructions method.
+
 MCP description caches are scoped to the composition and description file. Generated files include a composition identity incorporating the catalog version; a mismatched file is regenerated from compiled metadata without source comments. Regenerate descriptions with `--mcp` or `write_description` to retain those comments. Legacy description files remain supported for ordinary apps without explicit composition or mounts.
 
 ## Strong Parameter Usage

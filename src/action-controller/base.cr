@@ -474,14 +474,12 @@ abstract class ActionController::Base
         # Inherited annotated actions need their own identity and public route metadata.
         {% unless ::ActionController::Route::Builder::OPENAPI_ROUTES[verb_route] %}
           {% inherited_metadata = nil %}
-          {% inherited_base = nil %}
           {% for ancestor in @type.ancestors %}
             {% ancestor_base = CONTROLLER_BASES[ancestor.name.id] %}
             {% if ancestor_base && !inherited_metadata %}
               {% inherited_path = (ancestor_base + route_path.id.stringify).split("/").reject(&.empty?).join("/") %}
               {% inherited_key = ancestor.name.stringify + "#" + (is_websocket ? "WEBSOCKET" : http_method.id.stringify.upcase) + "/" + inherited_path %}
               {% inherited_metadata = ::ActionController::Route::Builder::OPENAPI_ROUTES[inherited_key] %}
-              {% inherited_base = ancestor_base if inherited_metadata %}
             {% end %}
           {% end %}
           {% if inherited_metadata %}
@@ -491,10 +489,11 @@ abstract class ActionController::Base
             {% end %}
             {% metadata[:controller] = @type.name.stringify %}
             {% metadata[:route] = "/" + full_route.join("/") %}
-            {% if metadata[:mcp_endpoint] %}
-              {% original_base = inherited_base.split("/").reject(&.empty?) %}
-              {% endpoint = metadata[:mcp_endpoint].split("/").reject(&.empty?) %}
-              {% metadata[:mcp_endpoint] = "/" + (NAMESPACE[0].split("/").reject(&.empty?) + endpoint[original_base.size..-1]).join("/") %}
+            {% options = ::ActionController::Route::Builder::MCP_CONFIGURATIONS[@type.name.stringify + "#" + metadata[:method]] %}
+            {% if options %}
+              {% for key, value in options %}
+                {% metadata[key] = value %}
+              {% end %}
             {% end %}
             {% ::ActionController::Route::Builder::OPENAPI_ROUTES[verb_route] = metadata %}
           {% end %}
