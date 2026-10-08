@@ -1,11 +1,18 @@
-require "lucky_router"
+require "./matcher"
 
 # :nodoc:
 class ActionController::Router::RouteHandler
   include HTTP::Handler
 
+  # Used to validate additional endpoints before mutating the router.
+  getter registered_routes : Set(Tuple(String, String)) = Set(Tuple(String, String)).new
+
+  # Explicit compositions isolate matched routes from upstream path bindings.
+  # Ordinary routers retain their historical static-route behavior.
+  property? isolate_path_params : Bool = false
+
   def initialize
-    @matcher = LuckyRouter::Matcher(Tuple(Action, Bool)).new
+    @matcher = Matcher(Tuple(Action, Bool)).new
     # keyed on {method, path} rather than a concatenation of the two so that
     # lookups don't have to build a string on every request
     @static_routes = {} of Tuple(String, String) => Tuple(Action, Bool)
@@ -13,11 +20,12 @@ class ActionController::Router::RouteHandler
 
   # Searches static routes before checking the matcher
   def search_route(method, req_path, context : HTTP::Server::Context) : Tuple(Action, Bool)?
-    @static_routes.fetch({method, req_path}) do
-      if match = @matcher.match(method, req_path)
-        context.route_params = match.params
-        match.payload
-      end
+    if action = @static_routes[{method, req_path}]?
+      context.reset_route_params if isolate_path_params?
+      action
+    elsif match = @matcher.match(method, req_path)
+      context.route_params = match.params
+      match.payload
     end
   end
 
@@ -70,6 +78,7 @@ class ActionController::Router::RouteHandler
   # Determines if routes are static or require decomposition and stores them appropriately
   private def add_path(method : String, path : String, action : Tuple(Action, Bool))
     @matcher.add(method, path, action)
+    @registered_routes << {method, path}
 
     unless path.includes?(':') || path.includes?('*')
       @static_routes[{method, path}] = action

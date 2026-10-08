@@ -201,6 +201,7 @@ module ActionController::MCPServer
     end
 
     private def build_path(path : String, arguments : Hash(String, JSON::Any)) : String
+      optional_missing = nil.as(String?)
       segments = path.split('/').compact_map do |segment|
         case segment
         when .starts_with?(':')
@@ -211,7 +212,13 @@ module ActionController::MCPServer
         when .starts_with?("?:"), .starts_with?("*:")
           name = segment[2..]
           value = arguments[name]?
-          next if value.nil? || value.raw.nil?
+          if value.nil? || value.raw.nil?
+            optional_missing ||= name
+            next
+          end
+          if omitted = optional_missing
+            raise ArgumentError.new("optional route parameter :#{name} requires :#{omitted}")
+          end
           segment.starts_with?('?') ? URI.encode_path_segment(param_value(value)) : URI.encode_path(param_value(value))
         else
           segment

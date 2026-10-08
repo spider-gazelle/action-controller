@@ -115,6 +115,15 @@ abstract class ActionController::Base
   CONCRETE_CONTROLLERS = {} of Nil => Nil
 
   # :nodoc:
+  CONTROLLER_ANCESTORS = {} of Nil => Nil
+
+  # :nodoc:
+  CONTROLLER_BASES = {} of Nil => Nil
+
+  # :nodoc:
+  MOUNTS = {} of Nil => Nil
+
+  # :nodoc:
   FILTER_TYPES = %w(ROUTES BEFORE AROUND AFTER RESCUE FORCE SKIP)
 
   {% for ftype in FILTER_TYPES %}
@@ -275,6 +284,7 @@ abstract class ActionController::Base
 
   # :nodoc:
   macro inherited
+    {% CONTROLLER_ANCESTORS[@type.name.id] = @type.ancestors.map(&.stringify) %}
     # :nodoc:
     # default namespace based on class
     NAMESPACE = [{{"/" + @type.name.stringify.underscore.gsub(/\:\:/, "/")}}]
@@ -324,6 +334,16 @@ abstract class ActionController::Base
 
   # :nodoc:
   macro __create_route_methods__
+    {% CONTROLLER_BASES[@type.name.id] = NAMESPACE[0] %}
+    # Resolve targets after all types are declared, in this controller's scope.
+    {% for mount, index in MOUNTS[@type.name.id] || [] of Nil %}
+      {% MOUNTS[@type.name.id][index] = {mount[0], mount[1].resolve} %}
+    {% end %}
+    class_getter base_route = {{ NAMESPACE[0] }}
+    def base_route : String
+      context.controller_base || self.class.base_route
+    end
+
     {% if !@type.abstract? %}
       # Create functions as required for errors
       # Skip the generating methods for existing handlers
@@ -335,23 +355,28 @@ abstract class ActionController::Base
           end
         {% end %}
       {% end %}
-
-      # Helper for obtaining base route
-      class_getter base_route = {{NAMESPACE[0]}}
-      # :ditto:
-      delegate base_route, to: self.class
     {% end %}
   end
 
   # :nodoc:
   # To support inheritance
-  def self.__init_routes__(router)
+  def self.__init_routes__(router, public_base : String = "/")
+    nil
+  end
+
+  # :nodoc:
+  def self.__init_internal_routes__(router, public_base : String = "/")
     nil
   end
 
   # :nodoc:
   def self.__route_list__
     # Class, name, verb, route
+    [] of {String, Symbol, Symbol, String}
+  end
+
+  # :nodoc:
+  def self.__internal_route_list__
     [] of {String, Symbol, Symbol, String}
   end
 
@@ -441,9 +466,37 @@ abstract class ActionController::Base
         # OpenAPI route lookup
         {% full_route = (NAMESPACE[0].id.stringify + route_path.id.stringify).split("/").reject(&.empty?) %}
         {% if is_websocket %}
-          {% verb_route = "WEBSOCKET/" + full_route.join("/") %}
+          {% verb_route = @type.name.stringify + "#WEBSOCKET/" + full_route.join("/") %}
         {% else %}
-          {% verb_route = http_method.id.stringify.upcase + "/" + full_route.join("/") %}
+          {% verb_route = @type.name.stringify + "#" + http_method.id.stringify.upcase + "/" + full_route.join("/") %}
+        {% end %}
+
+        # Inherited annotated actions need their own identity and public route metadata.
+        {% unless ::ActionController::Route::Builder::OPENAPI_ROUTES[verb_route] %}
+          {% inherited_metadata = nil %}
+          {% for ancestor in @type.ancestors %}
+            {% ancestor_base = CONTROLLER_BASES[ancestor.name.id] %}
+            {% if ancestor_base && !inherited_metadata %}
+              {% inherited_path = (ancestor_base + route_path.id.stringify).split("/").reject(&.empty?).join("/") %}
+              {% inherited_key = ancestor.name.stringify + "#" + (is_websocket ? "WEBSOCKET" : http_method.id.stringify.upcase) + "/" + inherited_path %}
+              {% inherited_metadata = ::ActionController::Route::Builder::OPENAPI_ROUTES[inherited_key] %}
+            {% end %}
+          {% end %}
+          {% if inherited_metadata %}
+            {% metadata = {} of Nil => Nil %}
+            {% for key, value in inherited_metadata %}
+              {% metadata[key] = value %}
+            {% end %}
+            {% metadata[:controller] = @type.name.stringify %}
+            {% metadata[:route] = "/" + full_route.join("/") %}
+            {% options = ::ActionController::Route::Builder::MCP_CONFIGURATIONS[@type.name.stringify + "#" + metadata[:method]] %}
+            {% if options %}
+              {% for key, value in options %}
+                {% metadata[key] = value %}
+              {% end %}
+            {% end %}
+            {% ::ActionController::Route::Builder::OPENAPI_ROUTES[verb_route] = metadata %}
+          {% end %}
         {% end %}
 
         {% OPENAPI_FILTER_MAP[verb_route] = [] of Nil %}
@@ -672,7 +725,7 @@ abstract class ActionController::Base
 
       # :nodoc:
       # Routes call the functions generated above
-      def self.__init_routes__(router)
+      def self.__init_routes__(router, public_base : String = base_route)
         {% for _key, details in ROUTES %}
           {% http_method = details[0] %}
           {% route_path = details[1] %}
@@ -695,17 +748,31 @@ abstract class ActionController::Base
             # bound to a dedicated execution context: run the whole request there
             # so the response payload is not separately offloaded to the default
             # context (avoids a redundant hop and head-of-line blocking).
-            router.{{http_method.id}}({{route}}) do |%context, %head_request|
-              ::ActionController::ExecutionContext.offload(::ActionController::ExecutionContext.context_{{execution_context.gsub(/\W/, "_").id}}) do
-                {{dispatch}}(%context, %head_request)
+            if public_base == base_route
+              router.{{ http_method.id }}({{ route }}) do |%context, %head_request|
+                ::ActionController::ExecutionContext.offload(::ActionController::ExecutionContext.context_{{ execution_context.gsub(/\W/, "_").id }}) do
+                  {{ dispatch }}(%context, %head_request)
+                end
+                %context
               end
-              %context
+            else
+              router.{{ http_method.id }}(::ActionController::Composition.join(public_base, {{ route_path.id.stringify }})) do |%context, %head_request|
+                %context.controller_base = public_base
+                ::ActionController::ExecutionContext.offload(::ActionController::ExecutionContext.context_{{ execution_context.gsub(/\W/, "_").id }}) do
+                  {{ dispatch }}(%context, %head_request)
+                end
+                %context
+              end
             end
           {% else %}
-            router.{{http_method.id}}(
-              {{route}},
-              &->{{dispatch}}(HTTP::Server::Context, Bool)
-            )
+            if public_base == base_route
+              router.{{ http_method.id }}({{ route }}, &->{{ dispatch }}(HTTP::Server::Context, Bool))
+            else
+              router.{{ http_method.id }}(::ActionController::Composition.join(public_base, {{ route_path.id.stringify }})) do |%context, %head_request|
+                %context.controller_base = public_base
+                {{ dispatch }}(%context, %head_request)
+              end
+            end
           {% end %}
           {% end %}
         {% end %}
@@ -715,12 +782,19 @@ abstract class ActionController::Base
 
       # :nodoc:
       # MCP prompts are routes that are not exposed via HTTP
-      def self.__init_internal_routes__(router)
+      def self.__init_internal_routes__(router, public_base : String = base_route)
         {% for _key, details in ROUTES %}
           {% if details[8] %}
             {% route = (NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/$/, "").gsub(/\/\//, "/") %}
             {% dispatch = (details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\W/, "_").id %}
-            router.{{details[0].id}}({{route}}, &->{{dispatch}}(HTTP::Server::Context, Bool))
+            if public_base == base_route
+              router.{{ details[0].id }}({{ route }}, &->{{ dispatch }}(HTTP::Server::Context, Bool))
+            else
+              router.{{ details[0].id }}(::ActionController::Composition.join(public_base, {{ details[1].id.stringify }})) do |%context, %head_request|
+                %context.controller_base = public_base
+                {{ dispatch }}(%context, %head_request)
+              end
+            end
           {% end %}
         {% end %}
         nil
@@ -732,9 +806,10 @@ abstract class ActionController::Base
         {% reference_name = details[5] %}
         {% route_path = details[1] %}
         def self.{{reference_name}}(hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
-          route = "{{NAMESPACE[0].id}}{{route_path.id}}".gsub("//", "/")
+          route = {{ (NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/\//, "/") }}
           ActionController::Support.build_route(route, hash_parts, **tuple_parts)
         end
+
         {% end %}
       {% end %}
 
@@ -748,6 +823,17 @@ abstract class ActionController::Base
             {% route_path = details[1] %}
             {% reference_name = details[5] %}
             { "{{@type.name}}", :{{reference_name}}, :{{http_method.id}}, "{{NAMESPACE[0].id}}{{route_path.id}}".gsub("//", "/")},
+            {% end %}
+          {% end %}
+        ] of Tuple(String, Symbol, Symbol, String)
+      end
+
+      # :nodoc:
+      def self.__internal_route_list__
+        [
+          {% for _key, details in ROUTES %}
+            {% if details[8] %}
+              { {{ @type.name.stringify }}, :{{ details[5] }}, :{{ details[0].id }}, ::ActionController::Composition.join(base_route, {{ details[1].id.stringify }}) },
             {% end %}
           {% end %}
         ] of Tuple(String, Symbol, Symbol, String)
@@ -768,6 +854,25 @@ abstract class ActionController::Base
         {% NAMESPACE[0] = "/" + name.id.stringify %}
       {% end %}
     {% end %}
+  end
+
+  # Mount a controller subtree with a replacement base relative to this controller.
+  macro mount(path, target)
+    {% raise "mount path must be a string starting with /" unless path.is_a?(StringLiteral) && path.starts_with?("/") %}
+    {% raise "mount path cannot contain query strings, fragments or dot segments" if path.includes?("#") || path.split("/").any? { |part| part == "." || part == ".." || (part.starts_with?("?:") ? part[2..-1].includes?("?") : part.includes?("?")) } %}
+    {% MOUNTS[@type.name.id] = [] of Nil unless MOUNTS[@type.name.id] %}
+    {% MOUNTS[@type.name.id] << {path, target} %}
+  end
+
+  # Builds a URL with this request's mounted base and bound path parameters.
+  def route_path(action : Symbol, hash_parts : Hash((String | Symbol), (Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol)?)? = nil, **tuple_parts) : String
+    route = self.class.__route_list__.find(&.[1].==(action)) || raise InvalidRoute.new("unknown action #{self.class.name}##{action}")
+    bound = {} of (String | Symbol) => (Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol)?
+    path = Composition.join(base_route, Composition.relative(route[3], self.class.base_route))
+    path_keys = path.split('/').select(&.includes?(':')).map { |part| part.split(':', 2)[1] }
+    route_params.each { |key, value| bound[key] = value if path_keys.includes?(key) }
+    hash_parts.try { |parts| bound.merge!(parts) }
+    Support.build_route(path, bound, **tuple_parts)
   end
 
   # Define each method for supported http methods except head (which is meta)

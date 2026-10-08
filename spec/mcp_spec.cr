@@ -648,7 +648,7 @@ describe ActionController::MCPServer do
 
     it "describes endpoints, binding the base path params" do
       description = ActionController::MCPServer.description
-      ActionController::MCPServer.endpoint_paths.sort.should eq ["/mcp_account/:account_id/mcp", "/mcp_shared/assistant"]
+      ActionController::MCPServer.endpoint_paths.select(&.starts_with?("/mcp_")).sort!.should eq ["/mcp_account/:account_id/mcp", "/mcp_shared/assistant"]
 
       endpoint = description.endpoint?("/mcp_account/:account_id/mcp").should_not be_nil
       endpoint.name.should eq "mcp_account"

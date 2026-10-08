@@ -88,6 +88,8 @@ end
 #   The method must return `String` or `Array(AC::PromptMessage)`
 #
 # a method level annotation overrides the controller level annotation
+# The nearest annotated controller supplies defaults for inherited and newly
+# declared actions; a child controller annotation replaces those defaults.
 #
 # ```
 # @[AC::MCP(hide: true)]
@@ -185,6 +187,18 @@ module ActionController::Route::Builder
   # :nodoc:
   # verb+route  => controller_name, route_name, params (path, query), request body schema, response object name => response code
   OPENAPI_ROUTES = {} of Nil => Nil
+
+  # :nodoc:
+  # Controller/method defaults used when projecting inherited routes.
+  MCP_CONFIGURATIONS = {} of Nil => Nil
+
+  # :nodoc:
+  # Source locations and arguments distinguish overloads of declared methods.
+  MCP_METHOD_CONFIGURATIONS = {} of Nil => Nil
+
+  # :nodoc:
+  # The annotated source method selected by each controller's route builder.
+  MCP_ROUTE_METHODS = {} of Nil => Nil
 
   # :nodoc:
   # Routing related
@@ -316,14 +330,27 @@ module ActionController::Route::Builder
   end
 
   # :nodoc:
-  macro __parse_inferred_routes__
-    # Check if they have been applied to any of the methods
-    {% for method in @type.methods.sort_by(&.line_number) %}
+  # Resolve controller defaults and method overrides once for both declared and
+  # inherited routes. The nearest annotated controller supplies the defaults.
+  macro __build_mcp_configurations__
+    {% mcp_klass_ann = @type.annotation(::ActionController::MCP) %}
+    {% mcp_toolbox_icons = @type.annotations(::ActionController::Icon).map(&.named_args) %}
+    {% methods = @type.methods %}
+    {% names = methods.map(&.name.stringify) %}
+    {% for klass in [@type] + @type.ancestors %}
+      {% mcp_klass_ann = klass.annotation(::ActionController::MCP) unless mcp_klass_ann %}
+      {% mcp_toolbox_icons = klass.annotations(::ActionController::Icon).map(&.named_args) if mcp_toolbox_icons.empty? %}
+      {% for method in klass.methods %}
+        {% unless names.includes?(method.name.stringify) %}
+          {% names << method.name.stringify %}
+          # Use the ancestor's annotated overload rather than a plain overload.
+          {% methods << (MCP_ROUTE_METHODS[klass.name.stringify + "#" + method.name.stringify] || method) %}
+        {% end %}
+      {% end %}
+    {% end %}
+    {% for method in methods %}
       {% method_name = method.name %}
-      {% annotation_found = false %}
-
       # MCP options, method level annotation takes precedence
-      {% mcp_klass_ann = @type.annotation(::ActionController::MCP) %}
       {% mcp_method_ann = method.annotation(::ActionController::MCP) %}
       {% mcp_hide = mcp_klass_ann ? mcp_klass_ann[:hide] : nil %}
       {% mcp_root = mcp_klass_ann ? mcp_klass_ann[:root] : nil %}
@@ -381,7 +408,6 @@ module ActionController::Route::Builder
       {% mcp_title = mcp_method_ann ? mcp_method_ann[:title] : nil %}
 
       # icons, the controller's icons are the default
-      {% mcp_toolbox_icons = @type.annotations(::ActionController::Icon).map(&.named_args) %}
       {% mcp_icons = method.annotations(::ActionController::Icon).map(&.named_args) %}
       {% mcp_icons = mcp_toolbox_icons if mcp_icons.empty? %}
 
@@ -401,6 +427,45 @@ module ActionController::Route::Builder
       # are root items unless `root: false`
       {% mcp_root = true if mcp_root == nil && (mcp_ui || (mcp_visibility && !mcp_visibility.includes?("model"))) %}
 
+      {% options = {
+           :mcp_hide          => mcp_hide == true,
+           :mcp_root          => mcp_root == true,
+           :mcp_behaviour     => mcp_behaviour,
+           :mcp_visibility    => mcp_visibility,
+           :mcp_title         => mcp_title,
+           :mcp_icons         => mcp_icons,
+           :mcp_toolbox_icons => mcp_toolbox_icons,
+           :mcp_ui            => mcp_ui,
+           :mcp_endpoint      => mcp_endpoint_path,
+           :mcp_endpoint_hide => mcp_endpoint_hide,
+         } %}
+      {% MCP_METHOD_CONFIGURATIONS[{@type.name.stringify, method_name.stringify, method.filename, method.line_number, method.column_number, method.args.stringify}] = options %}
+      {% MCP_CONFIGURATIONS[@type.name.stringify + "#" + method_name.stringify] = options unless MCP_CONFIGURATIONS[@type.name.stringify + "#" + method_name.stringify] %}
+    {% end %}
+  end
+
+  # :nodoc:
+  macro __parse_inferred_routes__
+    # Check if they have been applied to any of the methods
+    {% methods = @type.methods.sort_by(&.line_number) %}
+    {% instructions_options = MCP_CONFIGURATIONS[@type.name.stringify + "#instructions"] %}
+    {% instructions_routed = @type.ancestors.any? { |ancestor| ROUTE_FUNCTIONS[ancestor.name.stringify + "#instructions"] } %}
+    {% if instructions_options && instructions_options[:mcp_endpoint] && !methods.any? { |method| method.name.stringify == "instructions" } %}
+      {% inherited_instructions = nil %}
+      {% for ancestor in @type.ancestors %}
+        {% inherited_instructions = ancestor.methods.find { |method| method.name.stringify == "instructions" } unless inherited_instructions %}
+      {% end %}
+      {% methods << inherited_instructions if inherited_instructions && !instructions_routed %}
+    {% end %}
+    {% for method in methods %}
+      {% method_name = method.name %}
+      {% annotation_found = false %}
+
+      {% mcp_method_ann = method.annotation(::ActionController::MCP) %}
+      {% mcp_options = MCP_METHOD_CONFIGURATIONS[{@type.name.stringify, method_name.stringify, method.filename, method.line_number, method.column_number, method.args.stringify}] %}
+      {% mcp_endpoint = mcp_options[:mcp_endpoint] %}
+      {% internal_annotations = [] of Nil %}
+
       # MCP prompts are implemented as internal GET routes so filters, error handlers and param parsing apply
       {% mcp_prompt = mcp_method_ann && mcp_method_ann[:prompt] == true %}
       {% if mcp_prompt %}
@@ -411,7 +476,7 @@ module ActionController::Route::Builder
         {% multi_message = prompt_type && prompt_type.stringify.starts_with?("Array(") && prompt_type.type_vars[0] == ::ActionController::PromptMessage %}
         {% raise "#{@type.name}##{method_name} is an MCP prompt and must declare a return type of String or Array(AC::PromptMessage)" unless prompt_type == String || multi_message %}
         # always rendered as JSON (the responder is always available), a string is a single message
-        {% prompt_annotation = {0 => "/__mcp_prompt__/" + method_name.stringify, :content_type => "application/json", :internal => true} %}
+        {% internal_annotations << {0 => "/__mcp_prompt__/" + method_name.stringify, :content_type => "application/json", :internal => true} %}
       {% end %}
 
       # an endpoint's `instructions` method provides its MCP instructions, built per
@@ -423,7 +488,8 @@ module ActionController::Route::Builder
           {% raise "#{@type.name}#instructions provides the MCP endpoint instructions, it can't also be a route, filter or exception handler" unless method.annotations(route_method).empty? %}
         {% end %}
         {% raise "#{@type.name}#instructions provides the MCP endpoint instructions and must declare a return type of String" unless method.return_type && method.return_type.resolve == String %}
-        {% prompt_annotation = {0 => "/__mcp_instructions__", :content_type => "application/json", :internal => true} %}
+        # An inherited wrapper dispatches to this controller's overridden method.
+        {% internal_annotations << {0 => "/__mcp_instructions__", :content_type => "application/json", :internal => true} unless instructions_routed %}
       {% end %}
 
       # Run through the various route annotations
@@ -431,12 +497,12 @@ module ActionController::Route::Builder
         {% lower_route_method = route_method.stringify.split("::")[-1].downcase.id %}
 
         # Multiple routes can be applied to a single method
-        {% for ann, idx in ((mcp_prompt || mcp_instructions) && route_method == AC::Route::GET) ? [prompt_annotation] : method.annotations(route_method) %}
+        {% for ann, idx in ((mcp_prompt || mcp_instructions) && route_method == AC::Route::GET) ? internal_annotations : method.annotations(route_method) %}
           {% annotation_found = true %}
 
           # OpenAPI route lookup (note full route here is not valid for exceptions and filters)
           {% full_route = (NAMESPACE[0] + ann[0].id.stringify).split("/").reject(&.empty?) %}
-          {% verb_route = lower_route_method.stringify.upcase + "/" + full_route.join("/") %}
+          {% verb_route = @type.name.stringify + "#" + lower_route_method.stringify.upcase + "/" + full_route.join("/") %}
 
           {% if route_method == AC::Route::Filter && ann[0] == :around_action %}
             {% raise "#{@type.name}##{method_name} method must yield" unless method.accepts_block? %}
@@ -515,20 +581,15 @@ module ActionController::Route::Builder
             {% open_api_route[:route] = "/" + full_route.join("/") %}
             {% open_api_route[:verb] = lower_route_method.stringify %}
 
-            {% open_api_route[:mcp_hide] = mcp_hide == true %}
-            {% open_api_route[:mcp_root] = mcp_root == true %}
-            {% open_api_route[:mcp_behaviour] = mcp_behaviour %}
-            {% open_api_route[:mcp_visibility] = mcp_visibility %}
-            {% open_api_route[:mcp_title] = mcp_title %}
-            {% open_api_route[:mcp_icons] = mcp_icons %}
-            {% open_api_route[:mcp_toolbox_icons] = mcp_toolbox_icons %}
-            {% open_api_route[:mcp_ui] = mcp_ui %}
-            {% open_api_route[:mcp_endpoint] = mcp_endpoint_path %}
-            {% open_api_route[:mcp_endpoint_hide] = mcp_endpoint_hide %}
+            {% for key, value in mcp_options %}
+              {% open_api_route[key] = value %}
+            {% end %}
             # internal MCP routes (prompts and endpoint instructions) aren't HTTP routes or tools
             {% open_api_route[:mcp_prompt] = ann[:internal] == true %}
             {% open_api_route[:mcp_instructions] = mcp_instructions == true %}
             {% OPENAPI_ROUTES[verb_route] = open_api_route %}
+            {% MCP_CONFIGURATIONS[@type.name.stringify + "#" + method_name.stringify] = mcp_options %}
+            {% MCP_ROUTE_METHODS[@type.name.stringify + "#" + method_name.stringify] = method %}
 
             # initial recording of path params
             {% for path_param in required_params %}
@@ -868,6 +929,7 @@ module ActionController::Route::Builder
     macro inherited
       macro finished
         __build_transformer_functions__
+        __build_mcp_configurations__
         __parse_inferred_routes__
       end
     end

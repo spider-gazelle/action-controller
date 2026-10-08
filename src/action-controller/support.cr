@@ -37,44 +37,45 @@ module ActionController::Support
 
   # Used in base.cr to build routes for the redirect_to helpers
   def self.build_route(route, hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
-    keys = route.split("/:")[1..-1].map &.split("/")[0]
-    params = {} of String => String
+    return route if hash_parts.nil? && tuple_parts.empty? && !route.includes?(':')
 
-    if hash_parts
-      hash_parts.each do |key, value|
-        key = key.to_s
-        value = value.to_s
+    params = {} of String => String?
+    hash_parts.try(&.each { |key, value| params[key.to_s] = value.try(&.to_s) })
+    # Merge before substitution so explicit arguments also override bound path values.
+    tuple_parts.each { |key, value| params[key.to_s] = value.try(&.to_s) }
 
-        if keys.includes?(key)
-          route = route.sub(":#{key}", URI.encode_path(value))
-          keys.delete(key)
+    missing = [] of String
+    segments = [] of String
+    optional_missing = nil.as(String?)
+    route.split('/').each do |segment|
+      if segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:")
+        key = segment.byte_slice(segment.starts_with?(':') ? 1 : 2)
+        present = params.has_key?(key)
+        value = params.delete(key)
+        if segment.starts_with?(':')
+          missing << key unless present
+          segments << URI.encode_path_segment(value.to_s)
+        elsif value
+          if omitted = optional_missing
+            raise ActionController::InvalidRoute.new("optional route parameter :#{key} requires :#{omitted} for #{route}")
+          end
+          segments << (segment.starts_with?("*:") ? URI.encode_path(value) : URI.encode_path_segment(value))
         else
-          params[key] = value
+          optional_missing ||= key
         end
-      end
-    end
-
-    # Tuple overwrites hash parts (so safe to use a user generated hash)
-    tuple_parts.each do |key, value|
-      key = key.to_s
-      value = value.to_s
-
-      if keys.includes?(key)
-        route = route.sub(":#{key}", URI.encode_path(value))
-        keys.delete(key)
       else
-        params[key] = value
+        segments << segment
       end
     end
-
-    # Raise error if not all parts are substituted
-    raise ActionController::InvalidRoute.new("route parameters missing :#{keys.join(", :")} for #{route}") unless keys.empty?
+    raise ActionController::InvalidRoute.new("route parameters missing :#{missing.join(", :")} for #{route}") unless missing.empty?
+    route = segments.join('/')
+    route = "/" if route.empty?
 
     # Add any remaining values as query params
     if params.empty?
       route
     else
-      "#{route}?#{URI::Params.encode(params)}"
+      "#{route}?#{URI::Params.encode(params.transform_values(&.to_s))}"
     end
   end
 

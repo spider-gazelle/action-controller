@@ -6,15 +6,10 @@ module ActionController
     include Router
 
     getter route_handler = RouteHandler.new
+    getter composition : Composition
 
-    def initialize
-      init_routes
-    end
-
-    private def init_routes
-      {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
-        {{klass}}.__init_routes__(self)
-      {% end %}
+    def initialize(@composition : Composition = Composition.default)
+      @route_handler = composition.handler.route_handler
     end
 
     def hot_topic
@@ -30,7 +25,7 @@ module ActionController
       macro included
         macro inherited
           # Simplify obtaining an instance of a controller class in specs
-          def self.spec_instance(request : HTTP::Request = HTTP::Request.new("GET", "/"))
+          def self.spec_instance(request : HTTP::Request = HTTP::Request.new("GET", "/"), composition : ActionController::Composition = ActionController::Composition.default)
             response = HTTP::Server::Response.new(IO::Memory.new, request.version)
             context = HTTP::Server::Context.new request, response
             context.response.output = IO::Memory.new
@@ -38,7 +33,16 @@ module ActionController
             method = request.method
             req_path = request.path
 
-            ActionController::SpecHelper.new.route_handler.search_route(method, req_path, context)
+            # Match this controller's placements without executing its action or
+            # filters, so path bindings and URL helpers use the requested mount.
+            composition.placements.each do |placement|
+              next unless placement.controller.name == name
+              router = ActionController::Composition.new([placement], composition.explicit?)
+              if router.route_handler.search_route(method, req_path, context)
+                context.controller_base = placement.base
+                break
+              end
+            end
             self.new(context)
           end
         end

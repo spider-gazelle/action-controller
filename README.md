@@ -4,6 +4,86 @@
 
 Extending [lucky_router](https://github.com/luckyframework/lucky_router) for a Rails like DSL without the overhead. See the [docs site](https://spider-gazelle.net/) for usage details
 
+## Composable applications
+
+Every controller class provides `.handler`, which returns a fresh `HTTP::Handler` serving that class and its concrete descendants. It also works on an abstract application base such as the template's `App::Base`:
+
+```crystal
+HTTP::Server.new([
+  App::Base.handler,
+  OtherAC::App::Base.handler,
+  HTTP::StaticFileHandler.new("www", directory_listing: false),
+])
+```
+
+A route miss calls the next handler. A matched action keeps its response, including a deliberate 404 or an authentication failure. Application filters run only when one of that application's routes matches. Use a fresh handler for each server or chain; request controllers still take an `HTTP::Server::Context` in their constructor.
+
+Explicit compositions and apps with mounts isolate matched routes from path parameters set by upstream handlers. Route misses preserve the context for the next handler. Ordinary automatic routing retains its existing path parameter behavior.
+
+For one server with unified route listing, OpenAPI and MCP, select application roots in `config.cr`, after requiring their controllers:
+
+```crystal
+ActionController::Server.compose(App::Base, OtherAC::App::Base)
+```
+
+This is a compile-time declaration, so it also applies to the template's `--routes`, `--docs` and `--mcp` options, which execute before configuration initialization. Declare it once. Existing `Server.new`, `Server.before`, `Server.after`, OpenAPI and MCP calls work unchanged. Without a declaration, controllers are discovered automatically as before. Reusable apps should expose their controllers in a library entry point; require their executable startup and global configuration only when running them standalone.
+
+### Mounting controllers and apps
+
+```crystal
+class MyApp < AC::Base
+  base "/myapp/"
+  mount "/auth/", OtherAC::App::OAuth2
+end
+```
+
+The mount replaces the target's base. If `OAuth2` has `base "/oauth2"` and a `/token` action, the public URL is `/myapp/auth/token`. Targets can use names relative to the declaring controller's namespace and can be declared later. A mounted application base includes its descendants, preserving their paths relative to that base. For example, an app with `base "/api"` and a descendant controller with `base "/api/users"` mounted at `/service` exposes that controller at `/service/users`. Controller bases outside the app base retain their whole path beneath the mount. `base` continues to set each controller's own path; it does not implicitly prefix descendants.
+
+Mounts can be nested or repeated. Mount-only targets are excluded from standalone automatic discovery. Explicitly selecting an application includes its descendants independently of mounts declared in other applications; its own mount declarations determine which descendants are relocated. Mounting a whole application likewise includes its complete subtree. Mounted controllers keep their own filters and exception handlers. Parent controllers' filters apply to their own actions. Requests retain their public path, and unmatched mounted routes continue downstream.
+
+Parameterized mounts such as `mount "/accounts/:account_id/auth", OAuth2` bind those parameters for controller filters and actions, OpenAPI and MCP. Mounts must preserve any required parameters from the target's original routes as required parameters. Cycles, ambiguous parameter names and conflicting public operations are rejected. Explicit composition also checks equivalent parameterized routes and generated HEAD operations. MCP endpoint conflicts are checked against the actual router before endpoints are registered.
+
+Optional mount segments retain the action's argument requirements. If a query argument becomes an optional path segment, OpenAPI describes its query form on URLs that omit the segment; required action and filter arguments stay required in MCP. Replacing a base that contains an optional parameter moves declared arguments back to queries. If the replacement makes that segment mandatory, tools and prompts require its value. MCP endpoint listings omit only arguments bound by the current session URL, so sessions without an optional segment can still supply that argument.
+
+Use `route_path(:action, ...)` inside an action to generate a URL using the current mounted base and bound path parameters:
+
+```crystal
+redirect_to route_path(:token)
+```
+
+Explicit URL arguments override bound path values. Helpers encode individual path segments and support optional (`?:`) and glob (`*:`) segments; later optional segments require earlier ones. Existing class URL helpers such as `OAuth2.token` retain their original URLs. Outside a request, use `composition.url_for(OAuth2, :token, ...)`; supply `mount_base:` to choose between repeated mounts.
+
+### Independent compositions and catalogs
+
+```crystal
+composition = AC::Composition.new([MyApp.name, AnotherApp::Base.name])
+server = AC::Server.new(composition: composition)
+AC::MCPServer.mount(server, "/mcp")
+
+docs = AC::OpenAPI.generate_open_api_docs(
+  title: "Combined API", version: "1.0", composition: composition,
+)
+AC::MCPServer.write_description("combined-mcp.yml", composition: composition)
+client = AC::SpecHelper.new(composition).hot_topic
+```
+
+For direct controller tests, `spec_instance` accepts the same composition and binds the requested mount's base and path parameters without executing actions or filters. Existing calls use the configured default composition:
+
+```crystal
+instance = OtherAC::App::OAuth2.spec_instance(
+  HTTP::Request.new("GET", "/myapp/auth/token"), composition: composition,
+)
+instance.route_path(:token) # => "/myapp/auth/token"
+```
+
+OpenAPI uses public mounted paths and distinct operation IDs. MCP uses the same composition for tool calls, prompts, internal instructions, and relocated controller endpoints. Repeated mounts receive separate toolboxes and unique tool/prompt names. Existing visibility annotations and authentication settings still apply; the host owns global MCP configuration, session settings and UI asset locations.
+
+For controller inheritance, the nearest controller with an `@[AC::MCP(...)]` annotation supplies defaults for both inherited and newly declared actions. A child controller annotation replaces those defaults; method annotations take precedence. Icons use the nearest controller that declares them; a method's icons take precedence. Children can change or disable inherited endpoints, enable an endpoint using inherited instructions, and override the instructions method.
+
+MCP description caches are scoped to the composition and description file. Generated files include a composition identity incorporating the catalog version; a mismatched file is regenerated from compiled metadata without source comments. Regenerate descriptions with `--mcp` or `write_description` to retain those comments. Legacy description files remain supported for ordinary apps without explicit composition or mounts.
+
+Controller selection, mount expansion, conflict validation and catalog projection run during compilation or initialization. `Server` registers all placements in one routing table. Exact static routes use the existing allocation-free lookup; dynamic routes traverse LuckyRouter's trie using temporary byte views, copying captures only after a successful match. Escaped paths retain its original decoder. Ordinary controller routes retain direct dispatch procs, which outperform the tested callable-object and integer dispatch alternatives with mixed targets. Relocated routes bind their public base on the request context, without allocating a placement or rewriting the request. Warmed MCP descriptions use atomic cache snapshots, without taking the catalog lock or hashing the composition. Explicit handler chains perform another lookup for every handler that misses. See [the performance benchmark](benchmarks/README.md) for repeatable comparisons and their limits.
+
 ## Strong Parameter Usage
 
 ```crystal

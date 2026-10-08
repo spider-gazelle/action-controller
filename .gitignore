@@ -5,4 +5,4 @@ bin
 docs
 lib
 shard.lock
-tasks
+/tasks/

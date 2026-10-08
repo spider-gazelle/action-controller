@@ -25,12 +25,27 @@ class ActionController::Server
 
   @route_handler = RouteHandler.new
 
+  getter composition : Composition
+
+  # Select application roots for routing, route listing and generated catalogs.
+  # Call from config.cr before constructing the server.
+  macro compose(*roots)
+    {% raise "compose requires at least one application root" if roots.empty? %}
+    {% raise "compose can only be declared once" unless Composition::ROOTS.empty? %}
+    {% for root in roots %}
+      {% type = root.resolve %}
+      {% raise "#{root} must inherit ActionController::Base" unless type < ::ActionController::Base %}
+      {% Composition::ROOTS << type.name.stringify %}
+    {% end %}
+    ::ActionController::Composition.default
+  end
+
   # reuse port is only useful for broadcast or multicast applications on windows
   # when used with TCP it is considered a security risk as the port can be stolen
   REUSE_DEFAULT = {% if flag?(:win32) %} false {% else %} true {% end %}
 
   # create an instance of the application
-  def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT)
+  def initialize(@port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT, @composition : Composition = Composition.default)
     @processes = 0
     @process_closed = Channel(Nil).new
     init_routes
@@ -38,7 +53,7 @@ class ActionController::Server
   end
 
   # create an instance of the application with tls
-  def initialize(@ssl_context : OpenSSL::SSL::Context::Server?, @port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT)
+  def initialize(@ssl_context : OpenSSL::SSL::Context::Server?, @port = 3000, @host = "127.0.0.1", @reuse_port : Bool = REUSE_DEFAULT, @composition : Composition = Composition.default)
     @processes = 0
     @process_closed = Channel(Nil).new
     init_routes
@@ -46,9 +61,7 @@ class ActionController::Server
   end
 
   private def init_routes
-    {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
-      {{klass}}.__init_routes__(self)
-    {% end %}
+    @route_handler = composition.handler.route_handler
   end
 
   # :nodoc:
@@ -183,12 +196,7 @@ class ActionController::Server
   #
   # responds with `[{"ControllerClass", :name, :verb, "/route"}]`
   def self.routes : Array(Tuple(String, Symbol, Symbol, String))
-    # Class, name, verb, route
-    routes = [] of {String, Symbol, Symbol, String}
-    {% for klass in ActionController::Base::CONCRETE_CONTROLLERS %}
-      routes.concat {{klass}}.__route_list__
-    {% end %}
-    routes
+    Composition.default.routes
   end
 
   # Used to output route details to the console from a command line switch

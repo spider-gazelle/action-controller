@@ -38,7 +38,7 @@ module ActionController::MCPServer
     }
 
     # `endpoint` is the path template of a controller endpoint, `nil` for the global server
-    def initialize(@invoker : Invoker, @endpoint : String? = nil)
+    def initialize(@invoker : Invoker, @endpoint : String? = nil, @composition : Composition = Composition.default)
     end
 
     # a controller endpoint lists every tool directly, there are no toolboxes
@@ -48,7 +48,7 @@ module ActionController::MCPServer
 
     private def endpoint : Endpoint
       path = @endpoint.as(String)
-      MCPServer.description.endpoint?(path) || raise RPCError.new(RPCError::INTERNAL_ERROR, "No MCP description for #{path}")
+      MCPServer.description(@composition).endpoint?(path) || raise RPCError.new(RPCError::INTERNAL_ERROR, "No MCP description for #{path}")
     end
 
     # the `initialize` result for the negotiated protocol version
@@ -120,7 +120,7 @@ module ActionController::MCPServer
     end
 
     private def description : Description
-      flat? ? endpoint.description : MCPServer.description
+      flat? ? endpoint.description : MCPServer.description(@composition)
     end
 
     # MCP Apps cards are described when there are cards to render. Every client is
@@ -180,7 +180,7 @@ module ActionController::MCPServer
                 META_TOOLS.each { |tool| json.raw tool }
                 PROXY_TOOLS.each { |tool| json.raw tool } if MCPServer.tool_proxy?
               end
-              available_tools(session).each(&.to_mcp_json(json, ui: ui?, host: host(request)))
+              available_tools(session).each(&.to_mcp_json(json, ui: ui?, host: host(request), bound: session.bound))
             end
           end
         end
@@ -245,9 +245,9 @@ module ActionController::MCPServer
         json.object do
           json.field "prompts" do
             json.array do
-              description.root_prompts.each(&.to_mcp_json(json, host(request)))
+              description.root_prompts.each(&.to_mcp_json(json, host(request), bound: session.bound))
               session.open_toolboxes.each do |name|
-                description.toolbox?(name).try &.toolbox_prompts.each(&.to_mcp_json(json, host(request)))
+                description.toolbox?(name).try &.toolbox_prompts.each(&.to_mcp_json(json, host(request), bound: session.bound))
               end
             end
           end
@@ -299,7 +299,7 @@ module ActionController::MCPServer
           json.field "toolbox", toolbox.name
           json.field "status", opened ? "opened" : "already open"
           json.field "tools" do
-            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json, proxy: MCPServer.tool_proxy?, ui: ui?, host: host(request))) }
+            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json, proxy: MCPServer.tool_proxy?, ui: ui?, host: host(request), bound: session.bound)) }
           end
           json.field "prompts" do
             json.array { toolbox.toolbox_prompts.each { |prompt| json.string prompt.name } }

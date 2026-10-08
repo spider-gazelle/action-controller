@@ -107,12 +107,12 @@ module ActionController::MCPServer
     # the tool definition as returned by `tools/list`, `proxy: true` also names the
     # proxy tool that runs it and `ui: true` includes the MCP Apps metadata.
     # `host` resolves icon paths
-    def to_mcp_json(json : JSON::Builder, proxy : Bool = false, ui : Bool = false, host : String? = nil) : Nil
+    def to_mcp_json(json : JSON::Builder, proxy : Bool = false, ui : Bool = false, host : String? = nil, bound : Hash(String, String)? = nil) : Nil
       json.object do
         json.field "name", name
         json.field "title", title if title
         json.field "description", description if description
-        json.field "inputSchema", input_schema
+        json.field "inputSchema", schema_for(bound)
         json.field "proxy", self.proxy if proxy
         Icons.to_json(json, icons, host)
         ui_meta(json) if ui
@@ -123,6 +123,26 @@ module ActionController::MCPServer
           end
         end
       end
+    end
+
+    private def schema_for(bound : Hash(String, String)?) : JSON::Any
+      return input_schema unless bound
+      return input_schema if bound.empty?
+      names = params.select { |param| param.in == "path" && bound.has_key?(param.name) }.map(&.name)
+      return input_schema if names.empty?
+      schema = input_schema.as_h.dup
+      if properties = schema["properties"]?.try(&.as_h?)
+        schema["properties"] = JSON::Any.new(properties.reject { |name, _| names.includes?(name) })
+      end
+      if required = schema["required"]?.try(&.as_a?)
+        remaining = required.reject { |name| names.includes?(name.as_s) }
+        if remaining.empty?
+          schema.delete("required")
+        else
+          schema["required"] = JSON::Any.new(remaining)
+        end
+      end
+      JSON::Any.new(schema)
     end
 
     # the card the host renders for the results and who can call the tool
@@ -206,7 +226,7 @@ module ActionController::MCPServer
     end
 
     # the prompt definition as returned by `prompts/list`, `host` resolves icon paths
-    def to_mcp_json(json : JSON::Builder, host : String? = nil) : Nil
+    def to_mcp_json(json : JSON::Builder, host : String? = nil, bound : Hash(String, String)? = nil) : Nil
       json.object do
         json.field "name", name
         json.field "title", title if title
@@ -215,6 +235,7 @@ module ActionController::MCPServer
         json.field "arguments" do
           json.array do
             arguments.each do |argument|
+              next if argument.in == "path" && bound.try(&.has_key?(argument.name))
               json.object do
                 json.field "name", argument.name
                 json.field "description", argument.description if argument.description
@@ -270,6 +291,9 @@ module ActionController::MCPServer
 
     # controllers served as their own MCP server, see `ActionController::MCP`
     getter endpoints : Array(Endpoint) = [] of Endpoint
+
+    # Detects descriptions generated for a different application composition.
+    property composition_id : String? = nil
 
     def initialize(@toolboxes = [] of Toolbox, @endpoints = [] of Endpoint)
     end
@@ -379,7 +403,7 @@ module ActionController::MCPServer
 
     # the path params in a path template
     def self.bound_params(path : String) : Array(String)
-      path.split('/').compact_map(&.lchop?(':'))
+      path.split('/').select { |segment| segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:") }.map { |segment| segment.split(':', 2)[1] }
     end
   end
 
@@ -388,33 +412,27 @@ module ActionController::MCPServer
   alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, behaviour: Array(String)?, global: Bool, endpoint: String?, ui: String?, visibility: Array(String)?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
 
   # :nodoc:
-  alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), global: Bool, endpoint: String?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
+  alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), declared_arguments: Array(String), global: Bool, endpoint: String?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
 
   # generates the MCP description from the compiled routes.
   #
   # `docs: true` extracts the source code comments using `crystal docs`,
   # which requires access to the source code
-  def generate_description(docs : Bool = true) : Description
-    generate_description(docs ? OpenAPI.extract_route_descriptions : {} of String => OpenAPI::KlassDoc)
+  def generate_description(docs : Bool = true, composition : Composition = Composition.default) : Description
+    generate_description(docs ? OpenAPI.extract_route_descriptions : {} of String => OpenAPI::KlassDoc, composition)
   end
 
   # :nodoc:
   # generates the MCP description using the provided class and method descriptions
-  def generate_description(descriptions : Hash(String, OpenAPI::KlassDoc)) : Description
-    open_api = OpenAPI.generate_open_api_docs(descriptions, server_name, server_version)
+  def generate_description(descriptions : Hash(String, OpenAPI::KlassDoc), composition : Composition = Composition.default) : Description
+    open_api = OpenAPI.generate_open_api_docs(descriptions, server_name, server_version, composition: composition)
 
     # expanded when the method is used, once all the routes are known
     {% begin %}
-      concrete = [
-        {% for klass in ::ActionController::Base::CONCRETE_CONTROLLERS.keys %}
-          {{klass.stringify}},
-        {% end %}
-      ] of String
-
       routes = [
         {% for _route_key, details in ::ActionController::Route::Builder::OPENAPI_ROUTES %}
           {% endpoint = details[:mcp_endpoint_hide] ? nil : details[:mcp_endpoint] %}
-          {% if details[:verb] != "websocket" && !details[:mcp_prompt] && (!details[:mcp_hide] || endpoint) %}
+          {% if Base::CONCRETE_CONTROLLERS[details[:controller].id] && details[:verb] != "websocket" && !details[:mcp_prompt] && (!details[:mcp_hide] || endpoint) %}
             {
               controller: {{ details[:controller] }},
               method: {{ details[:method] }},
@@ -437,7 +455,7 @@ module ActionController::MCPServer
       prompts = [
         {% for _route_key, details in ::ActionController::Route::Builder::OPENAPI_ROUTES %}
           {% endpoint = details[:mcp_endpoint_hide] ? nil : details[:mcp_endpoint] %}
-          {% if details[:mcp_prompt] && !details[:mcp_instructions] && (!details[:mcp_hide] || endpoint) %}
+          {% if Base::CONCRETE_CONTROLLERS[details[:controller].id] && details[:mcp_prompt] && !details[:mcp_instructions] && (!details[:mcp_hide] || endpoint) %}
             {
               controller: {{ details[:controller] }},
               method: {{ details[:method] }},
@@ -453,6 +471,13 @@ module ActionController::MCPServer
                   ),
                 {% end %}
               ] of PromptArgument,
+              declared_arguments: [
+                {% for param_name, param in details[:params] %}
+                  {% if param[:schema].stringify != "Nil" %}
+                    {{ param[:header] || param_name }},
+                  {% end %}
+                {% end %}
+              ] of String,
               global: {{ !details[:mcp_hide] }},
               endpoint: {{ endpoint }}.as(String?),
               title: {{ details[:mcp_title] }}.as(String?),
@@ -472,21 +497,87 @@ module ActionController::MCPServer
         {% end %}
       } of String => String
 
-      build_description(
-        open_api,
-        descriptions,
-        routes.select { |route| concrete.includes?(route[:controller]) },
-        prompts.select { |prompt| concrete.includes?(prompt[:controller]) },
-        instructions,
-      )
+      placed_description(open_api, descriptions, routes, prompts, instructions, composition)
     {% end %}
   end
 
   # :nodoc:
-  def build_description(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo), prompts : Array(PromptInfo) = [] of PromptInfo, instructions : Hash(String, String) = {} of String => String) : Description
+  alias PlacementNames = Hash(Tuple(String, String), Tuple(String, String?))
+
+  # :nodoc:
+  def placed_description(open_api, descriptions, routes, prompts, instructions, composition : Composition) : Description
+    placed_routes = [] of RouteInfo
+    placed_prompts = [] of PromptInfo
+    placed_instructions = {} of String => String
+    identities = PlacementNames.new
+    controllers = composition.placements.map(&.controller.name)
+    namespace = common_namespace(controllers)
+    counts = controllers.tally
+    names = Hash(String, Int32).new(0)
+    composition.placements.each do |placement|
+      controller = placement.controller.name
+      identity = "#{controller}\0#{placement.base}"
+      label = toolbox_name(controller, namespace)
+      label += "_#{tool_name(placement.base)}" if counts[controller] > 1
+      label = unique_name(names, label)
+      routes.select(&.[:controller].==(controller)).each do |route|
+        path = placement.path(route[:route])
+        endpoint = route[:endpoint].try { |value| placement.path(value) }
+        placed_routes << route.merge(route: path, endpoint: endpoint)
+        identities[{controller, path}] = {identity, label.as(String?)}
+      end
+      prompts.select(&.[:controller].==(controller)).each do |prompt|
+        path = placement.path(prompt[:route])
+        path_names = path.split('/').select { |segment| segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:") }.map { |segment| segment.split(':', 2)[1] }
+        arguments = prompt[:arguments].compact_map do |argument|
+          if argument.in == "path" && !path_names.includes?(argument.name)
+            next unless prompt[:declared_arguments].includes?(argument.name)
+            PromptArgument.new(argument.name, "query", argument.description, argument.required?)
+          elsif (argument.in == "query" || argument.in == "path") && path_names.includes?(argument.name)
+            PromptArgument.new(argument.name, "path", argument.description, argument.required? || path.split('/').includes?(":#{argument.name}"))
+          else
+            argument
+          end
+        end
+        path.split('/').each do |segment|
+          next unless segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:")
+          name = segment.split(':', 2)[1]
+          next if arguments.any? { |argument| argument.in == "path" && argument.name == name }
+          arguments << PromptArgument.new(name, "path", nil, segment.starts_with?(':'))
+        end
+        endpoint = prompt[:endpoint].try { |value| placement.path(value) }
+        placed_prompts << prompt.merge(route: path, endpoint: endpoint, arguments: arguments)
+        identities[{controller, path}] = {identity, label.as(String?)}
+      end
+      if instruction = instructions[controller]?
+        endpoint_paths_for(controller).each do |endpoint|
+          placed_instructions["#{controller}\0#{placement.path(endpoint)}"] = placement.path(instruction)
+        end
+      end
+    end
+    description = build_description(open_api, descriptions, placed_routes, placed_prompts, placed_instructions, identities)
+    description.composition_id = composition.signature
+    description
+  end
+
+  private def endpoint_paths_for(controller : String) : Array(String)
+    {% begin %}
+      paths = [
+        {% for _key, details in Route::Builder::OPENAPI_ROUTES %}
+          {% if details[:mcp_endpoint] %}
+            { {{ details[:controller] }}, {{ details[:mcp_endpoint] }} },
+          {% end %}
+        {% end %}
+      ] of Tuple(String, String)
+      paths.select(&.[0].==(controller)).map(&.[1]).uniq
+    {% end %}
+  end
+
+  # :nodoc:
+  def build_description(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo), prompts : Array(PromptInfo) = [] of PromptInfo, instructions : Hash(String, String) = {} of String => String, identities : PlacementNames = PlacementNames.new) : Description
     namespace = common_namespace(routes.map(&.[:controller]) + prompts.map(&.[:controller]))
 
-    toolboxes = build_toolboxes(open_api, descriptions, routes.select(&.[:global]), prompts.select(&.[:global]), namespace) do |toolbox, method|
+    toolboxes = build_toolboxes(open_api, descriptions, routes.select(&.[:global]), prompts.select(&.[:global]), namespace, identities: identities) do |toolbox, method|
       "#{toolbox.name}_#{method}"
     end
 
@@ -496,10 +587,11 @@ module ActionController::MCPServer
     paths = (endpoint_routes.map(&.[:endpoint]) + endpoint_prompts.map(&.[:endpoint])).compact.uniq!
     endpoints = paths.compact_map do |path|
       bound = Endpoint.bound_params(path)
-      boxes = build_toolboxes(open_api, descriptions, endpoint_routes.select(&.[:endpoint].==(path)), endpoint_prompts.select(&.[:endpoint].==(path)), namespace, root: true, bound: bound) do |_toolbox, method|
+      always_bound = path.split('/').compact_map(&.lchop?(':'))
+      boxes = build_toolboxes(open_api, descriptions, endpoint_routes.select(&.[:endpoint].==(path)), endpoint_prompts.select(&.[:endpoint].==(path)), namespace, root: true, bound: always_bound, identities: identities) do |_toolbox, method|
         method
       end
-      boxes.first?.try { |box| Endpoint.new(path, bound, box, instructions[box.controller]?) }
+      boxes.first?.try { |box| Endpoint.new(path, bound, box, instructions["#{box.controller}\0#{path}"]? || instructions[box.controller]?) }
     end
 
     Description.new(toolboxes, endpoints)
@@ -507,7 +599,7 @@ module ActionController::MCPServer
 
   # one toolbox per controller. `root` makes every item a root item, and `bound`
   # path params are left out of the tool arguments
-  private def build_toolboxes(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo), prompts : Array(PromptInfo), namespace : Array(String), root : Bool = false, bound : Array(String) = [] of String, & : Toolbox, String -> String) : Array(Toolbox)
+  private def build_toolboxes(open_api, descriptions : Hash(String, OpenAPI::KlassDoc), routes : Array(RouteInfo), prompts : Array(PromptInfo), namespace : Array(String), root : Bool = false, bound : Array(String) = [] of String, identities : PlacementNames = PlacementNames.new, & : Toolbox, String -> String) : Array(Toolbox)
     schemas = open_api[:components].schemas
     toolboxes = {} of String => Toolbox
     tool_names = Hash(String, Int32).new(0)
@@ -519,7 +611,8 @@ module ActionController::MCPServer
     methods = Set(Tuple(String, String)).new
 
     routes.each do |route|
-      next if methods.includes?({route[:controller], route[:method]})
+      identity, label = identities[{route[:controller], route[:route]}]? || {route[:controller], nil.as(String?)}
+      next if methods.includes?({identity, route[:method]})
       path = open_api[:paths][OpenAPI.openapi_path(route[:route])]?
       operation = case route[:verb]
                   when "get"    then path.try &.get
@@ -530,16 +623,17 @@ module ActionController::MCPServer
                   end
       next unless operation
 
-      toolbox = toolbox_for(toolboxes, route[:controller], namespace, descriptions, route[:toolbox_icons])
+      toolbox = toolbox_for(toolboxes, route[:controller], namespace, descriptions, route[:toolbox_icons], identity, label)
       name = unique_name(tool_names, yield(toolbox, route[:method]))
       description = operation.description || operation.summary || "#{route[:verb].upcase} #{route[:route]}"
       route = route.merge(root: true) if root
       toolbox.tools << build_tool(name, description, route, operation, schemas, bound)
-      methods << {route[:controller], route[:method]}
+      methods << {identity, route[:method]}
     end
 
     prompts.each do |prompt|
-      toolbox = toolbox_for(toolboxes, prompt[:controller], namespace, descriptions, prompt[:toolbox_icons])
+      identity, label = identities[{prompt[:controller], prompt[:route]}]? || {prompt[:controller], nil.as(String?)}
+      toolbox = toolbox_for(toolboxes, prompt[:controller], namespace, descriptions, prompt[:toolbox_icons], identity, label)
       name = unique_name(prompt_names, yield(toolbox, prompt[:method]))
       description = method_docs(descriptions, prompt[:controller], prompt[:method]).try(&.strip)
       arguments = prompt[:arguments].reject { |argument| argument.in == "path" && bound.includes?(argument.name) }
@@ -549,9 +643,9 @@ module ActionController::MCPServer
     toolboxes.values
   end
 
-  private def toolbox_for(toolboxes : Hash(String, Toolbox), controller : String, namespace : Array(String), descriptions : Hash(String, OpenAPI::KlassDoc), icons : Array(String)?) : Toolbox
-    toolboxes[controller] ||= Toolbox.new(
-      toolbox_name(controller, namespace),
+  private def toolbox_for(toolboxes : Hash(String, Toolbox), controller : String, namespace : Array(String), descriptions : Hash(String, OpenAPI::KlassDoc), icons : Array(String)?, identity : String = controller, label : String? = nil) : Toolbox
+    toolboxes[identity] ||= Toolbox.new(
+      label || toolbox_name(controller, namespace),
       controller,
       descriptions[controller]?.try(&.docs).try(&.strip).presence,
       icons: parse_icons(icons),
@@ -626,7 +720,7 @@ module ActionController::MCPServer
         schema["examples"] = JSON::Any.new([example])
       end
       properties[param_name] = JSON::Any.new(schema)
-      required << param_name if param.required && !optional.includes?(param_name)
+      required << param_name if (param.required && !optional.includes?(param_name)) || param.query_fallback.try(&.required)
     end
 
     body = nil

@@ -1,14 +1,10 @@
 module ActionController::MCPServer
   # :nodoc:
   # MCP prompts are routes that are not exposed via HTTP
-  class PromptRouter
-    include Router
-
-    def initialize
-      # expanded when the method is used, once all the routes are known
-      {% for klass in ::ActionController::Base::CONCRETE_CONTROLLERS.keys %}
-        {{klass}}.__init_internal_routes__(self)
-      {% end %}
+  class PromptRouter < Composition
+    def initialize(composition : Composition = Composition.default)
+      super([] of Placement, false)
+      composition.register_internal(self)
     end
   end
 
@@ -30,9 +26,9 @@ module ActionController::MCPServer
     getter bound : Array(String)
 
     # `endpoint: true` serves the controller endpoint mounted at `path`
-    def initialize(route_handler : Router::RouteHandler, @path : String = "/mcp", endpoint : Bool = false)
-      @invoker = Invoker.new(route_handler, PromptRouter.new.route_handler)
-      @protocol = Protocol.new(@invoker, endpoint ? @path : nil)
+    def initialize(route_handler : Router::RouteHandler, @path : String = "/mcp", endpoint : Bool = false, composition : Composition = Composition.default)
+      @invoker = Invoker.new(route_handler, PromptRouter.new(composition).route_handler)
+      @protocol = Protocol.new(@invoker, endpoint ? @path : nil, composition)
       @bound = endpoint ? Endpoint.bound_params(@path) : [] of String
     end
 
@@ -228,7 +224,13 @@ module ActionController::MCPServer
     private def bound_values(context) : Hash(String, String)
       return {} of String => String if @bound.empty?
       params = context.route_params
-      @bound.to_h { |name| {name, params[name]? || ""} }
+      values = {} of String => String
+      @bound.each do |name|
+        if value = params[name]?
+          values[name] = value
+        end
+      end
+      values
     end
 
     # protects against DNS rebinding attacks
