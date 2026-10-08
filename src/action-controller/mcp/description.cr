@@ -533,7 +533,7 @@ module ActionController::MCPServer
           if argument.in == "path" && !path_names.includes?(argument.name)
             next unless prompt[:declared_arguments].includes?(argument.name)
             PromptArgument.new(argument.name, "query", argument.description, argument.required?)
-          elsif argument.in == "query" && path_names.includes?(argument.name)
+          elsif (argument.in == "query" || argument.in == "path") && path_names.includes?(argument.name)
             PromptArgument.new(argument.name, "path", argument.description, argument.required? || path.split('/').includes?(":#{argument.name}"))
           else
             argument

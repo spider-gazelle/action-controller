@@ -176,6 +176,11 @@ class CompositionOptionalSourceHost < AC::Base
   mount "/app", CompositionOptionalSource
 end
 
+class CompositionRequiredSourceHost < AC::Base
+  base "/composition/required-source-host/:label"
+  mount "/app", CompositionOptionalSource
+end
+
 class CompositionOptionalHost < AC::Base
   base "/composition/optional/?:tenant_id"
   mount "/auth", CompositionOAuth
@@ -798,5 +803,21 @@ describe AC::Composition do
     schema["type"].as_s.should eq "integer"
     tool = AC::MCPServer.generate_description(docs: false, composition: composition).toolboxes.first.tools.first
     tool.input_schema["required"].as_a.map(&.as_s).should eq ["tenant_id"]
+  end
+
+  it "requires prompt arguments when a mount makes an optional source segment mandatory" do
+    composition = CompositionRequiredSourceHost.handler
+    HotTopic.new(composition).get("/composition/required-source-host/provided/app").body.should eq %q("provided")
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    box = description.toolboxes.first
+    box.tools.find!(&.path.ends_with?("/app")).input_schema["required"].as_a.map(&.as_s).should eq ["label"]
+    prompt = box.prompts.find!(&.path.ends_with?("/explain"))
+    prompt.arguments.first.required?.should be_true
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    invoker.get_prompt(prompt, {"label" => JSON::Any.new("provided")}, HTTP::Request.new("POST", "/mcp")).should contain "provided"
+    expect_raises(AC::MCPServer::RPCError, "missing required argument: label") do
+      invoker.get_prompt(prompt, {} of String => JSON::Any, HTTP::Request.new("POST", "/mcp"))
+    end
+    description.endpoints.first.toolbox.prompts.find!(&.path.ends_with?("/explain")).arguments.should be_empty
   end
 end

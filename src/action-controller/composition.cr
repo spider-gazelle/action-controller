@@ -12,7 +12,7 @@ class ActionController::Composition
 
   # :nodoc:
   # Invalidate generated descriptions when projection behavior changes.
-  CATALOG_VERSION = 2
+  CATALOG_VERSION = 3
 
   # :nodoc:
   record Controller,
