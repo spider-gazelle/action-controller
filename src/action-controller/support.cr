@@ -37,6 +37,8 @@ module ActionController::Support
 
   # Used in base.cr to build routes for the redirect_to helpers
   def self.build_route(route, hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
+    return route if hash_parts.nil? && tuple_parts.empty? && !route.includes?(':')
+
     params = {} of String => String?
     hash_parts.try(&.each { |key, value| params[key.to_s] = value.try(&.to_s) })
     # Merge before substitution so explicit arguments also override bound path values.
@@ -47,7 +49,7 @@ module ActionController::Support
     optional_missing = nil.as(String?)
     route.split('/').each do |segment|
       if segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:")
-        key = segment.split(':', 2)[1]
+        key = segment.byte_slice(segment.starts_with?(':') ? 1 : 2)
         present = params.has_key?(key)
         value = params.delete(key)
         if segment.starts_with?(':')

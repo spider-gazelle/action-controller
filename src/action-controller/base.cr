@@ -748,17 +748,30 @@ abstract class ActionController::Base
             # bound to a dedicated execution context: run the whole request there
             # so the response payload is not separately offloaded to the default
             # context (avoids a redundant hop and head-of-line blocking).
-            router.{{ http_method.id }}(::ActionController::Composition.join(public_base, {{ route_path.id.stringify }})) do |%context, %head_request|
-              %context.controller_base = public_base
-              ::ActionController::ExecutionContext.offload(::ActionController::ExecutionContext.context_{{execution_context.gsub(/\W/, "_").id}}) do
-                {{dispatch}}(%context, %head_request)
+            if public_base == base_route
+              router.{{ http_method.id }}({{ route }}) do |%context, %head_request|
+                ::ActionController::ExecutionContext.offload(::ActionController::ExecutionContext.context_{{ execution_context.gsub(/\W/, "_").id }}) do
+                  {{ dispatch }}(%context, %head_request)
+                end
+                %context
               end
-              %context
+            else
+              router.{{ http_method.id }}(::ActionController::Composition.join(public_base, {{ route_path.id.stringify }})) do |%context, %head_request|
+                %context.controller_base = public_base
+                ::ActionController::ExecutionContext.offload(::ActionController::ExecutionContext.context_{{ execution_context.gsub(/\W/, "_").id }}) do
+                  {{ dispatch }}(%context, %head_request)
+                end
+                %context
+              end
             end
           {% else %}
-            router.{{ http_method.id }}(::ActionController::Composition.join(public_base, {{ route_path.id.stringify }})) do |%context, %head_request|
-              %context.controller_base = public_base
-              {{ dispatch }}(%context, %head_request)
+            if public_base == base_route
+              router.{{ http_method.id }}({{ route }}, &->{{ dispatch }}(HTTP::Server::Context, Bool))
+            else
+              router.{{ http_method.id }}(::ActionController::Composition.join(public_base, {{ route_path.id.stringify }})) do |%context, %head_request|
+                %context.controller_base = public_base
+                {{ dispatch }}(%context, %head_request)
+              end
             end
           {% end %}
           {% end %}
@@ -774,9 +787,13 @@ abstract class ActionController::Base
           {% if details[8] %}
             {% route = (NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\/$/, "").gsub(/\/\//, "/") %}
             {% dispatch = (details[0].id.stringify + "_" + NAMESPACE[0].id.stringify + details[1].id.stringify).gsub(/\W/, "_").id %}
-            router.{{ details[0].id }}(::ActionController::Composition.join(public_base, {{ details[1].id.stringify }})) do |%context, %head_request|
-              %context.controller_base = public_base
-              {{ dispatch }}(%context, %head_request)
+            if public_base == base_route
+              router.{{ details[0].id }}({{ route }}, &->{{ dispatch }}(HTTP::Server::Context, Bool))
+            else
+              router.{{ details[0].id }}(::ActionController::Composition.join(public_base, {{ details[1].id.stringify }})) do |%context, %head_request|
+                %context.controller_base = public_base
+                {{ dispatch }}(%context, %head_request)
+              end
             end
           {% end %}
         {% end %}
@@ -789,7 +806,7 @@ abstract class ActionController::Base
         {% reference_name = details[5] %}
         {% route_path = details[1] %}
         def self.{{reference_name}}(hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
-          route = "{{NAMESPACE[0].id}}{{route_path.id}}".gsub("//", "/")
+          route = {{ (NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/\//, "/") }}
           ActionController::Support.build_route(route, hash_parts, **tuple_parts)
         end
 

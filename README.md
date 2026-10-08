@@ -82,6 +82,8 @@ For controller inheritance, the nearest controller with an `@[AC::MCP(...)]` ann
 
 MCP description caches are scoped to the composition and description file. Generated files include a composition identity incorporating the catalog version; a mismatched file is regenerated from compiled metadata without source comments. Regenerate descriptions with `--mcp` or `write_description` to retain those comments. Legacy description files remain supported for ordinary apps without explicit composition or mounts.
 
+Controller selection, mount expansion, conflict validation and catalog projection run during compilation or initialization. `Server` registers all placements in one routing table; requests use the existing static lookup and dynamic matcher. Ordinary controller routes retain direct dispatch procs. Relocated routes bind their public base on the request context, without allocating a placement or rewriting the request. Warmed MCP descriptions use atomic cache snapshots, without taking the catalog lock or hashing the composition. Explicit handler chains perform another lookup for every handler that misses. See [the performance benchmark](benchmarks/README.md) for repeatable comparisons and their limits.
+
 ## Strong Parameter Usage
 
 ```crystal

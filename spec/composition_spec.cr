@@ -592,6 +592,41 @@ describe AC::Composition do
     end
   end
 
+  it "invalidates warmed MCP snapshots when descriptions or their file change" do
+    first_path = File.tempname("composition-cache-first", ".yml")
+    second_path = File.tempname("composition-cache-second", ".yml")
+    previous = AC::MCPServer.description_path
+    composition = ComposableFirst::Base.handler
+    begin
+      AC::MCPServer.description_path = first_path
+      first_docs = AC::OpenAPI::KlassDoc.new("ComposableFirst::Pages", nil)
+      first_docs.methods["index"] = "first file"
+      second_docs = AC::OpenAPI::KlassDoc.new("ComposableFirst::Pages", nil)
+      second_docs.methods["index"] = "second file"
+      original = AC::MCPServer.generate_description({"ComposableFirst::Pages" => first_docs}, composition: composition)
+      replacement = AC::MCPServer.generate_description({"ComposableFirst::Pages" => second_docs}, composition: composition)
+      File.write(first_path, original.to_yaml)
+      File.write(second_path, replacement.to_yaml)
+      AC::MCPServer.description = nil
+      first = AC::MCPServer.description(composition)
+      AC::MCPServer.description(composition).should be first
+      AC::MCPServer.description_path = second_path
+      second = AC::MCPServer.description(composition)
+      second.toolboxes.flat_map(&.tools).first.description.should eq "second file"
+      second.should_not be first
+      AC::MCPServer.description = nil
+      AC::MCPServer.description(composition).should_not be second
+      default = AC::MCPServer.description
+      AC::MCPServer.description = replacement
+      AC::MCPServer.description.should be replacement
+      AC::MCPServer.description.should_not be default
+    ensure
+      AC::MCPServer.description_path = previous
+      AC::MCPServer.description = nil
+      [first_path, second_path].each { |path| File.delete(path) if File.exists?(path) }
+    end
+  end
+
   it "serves a global MCP endpoint using the mounted app's composition" do
     composition = CompositionAccountHost.handler
     AC::MCPServer.mount(composition)

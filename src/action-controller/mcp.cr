@@ -174,14 +174,34 @@ module ActionController::MCPServer
 
   @@descriptions = {} of Tuple(String, String) => Description
   @@description_lock = Mutex.new
+  @@description_generation = Atomic(UInt64).new(0)
+
+  # :nodoc:
+  # Immutable snapshots keep warmed reads free of locks and catalog hashing.
+  class CachedDescription
+    getter generation : UInt64
+    getter path : String
+    getter description : Description
+
+    def initialize(@generation, @path, @description)
+    end
+  end
 
   # the tool descriptions, lazily loaded from `description_path`.
   #
   # if the file doesn't exist the description is generated from the compiled
   # routes, however it will not include the documentation comments
   def description(composition : Composition = Composition.default) : Description
+    path = description_path
+    if cached = composition.mcp_description_cache.get(:acquire)
+      if cached.generation == @@description_generation.get(:acquire) && cached.path == path
+        return cached.description
+      end
+    end
     @@description_lock.synchronize do
-      @@descriptions[{composition.signature, description_path}] ||= load_description(composition)
+      description = @@descriptions[{composition.signature, path}] ||= load_description(composition)
+      composition.mcp_description_cache.set(CachedDescription.new(@@description_generation.get(:relaxed), path, description), :release)
+      description
     end
   end
 
@@ -190,6 +210,7 @@ module ActionController::MCPServer
     @@description_lock.synchronize do
       @@descriptions.clear
       @@descriptions[{Composition.default.signature, description_path}] = description if description
+      @@description_generation.add(1, :release)
     end
   end
 
@@ -310,3 +331,8 @@ module ActionController::MCPServer
 end
 
 require "./mcp/*"
+
+# :nodoc:
+class ActionController::Composition
+  getter mcp_description_cache : Atomic(MCPServer::CachedDescription?) = Atomic(MCPServer::CachedDescription?).new(nil)
+end
