@@ -16,6 +16,12 @@ class ActionController::OpenAPI::Parameter
 
   property schema : JSON::Any? = nil
 
+  # A method/filter query argument promoted into a mounted path can still be
+  # supplied as a query when that optional path segment is omitted.
+  @[JSON::Field(ignore: true)]
+  @[YAML::Field(ignore: true)]
+  property query_fallback : Parameter? = nil
+
   def initialize
   end
 end

@@ -141,6 +141,41 @@ class CompositionTypedHost < AC::Base
   mount "/auth", CompositionTyped
 end
 
+class CompositionOptionalTypedHost < AC::Base
+  base "/composition/optional-typed/?:tenant_id"
+  mount "/auth", CompositionTyped
+end
+
+@[AC::MCP(endpoint: true, hide: false)]
+class CompositionOptionalSource < AC::Base
+  base "/composition/optional-source/?:label"
+
+  @[AC::Route::GET("/")]
+  def index(label : String? = nil) : String
+    label || "none"
+  end
+
+  @[AC::MCP(prompt: true)]
+  def explain(label : String? = nil) : String
+    label || "none"
+  end
+
+  @[AC::Route::GET("/plain")]
+  def plain : String
+    "plain"
+  end
+
+  @[AC::MCP(prompt: true)]
+  def plain_prompt : String
+    "plain"
+  end
+end
+
+class CompositionOptionalSourceHost < AC::Base
+  base "/composition/optional-source-host"
+  mount "/app", CompositionOptionalSource
+end
+
 class CompositionOptionalHost < AC::Base
   base "/composition/optional/?:tenant_id"
   mount "/auth", CompositionOAuth
@@ -162,6 +197,11 @@ end
 
 class CompositionFilteredHost < AC::Base
   base "/composition/filtered-host/:tenant_id"
+  mount "/auth", CompositionFiltered
+end
+
+class CompositionOptionalFilteredHost < AC::Base
+  base "/composition/optional-filtered/?:tenant_id"
   mount "/auth", CompositionFiltered
 end
 
@@ -563,7 +603,7 @@ describe AC::Composition do
     invoker.get_prompt(prompt, {} of String => JSON::Any, HTTP::Request.new("POST", "/mcp")).to_json.should contain "/composition/optional/?:tenant_id/auth"
     endpoint = description.endpoints.first
     endpoint.bound.should eq ["tenant_id"]
-    endpoint.toolbox.prompts.first.arguments.should be_empty
+    endpoint.toolbox.prompts.first.arguments.map(&.name).should eq ["tenant_id"]
     transports = AC::MCPServer.mount_endpoints(composition)
     transport = transports.first
     headers = HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json, text/event-stream"}
@@ -677,5 +717,86 @@ describe AC::Composition do
     client.get("/composition/owned-mount/original/token").status_code.should eq 404
     description = AC::MCPServer.generate_description(docs: false, composition: composition)
     description.toolboxes.flat_map(&.tools).map(&.path).should eq ["/composition/owned-mount/auth/token"]
+  end
+
+  it "preserves required action arguments in optional mount catalogs" do
+    composition = CompositionOptionalTypedHost.handler
+    client = HotTopic.new(composition)
+    client.get("/composition/optional-typed/auth?tenant_id=42").body.should eq "42"
+    client.get("/composition/optional-typed/42/auth").body.should eq "42"
+    docs = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    operation = docs[:paths]["/composition/optional-typed/auth"].get.should_not be_nil
+    params = operation.parameters.should_not be_nil
+    params.size.should eq 1
+    params.first.in.should eq "query"
+    params.first.required.should be_true
+    operation.to_json.should_not contain "query_fallback"
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    box = description.toolboxes.first
+    tool = box.tools.find!(&.path.ends_with?("/auth"))
+    tool.input_schema["required"].as_a.map(&.as_s).should eq ["tenant_id"]
+    box.prompts.first.arguments.first.required?.should be_true
+  end
+
+  it "keeps optional parameters usable as queries when a mount removes their original path" do
+    composition = CompositionOptionalSourceHost.handler
+    HotTopic.new(composition).get("/composition/optional-source-host/app?label=provided").body.should eq %q("provided")
+    docs = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    operation = docs[:paths]["/composition/optional-source-host/app"].get.should_not be_nil
+    params = operation.parameters.should_not be_nil
+    params.map(&.name).should eq ["label"]
+    params.first.in.should eq "query"
+    description = AC::MCPServer.generate_description(docs: false, composition: composition)
+    prompt = description.toolboxes.first.prompts.first
+    prompt.arguments.first.in.should eq "query"
+    invoker = AC::MCPServer::Invoker.new(composition.route_handler, AC::MCPServer::PromptRouter.new(composition).route_handler)
+    invoker.get_prompt(prompt, {"label" => JSON::Any.new("provided")}, HTTP::Request.new("POST", "/mcp")).should contain "provided"
+    plain = description.toolboxes.first.prompts.find!(&.path.ends_with?("/plain_prompt"))
+    plain.arguments.should be_empty
+    plain_operation = docs[:paths]["/composition/optional-source-host/app/plain"].get.should_not be_nil
+    (plain_operation.parameters.should_not be_nil).should be_empty
+  end
+
+  it "describes optional endpoint arguments according to the session's bound URL values" do
+    composition = CompositionOptionalTypedHost.handler
+    transport = AC::MCPServer.mount_endpoints(composition).first
+    request = HTTP::Request.new("POST", "/mcp")
+    unbound = AC::MCPServer::Session.new("2025-11-25")
+    bound = AC::MCPServer::Session.new("2025-11-25", {"tenant_id" => "42"})
+    protocol = transport.protocol
+    tools = JSON.parse(protocol.handle("tools/list", {} of String => JSON::Any, unbound, request, [] of String))["tools"].as_a
+    tool = tools.find!(&.["name"].==("show"))
+    tool["inputSchema"]["required"].as_a.map(&.as_s).should eq ["tenant_id"]
+    bound_tools = JSON.parse(protocol.handle("tools/list", {} of String => JSON::Any, bound, request, [] of String))["tools"].as_a
+    bound_tools.find!(&.["name"].==("show"))["inputSchema"]["properties"].as_h.should be_empty
+    prompts = JSON.parse(protocol.handle("prompts/list", {} of String => JSON::Any, unbound, request, [] of String))["prompts"].as_a
+    prompts.first["arguments"].as_a.first["required"].as_bool.should be_true
+    bound_prompts = JSON.parse(protocol.handle("prompts/list", {} of String => JSON::Any, bound, request, [] of String))["prompts"].as_a
+    bound_prompts.first["arguments"].as_a.should be_empty
+    call = JSON.parse(%({"name":"show","arguments":{"tenant_id":43}})).as_h
+    JSON.parse(protocol.handle("tools/call", call, unbound, request, [] of String))["isError"].as_bool.should be_false
+    call = JSON.parse(%({"name":"show","arguments":{}})).as_h
+    JSON.parse(protocol.handle("tools/call", call, bound, request, [] of String))["isError"].as_bool.should be_false
+    call = JSON.parse(%({"name":"show","arguments":{"tenant_id":99}})).as_h
+    result = JSON.parse(protocol.handle("tools/call", call, bound, request, [] of String))
+    JSON.parse(result["content"].as_a.first["text"].as_s)["body"].as_i.should eq 42
+    prompt_call = JSON.parse(%({"name":"describe_tenant","arguments":{}})).as_h
+    protocol.handle("prompts/get", prompt_call, bound, request, [] of String).should contain "Tenant 42"
+    repeated = JSON.parse(protocol.handle("tools/list", {} of String => JSON::Any, unbound, request, [] of String))["tools"].as_a
+    repeated.find!(&.["name"].==("show"))["inputSchema"]["required"].as_a.map(&.as_s).should eq ["tenant_id"]
+  end
+
+  it "preserves required filter query arguments when an optional mount segment is omitted" do
+    composition = CompositionOptionalFilteredHost.handler
+    HotTopic.new(composition).get("/composition/optional-filtered/auth?tenant_id=42").headers["X-Tenant"].should eq "42"
+    docs = AC::OpenAPI.generate_open_api_docs({} of String => AC::OpenAPI::KlassDoc, "test", "1", composition: composition)
+    operation = docs[:paths]["/composition/optional-filtered/auth"].get.should_not be_nil
+    params = operation.parameters.should_not be_nil
+    params.first.in.should eq "query"
+    params.first.required.should be_true
+    schema = params.first.schema.should_not be_nil
+    schema["type"].as_s.should eq "integer"
+    tool = AC::MCPServer.generate_description(docs: false, composition: composition).toolboxes.first.tools.first
+    tool.input_schema["required"].as_a.map(&.as_s).should eq ["tenant_id"]
   end
 end

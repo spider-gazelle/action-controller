@@ -41,6 +41,8 @@ Mounts can be nested or repeated. Mount-only targets are excluded from standalon
 
 Parameterized mounts such as `mount "/accounts/:account_id/auth", OAuth2` bind those parameters for controller filters and actions, OpenAPI and MCP. Mounts must preserve any required parameters from the target's original routes as required parameters. Cycles, ambiguous parameter names and conflicting public operations are rejected. Explicit composition also checks equivalent parameterized routes and generated HEAD operations. MCP endpoint conflicts are checked against the actual router before endpoints are registered.
 
+Optional mount segments retain the action's argument requirements. If a query argument becomes an optional path segment, OpenAPI describes its query form on URLs that omit the segment; required action and filter arguments stay required in MCP. Replacing a base that contains an optional parameter moves declared arguments back to queries. MCP endpoint listings omit only arguments bound by the current session URL, so sessions without an optional segment can still supply that argument.
+
 Use `route_path(:action, ...)` inside an action to generate a URL using the current mounted base and bound path parameters:
 
 ```crystal
@@ -65,7 +67,7 @@ client = AC::SpecHelper.new(composition).hot_topic
 
 OpenAPI uses public mounted paths and distinct operation IDs. MCP uses the same composition for tool calls, prompts, internal instructions, and relocated controller endpoints. Repeated mounts receive separate toolboxes and unique tool/prompt names. Existing visibility annotations and authentication settings still apply; the host owns global MCP configuration, session settings and UI asset locations.
 
-MCP description caches are scoped to the composition and description file. Generated files include a composition identity; a mismatched file is regenerated from compiled metadata without source comments. Regenerate descriptions with `--mcp` or `write_description` to retain those comments. Legacy description files remain supported for ordinary apps without explicit composition or mounts.
+MCP description caches are scoped to the composition and description file. Generated files include a composition identity and catalog version; a mismatched file is regenerated from compiled metadata without source comments. Regenerate descriptions with `--mcp` or `write_description` to retain those comments. Legacy description files remain supported for ordinary apps without explicit composition or mounts.
 
 ## Strong Parameter Usage
 

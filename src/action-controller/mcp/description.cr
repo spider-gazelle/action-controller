@@ -107,12 +107,12 @@ module ActionController::MCPServer
     # the tool definition as returned by `tools/list`, `proxy: true` also names the
     # proxy tool that runs it and `ui: true` includes the MCP Apps metadata.
     # `host` resolves icon paths
-    def to_mcp_json(json : JSON::Builder, proxy : Bool = false, ui : Bool = false, host : String? = nil) : Nil
+    def to_mcp_json(json : JSON::Builder, proxy : Bool = false, ui : Bool = false, host : String? = nil, bound : Hash(String, String)? = nil) : Nil
       json.object do
         json.field "name", name
         json.field "title", title if title
         json.field "description", description if description
-        json.field "inputSchema", input_schema
+        json.field "inputSchema", schema_for(bound)
         json.field "proxy", self.proxy if proxy
         Icons.to_json(json, icons, host)
         ui_meta(json) if ui
@@ -123,6 +123,26 @@ module ActionController::MCPServer
           end
         end
       end
+    end
+
+    private def schema_for(bound : Hash(String, String)?) : JSON::Any
+      return input_schema unless bound
+      return input_schema if bound.empty?
+      names = params.select { |param| param.in == "path" && bound.has_key?(param.name) }.map(&.name)
+      return input_schema if names.empty?
+      schema = input_schema.as_h.dup
+      if properties = schema["properties"]?.try(&.as_h?)
+        schema["properties"] = JSON::Any.new(properties.reject { |name, _| names.includes?(name) })
+      end
+      if required = schema["required"]?.try(&.as_a?)
+        remaining = required.reject { |name| names.includes?(name.as_s) }
+        if remaining.empty?
+          schema.delete("required")
+        else
+          schema["required"] = JSON::Any.new(remaining)
+        end
+      end
+      JSON::Any.new(schema)
     end
 
     # the card the host renders for the results and who can call the tool
@@ -206,7 +226,7 @@ module ActionController::MCPServer
     end
 
     # the prompt definition as returned by `prompts/list`, `host` resolves icon paths
-    def to_mcp_json(json : JSON::Builder, host : String? = nil) : Nil
+    def to_mcp_json(json : JSON::Builder, host : String? = nil, bound : Hash(String, String)? = nil) : Nil
       json.object do
         json.field "name", name
         json.field "title", title if title
@@ -215,6 +235,7 @@ module ActionController::MCPServer
         json.field "arguments" do
           json.array do
             arguments.each do |argument|
+              next if argument.in == "path" && bound.try(&.has_key?(argument.name))
               json.object do
                 json.field "name", argument.name
                 json.field "description", argument.description if argument.description
@@ -391,7 +412,7 @@ module ActionController::MCPServer
   alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, behaviour: Array(String)?, global: Bool, endpoint: String?, ui: String?, visibility: Array(String)?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
 
   # :nodoc:
-  alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), global: Bool, endpoint: String?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
+  alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), declared_arguments: Array(String), global: Bool, endpoint: String?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
 
   # generates the MCP description from the compiled routes.
   #
@@ -450,6 +471,13 @@ module ActionController::MCPServer
                   ),
                 {% end %}
               ] of PromptArgument,
+              declared_arguments: [
+                {% for param_name, param in details[:params] %}
+                  {% if param[:schema].stringify != "Nil" %}
+                    {{ param[:header] || param_name }},
+                  {% end %}
+                {% end %}
+              ] of String,
               global: {{ !details[:mcp_hide] }},
               endpoint: {{ endpoint }}.as(String?),
               title: {{ details[:mcp_title] }}.as(String?),
@@ -501,9 +529,12 @@ module ActionController::MCPServer
       prompts.select(&.[:controller].==(controller)).each do |prompt|
         path = placement.path(prompt[:route])
         path_names = path.split('/').select { |segment| segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:") }.map { |segment| segment.split(':', 2)[1] }
-        arguments = prompt[:arguments].map do |argument|
-          if argument.in == "query" && path_names.includes?(argument.name)
-            PromptArgument.new(argument.name, "path", argument.description, path.split('/').includes?(":#{argument.name}"))
+        arguments = prompt[:arguments].compact_map do |argument|
+          if argument.in == "path" && !path_names.includes?(argument.name)
+            next unless prompt[:declared_arguments].includes?(argument.name)
+            PromptArgument.new(argument.name, "query", argument.description, argument.required?)
+          elsif argument.in == "query" && path_names.includes?(argument.name)
+            PromptArgument.new(argument.name, "path", argument.description, argument.required? || path.split('/').includes?(":#{argument.name}"))
           else
             argument
           end
@@ -556,7 +587,8 @@ module ActionController::MCPServer
     paths = (endpoint_routes.map(&.[:endpoint]) + endpoint_prompts.map(&.[:endpoint])).compact.uniq!
     endpoints = paths.compact_map do |path|
       bound = Endpoint.bound_params(path)
-      boxes = build_toolboxes(open_api, descriptions, endpoint_routes.select(&.[:endpoint].==(path)), endpoint_prompts.select(&.[:endpoint].==(path)), namespace, root: true, bound: bound, identities: identities) do |_toolbox, method|
+      always_bound = path.split('/').compact_map(&.lchop?(':'))
+      boxes = build_toolboxes(open_api, descriptions, endpoint_routes.select(&.[:endpoint].==(path)), endpoint_prompts.select(&.[:endpoint].==(path)), namespace, root: true, bound: always_bound, identities: identities) do |_toolbox, method|
         method
       end
       boxes.first?.try { |box| Endpoint.new(path, bound, box, instructions["#{box.controller}\0#{path}"]? || instructions[box.controller]?) }
@@ -688,7 +720,7 @@ module ActionController::MCPServer
         schema["examples"] = JSON::Any.new([example])
       end
       properties[param_name] = JSON::Any.new(schema)
-      required << param_name if param.required && !optional.includes?(param_name)
+      required << param_name if (param.required && !optional.includes?(param_name)) || param.query_fallback.try(&.required)
     end
 
     body = nil

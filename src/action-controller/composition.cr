@@ -11,6 +11,10 @@ class ActionController::Composition
   ROOTS = [] of Nil
 
   # :nodoc:
+  # Invalidate generated descriptions when projection behavior changes.
+  CATALOG_VERSION = 2
+
+  # :nodoc:
   record Controller,
     name : String,
     ancestors : Array(String),
@@ -113,7 +117,7 @@ class ActionController::Composition
 
   # Identifies the selected placements and their public route definitions.
   getter signature : String do
-    Digest::SHA256.hexdigest(placements.map { |placement| {placement.controller.name, placement.base, placement.controller.routes, placement.controller.internal_routes, placement.controller.catalog}.to_json }.join("\n"))
+    Digest::SHA256.hexdigest("v#{CATALOG_VERSION}\n" + placements.map { |placement| {placement.controller.name, placement.base, placement.controller.routes, placement.controller.internal_routes, placement.controller.catalog}.to_json }.join("\n"))
   end
 
   # Builds a public URL outside a request. Specify mount_base for repeated mounts.

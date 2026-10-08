@@ -180,7 +180,7 @@ module ActionController::MCPServer
                 META_TOOLS.each { |tool| json.raw tool }
                 PROXY_TOOLS.each { |tool| json.raw tool } if MCPServer.tool_proxy?
               end
-              available_tools(session).each(&.to_mcp_json(json, ui: ui?, host: host(request)))
+              available_tools(session).each(&.to_mcp_json(json, ui: ui?, host: host(request), bound: session.bound))
             end
           end
         end
@@ -245,9 +245,9 @@ module ActionController::MCPServer
         json.object do
           json.field "prompts" do
             json.array do
-              description.root_prompts.each(&.to_mcp_json(json, host(request)))
+              description.root_prompts.each(&.to_mcp_json(json, host(request), bound: session.bound))
               session.open_toolboxes.each do |name|
-                description.toolbox?(name).try &.toolbox_prompts.each(&.to_mcp_json(json, host(request)))
+                description.toolbox?(name).try &.toolbox_prompts.each(&.to_mcp_json(json, host(request), bound: session.bound))
               end
             end
           end
@@ -299,7 +299,7 @@ module ActionController::MCPServer
           json.field "toolbox", toolbox.name
           json.field "status", opened ? "opened" : "already open"
           json.field "tools" do
-            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json, proxy: MCPServer.tool_proxy?, ui: ui?, host: host(request))) }
+            json.array { toolbox.toolbox_tools.each(&.to_mcp_json(json, proxy: MCPServer.tool_proxy?, ui: ui?, host: host(request), bound: session.bound)) }
           end
           json.field "prompts" do
             json.array { toolbox.toolbox_prompts.each { |prompt| json.string prompt.name } }

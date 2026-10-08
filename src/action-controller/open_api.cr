@@ -39,6 +39,7 @@ module ActionController::OpenAPI
     verb: String,
     route: String,
     params: Array(Params),
+    original_params: Array(Params),
     method: String,
     filters: Array(String),
     error_handlers: Array(String),
@@ -381,6 +382,7 @@ module ActionController::OpenAPI
               },
             {% end %}
           ]{% if params.empty? %} of Params{% end %},
+          original_params: [] of Params,
           method: {{ details[:method] }},
           filters: filter_keys,
           error_handlers: error_keys,
@@ -413,8 +415,11 @@ module ActionController::OpenAPI
         next unless route[:controller] == placement.controller.name
         path = placement.path(route[:route])
         path_names = path.split('/').select { |segment| segment.starts_with?(':') || segment.starts_with?("?:") || segment.starts_with?("*:") }.map { |segment| segment.split(':', 2)[1] }
-        parameters = route[:params].reject { |param| param[:in] == :path && !path_names.includes?(param[:name]) }.map do |param|
-          if param[:in] == :query && path_names.includes?(param[:name])
+        parameters = route[:params].compact_map do |param|
+          if param[:in] == :path && !path_names.includes?(param[:name])
+            next if param[:schema] == %({"type":"null"})
+            {name: param[:name], in: :query, required: param[:required], schema: param[:schema], docs: param[:docs], example: param[:example]}
+          elsif param[:in] == :query && path_names.includes?(param[:name])
             {name: param[:name], in: :path, required: param[:required], schema: param[:schema], docs: param[:docs], example: param[:example]}
           else
             param
@@ -433,7 +438,7 @@ module ActionController::OpenAPI
             example:  nil.as(String?),
           }
         end
-        placed["#{index}:#{key}"] = route.merge(route: path, params: parameters)
+        placed["#{index}:#{key}"] = route.merge(route: path, params: parameters, original_params: route[:params])
       end
     end
     placed
@@ -547,6 +552,12 @@ module ActionController::OpenAPI
         param.schema = JSON.parse(raw_param[:schema])
         param.description = raw_param[:docs]
         param.example = raw_param[:example].try { |example| JSON::Any.new(example) }
+        if param.in == "path" && (original = route[:original_params].find { |source| source[:name] == param.name && source[:in] == :query })
+          fallback = param.dup
+          fallback.in = "query"
+          fallback.required = original[:required] ? true : nil
+          param.query_fallback = fallback
+        end
         param
       end
 
@@ -566,6 +577,12 @@ module ActionController::OpenAPI
               existing.schema = JSON.parse(raw_param[:schema])
               existing.description ||= raw_param[:docs]
               existing.example ||= raw_param[:example].try { |example| JSON::Any.new(example) }
+            end
+            if existing.in == "path" && raw_param[:in] == :query
+              fallback = existing.query_fallback || existing.dup
+              fallback.in = "query"
+              fallback.required = fallback.required || raw_param[:required] ? true : nil
+              existing.query_fallback = fallback
             end
             next
           end
@@ -595,6 +612,13 @@ module ActionController::OpenAPI
 
         if example = param.example.try(&.as_s?)
           param.example = typed_example(example, param.schema, schemas) || param.example
+        end
+        if fallback = param.query_fallback
+          fallback.example = param.example
+          if schema_type(fallback.schema, schemas) == "array"
+            fallback.style = "form"
+            fallback.explode = false
+          end
         end
       end
       operation.parameters = params
@@ -627,7 +651,9 @@ module ActionController::OpenAPI
         if omitted
           present = path_key.scan(/\{([^}]+)\}/).map(&.[1])
           variant_operation = operation.dup
-          variant_operation.parameters = params.reject { |param| param.in == "path" && !present.includes?(param.name) }
+          variant_operation.parameters = params.compact_map do |param|
+            param.in == "path" && !present.includes?(param.name) ? param.query_fallback : param
+          end
         end
         variant_operation.operation_id = unique_operation_id(operation_ids, omitted ? "#{op_id}_without_#{omitted}" : op_id)
 
