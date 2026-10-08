@@ -19,6 +19,9 @@ One composition registry supplies HTTP routing, route listing, OpenAPI, MCP and 
 - [x] Verify unchanged template and composed fixtures; document the public APIs.
 - [x] Remove avoidable HTTP binding, URL helper allocation and warmed MCP-cache overhead.
 - [x] Record release benchmark comparisons against master, including mounted dispatch and MCP listings.
+- [x] Compare Proc, callable-object and generated integer dispatch with varied route working sets.
+- [x] Prototype dynamic matching without copying static path segments; compare lookup and full dispatch.
+- [x] Implement the fastest compatible option, verify matching/handler/catalog behavior and update PR evidence.
 
 ## Acceptance checks
 
@@ -31,6 +34,8 @@ One composition registry supplies HTTP routing, route listing, OpenAPI, MCP and 
 - MCP tools, prompts, instructions, endpoint metadata and cached descriptions.
 
 ## Review
+
+Router review: measured plain/captured Procs, callable objects and generated integer dispatch with 16 and 256 targets. Procs win mixed-target dispatch; one-hot alternatives save less than a nanosecond and do not justify changing the runtime action API. The implemented lazy matcher reuses LuckyRouter's trie and validation, compares temporary byte views with static String keys, and copies only successful captures. Escaped paths retain the original decoder. Local lookup measurements improve common unescaped dynamic cases by 10–16%, globs by about 46%, and reduce misses to zero allocated bytes. Actual warmed single/mounted requests save 32–64 bytes with ordinary parameters; nested dispatch improves by a few percent, with other timings around the baseline. Static routing and Proc dispatch remain unchanged. Differential specs cover branch/method failures, optional/glob routes, escaping, Unicode, empty segments, 80 captures and generated paths. Validation: 274 normal examples, 277 MT/execution-context examples and all seven unchanged-template specs pass; template routes/OpenAPI/MCP CLI generation works. Formatter/whitespace checks pass. Ameba reports 233 existing findings, none in changed router, spec or benchmark files. All six CI checks passed on `f400c28`; the router follow-up requires fresh CI. Results and reproduction commands are in `benchmarks/README.md`. Final review and approval remain outstanding.
 
 Warmed-handler follow-up: the actual application `.handler` and a declaratively mounted app were compared with equivalent original routers at identical public paths. The fixture has 19 GET routes plus implicit HEAD, typed filters, static/dynamic/nested parameters and mounted base access. Four alternating release runs per build, with 20,000 warm-up requests and 15 samples per case, show no measurable dispatch regression across eight cases. Single-handler medians range from −1.80% to +0.07%; mounted medians are 0.95–1.65% faster. Allocation counter differences are under 0.1 byte/request. `Composition.call` now retains method/path locally, matching the original router's request reads. Details and reproduction commands are in `benchmarks/README.md`. All six CI checks passed on `47a38be`; the follow-up requires fresh CI. The full 272-example suite and 275-example MT/execution-context suite pass after the change. Final PR review and approval remain outstanding.
 

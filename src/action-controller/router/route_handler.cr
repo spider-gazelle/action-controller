@@ -1,4 +1,4 @@
-require "lucky_router"
+require "./matcher"
 
 # :nodoc:
 class ActionController::Router::RouteHandler
@@ -12,7 +12,7 @@ class ActionController::Router::RouteHandler
   property? isolate_path_params : Bool = false
 
   def initialize
-    @matcher = LuckyRouter::Matcher(Tuple(Action, Bool)).new
+    @matcher = Matcher(Tuple(Action, Bool)).new
     # keyed on {method, path} rather than a concatenation of the two so that
     # lookups don't have to build a string on every request
     @static_routes = {} of Tuple(String, String) => Tuple(Action, Bool)
