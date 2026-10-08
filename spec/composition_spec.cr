@@ -1084,3 +1084,19 @@ describe AC::Composition do
     HotTopic.new(upstream).get("/composition/automatic-mount?tenant_id=42").headers["X-Tenant"].should eq "42"
   end
 end
+
+{% if LuckyRouter::Matcher(Int32).has_method?(:compile) %}
+  describe "compiled composition handlers" do
+    it "compiles direct composition handlers on their first non-static request" do
+      handler = CompositionHost.handler
+      handler.route_handler.compiled?.should be_false
+      client = HotTopic.new(handler)
+      client.get("/composition/host/auth/token").status_code.should eq 200
+      # This exact route uses AC's allocation-free static lookup.
+      handler.route_handler.compiled?.should be_false
+      client.get("/composition/host/auth/unknown").status_code.should eq 404
+      handler.route_handler.compiled?.should be_true
+      client.get("/composition/host/auth/token").body.should eq %q("/composition/host/auth/token")
+    end
+  end
+{% end %}
