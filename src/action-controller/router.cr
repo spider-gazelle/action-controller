@@ -9,6 +9,13 @@ module ActionController::Router
 
   getter route_handler : RouteHandler = ::ActionController::Router::RouteHandler.new
 
+  # Prepare the current routes for serving requests. Server.run calls this
+  # automatically. Custom HTTP::Server setups may call it before listening.
+  # Route additions invalidate the snapshot and the next trie lookup rebuilds it.
+  def compile_routes : Nil
+    route_handler.compile_routes
+  end
+
   # Define each method for supported http actions
   {% for http_method in HTTP_METHODS %}
     def {{http_method.id}}(path : String, &block : Action)

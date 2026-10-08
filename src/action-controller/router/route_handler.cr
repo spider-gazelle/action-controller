@@ -11,6 +11,48 @@ class ActionController::Router::RouteHandler
   # Ordinary routers retain their historical static-route behavior.
   property? isolate_path_params : Bool = false
 
+  {% if LuckyRouter::Matcher(Int32).has_method?(:compile) %}
+    @compiled_matcher = Atomic(LuckyRouter::CompiledMatcher(Tuple(Action, Bool))?).new(nil)
+    @compile_lock = Mutex.new
+
+    private def compiled_matcher : LuckyRouter::CompiledMatcher(Tuple(Action, Bool))
+      if snapshot = @compiled_matcher.get(:acquire)
+        return snapshot
+      end
+
+      @compile_lock.synchronize do
+        snapshot = @compiled_matcher.get(:acquire)
+        unless snapshot
+          {% compiler = LuckyRouter::Matcher(Int32).methods.find { |method| method.name == "compile".id } %}
+          {% if compiler && compiler.args.any? { |arg| arg.name == "static_index".id } %}
+            # AC already provides the allocation-free exact static lookup.
+            snapshot = @matcher.compile(static_index: false)
+          {% else %}
+            snapshot = @matcher.compile
+          {% end %}
+          @compiled_matcher.set(snapshot, :release)
+        end
+        snapshot
+      end
+    end
+  {% end %}
+
+  # Build once after registration; direct HTTP handlers also compile lazily
+  # before their first non-static lookup. Adding routes invalidates the snapshot.
+  def compile_routes : Nil
+    {% if LuckyRouter::Matcher(Int32).has_method?(:compile) %}
+      compiled_matcher
+    {% end %}
+  end
+
+  def compiled? : Bool
+    {% if LuckyRouter::Matcher(Int32).has_method?(:compile) %}
+      !@compiled_matcher.get(:acquire).nil?
+    {% else %}
+      false
+    {% end %}
+  end
+
   def initialize
     @matcher = Matcher(Tuple(Action, Bool)).new
     # keyed on {method, path} rather than a concatenation of the two so that
@@ -23,10 +65,18 @@ class ActionController::Router::RouteHandler
     if action = @static_routes[{method, req_path}]?
       context.reset_route_params if isolate_path_params?
       action
-    elsif match = @matcher.match(method, req_path)
+    elsif match = match_route(method, req_path)
       context.route_params = match.params
       match.payload
     end
+  end
+
+  private def match_route(method : String, path : String) : LuckyRouter::Match(Tuple(Action, Bool))?
+    {% if LuckyRouter::Matcher(Int32).has_method?(:compile) %}
+      compiled_matcher.match(method, path)
+    {% else %}
+      @matcher.match(method, path)
+    {% end %}
   end
 
   # Routes requests to the appropriate handler
@@ -69,14 +119,18 @@ class ActionController::Router::RouteHandler
   end
 
   # Adds a route handler to the system
-  # Optional segments are expanded so they match where they're written (lucky_router would
-  # move them after the required segments)
+  # Optional segments are expanded consistently with route catalogs and URL helpers.
   def add_route(method : String, path : String, action : Tuple(Action, Bool))
     self.class.optional_variants(path).each { |(variant, _)| add_path(method, variant, action) }
   end
 
   # Determines if routes are static or require decomposition and stores them appropriately
   private def add_path(method : String, path : String, action : Tuple(Action, Bool))
+    # Invalidate before mutation, including a registration that raises after
+    # LuckyRouter has changed an implicit HEAD alias or an optional variant.
+    {% if LuckyRouter::Matcher(Int32).has_method?(:compile) %}
+      @compiled_matcher.set(nil, :release)
+    {% end %}
     @matcher.add(method, path, action)
     @registered_routes << {method, path}
 

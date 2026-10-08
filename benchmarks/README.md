@@ -198,3 +198,91 @@ dynamic backtracking, method mismatches, optional/glob paths, Unicode, escaping,
 empty segments, implicit HEAD and paths with up to 80 captures, plus 500
 deterministically generated paths. Existing handler, mount and catalog suites
 remain the end-to-end compatibility checks.
+
+## Compiled LuckyRouter integration, 2026-10-09
+
+The baseline is AC `602925c` with LuckyRouter's performance implementation
+`f52a500`. The candidate uses compiled snapshots from `78cbfda`, retaining AC's
+exact static cache and passing `static_index: false` to avoid building and probing
+LuckyRouter's duplicate static index. The third strategy removes AC's cache and
+uses LuckyRouter's default compiled static index. Its static binding behavior
+also differs from AC, so it is a benchmark alternative rather than production code.
+
+These are Crystal 1.21.0 release builds on Apple M4 Pro. Each table reports the
+mean of two per-process medians, run sequentially in baseline/candidate/alternative/
+alternative/candidate/baseline order without concurrent builds or specs. Startup,
+registration and compilation are excluded. Compare with the same dependencies
+and harness in both checkouts; the optional static-index keyword does not change
+the baseline's live matcher.
+
+```sh
+# Copy compiled_routes.cr, router_strategy.cr and warmed_dispatch.cr into the
+# baseline checkout's benchmarks/ directory before building there as well.
+crystal build --release benchmarks/compiled_routes.cr -o /tmp/ac-lookup
+crystal build --release -Dlucky_router_only benchmarks/compiled_routes.cr -o /tmp/ac-lookup-all
+crystal build --release -Dcomposable_benchmark benchmarks/warmed_dispatch.cr -o /tmp/ac-http
+crystal build --release -Dcomposable_benchmark -Dlucky_router_only benchmarks/warmed_dispatch.cr -o /tmp/ac-http-all
+```
+
+`compiled_routes.cr` validates payload presence, captures and HEAD flags, warms
+20,000 lookups and takes nine samples of 200,000 calls. The HTTP harness uses the
+actual single and mounted handlers described above, explicitly preparing their
+snapshots before timing; it warms 20,000 requests and takes fifteen samples of
+100,000 requests. The all-LuckyRouter flag requires the compiled dependency and
+should only be built in the candidate checkout.
+
+| Lookup | Baseline ns/op | Compiled + AC cache ns/op | All LuckyRouter ns/op | Bytes/op: baseline / compiled + cache / all LuckyRouter |
+| --- | ---: | ---: | ---: | ---: |
+| static | 7.6 | 7.8 | 26.7 | 0 / 0 / 64 |
+| static alias | 6.4 | 6.4 | 26.1 | 0 / 0 / 64 |
+| dynamic | 102.1 | 92.4 | 84.0 | 192 / 192 / 192 |
+| nested | 134.3 | 116.6 | 111.2 | 208 / 208 / 208 |
+| fanout | 116.6 | 95.2 | 92.3 | 192 / 192 / 192 |
+| glob | 104.1 | 96.0 | 89.4 | 208 / 208 / 208 |
+| optional absent | 8.3 | 7.9 | 26.8 | 0 / 0 / 64 |
+| optional present | 104.6 | 90.3 | 86.6 | 192 / 192 / 192 |
+| encoded capture | 103.9 | 102.8 | 94.6 | 208 / 208 / 208 |
+| encoded static | 69.8 | 69.1 | 63.7 | 96 / 96 / 96 |
+| early miss | 39.7 | 21.7 | 16.3 | 0 / 0 / 0 |
+| late miss | 56.7 | 40.5 | 33.9 | 0 / 0 / 0 |
+| HEAD | 103.6 | 96.8 | 88.4 | 192 / 192 / 192 |
+| many captures | 863.0 | 735.8 | 732.2 | 2256 / 1488 / 1488 |
+| method backtracking | 944.1 | 108.8 | 103.1 | 208 / 208 / 208 |
+| method miss | 839.0 | 28.5 | 23.4 | 0 / 0 / 0 |
+
+| HTTP dispatch | Baseline ns/request | Compiled + AC cache ns/request | All LuckyRouter ns/request | Bytes/request: baseline / compiled + cache / all LuckyRouter |
+| --- | ---: | ---: | ---: | ---: |
+| single static | 343.0 | 346.2 | 356.4 | 976 / 976 / 1040 |
+| single dynamic | 395.2 | 385.9 | 389.8 | 1184 / 1184 / 1184 |
+| single nested | 481.2 | 464.8 | 458.5 | 1360 / 1360 / 1360 |
+| single base accessor | 335.3 | 340.3 | 344.9 | 976 / 976 / 1040 |
+| mounted static | 341.2 | 346.0 | 349.5 | 976 / 976 / 1040 |
+| mounted dynamic | 398.0 | 390.5 | 394.3 | 1184 / 1184 / 1184 |
+| mounted nested | 495.2 | 469.4 | 470.8 | 1376 / 1376 / 1376 |
+| mounted base accessor | 344.8 | 345.1 | 356.4 | 976 / 976 / 1040 |
+
+Retain AC's cache: exact static hits remain about 8 ns and allocation-free,
+whereas compiled `match` takes about 27 ns and creates a 64-byte empty params
+hash. Sending everything through LuckyRouter can save a few nanoseconds on
+parameterized lookups, but adds allocations and dispatch time to static
+requests. Disabling the duplicate index removes that unnecessary initialization
+memory and extra probe from AC's hybrid implementation.
+
+The compiled hybrid improves ordinary dynamic lookups and method-heavy
+backtracking, reduces 20-capture allocations by 768 bytes, and preserves zero
+allocations on misses. Encoded-path lookup remains close to baseline. The warmed
+single-handler and mounted-handler fixtures retain their allocation counts and
+show no consistent dispatch regression; small static differences are within
+run-to-run variation. These measurements cover these fixtures rather than a
+universal latency guarantee.
+
+`Server.run` prepares snapshots before listening, including routes added in its
+binding callback. Custom HTTP setups can call `handler.compile_routes` themselves;
+direct handlers otherwise prepare lazily on their first non-static lookup.
+Route additions invalidate the snapshot. Atomic publication and a lock used only
+for compilation permit concurrent warmed readers; concurrent route registration
+remains outside the supported setup lifecycle. Catalogs, OpenAPI and MCP still
+use the live definitions. Snapshot memory and compilation time are startup costs.
+Released LuckyRouter versions without compilation retain the previous matcher;
+CI covers both that fallback and compiled routing with normal and multithreaded
+execution.

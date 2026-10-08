@@ -44,3 +44,29 @@ jobs:
           ${{ matrix.MT && '-Dpreview_mt' || '' }} \
           --order random \
           --verbose
+
+  compiled-router:
+    name: Compiled LuckyRouter (MT=${{ matrix.MT }})
+    strategy:
+      fail-fast: false
+      matrix:
+        MT: [true, false]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Crystal
+        uses: crystal-lang/install-crystal@v1
+        with:
+          crystal: latest
+      - name: Select LuckyRouter with compiled snapshots
+        run: |
+          cat > shard.override.yml <<'EOF'
+          dependencies:
+            lucky_router:
+              github: stakach/lucky_router
+              commit: 78cbfda312ec638ed6e180b7842080d8bf37621a
+          EOF
+      - name: Install dependencies
+        run: shards install --ignore-crystal-version --skip-postinstall --skip-executables
+      - name: Test compiled routing
+        run: crystal spec --error-trace --order random ${{ matrix.MT && '-Dpreview_mt' || '' }}

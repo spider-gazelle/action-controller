@@ -1,4 +1,4 @@
-require "../src/action-controller"
+require "./router_strategy"
 require "http/client/response"
 
 # The same routes and filters are used for the original and mounted app.
@@ -96,6 +96,12 @@ mounted = {% if flag?(:composable_benchmark) %} WarmedHost.handler {% else %} Wa
 {% unless flag?(:composable_benchmark) %}
   WarmedPages.__init_routes__(single)
   WarmedNativePages.__init_routes__(mounted)
+{% end %}
+
+# Match server.run's startup preparation without listening on a socket.
+{% if ActionController::Router::RouteHandler.has_method?(:compile_routes) %}
+  single.route_handler.compile_routes
+  mounted.route_handler.compile_routes
 {% end %}
 
 measure("single static", single, "/app/static/7", "ok")
