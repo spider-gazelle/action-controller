@@ -271,10 +271,12 @@ memory and extra probe from AC's hybrid implementation.
 The compiled hybrid improves ordinary dynamic lookups and method-heavy
 backtracking, reduces 20-capture allocations by 768 bytes, and preserves zero
 allocations on misses. Encoded-path lookup remains close to baseline. The warmed
-single-handler and mounted-handler fixtures retain their allocation counts and
-show no consistent dispatch regression; small static differences are within
-run-to-run variation. These measurements cover these fixtures rather than a
-universal latency guarantee.
+single-handler and mounted-handler fixtures retain their allocation counts.
+Dynamic HTTP dispatch improves about 2–5%; static/base means are approximately
+0.1–1.5% slower. Individual single-static candidate medians span 340–352 ns,
+while baseline medians are about 343 ns. The static lookup executes the same
+code as before and does not read the compiled snapshot. These short runs do not
+establish a reliable static regression or a universal zero-cost guarantee.
 
 `Server.run` prepares snapshots before listening, including routes added in its
 binding callback. Custom HTTP setups can call `handler.compile_routes` themselves;
