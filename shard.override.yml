@@ -1,4 +1,0 @@
-dependencies:
-  lucky_router:
-    github: stakach/lucky_router
-    branch: codex/router-performance
