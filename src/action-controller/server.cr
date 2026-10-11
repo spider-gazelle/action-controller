@@ -82,7 +82,6 @@ class ActionController::Server
 
   # Starts the server, providing a callback once the ports are bound
   def run(&) : Nil
-    route_handler.compile_routes
     if @socket.addresses.empty?
       if ssl_context = @ssl_context
         address = @socket.bind_tls(@host, @port, ssl_context, @reuse_port)
