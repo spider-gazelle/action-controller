@@ -158,7 +158,8 @@ require "./spec_helper"
             bound.send(prepared)
           end
         end
-        bound.receive.should be_true
+        # compilation is deferred until after the callback so routes are only compiled once
+        bound.receive.should be_false
         port = server.socket.addresses.first.as(Socket::IPAddress).port
         HTTP::Client.get("http://127.0.0.1:#{port}/compiled-callback").body.should eq "true"
       ensure
