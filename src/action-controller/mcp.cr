@@ -232,7 +232,17 @@ module ActionController::MCPServer
     declarations.each do |(_controller, endpoint_path)|
       mount_transport(router, Transport.new(router.route_handler, endpoint_path, endpoint: true, composition: composition))
     end
-    mount_transport(router, Transport.new(router.route_handler, path, composition: composition))
+    transport = mount_transport(router, Transport.new(router.route_handler, path, composition: composition))
+    @@mounted_lock.synchronize { @@mounted[router.route_handler.object_id] = path }
+    transport
+  end
+
+  @@mounted = {} of UInt64 => String
+  @@mounted_lock = Mutex.new
+
+  # the path of the global MCP server mounted on the router, `nil` if there isn't one
+  def mounted_path(router : Router) : String?
+    @@mounted_lock.synchronize { @@mounted[router.route_handler.object_id]? }
   end
 
   # mounts a server for each controller annotated `@[AC::MCP(endpoint: true)]`

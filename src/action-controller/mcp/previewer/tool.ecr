@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= h(tool.title || tool.name) %> · Card previewer</title>
+<style><%= styles %></style>
+</head>
+<body class="tool">
+<header class="bar">
+  <h1><a href="<%= h path %>">Card previewer</a></h1>
+  <span class="crumb"><span class="verb verb-<%= h tool.verb.downcase %>"><%= h tool.verb.upcase %></span> <code class="route"><%= h tool.path %></code> <strong><%= h(tool.title || tool.name) %></strong></span>
+</header>
+<div class="layout">
+  <aside class="panel">
+    <form id="args-form" autocomplete="off">
+      <h2>Arguments</h2>
+      <% if summary = tool.description %><p class="muted"><%= h summary %></p><% end %>
+      <div id="fields"></div>
+      <button type="submit" id="run">Render card</button>
+    </form>
+    <section>
+      <h2>Request headers</h2>
+      <p class="muted">Sent with every MCP request, kept for this browser tab. Cookies for this site are sent automatically.</p>
+      <div id="headers"></div>
+      <button type="button" id="add-header" class="secondary">Add header</button>
+    </section>
+  </aside>
+  <main>
+    <div class="toolbar">
+      <div class="segmented" role="group" aria-label="Viewport">
+        <button type="button" data-viewport="desktop">Desktop</button>
+        <button type="button" data-viewport="tablet">Tablet</button>
+        <button type="button" data-viewport="mobile">Mobile</button>
+      </div>
+      <div class="segmented" role="group" aria-label="Theme">
+        <button type="button" data-theme-choice="light">Light</button>
+        <button type="button" data-theme-choice="dark">Dark</button>
+      </div>
+      <button type="button" id="exit-fullscreen" class="secondary" hidden>Exit fullscreen</button>
+      <span id="status" class="muted" role="status"></span>
+    </div>
+    <div id="stage" data-state="idle">
+      <div id="device-wrap"><div id="device"></div></div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="log" aria-selected="true">Messages</button>
+      <button type="button" role="tab" data-tab="result" aria-selected="false">Tool result</button>
+      <button type="button" role="tab" data-tab="model" aria-selected="false">To the model</button>
+    </div>
+    <ol id="log" class="tab-panel" data-panel="log"></ol>
+    <pre id="result" class="tab-panel" data-panel="result" hidden></pre>
+    <ol id="model" class="tab-panel" data-panel="model" hidden></ol>
+  </main>
+</div>
+<script type="application/json" id="previewer-config"><%= config %></script>
+<script><%= script %></script>
+</body>
+</html>

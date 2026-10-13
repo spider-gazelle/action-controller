@@ -475,6 +475,53 @@ end
   time). Nothing outside `ui_base` is served. Hosts without MCP Apps support ignore the
   card metadata and show the text result.
 
+#### Previewing cards
+
+The card previewer is a test harness that renders cards in your browser, as a host would.
+Mount it in development:
+
+```crystal
+server.run do
+  {% unless flag?(:release) %}
+    server.mount_mcp_card_previewer("/mcp/card/preview")
+  {% end %}
+end
+```
+
+`/mcp/card/preview` lists the cards and the tools that render them. A tool's page has a
+form for its arguments and renders the card once the required arguments are filled in,
+straight away when they're all optional. Switch between desktop, tablet and mobile
+viewports and light and dark themes, and inspect the messages between the card and the
+host, the tool result and anything the card sends to the model.
+
+The page is an MCP client of the global MCP server, at the path given to
+`MCPServer.mount` (mount it first, or pass `mcp: "/prefix/mcp"`). It initializes a session, calls the tool, reads
+the card and runs it in a sandboxed iframe with the card's CSP. Tools the card calls go
+through the same session, with the rules hosts apply: only listed tools, not
+`visibility: :model` tools. Add request headers, such as `Authorization`, in the page;
+they're kept for the browser tab. Cookies are sent automatically.
+
+Everything can be set in the URL, for links and automated tests:
+
+```
+/mcp/card/preview/tools/bookings_show?id=42&viewport_size=mobile&theme=dark&header.Authorization=Bearer%20token
+```
+
+* tool arguments by name, objects and arrays as JSON
+* `viewport_size`: `desktop` (1280px), `tablet` (768px) or `mobile` (375px)
+* `theme`: `light` or `dark`
+* `header.<Name>`: a request header. Tokens in URLs end up in logs and browser history,
+  so use test credentials
+
+Tests can wait for `#stage[data-state="ready"]` (or `"error"`), then inspect the card in
+the `#card` iframe. `window.cardPreviewer` exposes the `state`, the tool `result` and the
+message `log`.
+
+The previewer's pages and assets are compiled into your application only when
+`mount_mcp_card_previewer` is called, so the `flag?(:release)` check above leaves them
+out of release builds. The index is served without authentication, so don't mount it in
+production: it lists your card tools and their descriptions.
+
 ### Connecting a client
 
 Point any MCP client that supports Streamable HTTP at the mounted path, for example

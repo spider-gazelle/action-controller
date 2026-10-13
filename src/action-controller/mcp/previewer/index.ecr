@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card previewer</title>
+<style><%= styles %></style>
+</head>
+<body class="index">
+<header class="bar">
+  <h1>Card previewer</h1>
+  <span class="muted">MCP server <code><%= h mcp %></code></span>
+</header>
+<main class="cards">
+<% if MCPServer.ui_base.nil? %>
+  <p class="notice error">Cards aren't served: set <code>ActionController::MCPServer.ui_base</code> to the folder of your cards.</p>
+<% end %>
+<% if cards.empty? %>
+  <p class="notice">No tools render a card. Add one with <code>@[AC::MCP(ui: "bookings/card.html")]</code>.</p>
+<% end %>
+<% cards.each do |card| %>
+  <section class="card" data-card="<%= h card.uri %>">
+    <h2><code><%= h card.uri %></code></h2>
+    <% unless card.found %><p class="notice error">Card file not found in <code>ui_base</code>.</p><% end %>
+    <ul class="tools">
+    <% card.tools.each do |(toolbox, tool)| %>
+      <li>
+        <a class="tool-head" href="<%= h tool_path(URI.encode_path_segment(tool.name)) %>" data-tool="<%= h tool.name %>">
+          <span class="verb verb-<%= h tool.verb.downcase %>"><%= h tool.verb.upcase %></span>
+          <code class="route"><%= h tool.path %></code>
+          <strong><%= h(tool.title || tool.name) %></strong>
+        </a>
+        <span class="muted"><%= h tool.name %> · <%= h toolbox.name %><%= " · not a root tool" unless tool.root? %></span>
+        <% if summary = tool.description.try(&.lines.first?) %><p><%= h summary %></p><% end %>
+      </li>
+    <% end %>
+    </ul>
+  </section>
+<% end %>
+<% unless card_tools.empty? %>
+  <section class="card">
+    <h2>Card-only tools</h2>
+    <p class="muted">Hidden from the model (<code>visibility: :card</code>), cards call these.</p>
+    <ul class="tools">
+    <% card_tools.each do |(toolbox, tool)| %>
+      <li>
+        <span class="tool-head">
+          <span class="verb verb-<%= h tool.verb.downcase %>"><%= h tool.verb.upcase %></span>
+          <code class="route"><%= h tool.path %></code>
+          <strong><%= h(tool.title || tool.name) %></strong>
+        </span>
+        <span class="muted"><%= h tool.name %> · <%= h toolbox.name %></span>
+      </li>
+    <% end %>
+    </ul>
+  </section>
+<% end %>
+</main>
+</body>
+</html>
