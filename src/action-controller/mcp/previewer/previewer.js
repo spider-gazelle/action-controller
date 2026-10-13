@@ -57,7 +57,6 @@
   const query = new URLSearchParams(location.search);
   const stage = $("#stage");
   const device = $("#device");
-  const deviceWrap = $("#device-wrap");
   const statusText = $("#status");
 
   const state = {
@@ -441,7 +440,6 @@
         case "ui/notifications/size-changed":
           if (state.displayMode === "inline" && params.height) {
             this.iframe.style.height = `${Math.max(40, Math.ceil(params.height))}px`;
-            fit();
           }
           break;
         case "ui/notifications/request-teardown":
@@ -778,15 +776,11 @@
     if (bridge) bridge.contextChanged();
   }
 
-  // scales the device to fit the stage, the card still lays out at the viewport width
+  // the card always lays out at the viewport's true width, the stage scrolls when it
+  // doesn't fit. Scaling it instead would break clicks from browser automation (they
+  // ignore transforms on a frame's ancestors) and make screenshots depend on the window
   function fit() {
-    const viewport = VIEWPORTS[state.viewport];
-    device.style.width = `${viewport.width}px`;
-    const available = stage.clientWidth - 32;
-    const scale = Math.min(1, available / viewport.width);
-    device.style.transform = scale < 1 ? `scale(${scale})` : "";
-    deviceWrap.style.width = `${viewport.width * scale}px`;
-    deviceWrap.style.height = `${device.offsetHeight * scale}px`;
+    device.style.width = `${VIEWPORTS[state.viewport].width}px`;
   }
 
   function applyView() {
@@ -944,8 +938,6 @@
       });
     }
     for (const button of document.querySelectorAll("[data-tab]")) button.addEventListener("click", () => selectTab(button.dataset.tab));
-    new ResizeObserver(fit).observe(stage);
-    new ResizeObserver(fit).observe(device);
 
     applyView();
     if (!tool.found) log("host", `${tool.ui} wasn't found in MCPServer.ui_base`, undefined, "warn");

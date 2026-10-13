@@ -73,9 +73,8 @@ button.secondary { background: transparent; color: var(--accent); }
 .segmented button:last-child { border-radius: 0 5px 5px 0; }
 .segmented button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 #status[data-error] { color: var(--danger); }
-#stage { background: var(--stage); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow: hidden; }
-#device-wrap { margin: 0 auto; overflow: hidden; }
-#device { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); transform-origin: top left; }
+#stage { background: var(--stage); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; overflow-x: auto; }
+#device { margin: 0 auto; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); }
 #stage[data-theme="dark"] #device { background: #1a1a1a; }
 #stage[data-theme="light"] #device { background: #ffffff; }
 #device iframe { display: block; width: 100%; height: 160px; border: 0; }
