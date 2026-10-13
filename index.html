@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Crystal Docs 1.20.3">
+<meta name="generator" content="Crystal Docs 1.21.0">
 <meta name="crystal_docs.project_version" content="master">
 <meta name="crystal_docs.project_name" content="action-controller">
 
@@ -884,6 +884,45 @@ opening their toolbox, unless annotated <code>root: false</code>.</li>
 time). Nothing outside <code>ui_base</code> is served. Hosts without MCP Apps support ignore the
 card metadata and show the text result.</li>
 </ul>
+<h4><a id="previewing-cards" class="anchor" href="#previewing-cards">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Previewing cards</h4>
+<p>The card previewer is a test harness that renders cards in your browser, as a host would.
+Mount it in development:</p>
+<pre><code class="language-crystal">server.run <span class="k">do</span>
+  <span class="o">{%</span> <span class="k">unless</span> flag?(<span class="n">:release</span>) <span class="o">%}</span>
+    server.mount_mcp_card_previewer(<span class="s">&quot;/mcp/card/preview&quot;</span>)
+  <span class="o">{%</span> <span class="k">end</span> <span class="o">%}</span>
+<span class="k">end</span></code></pre>
+<p><code>/mcp/card/preview</code> lists the cards and the tools that render them. A tool's page has a
+form for its arguments and renders the card once the required arguments are filled in,
+straight away when they're all optional. Switch between desktop, tablet and mobile
+viewports and light and dark themes, and inspect the messages between the card and the
+host, the tool result and anything the card sends to the model.</p>
+<p>The page is an MCP client of the global MCP server, at the path given to
+<code>MCPServer.mount</code> (mount it first, or pass <code>mcp: &quot;/prefix/mcp&quot;</code>). It initializes a session, calls the tool, reads
+the card and runs it in a sandboxed iframe with the card's CSP. Tools the card calls go
+through the same session, with the rules hosts apply: only listed tools, not
+<code>visibility: :model</code> tools. Add request headers, such as <code>Authorization</code>, in the page;
+they're kept for the browser tab. Cookies are sent automatically.</p>
+<p>Everything can be set in the URL, for links and automated tests:</p>
+<pre><code class="language-crystal"><span class="s">/mcp/</span>card<span class="o">/</span>preview<span class="o">/</span>tools<span class="o">/</span>bookings_show?id<span class="o">=</span><span class="n">42</span><span class="o">&amp;</span>viewport_size<span class="o">=</span>mobile<span class="o">&amp;</span>theme<span class="o">=</span>dark<span class="o">&amp;</span>header.<span class="t">Authorization</span><span class="o">=</span><span class="t">Bearer</span><span class="o">%</span><span class="n">20</span>token</code></pre>
+<ul>
+<li>tool arguments by name, objects and arrays as JSON</li>
+<li><code>viewport_size</code>: <code>desktop</code> (1280px), <code>tablet</code> (768px) or <code>mobile</code> (375px)</li>
+<li><code>theme</code>: <code>light</code> or <code>dark</code></li>
+<li><code>header.&lt;Name&gt;</code>: a request header. Tokens in URLs end up in logs and browser history,
+so use test credentials</li>
+</ul>
+<p>Tests can wait for <code>#stage[data-state=&quot;ready&quot;]</code> (or <code>&quot;error&quot;</code>), then inspect the card in
+the <code>#card</code> iframe. <code>window.cardPreviewer</code> exposes the <code>state</code>, the tool <code>result</code> and the
+message <code>log</code>.</p>
+<p>The previewer's pages and assets are compiled into your application only when
+<code>mount_mcp_card_previewer</code> is called, so the <code>flag?(:release)</code> check above leaves them
+out of release builds. The index is served without authentication, so don't mount it in
+production: it lists your card tools and their descriptions.</p>
 <h3><a id="connecting-a-client" class="anchor" href="#connecting-a-client">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
