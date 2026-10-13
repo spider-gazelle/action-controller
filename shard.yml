@@ -1,13 +1,15 @@
 name: action-controller
-version: 9.1.2
+version: 9.1.3
 
 dependencies:
   habitat:
     github: luckyframework/habitat
     version: ">= 0.4"
+
   lucky_router:
-    github: stakach/lucky_router
-    branch: codex/router-performance
+    github: luckyframework/lucky_router
+    branch: main
+
   exception_page:
     github: crystal-loot/exception_page
     version: ">= 0.5"
