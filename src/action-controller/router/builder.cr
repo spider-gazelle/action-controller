@@ -877,7 +877,7 @@ module ActionController::Route::Builder
                 # HEAD requests have no body to serialise, so the whole block -
                 # including any `offload_responses` offload - is skipped for them.
                 unless @__head_request__ || result.nil?
-                  {% if flag?(:execution_context) && bound_execution_context == nil && ::ActionController::ExecutionContext::OFFLOAD_RESPONSES[0] %}
+                  {% if ::ActionController::ExecutionContext::ENABLED && bound_execution_context == nil && ::ActionController::ExecutionContext::OFFLOAD_RESPONSES[0] %}
                     ::ActionController::ExecutionContext.offload do
                       __transform_response__(responds_with, response, result, {{method_name.id.symbolize}})
                     end

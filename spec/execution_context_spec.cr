@@ -1,7 +1,7 @@
 require "./spec_helper"
 
-# named context used by the specs below; with the flag it builds a real context,
-# without it this only records the name so the controller routes still validate.
+# named context used by the specs below; with execution contexts it builds a real
+# context, without them this only records the name so the controller routes still validate.
 ActionController::ExecutionContext.define "spec-ctx", parallelism: 2
 
 # records the execution context the most recent action ran in
@@ -15,28 +15,28 @@ class SpecContextController < ActionController::Base
 
   @[AC::Route::GET("/")]
   def index : NamedTuple(ok: Bool)
-    {% if flag?(:execution_context) %}SPEC_ACTION_CONTEXT << Fiber.current.execution_context.name{% end %}
+    {% if ActionController::ExecutionContext::ENABLED %}SPEC_ACTION_CONTEXT << Fiber.current.execution_context.name{% end %}
     {ok: true}
   end
 
   @[AC::Route::GET("/override", execution_context: "spec-ctx")]
   def override : Array(Int32)
-    {% if flag?(:execution_context) %}SPEC_ACTION_CONTEXT << Fiber.current.execution_context.name{% end %}
+    {% if ActionController::ExecutionContext::ENABLED %}SPEC_ACTION_CONTEXT << Fiber.current.execution_context.name{% end %}
     [1, 2, 3]
   end
 end
 
-# These specs are flag-agnostic. Without `-Dexecution_context` the configuration
-# is a no-op and `offload` runs the block inline; with the flag the block is piped
+# These specs run in both modes. Without execution contexts the configuration
+# is a no-op and `offload` runs the block inline; with them the block is piped
 # to the relevant execution context. The asserted behaviour holds in both cases.
-# Context-specific assertions are guarded by the flag.
+# Context-specific assertions are guarded by `ExecutionContext::ENABLED`.
 describe ActionController::ExecutionContext do
   client = AC::SpecHelper.client
 
   it "exposes configurable response parallelism" do
     ActionController::ExecutionContext.response_parallelism = 9
 
-    {% if flag?(:execution_context) %}
+    {% if ActionController::ExecutionContext::ENABLED %}
       ActionController::ExecutionContext.response_parallelism.should eq(9)
     {% else %}
       ActionController::ExecutionContext.response_parallelism.should eq(4)
@@ -66,7 +66,7 @@ describe ActionController::ExecutionContext do
     result.body.should eq("")
   end
 
-  {% if flag?(:execution_context) %}
+  {% if ActionController::ExecutionContext::ENABLED %}
     it "lazily creates a distinct, memoized named context" do
       ctx = ActionController::ExecutionContext.context_spec_ctx
       ctx.should be_a(::Fiber::ExecutionContext::Parallel)

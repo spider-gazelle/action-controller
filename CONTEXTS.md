@@ -12,16 +12,19 @@ context directly, there is no per-request lookup.
 
 ## Requirements
 
-Execution contexts require both compiler flags:
+Crystal 1.21 and later run on execution contexts by default, no flags needed.
+Earlier versions need both compiler flags:
 
 ```sh
 crystal build -Dpreview_mt -Dexecution_context src/app.cr
 ```
 
-Without these flags **every entry point below is a no-op**: contexts are not
-created, configuration is ignored, and responses serialise inline. Code that
+`ActionController::ExecutionContext::ENABLED` says whether they're available. It's
+false before 1.21 without the flags, and when the app opts out with `-Dwithout_mt`
+or `-Dpreview_mt` alone. Then **every entry point below is a no-op**: contexts are
+not created, configuration is ignored, and responses serialise inline. Code that
 references the API still compiles unchanged, so a shard can adopt it without
-forcing the flags on its users.
+forcing execution contexts on its users.
 
 ## Concepts
 
@@ -146,4 +149,4 @@ unaffected — they always run the whole request in their own context.
 | `ExecutionContext.offload_responses` | macro | off | offload unbound responses to `response_context` |
 | `ExecutionContext.response_parallelism = n` | runtime | 4 | size of the shared response context |
 
-All of the above are no-ops without `-Dpreview_mt -Dexecution_context`.
+All of the above are no-ops when `ExecutionContext::ENABLED` is false.

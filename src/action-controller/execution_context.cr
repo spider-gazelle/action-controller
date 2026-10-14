@@ -1,7 +1,7 @@
 module ActionController
   # Manages the optional response execution context(s).
   #
-  # When compiled with `-Dpreview_mt -Dexecution_context` the response body
+  # When execution contexts are enabled (see `ENABLED`) the response body
   # serialisation (typically converting a handler's return value into JSON) runs
   # in a dedicated parallel execution context. Moving the serialisation off the
   # request fiber means a large, CPU heavy JSON response is serialised in
@@ -30,9 +30,19 @@ module ActionController
   # `serialize_response` simply yields inline, so third party code referencing
   # this module still compiles unchanged.
   module ExecutionContext
+    # Are execution contexts available? The Crystal runtime uses them by default
+    # since 1.21 (unless built with `-Dwithout_mt` or `-Dpreview_mt` alone),
+    # earlier versions need `-Dpreview_mt -Dexecution_context`.
+    # A literal so macros can read it (`{% if ENABLED %}`).
+    {% if flag?(:execution_context) || (compare_versions(Crystal::VERSION, "1.21.0") >= 0 && !flag?(:without_mt) && !flag?(:preview_mt)) %}
+      ENABLED = true
+    {% else %}
+      ENABLED = false
+    {% end %}
+
     # :nodoc:
     # compile-time registry of named contexts: name => default parallelism.
-    # declared regardless of the compilation flags so the route builder can
+    # declared whether or not contexts are enabled so the route builder can
     # validate names in both modes.
     CONTEXTS = {} of Nil => Nil
 
@@ -57,8 +67,8 @@ module ActionController
     # would otherwise cause head-of-line blocking.
     #
     # This is a compile-time switch - call it before your controllers are
-    # finalised (e.g. in config.cr). It has no effect without the execution
-    # context compilation flags.
+    # finalised (e.g. in config.cr). It has no effect when execution
+    # contexts are disabled.
     #
     # ```
     # ActionController::ExecutionContext.offload_responses
@@ -74,8 +84,8 @@ module ActionController
     # ```
     #
     # The size can be overridden at runtime before the context is first used via
-    # `ActionController::ExecutionContext.parallelism("reports", n)`. Without the
-    # execution context compilation flags this only records the name (so routes
+    # `ActionController::ExecutionContext.parallelism("reports", n)`. When execution
+    # contexts are disabled this only records the name (so routes
     # referencing it still validate) and creates no context.
     macro define(name, parallelism = 4)
       {% san = name.gsub(/\W/, "_") %}
@@ -86,7 +96,7 @@ module ActionController
       {% ::ActionController::ExecutionContext::CONTEXT_METHODS[san] = name %}
       {% ::ActionController::ExecutionContext::CONTEXTS[name] = parallelism %}
 
-      {% if flag?(:execution_context) %}
+      {% if ::ActionController::ExecutionContext::ENABLED %}
         module ActionController::ExecutionContext
           @@context_{{san.id}} : ::Fiber::ExecutionContext::Parallel? = nil
 
@@ -111,9 +121,9 @@ module ActionController
     # propagated back to the calling fiber. Implemented as a macro so the body is
     # not captured as a separate closure.
     #
-    # Without the execution context compilation flags the block simply runs inline.
+    # When execution contexts are disabled the block simply runs inline.
     macro offload(context = nil, &block)
-      {% if flag?(:execution_context) %}
+      {% if ::ActionController::ExecutionContext::ENABLED %}
         # buffered (capacity 1) so the worker can hand back the result and return
         # its stack to the pool without waiting for a rendezvous.
         %done = ::Channel(::Exception?).new(1)
@@ -131,7 +141,7 @@ module ActionController
       {% end %}
     end
 
-    {% if flag?(:execution_context) %}
+    {% if ::ActionController::ExecutionContext::ENABLED %}
       # execution contexts are available, responses are serialised separately
 
       # guards lazy creation of the contexts

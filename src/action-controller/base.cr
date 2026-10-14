@@ -36,7 +36,7 @@ abstract class ActionController::Base
   #
   # The context must be declared with `ActionController::ExecutionContext.define`.
   # A per-route `execution_context:` annotation takes precedence over this. Has
-  # no effect unless compiled with `-Dpreview_mt -Dexecution_context`.
+  # no effect unless execution contexts are enabled (`ExecutionContext::ENABLED`).
   #
   # ```
   # class Reports < ActionController::Base
@@ -744,7 +744,7 @@ abstract class ActionController::Base
           {% route = (NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/$/, "").gsub(/\/\//, "/") %}
           {% dispatch = (http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\W/, "_").id %}
 
-          {% if flag?(:execution_context) && execution_context != nil && !is_websocket %}
+          {% if ::ActionController::ExecutionContext::ENABLED && execution_context != nil && !is_websocket %}
             # bound to a dedicated execution context: run the whole request there
             # so the response payload is not separately offloaded to the default
             # context (avoids a redundant hop and head-of-line blocking).
