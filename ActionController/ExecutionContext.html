@@ -466,7 +466,7 @@
   </h2>
 
   <p>Manages the optional response execution context(s).</p>
-<p>When compiled with <code>-Dpreview_mt -Dexecution_context</code> the response body
+<p>When execution contexts are enabled (see <code><a href="../ActionController/ExecutionContext.html#ENABLED">ENABLED</a></code>) the response body
 serialisation (typically converting a handler's return value into JSON) runs
 in a dedicated parallel execution context. Moving the serialisation off the
 request fiber means a large, CPU heavy JSON response is serialised in
@@ -480,7 +480,7 @@ getter directly, there is no per-request lookup. Named contexts are created
 once, lazily, on first use.</p>
 <p>Routes that are <strong>not</strong> bound to a context serialise their response inline on
 the request fiber by default. Call <code><a href="../ActionController/ExecutionContext.html#offload_responses%28enabled%3Dtrue%29-macro">offload_responses</a></code> to instead offload
-those responses to the shared <code>response_context</code> (useful when unbound routes
+those responses to the shared <code><a href="../ActionController/ExecutionContext.html#response_context%3AFiber%3A%3AExecutionContext%3A%3AParallel-class-method">.response_context</a></code> (useful when unbound routes
 can return large payloads).</p>
 <pre><code class="language-crystal"><span class="c"># configure your contexts (e.g. in config.cr), names are string literals</span>
 <span class="t">ActionController</span><span class="t">::</span><span class="t">ExecutionContext</span>.define <span class="s">&quot;reports&quot;</span>, parallelism: <span class="n">2</span>
@@ -514,7 +514,7 @@ this module still compiles unchanged.</p>
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/46cfd6da8ff18a7c0d36bdd08751bafe1f3889aa/src/action-controller/execution_context.cr#L32" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/execution_context.cr#L32" target="_blank">
         action-controller/execution_context.cr
       </a>
     
@@ -522,6 +522,25 @@ this module still compiles unchanged.</p>
   
 
 
+
+  
+    <h2>
+      <a id="constant-summary" class="anchor" href="#constant-summary">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>
+      Constant Summary
+    </h2>
+  
+  <dl>
+    
+      <dt class="entry-const" id="ENABLED">
+        <strong>ENABLED</strong> = <code><span class="n">true</span></code>
+      </dt>
+      
+    
+  </dl>
 
 
 
@@ -541,14 +560,28 @@ this module still compiles unchanged.</p>
       <li class="entry-summary">
         <a href="#parallelism%28name%3AString%2Csize%3AInt32%29%3AInt32-class-method" class="signature"><strong>.parallelism</strong>(name : String, size : Int32) : Int32</a>
         
-          <div class="summary"><p>no-op: execution contexts are not enabled</p></div>
+          <div class="summary"><p>override the parallelism of a named context before it is first used (e.g.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#response_context%3AFiber%3A%3AExecutionContext%3A%3AParallel-class-method" class="signature"><strong>.response_context</strong> : Fiber::ExecutionContext::Parallel</a>
+        
+          <div class="summary"><p>the default execution context response bodies are serialised in</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#response_parallelism%3AInt32-class-method" class="signature"><strong>.response_parallelism</strong> : Int32</a>
+        
+          <div class="summary"><p>the number of parallel schedulers used to serialise response bodies.</p></div>
         
       </li>
     
       <li class="entry-summary">
         <a href="#response_parallelism%3D%28size%3AInt32%29%3AInt32-class-method" class="signature"><strong>.response_parallelism=</strong>(size : Int32) : Int32</a>
         
-          <div class="summary"><p>no-op: execution contexts are not enabled</p></div>
+          <div class="summary"><p>configure the number of parallel schedulers used to serialise responses</p></div>
         
       </li>
     
@@ -576,14 +609,14 @@ this module still compiles unchanged.</p>
       <li class="entry-summary">
         <a href="#offload%28context%3Dnil%2C%26block%29-macro" class="signature"><strong>offload</strong>(context = <span class="n">nil</span>, &block)</a>
         
-          <div class="summary"><p>run a block in an execution context (defaulting to the shared <code>response_context</code>), blocking the calling fiber until it completes.</p></div>
+          <div class="summary"><p>run a block in an execution context (defaulting to the shared <code><a href="../ActionController/ExecutionContext.html#response_context%3AFiber%3A%3AExecutionContext%3A%3AParallel-class-method">.response_context</a></code>), blocking the calling fiber until it completes.</p></div>
         
       </li>
     
       <li class="entry-summary">
         <a href="#offload_responses%28enabled%3Dtrue%29-macro" class="signature"><strong>offload_responses</strong>(enabled = <span class="n">true</span>)</a>
         
-          <div class="summary"><p>enable offloading of responses to the shared <code>response_context</code> for routes and controllers that are <strong>not</strong> bound to a dedicated execution context.</p></div>
+          <div class="summary"><p>enable offloading of responses to the shared <code><a href="../ActionController/ExecutionContext.html#response_context%3AFiber%3A%3AExecutionContext%3A%3AParallel-class-method">.response_context</a></code> for routes and controllers that are <strong>not</strong> bound to a dedicated execution context.</p></div>
         
       </li>
     
@@ -619,13 +652,58 @@ this module still compiles unchanged.</p>
       
         <div class="doc">
           
-          <p>no-op: execution contexts are not enabled</p>
+          <p>override the parallelism of a named context before it is first used (e.g.
+to size it from an environment variable). Has no effect once the context
+has been created.</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/46cfd6da8ff18a7c0d36bdd08751bafe1f3889aa/src/action-controller/execution_context.cr#L134" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/execution_context.cr#L144" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="response_context:Fiber::ExecutionContext::Parallel-class-method">
+      <div class="signature">
+        
+        def self.<strong>response_context</strong> : Fiber::ExecutionContext::Parallel
+
+        <a class="method-permalink" href="#response_context%3AFiber%3A%3AExecutionContext%3A%3AParallel-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the default execution context response bodies are serialised in</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/execution_context.cr#L144" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="response_parallelism:Int32-class-method">
+      <div class="signature">
+        
+        def self.<strong>response_parallelism</strong> : Int32
+
+        <a class="method-permalink" href="#response_parallelism%3AInt32-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the number of parallel schedulers used to serialise response bodies.
+must be configured before the server starts as the context is built lazily.</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/execution_context.cr#L144" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -640,13 +718,13 @@ this module still compiles unchanged.</p>
       
         <div class="doc">
           
-          <p>no-op: execution contexts are not enabled</p>
+          <p>configure the number of parallel schedulers used to serialise responses</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/46cfd6da8ff18a7c0d36bdd08751bafe1f3889aa/src/action-controller/execution_context.cr#L134" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/execution_context.cr#L144" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -676,15 +754,15 @@ this module still compiles unchanged.</p>
           <p>define a named execution context, created once and lazily on first use.</p>
 <pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">ExecutionContext</span>.define <span class="s">&quot;reports&quot;</span>, parallelism: <span class="n">2</span></code></pre>
 <p>The size can be overridden at runtime before the context is first used via
-<code><a href="../ActionController/ExecutionContext.html#parallelism%28name%3AString%2Csize%3AInt32%29%3AInt32-class-method">ActionController::ExecutionContext.parallelism(&quot;reports&quot;, n)</a></code>. Without the
-execution context compilation flags this only records the name (so routes
+<code><a href="../ActionController/ExecutionContext.html#parallelism%28name%3AString%2Csize%3AInt32%29%3AInt32-class-method">ActionController::ExecutionContext.parallelism(&quot;reports&quot;, n)</a></code>. When execution
+contexts are disabled this only records the name (so routes
 referencing it still validate) and creates no context.</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/46cfd6da8ff18a7c0d36bdd08751bafe1f3889aa/src/action-controller/execution_context.cr#L80" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/execution_context.cr#L90" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -700,7 +778,7 @@ referencing it still validate) and creates no context.</p>
         <div class="doc">
           
           <p>run a block in an execution context (defaulting to the shared
-<code>response_context</code>), blocking the calling fiber until it completes.</p>
+<code><a href="../ActionController/ExecutionContext.html#response_context%3AFiber%3A%3AExecutionContext%3A%3AParallel-class-method">.response_context</a></code>), blocking the calling fiber until it completes.</p>
 <p>Used both to offload just the response serialisation (default context) and
 to run a whole request in a controller/route bound context. The block is
 <strong>inlined</strong> into the fiber spawned in the chosen context - the calling fiber
@@ -708,13 +786,13 @@ blocks on a channel until it completes, freeing it to handle other requests
 while the potentially CPU heavy work runs in parallel. Any error is
 propagated back to the calling fiber. Implemented as a macro so the body is
 not captured as a separate closure.</p>
-<p>Without the execution context compilation flags the block simply runs inline.</p>
+<p>When execution contexts are disabled the block simply runs inline.</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/46cfd6da8ff18a7c0d36bdd08751bafe1f3889aa/src/action-controller/execution_context.cr#L115" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/execution_context.cr#L125" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -729,22 +807,22 @@ not captured as a separate closure.</p>
       
         <div class="doc">
           
-          <p>enable offloading of responses to the shared <code>response_context</code> for routes
+          <p>enable offloading of responses to the shared <code><a href="../ActionController/ExecutionContext.html#response_context%3AFiber%3A%3AExecutionContext%3A%3AParallel-class-method">.response_context</a></code> for routes
 and controllers that are <strong>not</strong> bound to a dedicated execution context.</p>
 <p>Off by default: by default an unbound response is serialised inline on the
 request fiber (no spawn, no channel) which is cheaper for small responses.
 Enable it when your unbound routes can return large, CPU heavy payloads that
 would otherwise cause head-of-line blocking.</p>
 <p>This is a compile-time switch - call it before your controllers are
-finalised (e.g. in config.cr). It has no effect without the execution
-context compilation flags.</p>
+finalised (e.g. in config.cr). It has no effect when execution
+contexts are disabled.</p>
 <pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">ExecutionContext</span>.offload_responses</code></pre>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/46cfd6da8ff18a7c0d36bdd08751bafe1f3889aa/src/action-controller/execution_context.cr#L66" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/execution_context.cr#L76" target="_blank">View source</a>]
         
       </div>
     </div>
