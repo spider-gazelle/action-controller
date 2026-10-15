@@ -43,7 +43,7 @@ Mounts can be nested or repeated. Mount-only targets are excluded from standalon
 
 Parameterized mounts such as `mount "/accounts/:account_id/auth", OAuth2` bind those parameters for controller filters and actions, OpenAPI and MCP. Mounts must preserve any required parameters from the target's original routes as required parameters. Cycles, ambiguous parameter names and conflicting public operations are rejected. Explicit composition also checks equivalent parameterized routes and generated HEAD operations. MCP endpoint conflicts are checked against the actual router before endpoints are registered.
 
-Optional mount segments retain the action's argument requirements. If a query argument becomes an optional path segment, OpenAPI describes its query form on URLs that omit the segment; required action and filter arguments stay required in MCP. Replacing a base that contains an optional parameter moves declared arguments back to queries. If the replacement makes that segment mandatory, tools and prompts require its value. MCP endpoint listings omit only arguments bound by the current session URL, so sessions without an optional segment can still supply that argument.
+Optional mount segments retain the action's argument requirements. If a query argument becomes an optional path segment, OpenAPI describes its query form on URLs that omit the segment; required action and filter arguments stay required in MCP. Replacing a base that contains an optional parameter moves declared arguments back to queries. If the replacement makes that segment mandatory, tools and prompts require its value. MCP endpoint listings omit only arguments bound by the request URL, so clients connected without an optional segment can still supply that argument.
 
 Use `route_path(:action, ...)` inside an action to generate a URL using the current mounted base and bound path parameters:
 
@@ -76,7 +76,7 @@ instance = OtherAC::App::OAuth2.spec_instance(
 instance.route_path(:token) # => "/myapp/auth/token"
 ```
 
-OpenAPI uses public mounted paths and distinct operation IDs. MCP uses the same composition for tool calls, prompts, internal instructions, and relocated controller endpoints. Repeated mounts receive separate toolboxes and unique tool/prompt names. Existing visibility annotations and authentication settings still apply; the host owns global MCP configuration, session settings and UI asset locations.
+OpenAPI uses public mounted paths and distinct operation IDs. MCP uses the same composition for tool calls, prompts, internal instructions, and relocated controller endpoints. Repeated mounts receive separate toolboxes and unique tool/prompt names. Existing visibility annotations and authentication settings still apply; the host owns global MCP configuration and UI asset locations.
 
 For controller inheritance, the nearest controller with an `@[AC::MCP(...)]` annotation supplies defaults for both inherited and newly declared actions. A child controller annotation replaces those defaults; method annotations take precedence. Icons use the nearest controller that declares them; a method's icons take precedence. Children can change or disable inherited endpoints, enable an endpoint using inherited instructions, and override the instructions method.
 
@@ -185,27 +185,28 @@ Streamable HTTP transport.
 
 Controllers are presented as **toolboxes**, their route methods as **tools**, and methods
 annotated with `@[AC::MCP(prompt: true)]` as **prompts**. To keep the model's context
-lean, a session starts with just five tools, plus any [root items](#root-tools-and-prompts):
+lean, only four tools are listed, plus any [root items](#root-tools-and-prompts):
 
 | tool | description |
 |------|-------------|
 | `list_toolboxes` | lists the controllers, their descriptions (the class comment), and their tool and prompt counts |
-| `open_toolbox(name)` | adds the controller's tools and prompts to the session, sends `notifications/tools/list_changed` and/or `notifications/prompts/list_changed`, and returns the tool definitions |
-| `close_toolbox(name)` | removes them again and sends the same notifications |
-| `call_read_only(name, arguments)` | runs a read only tool from an open toolbox (or a root tool), for clients that don't refresh their tools when notified |
-| `call_tool(name, arguments)` | runs any tool from an open toolbox (or a root tool), the same way. Both proxies refuse `visibility: :card` tools |
+| `open_toolbox(name)` | returns the definitions of the controller's tools and the names of its prompts |
+| `call_read_only(name, arguments)` | runs a read only tool from a toolbox |
+| `call_tool(name, arguments)` | runs any tool from a toolbox. Both proxies refuse `visibility: :card` tools |
 
-Some MCP clients (currently including Claude and ChatGPT) don't re-fetch their tools when
-notified, so the opened tools never appear. `open_toolbox` returns each tool's name,
-description, `inputSchema`, annotations and `proxy` (the proxy tool to run it with), and
-the model runs them through the proxies instead. Calls through a proxy behave exactly
-like direct calls.
+The server is stateless: opening a toolbox changes nothing, so the tool list is the same
+for every request and any instance of your application can serve any request.
+`open_toolbox` returns each tool's name, description, `inputSchema`, annotations and
+`proxy` (the proxy tool to run it with), and the model runs them through the proxies.
+Calls through a proxy behave exactly like direct calls, and clients can also call any
+tool directly. Every prompt is listed, as users pick prompts they don't use the model's
+context. Card only tools (`visibility: :card`) are listed too, so cards can call them.
 
 There are two proxies so clients can tell reads from writes: `call_read_only` is hinted
 `readOnlyHint: true` (so ChatGPT, for example, doesn't ask the user to confirm each call)
 and refuses tools that aren't read only. A tool is read only if it's a GET route,
-unless overridden with `@[AC::MCP(behaviour:)]`. Disable both proxies with
-`MCPServer.tool_proxy = false` once your clients support `list_changed`.
+unless overridden with `@[AC::MCP(behaviour:)]`. `MCPServer.tool_proxy = false` removes
+the toolboxes, listing every tool instead.
 
 Tool calls and prompts are dispatched in-process through the application router, so
 filters, authentication, controller exception handlers and responders behave exactly
@@ -224,7 +225,8 @@ ActionController::MCPServer.mount(server, "/mcp")
 server.run
 ```
 
-`mount` registers `POST`, `GET` and `DELETE` handlers at the path provided, the OAuth
+`mount` registers a `POST` handler at the path provided (`GET` and `DELETE` respond
+`405`), the OAuth
 protected resource metadata at `/.well-known/oauth-protected-resource<path>`, and any
 [controller endpoints](#controller-endpoints) (`endpoints: false` skips them).
 
@@ -340,7 +342,7 @@ end
 ### Root tools and prompts
 
 Items marked `root: true` are always available, without opening a toolbox. Use this for
-the handful of tools or prompts that most sessions need:
+the handful of tools or prompts that most conversations need:
 
 ```crystal
 class Widgets < AC::Base
@@ -396,13 +398,12 @@ end
 Connecting to `/rooms/boardroom/mcp` lists `state` and `lights` directly:
 
 * **Bound path params:** the base path params (`room_id`) come from the endpoint URL.
-  They're left out of the tool arguments, and a session can only be used at the URL it
-  was created at.
+  They're left out of the tool arguments, every request is bound to the URL it was sent to.
 * **No toolboxes:** there are no meta tools or proxies, every tool and prompt is listed,
   named by its method.
 * **Instructions:** the controller's doc comment is given to the model as the server's
   instructions, and the server is named after the controller. Define an `instructions`
-  method to build them for each session instead:
+  method to build them for each client instead:
 
   ```crystal
   # runs like a route when a client connects: filters run and path params are available
@@ -495,9 +496,10 @@ viewports and light and dark themes, and inspect the messages between the card a
 host, the tool result and anything the card sends to the model.
 
 The page is an MCP client of the global MCP server, at the path given to
-`MCPServer.mount` (mount it first, or pass `mcp: "/prefix/mcp"`). It initializes a session, calls the tool, reads
+`MCPServer.mount` (mount it first, or pass `mcp: "/prefix/mcp"`), using protocol version
+`2026-07-28`. It discovers the server, calls the tool, reads
 the card and runs it in a sandboxed iframe with the card's CSP. Tools the card calls go
-through the same session, with the rules hosts apply: only listed tools, not
+through the same client, with the rules hosts apply: only listed tools, not
 `visibility: :model` tools. Add request headers, such as `Authorization`, in the page;
 they're kept for the browser tab. Cookies are sent automatically.
 
@@ -695,7 +697,7 @@ ActionController::MCPServer.tap do |mcp|
   mcp.tool_proxy = true                           # the call_read_only and call_tool meta tools
   mcp.forward_headers = ["Authorization", "Cookie", "X-API-Key"] # copied onto tool requests
   mcp.allowed_origins = ["https://app.example.com"]              # "*" allows any origin
-  mcp.session_timeout = 30.minutes
+  mcp.cache_ttl = 5.minutes                       # how long 2026-07-28 clients cache lists (ttlMs)
   mcp.excluded_response_headers += ["X-Runtime"]  # left out of tool results, `*` matches a prefix
   mcp.icon "icons/logo.svg", sizes: ["any"]       # the server's icon, see Icons above
 
@@ -715,18 +717,22 @@ end
 
 ### Transport notes
 
-* Implements Streamable HTTP for protocol versions `2025-11-25`, `2025-06-18` and `2025-03-26`.
-* `POST` returns `application/json`, unless the call produced notifications and the client
-  accepts `text/event-stream`. In that case the notifications are streamed ahead of the result.
-* `GET` with `Accept: text/event-stream` opens a stream for server notifications.
-* `DELETE` ends the session.
+* Implements Streamable HTTP for protocol versions `2026-07-28`, `2025-11-25`, `2025-06-18` and `2025-03-26`.
+* **Stateless:** there are no sessions, so multi-node deployments don't need sticky sessions
+  or shared storage. When authentication is enabled every request is authenticated.
+* `2026-07-28` clients don't initialize: each request carries its protocol version and client
+  capabilities in `_meta`, and the `MCP-Protocol-Version`, `Mcp-Method` and `Mcp-Name` headers
+  must match the body (`400` otherwise). `server/discover` describes the server, results include
+  `resultType`, the server info in `_meta`, and lists `ttlMs` and `cacheScope` (`private` when
+  authentication is enabled). `subscriptions/listen` is acknowledged with nothing to notify,
+  as the lists never change.
+* Earlier versions start with `initialize`, which returns no `Mcp-Session-Id`. Any session id
+  a client sends is ignored, and clients without an `MCP-Protocol-Version` header are treated
+  as `2025-03-26`.
+* `POST` returns `application/json`. `GET` and `DELETE` respond `405`, there are no event
+  streams or sessions to end.
 * `Origin` headers must be same-origin or listed in `allowed_origins`, which protects against DNS rebinding.
-* Sessions are stored in memory per process. Multi-node deployments need sticky sessions.
-  Sessions are not credentials: when authentication is enabled every request must be authenticated.
 * Unhandled exceptions raised by a route are logged and returned as a generic `500` tool error.
-* Clients that support `notifications/tools/list_changed` see the tools added by
-  `open_toolbox` directly, others use `call_read_only` and `call_tool`. Prompts added by a toolbox need
-  `notifications/prompts/list_changed`. Root items don't require either.
 
 ### Tool results
 

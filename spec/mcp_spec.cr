@@ -5,14 +5,26 @@ require "file_utils"
 MCP_PORT = 6_123
 MCP_URI  = URI.parse("http://127.0.0.1:#{MCP_PORT}/mcp")
 
-# a minimal Streamable HTTP client
+MODERN_VERSION = "2026-07-28"
+
+# a minimal Streamable HTTP client.
+#
+# `modern: true` speaks 2026-07-28: there's no `initialize`, every request carries its
+# protocol version and client capabilities in `_meta` and the matching headers
 class MCPTestClient
+  # the legacy session id, if the server ever assigns one
   getter session_id : String? = nil
+
+  # the protocol version sent with each request, `nil` before initialization
+  getter protocol_version : String? = nil
 
   # credentials sent with each request, `nil` for none
   property authorization : String? = "Bearer token"
 
-  def initialize(@uri : URI = MCP_URI)
+  getter? modern : Bool
+
+  def initialize(@uri : URI = MCP_URI, @modern : Bool = false)
+    @protocol_version = MODERN_VERSION if @modern
   end
 
   def headers(accept = "application/json, text/event-stream", origin : String? = nil) : HTTP::Headers
@@ -22,25 +34,50 @@ class MCPTestClient
     }
     headers["Authorization"] = @authorization.as(String) if @authorization
     headers["Mcp-Session-Id"] = @session_id.as(String) if @session_id
+    headers["MCP-Protocol-Version"] = @protocol_version.as(String) if @protocol_version
     headers["Origin"] = origin if origin
     headers
   end
 
+  # modern requests also carry the `_meta` fields and the method and name headers
   def post(body, accept = "application/json, text/event-stream", origin = nil) : HTTP::Client::Response
-    HTTP::Client.post(@uri, headers: headers(accept, origin), body: body.to_json)
+    message = JSON.parse(body.to_json).as_h
+    headers = headers(accept, origin)
+    if modern? && (method = message["method"]?.try(&.as_s))
+      params = message["params"]?.try(&.as_h) || {} of String => JSON::Any
+      meta = params["_meta"]?.try(&.as_h) || {} of String => JSON::Any
+      meta["io.modelcontextprotocol/protocolVersion"] ||= JSON::Any.new(MODERN_VERSION)
+      meta["io.modelcontextprotocol/clientCapabilities"] ||= JSON.parse("{}")
+      params["_meta"] = JSON::Any.new(meta)
+      message["params"] = JSON::Any.new(params)
+      headers["Mcp-Method"] = method
+      if name = (params["name"]? || params["uri"]?).try(&.as_s?)
+        headers["Mcp-Name"] = name if {"tools/call", "prompts/get", "resources/read"}.includes?(method)
+      end
+    end
+    HTTP::Client.post(@uri, headers: headers, body: message.to_json)
   end
 
-  # `ui: true` advertises MCP Apps support
+  # `ui: true` advertises MCP Apps support. Modern clients don't initialize, they
+  # discover the server instead
   def initialize_session(ui : Bool = false) : JSON::Any
     capabilities = ui ? JSON.parse(%({"extensions": {"io.modelcontextprotocol/ui": {"mimeTypes": ["text/html;profile=mcp-app"]}}})) : JSON.parse("{}")
+    if modern?
+      return JSON.parse(post({jsonrpc: "2.0", id: 1, method: "server/discover", params: {
+        _meta: {"io.modelcontextprotocol/clientCapabilities" => capabilities},
+      }}).body)
+    end
+
     response = post({jsonrpc: "2.0", id: 1, method: "initialize", params: {
       protocolVersion: "2025-11-25",
       capabilities:    capabilities,
       clientInfo:      {name: "spec", version: "1.0"},
     }})
-    @session_id = response.headers["Mcp-Session-Id"]
+    @session_id = response.headers["Mcp-Session-Id"]?
+    result = JSON.parse(response.body)
+    @protocol_version = result["result"]?.try(&.["protocolVersion"].as_s)
     post({jsonrpc: "2.0", method: "notifications/initialized"}).status_code.should eq 202
-    JSON.parse(response.body)
+    result
   end
 
   # returns the JSON-RPC messages in the response
@@ -65,13 +102,14 @@ class MCPTestClient
     request("tools/list").last["result"]["tools"].as_a
   end
 
+  # leaves out the tools of other spec files, as the description covers every controller
   def tool_names : Array(String)
-    tools.map(&.["name"].as_s)
+    tools.map(&.["name"].as_s).reject(&.starts_with?("composition_"))
   end
 end
 
-# meta tools followed by the root tools
-DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "close_toolbox", "call_read_only", "call_tool", "mcp_widgets_colours", "mcp_ui_show", "mcp_ui_check_in", "mcp_ui_rooms", "mcp_root_time", "mcp_root_pixel"]
+# meta tools followed by the root tools, the same for every request
+DEFAULT_TOOLS = ["list_toolboxes", "open_toolbox", "call_read_only", "call_tool", "mcp_widgets_colours", "mcp_ui_show", "mcp_ui_check_in", "mcp_ui_rooms", "mcp_root_time", "mcp_root_pixel"]
 
 MCP_INIT = {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}
 
@@ -210,27 +248,56 @@ describe ActionController::MCPServer do
   end
 
   describe "transport" do
-    it "initializes a session" do
+    it "initializes without a session" do
       client = MCPTestClient.new
       result = client.initialize_session["result"]
-      client.session_id.should_not be_nil
+      client.session_id.should be_nil
       result["protocolVersion"].should eq "2025-11-25"
-      result["capabilities"]["tools"]["listChanged"].should be_true
+      result["capabilities"]["tools"]["listChanged"].should be_false
       result["instructions"].as_s.should contain "list_toolboxes"
       result["instructions"].as_s.should contain "call_tool"
     end
 
     it "negotiates the protocol version" do
       response = MCPTestClient.new.post({jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "1999-01-01"}})
-      JSON.parse(response.body)["result"]["protocolVersion"].should eq ActionController::MCPServer::PROTOCOL_VERSIONS.first
+      JSON.parse(response.body)["result"]["protocolVersion"].should eq "2025-11-25"
+
+      # modern clients don't initialize
+      response = MCPTestClient.new.post({jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: MODERN_VERSION}})
+      JSON.parse(response.body)["result"]["protocolVersion"].should eq "2025-11-25"
     end
 
-    it "requires a valid session" do
-      client = MCPTestClient.new
-      client.post({jsonrpc: "2.0", id: 2, method: "tools/list"}).status_code.should eq 400
+    it "doesn't require a session" do
+      # clients that never initialized are assumed to be 2025-03-26
+      response = HTTP::Client.post(MCP_URI, headers: HTTP::Headers{"Content-Type" => "application/json"}, body: {jsonrpc: "2.0", id: 2, method: "tools/list"}.to_json)
+      response.status_code.should eq 200
+      JSON.parse(response.body)["result"]["tools"].as_a.map(&.["name"].as_s).reject(&.starts_with?("composition_")).should eq DEFAULT_TOOLS
 
-      response = HTTP::Client.post(MCP_URI, headers: HTTP::Headers{"Mcp-Session-Id" => "unknown"}, body: {jsonrpc: "2.0", id: 2, method: "tools/list"}.to_json)
-      response.status_code.should eq 404
+      # unknown session ids are ignored
+      headers = HTTP::Headers{"Content-Type" => "application/json", "Mcp-Session-Id" => "unknown", "MCP-Protocol-Version" => "2025-11-25"}
+      response = HTTP::Client.post(MCP_URI, headers: headers, body: {jsonrpc: "2.0", id: 2, method: "ping"}.to_json)
+      response.status_code.should eq 200
+      response.headers["Mcp-Session-Id"]?.should be_nil
+    end
+
+    it "serves a conversation from any server" do
+      other = ActionController::Server.new(MCP_PORT + 1, "127.0.0.1")
+      ActionController::MCPServer.mount(other, "/mcp")
+      bound = Channel(Nil).new
+      spawn { other.run { bound.send nil } }
+      bound.receive
+      begin
+        first = MCPTestClient.new
+        first.initialize_session
+
+        second = MCPTestClient.new(URI.parse("http://127.0.0.1:#{MCP_PORT + 1}/mcp"))
+        second.initialize_session
+        first.call("open_toolbox", {name: "mcp_widgets"})["isError"].should be_false
+        second.tool_names.should eq first.tool_names
+        second.call("call_read_only", {name: "mcp_widgets_show", arguments: {"id" => 2, "X-Tenant" => "acme"}})["structuredContent"]["body"]["name"].should eq "widget-2-acme"
+      ensure
+        other.close
+      end
     end
 
     it "rejects invalid messages" do
@@ -251,21 +318,250 @@ describe ActionController::MCPServer do
 
       headers = client.headers
       headers["MCP-Protocol-Version"] = "1999-01-01"
-      HTTP::Client.post(MCP_URI, headers: headers, body: {jsonrpc: "2.0", id: 2, method: "ping"}.to_json).status_code.should eq 400
+      response = HTTP::Client.post(MCP_URI, headers: headers, body: {jsonrpc: "2.0", id: 2, method: "ping"}.to_json)
+      response.status_code.should eq 400
+      error = JSON.parse(response.body)["error"]
+      error["code"].should eq -32022
+      error["data"]["requested"].should eq "1999-01-01"
+      error["data"]["supported"].as_a.should eq [MODERN_VERSION, "2025-11-25", "2025-06-18", "2025-03-26"]
     end
 
-    it "terminates a session" do
+    it "has no event stream or sessions to end" do
       client = MCPTestClient.new
       client.initialize_session
-      HTTP::Client.delete(MCP_URI, headers: client.headers).status_code.should eq 204
-      client.post({jsonrpc: "2.0", id: 2, method: "ping"}).status_code.should eq 404
+      HTTP::Client.get(MCP_URI, headers: client.headers(accept: "text/event-stream")).status_code.should eq 405
+      HTTP::Client.delete(MCP_URI, headers: client.headers).status_code.should eq 405
+    end
+  end
+
+  describe "2026-07-28" do
+    meta = {
+      "io.modelcontextprotocol/protocolVersion"    => MODERN_VERSION,
+      "io.modelcontextprotocol/clientCapabilities" => {} of String => String,
+    }
+    # posts a message with the headers provided, returning the status and body
+    raw_post = ->(message : Hash(String, JSON::Any), headers : HTTP::Headers) do
+      response = HTTP::Client.post(MCP_URI, headers: headers, body: message.to_json)
+      {response.status_code, JSON.parse(response.body.presence || "null")}
+    end
+    modern_headers = ->(method : String) do
+      HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json, text/event-stream", "MCP-Protocol-Version" => MODERN_VERSION, "Mcp-Method" => method}
+    end
+    message = ->(method : String, params : Hash(String, JSON::Any)) do
+      JSON.parse({jsonrpc: "2.0", id: 7, method: method, params: params}.to_json).as_h
+    end
+    with_meta = ->(params : Hash(String, JSON::Any)) do
+      params.merge({"_meta" => JSON.parse(meta.to_json)})
+    end
+
+    it "serves requests without initializing" do
+      client = MCPTestClient.new(modern: true)
+      client.tool_names.should eq DEFAULT_TOOLS
+      client.call("mcp_widgets_show", {"id" => 5, "X-Tenant" => "acme"})["structuredContent"]["body"]["name"].should eq "widget-5-acme"
+      response = client.post({jsonrpc: "2.0", id: 3, method: "tools/list"})
+      response.headers["Mcp-Session-Id"]?.should be_nil
+      response.content_type.should eq "application/json"
+    end
+
+    it "discovers the server" do
+      response = MCPTestClient.new(modern: true).initialize_session
+      response["id"].should eq 1
+      result = response["result"]
+      result["resultType"].should eq "complete"
+      result["supportedVersions"].as_a.should eq [MODERN_VERSION, "2025-11-25", "2025-06-18", "2025-03-26"]
+      result["capabilities"]["tools"]["listChanged"].should be_false
+      result["capabilities"]["prompts"]["listChanged"].should be_false
+      result["capabilities"]["extensions"]["io.modelcontextprotocol/ui"].should eq JSON.parse("{}")
+      result["instructions"].as_s.should contain "list_toolboxes"
+      result["ttlMs"].should eq 300_000
+      result["cacheScope"].should eq "public"
+      result["serverInfo"]?.should be_nil
+      info = result["_meta"]["io.modelcontextprotocol/serverInfo"]
+      info["name"].should eq "action-controller"
+      info["version"].should eq "1.0.0"
+      info["icons"].as_a.size.should eq 1
+    end
+
+    it "describes the server and result type in every result" do
+      client = MCPTestClient.new(modern: true)
+      result = client.call("list_toolboxes")
+      result["resultType"].should eq "complete"
+      result["_meta"]["io.modelcontextprotocol/serverInfo"]["name"].should eq "action-controller"
+      result["ttlMs"]?.should be_nil
+      result["isError"].should be_false
+
+      # tool results with an empty object are still valid JSON
+      endpoint = MCPTestClient.new(URI.parse("http://127.0.0.1:#{MCP_PORT}/mcp_account/acme/mcp"), modern: true)
+      endpoint.request("tools/list").last["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]["name"].should eq "mcp_account"
+    end
+
+    it "includes cache hints in lists and resource reads" do
+      client = MCPTestClient.new(modern: true)
+      ["tools/list", "prompts/list", "resources/list"].each do |method|
+        result = client.request(method).last["result"]
+        result["ttlMs"].should eq 300_000
+        result["cacheScope"].should eq "public"
+      end
+      read = client.request("resources/read", {uri: "ui://bookings/card.html"}).last["result"]
+      read["ttlMs"].should eq 300_000
+      read["contents"][0]["text"].as_s.should contain "booking card"
+
+      # results that depend on the user's credentials are private
+      ActionController::MCPServer.cache_ttl = 1.minute
+      begin
+        with_mcp_auth(transport, authenticator: ->(_request : HTTP::Request) { true }) do
+          result = client.request("tools/list").last["result"]
+          result["ttlMs"].should eq 60_000
+          result["cacheScope"].should eq "private"
+        end
+      ensure
+        ActionController::MCPServer.cache_ttl = 5.minutes
+      end
+    end
+
+    it "rejects requests missing the required _meta fields" do
+      [
+        {} of String => JSON::Any,
+        {"_meta" => JSON.parse(%({"io.modelcontextprotocol/protocolVersion": "#{MODERN_VERSION}"}))},
+        {"_meta" => JSON.parse(%({"io.modelcontextprotocol/protocolVersion": "#{MODERN_VERSION}", "io.modelcontextprotocol/clientCapabilities": "none"}))},
+      ].each do |params|
+        status, body = raw_post.call(message.call("tools/list", params), modern_headers.call("tools/list"))
+        status.should eq 400
+        body["error"]["code"].should eq -32602
+      end
+    end
+
+    it "rejects unsupported versions" do
+      params = with_meta.call({} of String => JSON::Any)
+      params["_meta"].as_h["io.modelcontextprotocol/protocolVersion"] = JSON::Any.new("2099-01-01")
+      headers = modern_headers.call("tools/list")
+      headers["MCP-Protocol-Version"] = "2099-01-01"
+      status, body = raw_post.call(message.call("tools/list", params), headers)
+      status.should eq 400
+      body["error"]["code"].should eq -32022
+      body["error"]["data"].should eq JSON.parse({supported: [MODERN_VERSION, "2025-11-25", "2025-06-18", "2025-03-26"], requested: "2099-01-01"}.to_json)
+
+      # a legacy version in _meta isn't a modern request
+      params["_meta"].as_h["io.modelcontextprotocol/protocolVersion"] = JSON::Any.new("2025-11-25")
+      headers["MCP-Protocol-Version"] = "2025-11-25"
+      status, body = raw_post.call(message.call("tools/list", params), headers)
+      status.should eq 400
+      body["error"]["code"].should eq -32022
+    end
+
+    it "validates the routing headers against the body" do
+      params = with_meta.call({} of String => JSON::Any)
+      call = with_meta.call({"name" => JSON::Any.new("mcp_root_time"), "arguments" => JSON.parse("{}")})
+      mismatch = ->(msg : Hash(String, JSON::Any), headers : HTTP::Headers) do
+        status, body = raw_post.call(msg, headers)
+        status.should eq 400
+        body["error"]["code"].should eq -32020
+      end
+
+      # protocol version header missing or different
+      headers = modern_headers.call("tools/list")
+      headers.delete("MCP-Protocol-Version")
+      mismatch.call(message.call("tools/list", params), headers)
+      headers["MCP-Protocol-Version"] = "2025-11-25"
+      mismatch.call(message.call("tools/list", params), headers)
+
+      # method header missing or different
+      headers = modern_headers.call("tools/list")
+      headers.delete("Mcp-Method")
+      mismatch.call(message.call("tools/list", params), headers)
+      mismatch.call(message.call("tools/list", params), modern_headers.call("prompts/list"))
+
+      # name header missing or different
+      mismatch.call(message.call("tools/call", call), modern_headers.call("tools/call"))
+      headers = modern_headers.call("tools/call")
+      headers["Mcp-Name"] = "mcp_root_pixel"
+      mismatch.call(message.call("tools/call", call), headers)
+      headers = modern_headers.call("resources/read")
+      headers["Mcp-Name"] = "ui://rooms/card.html"
+      mismatch.call(message.call("resources/read", with_meta.call({"uri" => JSON::Any.new("ui://bookings/card.html")})), headers)
+
+      # names can be base64 encoded
+      headers = modern_headers.call("tools/call")
+      headers["Mcp-Name"] = "=?base64?#{Base64.strict_encode("mcp_root_time")}?="
+      status, body = raw_post.call(message.call("tools/call", call), headers)
+      status.should eq 200
+      body["result"]["structuredContent"]["body"].should eq "noon"
+
+      headers["Mcp-Name"] = "=?base64?not base64?="
+      mismatch.call(message.call("tools/call", call), headers)
+    end
+
+    it "treats a modern header without _meta as malformed" do
+      status, body = raw_post.call(message.call("tools/list", {} of String => JSON::Any), modern_headers.call("tools/list"))
+      status.should eq 400
+      body["error"]["code"].should eq -32602
+    end
+
+    it "responds 404 to unknown and removed methods" do
+      client = MCPTestClient.new(modern: true)
+      ["ping", "does/not/exist", "logging/setLevel"].each do |method|
+        response = client.post({jsonrpc: "2.0", id: 4, method: method})
+        response.status_code.should eq 404
+        JSON.parse(response.body)["error"]["code"].should eq -32601
+      end
+    end
+
+    it "reports unknown resources as invalid params" do
+      client = MCPTestClient.new(modern: true)
+      error = client.request("resources/read", {uri: "ui://missing.html"}).last["error"]
+      error["code"].should eq -32602
+      error["message"].should eq "Resource not found: ui://missing.html"
+    end
+
+    it "acknowledges subscriptions, with nothing to notify" do
+      client = MCPTestClient.new(modern: true)
+      response = client.post({jsonrpc: "2.0", id: 9, method: "subscriptions/listen", params: {notifications: {toolsListChanged: true, resourceSubscriptions: ["ui://bookings/card.html"]}}})
+      response.status_code.should eq 200
+      response.content_type.should eq "text/event-stream"
+      events = response.body.split("\n\n").compact_map do |event|
+        data = event.lines.find(&.starts_with?("data: "))
+        JSON.parse(data.lchop("data: ")) if data
+      end
+      events.size.should eq 2
+      events[0]["method"].should eq "notifications/subscriptions/acknowledged"
+      events[0]["params"]["notifications"].should eq JSON.parse("{}")
+      events[0]["params"]["_meta"]["io.modelcontextprotocol/subscriptionId"].should eq 9
+      events[1]["id"].should eq 9
+      events[1]["result"]["resultType"].should eq "complete"
+      events[1]["result"]["_meta"]["io.modelcontextprotocol/subscriptionId"].should eq 9
+    end
+
+    it "accepts notifications" do
+      client = MCPTestClient.new(modern: true)
+      client.post({jsonrpc: "2.0", method: "notifications/cancelled", params: {requestId: 1}}).status_code.should eq 202
+    end
+
+    it "serves controller endpoints" do
+      client = MCPTestClient.new(URI.parse("http://127.0.0.1:#{MCP_PORT}/mcp_account/acme/mcp"), modern: true)
+      result = client.initialize_session["result"]
+      result["instructions"].should eq "Account acme: call show to look up its widgets"
+      result["capabilities"]["tools"]["listChanged"].should be_false
+      client.tool_names.sort.should eq ["rename", "show"]
+      client.call("show", {id: 3})["structuredContent"]["body"].should eq JSON.parse(%({"account":"acme","id":3}))
+    end
+
+    it "challenges unauthenticated requests" do
+      with_mcp_auth(transport, authenticator: ->(request : HTTP::Request) { request.headers["Authorization"]? == "Bearer token" }) do
+        client = MCPTestClient.new(modern: true)
+        client.authorization = nil
+        client.post({jsonrpc: "2.0", id: 1, method: "tools/list"}).status_code.should eq 401
+        client.authorization = "Bearer token"
+        client.tool_names.should eq DEFAULT_TOOLS
+      end
     end
   end
 
   describe "toolboxes" do
-    it "only lists the meta tools by default" do
+    it "lists the same tools for every request" do
       client = MCPTestClient.new
       client.initialize_session
+      client.tool_names.should eq DEFAULT_TOOLS
+      client.call("open_toolbox", {name: "mcp_widgets"})["isError"].should be_false
       client.tool_names.should eq DEFAULT_TOOLS
     end
 
@@ -278,34 +574,26 @@ describe ActionController::MCPServer do
       widgets = toolboxes.find!(&.["name"].==("mcp_widgets"))
       widgets["tools"].should eq 3
       widgets["prompts"].should eq 1
-      widgets["open"].should be_false
+      widgets["open"]?.should be_nil
       widgets["description"].as_s.should start_with "Manages widgets"
     end
 
-    it "opens and closes toolboxes, notifying inline via SSE" do
+    it "opens toolboxes without changing anything" do
       client = MCPTestClient.new
       client.initialize_session
 
-      messages = client.request("tools/call", {name: "open_toolbox", arguments: {name: "mcp_widgets"}}, accept: "application/json, text/event-stream")
-      messages.size.should eq 3
-      messages[0]["method"].should eq "notifications/tools/list_changed"
-      messages[1]["method"].should eq "notifications/prompts/list_changed"
-      messages[2]["result"]["content"][0]["text"].as_s.should contain "mcp_widgets_show"
-      client.tool_names.should eq DEFAULT_TOOLS + ["mcp_widgets_show", "mcp_widgets_create", "mcp_widgets_destroy"]
-
-      # sessions are independent
-      other = MCPTestClient.new
-      other.initialize_session
-      other.tool_names.should eq DEFAULT_TOOLS
-
-      # already open, nothing changed
+      # no notifications, so a single JSON response even when SSE is accepted
       messages = client.request("tools/call", {name: "open_toolbox", arguments: {name: "mcp_widgets"}}, accept: "application/json, text/event-stream")
       messages.size.should eq 1
+      messages[0]["result"]["content"][0]["text"].as_s.should contain "mcp_widgets_show"
+    end
 
-      messages = client.request("tools/call", {name: "close_toolbox", arguments: {name: "mcp_widgets"}}, accept: "application/json, text/event-stream")
-      messages[0]["method"].should eq "notifications/tools/list_changed"
-      messages[1]["method"].should eq "notifications/prompts/list_changed"
-      client.tool_names.should eq DEFAULT_TOOLS
+    it "has no close_toolbox tool" do
+      client = MCPTestClient.new
+      client.initialize_session
+      client.tool_names.should_not contain "close_toolbox"
+      error = client.request("tools/call", {name: "close_toolbox", arguments: {name: "mcp_widgets"}}).first["error"]
+      error["message"].should eq "Unknown tool: close_toolbox"
     end
 
     it "reports unknown toolboxes as tool errors" do
@@ -316,118 +604,28 @@ describe ActionController::MCPServer do
       result["content"][0]["text"].as_s.should contain "Unknown toolbox"
     end
 
-    it "delivers notifications on the GET event stream" do
+    it "calls toolbox tools without opening the toolbox" do
       client = MCPTestClient.new
       client.initialize_session
+      client.call("mcp_widgets_show", {"id" => 1, "X-Tenant" => "acme"})["structuredContent"]["body"]["name"].should eq "widget-1-acme"
+    end
 
-      received = Channel(String).new(1)
-      spawn do
-        HTTP::Client.get(MCP_URI, headers: client.headers(accept: "text/event-stream")) do |response|
-          response.status_code.should eq 200
-          while line = response.body_io.gets
-            if line.starts_with?("data: ")
-              received.send line.lchop("data: ")
-              break
-            end
-          end
-        end
+    it "lists card only tools, even in toolboxes" do
+      description = ActionController::MCPServer::Description.new([
+        ActionController::MCPServer::Toolbox.new("cards", "Cards", nil, [
+          ActionController::MCPServer::Tool.new("cards_hidden", nil, "post", "/cards", [] of ActionController::MCPServer::ToolParam, nil, JSON.parse("{}"), visibility: ["card"]),
+          ActionController::MCPServer::Tool.new("cards_show", nil, "get", "/cards", [] of ActionController::MCPServer::ToolParam, nil, JSON.parse("{}")),
+        ]),
+      ])
+      original = ActionController::MCPServer.description
+      ActionController::MCPServer.description = description
+      begin
+        client = MCPTestClient.new
+        client.initialize_session
+        client.tool_names.should eq ["list_toolboxes", "open_toolbox", "call_read_only", "call_tool", "cards_hidden"]
+      ensure
+        ActionController::MCPServer.description = original
       end
-      Fiber.yield
-
-      # JSON only client, so the notification is sent via the stream
-      client.call("open_toolbox", {name: "mcp_widgets"}, accept: "application/json")["isError"].should be_false
-
-      select
-      when message = received.receive
-        JSON.parse(message)["method"].should eq "notifications/tools/list_changed"
-      when timeout(5.seconds)
-        fail "notification not received"
-      end
-    end
-
-    sse = "application/json, text/event-stream"
-    notifications = ->(messages : Array(JSON::Any)) { messages.compact_map(&.["method"]?.try(&.as_s)) }
-
-    # streams a session's GET event stream: "connected" once it's open, the data of
-    # each event, then `nil` when the stream ends
-    open_stream = ->(client : MCPTestClient) do
-      events = Channel(String?).new(32)
-      spawn do
-        HTTP::Client.get(MCP_URI, headers: client.headers(accept: "text/event-stream")) do |response|
-          response.status_code.should eq 200
-          events.send "connected"
-          while line = response.body_io.gets
-            events.send line.lchop("data: ") if line.starts_with?("data: ")
-          end
-        end
-        events.send nil
-      end
-      events
-    end
-
-    next_event = ->(events : Channel(String?)) do
-      select
-      when event = events.receive
-        event
-      when timeout(5.seconds)
-        fail "no event received"
-      end
-    end
-
-    it "only notifies about the lists that changed" do
-      client = MCPTestClient.new
-      client.initialize_session
-
-      # tools but no prompts
-      notifications.call(client.request("tools/call", {name: "open_toolbox", arguments: {name: "mcp_hidden"}}, accept: sse))
-        .should eq ["notifications/tools/list_changed"]
-
-      # prompts but no tools
-      notifications.call(client.request("tools/call", {name: "open_toolbox", arguments: {name: "mcp_prompts_only"}}, accept: sse))
-        .should eq ["notifications/prompts/list_changed"]
-      client.request("prompts/list").last["result"]["prompts"].as_a.map(&.["name"].as_s).should contain "mcp_prompts_only_greeting"
-
-      notifications.call(client.request("tools/call", {name: "close_toolbox", arguments: {name: "mcp_prompts_only"}}, accept: sse))
-        .should eq ["notifications/prompts/list_changed"]
-      notifications.call(client.request("tools/call", {name: "close_toolbox", arguments: {name: "mcp_hidden"}}, accept: sse))
-        .should eq ["notifications/tools/list_changed"]
-
-      # closing a toolbox that isn't open changes nothing
-      notifications.call(client.request("tools/call", {name: "close_toolbox", arguments: {name: "mcp_hidden"}}, accept: sse)).should be_empty
-    end
-
-    it "delivers every notification on the GET event stream" do
-      client = MCPTestClient.new
-      client.initialize_session
-      events = open_stream.call(client)
-      next_event.call(events).should eq "connected"
-
-      client.call("open_toolbox", {name: "mcp_widgets"})["isError"].should be_false
-      client.call("close_toolbox", {name: "mcp_widgets"})["isError"].should be_false
-
-      methods = Array.new(4) { JSON.parse(next_event.call(events).to_s)["method"].as_s }
-      methods.should eq [
-        "notifications/tools/list_changed", "notifications/prompts/list_changed",
-        "notifications/tools/list_changed", "notifications/prompts/list_changed",
-      ]
-    end
-
-    it "ends the event stream when the session ends" do
-      client = MCPTestClient.new
-      client.initialize_session
-      events = open_stream.call(client)
-      next_event.call(events).should eq "connected"
-
-      HTTP::Client.delete(MCP_URI, headers: client.headers).status_code.should eq 204
-      next_event.call(events).should be_nil
-    end
-
-    it "rejects tools from closed toolboxes" do
-      client = MCPTestClient.new
-      client.initialize_session
-      error = client.request("tools/call", {name: "mcp_widgets_show", arguments: {id: 1}}).first["error"]
-      error["code"].should eq -32602
-      error["message"].as_s.should contain "open the mcp_widgets toolbox"
     end
   end
 
@@ -435,7 +633,6 @@ describe ActionController::MCPServer do
     it "invokes routes with path, query and header arguments" do
       client = MCPTestClient.new
       client.initialize_session
-      client.call("open_toolbox", {name: "mcp_widgets"})
 
       result = client.call("mcp_widgets_show", {"id" => JSON::Any.new(12_i64), "detailed" => JSON::Any.new(true), "X-Tenant" => JSON::Any.new("acme")})
       result["isError"].should be_false
@@ -447,7 +644,6 @@ describe ActionController::MCPServer do
     it "invokes routes with a request body" do
       client = MCPTestClient.new
       client.initialize_session
-      client.call("open_toolbox", {name: "mcp_widgets"})
 
       result = client.call("mcp_widgets_create", {body: {name: "new", size: 3}})
       result["isError"].should be_false
@@ -458,7 +654,6 @@ describe ActionController::MCPServer do
     it "reports empty responses using the status" do
       client = MCPTestClient.new
       client.initialize_session
-      client.call("open_toolbox", {name: "mcp_widgets"})
 
       result = client.call("mcp_widgets_destroy", {id: 4})
       result["isError"].should be_false
@@ -469,7 +664,6 @@ describe ActionController::MCPServer do
     it "flags HTTP errors" do
       client = MCPTestClient.new
       client.initialize_session
-      client.call("open_toolbox", {name: "mcp_widgets"})
 
       result = client.call("mcp_widgets_show", {id: "not-a-number"})
       result["isError"].should be_true
@@ -482,7 +676,6 @@ describe ActionController::MCPServer do
     it "forwards authentication headers" do
       client = MCPTestClient.new
       client.initialize_session
-      client.call("open_toolbox", {name: "mcp_widgets"})
 
       headers = client.headers(accept: "application/json")
       headers["Authorization"] = "Bearer wrong"
@@ -501,7 +694,7 @@ describe ActionController::MCPServer do
       result = client.call("open_toolbox", {name: "mcp_widgets"})
       contents = result["structuredContent"]
       contents["toolbox"].should eq "mcp_widgets"
-      contents["status"].should eq "opened"
+      contents["status"]?.should be_nil
       show = contents["tools"].as_a.find! { |tool| tool["name"] == "mcp_widgets_show" }
       show["inputSchema"]["required"].as_a.should contain "id"
       show["annotations"]["readOnlyHint"].should be_true
@@ -510,21 +703,15 @@ describe ActionController::MCPServer do
       contents["usage"].as_s.should contain "call_tool"
       JSON.parse(result["content"][0]["text"].as_s).should eq contents
 
-      # opening again still returns the definitions, for a model that lost track of them
-      again = client.call("open_toolbox", {name: "mcp_widgets"})["structuredContent"]
-      again["status"].should eq "already open"
-      again["tools"].should eq contents["tools"]
+      # opening again returns the same definitions, for a model that lost track of them
+      client.call("open_toolbox", {name: "mcp_widgets"})["structuredContent"].should eq contents
     end
 
-    it "runs tools from open toolboxes" do
+    it "runs toolbox tools" do
       client = MCPTestClient.new
       client.initialize_session
 
-      closed = client.call("call_tool", {name: "mcp_widgets_show", arguments: {id: 12}})
-      closed["isError"].should be_true
-      closed["content"][0]["text"].as_s.should contain "open the mcp_widgets toolbox first"
-
-      client.call("open_toolbox", {name: "mcp_widgets"})
+      # opening the toolbox first isn't required
       result = client.call("call_tool", {name: "mcp_widgets_show", arguments: {"id" => 12, "X-Tenant" => "acme"}})
       result["isError"].should be_false
       result["structuredContent"].should eq JSON.parse(%({"status":200,"body":{"name":"widget-12-acme"}}))
@@ -557,14 +744,13 @@ describe ActionController::MCPServer do
       # meta tools aren't proxied
       meta = client.call("call_tool", {name: "open_toolbox", arguments: {name: "mcp_widgets"}})
       meta["isError"].should be_true
-      client.call("list_toolboxes")["structuredContent"]["toolboxes"].as_a.find!(&.["name"].==("mcp_widgets"))["open"].should be_false
     end
 
     it "runs only read only tools with call_read_only" do
       client = MCPTestClient.new
       client.initialize_session
-      # managing toolboxes only changes the session, not data
-      %w(list_toolboxes open_toolbox close_toolbox).each do |name|
+      # browsing toolboxes doesn't change data
+      %w(list_toolboxes open_toolbox).each do |name|
         client.tools.find!(&.["name"].==(name))["annotations"]["readOnlyHint"].should be_true
       end
       client.tools.find!(&.["name"].==("call_read_only"))["annotations"]["readOnlyHint"].should be_true
@@ -572,7 +758,6 @@ describe ActionController::MCPServer do
 
       client.call("call_read_only", {name: "mcp_widgets_colours"})["structuredContent"]["body"].should eq JSON.parse(%(["red","green"]))
 
-      client.call("open_toolbox", {name: "mcp_widgets"})
       destroy = client.call("call_read_only", {name: "mcp_widgets_destroy", arguments: {id: 4}})
       destroy["isError"].should be_true
       destroy["content"][0]["text"].should eq "Tool mcp_widgets_destroy can change data, run it with call_tool"
@@ -598,25 +783,35 @@ describe ActionController::MCPServer do
       client.call("call_read_only", {name: "mcp_read_only_touch"})["isError"].should be_true
       client.call("call_tool", {name: "mcp_read_only_touch"})["structuredContent"]["body"].should eq "touched"
 
-      # the same hints when listed directly
-      listed = client.tools
-      listed.find!(&.["name"].==("mcp_read_only_search"))["annotations"]["readOnlyHint"].should be_true
-      listed.find!(&.["name"].==("mcp_read_only_touch"))["annotations"]["readOnlyHint"].should be_false
-      listed.find!(&.["name"].==("mcp_read_only_touch"))["proxy"]?.should be_nil
+      # the same hints when listed directly, see "can be disabled"
+      ActionController::MCPServer.tool_proxy = false
+      begin
+        listed = client.tools
+        listed.find!(&.["name"].==("mcp_read_only_search"))["annotations"]["readOnlyHint"].should be_true
+        listed.find!(&.["name"].==("mcp_read_only_touch"))["annotations"]["readOnlyHint"].should be_false
+        listed.find!(&.["name"].==("mcp_read_only_touch"))["proxy"]?.should be_nil
+      ensure
+        ActionController::MCPServer.tool_proxy = true
+      end
     end
 
-    it "can be disabled" do
+    it "can be disabled, listing every tool instead of toolboxes" do
       ActionController::MCPServer.tool_proxy = false
       begin
         client = MCPTestClient.new
         result = client.initialize_session["result"]
-        result["instructions"].as_s.should_not contain "call_tool"
-        client.tool_names.should_not contain "call_tool"
-        client.tool_names.should_not contain "call_read_only"
-        client.call("open_toolbox", {name: "mcp_widgets"})["structuredContent"]["usage"]?.should be_nil
-
-        response = client.post({jsonrpc: "2.0", id: 9, method: "tools/call", params: {name: "call_tool", arguments: {name: "mcp_root_time"}}}, "application/json")
-        JSON.parse(response.body)["error"]["message"].should eq "Unknown tool: call_tool"
+        result["instructions"]?.should be_nil
+        names = client.tool_names
+        # the root tools come first
+        names.first(DEFAULT_TOOLS.size - 4).should eq DEFAULT_TOOLS[4..]
+        names.should contain "mcp_widgets_show"
+        names.should contain "mcp_ui_summary"
+        %w(list_toolboxes open_toolbox call_tool call_read_only).each do |meta|
+          names.should_not contain meta
+          response = client.post({jsonrpc: "2.0", id: 9, method: "tools/call", params: {name: meta, arguments: {name: "mcp_root_time"}}}, "application/json")
+          JSON.parse(response.body)["error"]["message"].should eq "Unknown tool: #{meta}"
+        end
+        client.call("mcp_widgets_show", {id: 1})["isError"].should be_false
       ensure
         ActionController::MCPServer.tool_proxy = true
       end
@@ -736,14 +931,12 @@ describe ActionController::MCPServer do
       end
     end
 
-    it "binds sessions to the endpoint URL" do
+    it "binds the path params of every request from its URL" do
       client = MCPTestClient.new(account_uri.call("acme"))
       client.initialize_session
-      response = HTTP::Client.post(account_uri.call("other"), headers: client.headers("application/json"), body: {jsonrpc: "2.0", id: 2, method: "tools/list"}.to_json)
-      response.status_code.should eq 404
-
-      # nor at the global server
-      HTTP::Client.post(MCP_URI, headers: client.headers("application/json"), body: {jsonrpc: "2.0", id: 2, method: "tools/list"}.to_json).status_code.should eq 404
+      body = {jsonrpc: "2.0", id: 2, method: "tools/call", params: {name: "show", arguments: {id: 3}}}.to_json
+      response = HTTP::Client.post(account_uri.call("globex"), headers: client.headers("application/json"), body: body)
+      JSON.parse(response.body)["result"]["structuredContent"]["body"]["account"].should eq "globex"
     end
 
     it "serves endpoints at a custom path" do
@@ -919,7 +1112,6 @@ describe ActionController::MCPServer do
       # a POST search can be run by call_read_only
       client = MCPTestClient.new
       client.initialize_session
-      client.call("open_toolbox", {name: "mcp_read_only"})
       client.call("call_read_only", {name: "mcp_read_only_search", arguments: {body: "x"}})["isError"].should be_false
     end
 
@@ -931,7 +1123,6 @@ describe ActionController::MCPServer do
 
       client = MCPTestClient.new
       client.initialize_session
-      client.call("open_toolbox", {name: "mcp_options"})
       prompt = client.request("prompts/list").last["result"]["prompts"].as_a.find!(&.["name"].==("mcp_options_draft"))
       prompt["title"].should eq "Draft an email"
     end
@@ -1061,33 +1252,29 @@ describe ActionController::MCPServer do
 
     it "advertises the prompts capability" do
       client = MCPTestClient.new
-      client.initialize_session["result"]["capabilities"]["prompts"]["listChanged"].should be_true
+      client.initialize_session["result"]["capabilities"]["prompts"]["listChanged"].should be_false
     end
 
-    it "lists root prompts and the prompts of open toolboxes" do
+    it "lists every prompt, root prompts first" do
       client = MCPTestClient.new
       client.initialize_session
-      prompt_names = -> { client.request("prompts/list").last["result"]["prompts"].as_a.map(&.["name"].as_s) }
-      prompt_names.call.should eq ["mcp_widgets_review", "mcp_root_greet"]
+      prompts = client.request("prompts/list").last["result"]["prompts"].as_a
+      names = prompts.map(&.["name"].as_s)
+      names.first(2).should eq ["mcp_widgets_review", "mcp_root_greet"]
+      names.should contain "mcp_widgets_summarise"
+      names.should contain "mcp_prompts_only_greeting"
 
-      client.call("open_toolbox", {name: "mcp_widgets"})
-      prompt_names.call.should eq ["mcp_widgets_review", "mcp_root_greet", "mcp_widgets_summarise"]
-
-      prompt = client.request("prompts/list").last["result"]["prompts"].as_a.last
+      prompt = prompts.find!(&.["name"].==("mcp_widgets_summarise"))
       prompt["description"].should eq "summarise a widget for the user"
       prompt["arguments"].as_a.should eq [
         JSON.parse(%({"name":"id","required":true})),
         JSON.parse(%({"name":"tone","description":"the tone of the summary","required":false})),
       ]
-
-      client.call("close_toolbox", {name: "mcp_widgets"})
-      prompt_names.call.should eq ["mcp_widgets_review", "mcp_root_greet"]
     end
 
     it "renders single message prompts" do
       client = MCPTestClient.new
       client.initialize_session
-      client.call("open_toolbox", {name: "mcp_widgets"})
 
       result = client.request("prompts/get", {name: "mcp_widgets_summarise", arguments: {id: "5", tone: "formal"}}).last["result"]
       result["description"].should eq "summarise a widget for the user"
@@ -1110,11 +1297,6 @@ describe ActionController::MCPServer do
     it "reports prompt errors" do
       client = MCPTestClient.new
       client.initialize_session
-
-      # toolbox is closed
-      error = client.request("prompts/get", {name: "mcp_widgets_summarise", arguments: {id: "1"}}).last["error"]
-      error["code"].should eq -32602
-      error["message"].as_s.should contain "open the mcp_widgets toolbox"
 
       # missing required argument
       error = client.request("prompts/get", {name: "mcp_widgets_review"}).last["error"]
@@ -1208,12 +1390,6 @@ describe ActionController::MCPServer do
 
         # successful checks are cached
         calls.should eq 3
-
-        # the event stream and session termination require authentication
-        headers = client.headers(accept: "text/event-stream")
-        headers.delete("Authorization")
-        HTTP::Client.get(MCP_URI, headers: headers).status_code.should eq 401
-        HTTP::Client.delete(MCP_URI, headers: headers).status_code.should eq 401
       end
     end
 
@@ -1265,11 +1441,11 @@ describe ActionController::MCPServer do
       end
 
       with_mcp_auth(transport, metadata: metadata) do
-        # credentials are present so the session can be established
+        # credentials are present so the server can be initialized
         client = MCPTestClient.new
         client.authorization = "Bearer expired"
         client.initialize_session
-        client.call("open_toolbox", {name: "mcp_widgets"})["isError"].should be_false
+        client.call("list_toolboxes")["isError"].should be_false
 
         fingerprint = ActionController::MCPServer::AuthCache.fingerprint(
           HTTP::Request.new("POST", "/mcp", HTTP::Headers{"Host" => "127.0.0.1:#{MCP_PORT}", "Authorization" => "Bearer expired"})
@@ -1295,42 +1471,5 @@ describe ActionController::MCPServer do
       headers["Host"].should eq "example.com"
       headers.has_key?("X-Other").should be_false
     end
-  end
-
-  it "tracks sessions in the transport" do
-    MCPTestClient.new.initialize_session
-    (transport.sessions.size > 0).should be_true
-  end
-end
-
-describe ActionController::MCPServer::Session do
-  it "drops notifications rather than blocking when nobody is listening" do
-    session = ActionController::MCPServer::Session.new("2025-11-25")
-
-    notified = Channel(Nil).new(1)
-    spawn do
-      40.times { |index| session.notify(%({"index":#{index}})) }
-      notified.send nil
-    end
-    select
-    when notified.receive
-    when timeout(5.seconds)
-      fail "notify blocked"
-    end
-
-    queued = 0
-    loop do
-      select
-      when session.notifications.receive
-        queued += 1
-      else
-        break
-      end
-    end
-    queued.should eq 32
-
-    # notifying an ended session is ignored
-    session.terminate
-    session.notify(%({"index":41}))
   end
 end

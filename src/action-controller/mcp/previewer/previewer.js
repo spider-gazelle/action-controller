@@ -6,7 +6,7 @@
   const config = JSON.parse(document.getElementById("previewer-config").textContent);
   const tool = config.tool;
 
-  const MCP_PROTOCOL = "2025-11-25";
+  const MCP_PROTOCOL = "2026-07-28";
   const APPS_PROTOCOL = "2026-01-26";
   const UI_EXTENSION = "io.modelcontextprotocol/ui";
   const UI_MIME = "text/html;profile=mcp-app";
@@ -145,34 +145,41 @@
     }
   }
 
-  // Streamable HTTP client, every request carries the configured headers
+  // Streamable HTTP client (2026-07-28), stateless: every request carries the protocol
+  // version and client capabilities in `_meta`, the routing headers and the configured headers
+  const NAMED_METHODS = { "tools/call": "name", "prompts/get": "name", "resources/read": "uri" };
+
+  // header values that aren't printable ASCII are sent base64 encoded
+  function headerValue(value) {
+    if (/^[\x20-\x7E]*$/.test(value)) return value;
+    const bytes = new TextEncoder().encode(value);
+    return `=?base64?${btoa(String.fromCharCode(...bytes))}?=`;
+  }
+
   class McpClient {
-    constructor(url, headers, onNotification) {
+    constructor(url, headers) {
       this.url = url;
       this.headers = headers;
-      this.onNotification = onNotification;
       this.nextId = 1;
-      this.sessionId = null;
-      this.protocolVersion = null;
     }
 
-    async connect() {
-      const result = await this.request("initialize", {
-        protocolVersion: MCP_PROTOCOL,
-        capabilities: { extensions: { [UI_EXTENSION]: { mimeTypes: [UI_MIME] } } },
-        clientInfo: { name: "action-controller card previewer", version: "1.0.0" },
-      });
-      this.protocolVersion = result.protocolVersion;
-      await this.notify("notifications/initialized");
-      return result;
+    connect() {
+      return this.request("server/discover", {});
     }
 
     async request(method, params) {
       const id = this.nextId++;
-      const message = { jsonrpc: "2.0", id, method };
-      if (params !== undefined) message.params = params;
+      const meta = {
+        "io.modelcontextprotocol/protocolVersion": MCP_PROTOCOL,
+        "io.modelcontextprotocol/clientCapabilities": { extensions: { [UI_EXTENSION]: { mimeTypes: [UI_MIME] } } },
+        "io.modelcontextprotocol/clientInfo": { name: "action-controller card previewer", version: "1.0.0" },
+      };
+      const message = { jsonrpc: "2.0", id, method, params: { ...(params || {}), _meta: meta } };
       log("mcp →", method, params);
-      const replies = await this.post(message);
+      const headers = { "Mcp-Method": method };
+      const nameField = NAMED_METHODS[method];
+      if (nameField && params && typeof params[nameField] === "string") headers["Mcp-Name"] = headerValue(params[nameField]);
+      const replies = await this.post(message, headers);
       const reply = replies.find((candidate) => candidate.id === id);
       if (!reply) throw new Error(`no response to ${method}`);
       if (reply.error) {
@@ -183,21 +190,14 @@
       return reply.result;
     }
 
-    async notify(method, params) {
-      const message = { jsonrpc: "2.0", method };
-      if (params !== undefined) message.params = params;
-      log("mcp →", method, params);
-      await this.post(message);
-    }
-
-    async post(message) {
+    async post(message, routing) {
       const headers = {
         ...this.headers,
+        ...routing,
         "Content-Type": "application/json",
         Accept: "application/json, text/event-stream",
+        "MCP-Protocol-Version": MCP_PROTOCOL,
       };
-      if (this.sessionId) headers["Mcp-Session-Id"] = this.sessionId;
-      if (this.protocolVersion) headers["MCP-Protocol-Version"] = this.protocolVersion;
 
       const response = await fetch(this.url, {
         method: "POST",
@@ -205,8 +205,6 @@
         body: JSON.stringify(message),
         credentials: "same-origin",
       });
-      const session = response.headers.get("Mcp-Session-Id");
-      if (session) this.sessionId = session;
       if (response.status === 202) return [];
 
       const body = await response.text();
@@ -225,20 +223,9 @@
       }
 
       for (const reply of messages) {
-        if (reply.method && reply.id === undefined) {
-          log("← mcp", reply.method, reply.params);
-          this.onNotification(reply);
-        }
+        if (reply.method && reply.id === undefined) log("← mcp", reply.method, reply.params);
       }
       return messages;
-    }
-
-    // ends the session, best effort
-    close() {
-      if (!this.sessionId) return;
-      const headers = { ...this.headers, "Mcp-Session-Id": this.sessionId };
-      if (this.protocolVersion) headers["MCP-Protocol-Version"] = this.protocolVersion;
-      fetch(this.url, { method: "DELETE", headers, credentials: "same-origin" }).catch(() => {});
     }
   }
 
@@ -798,10 +785,7 @@
       bridge = null;
       await previous.teardown();
     }
-    if (client) {
-      client.close();
-      client = null;
-    }
+    client = null;
     device.replaceChildren();
     delete stage.dataset.toolError;
     state.displayMode = "inline";
@@ -830,17 +814,12 @@
     state.result = null;
     setPhase("loading", "Connecting…");
 
-    const mcp = new McpClient(config.mcp, requestHeaders(), (notification) => {
-      if (notification.method === "notifications/tools/list_changed") refreshTools(mcp);
-    });
+    const mcp = new McpClient(config.mcp, requestHeaders());
     client = mcp;
     mcp.tools = new Map();
     try {
       await mcp.connect();
-      if (!tool.root) {
-        await mcp.request("tools/call", { name: "open_toolbox", arguments: { name: tool.toolbox } });
-      }
-      await refreshTools(mcp);
+      await loadTools(mcp);
       const listed = mcp.tools.get(tool.name);
       if (!listed) throw new Error(`${tool.name} isn't in the tool list`);
       const meta = listed._meta || {};
@@ -891,9 +870,15 @@
     }
   }
 
-  async function refreshTools(mcp) {
+  // the listed tools, plus the toolbox's tools when the tool isn't listed (not a root tool)
+  async function loadTools(mcp) {
     const listed = await mcp.request("tools/list", {});
-    mcp.tools = new Map((listed.tools || []).map((entry) => [entry.name, entry]));
+    const tools = listed.tools || [];
+    if (!tool.root) {
+      const opened = await mcp.request("tools/call", { name: "open_toolbox", arguments: { name: tool.toolbox } });
+      tools.push(...((opened.structuredContent && opened.structuredContent.tools) || []));
+    }
+    mcp.tools = new Map(tools.map((entry) => [entry.name, entry]));
   }
 
   // ---------------------------------------------------------------- wiring

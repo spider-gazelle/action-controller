@@ -7,13 +7,15 @@ require "./router"
 # using the Streamable HTTP transport.
 #
 # Controllers are presented as toolboxes and their routes as tools. To keep the
-# model's context lean a session starts with these tools, plus any root tools:
+# model's context lean only these tools are listed, plus any root tools:
 #
 # * `list_toolboxes` lists the controllers and their descriptions
-# * `open_toolbox(name)` adds the controller's routes to the session's tool set
-# * `close_toolbox(name)` removes them again
-# * `call_read_only(name, arguments)` and `call_tool(name, arguments)` run tools from open
-#   toolboxes, for clients that don't refresh their tools (when `tool_proxy` is enabled)
+# * `open_toolbox(name)` returns the definitions of the controller's tools
+# * `call_read_only(name, arguments)` and `call_tool(name, arguments)` run the tools
+#
+# The server is stateless, there are no sessions, so requests can be served by any
+# instance of the application. Both the 2026-07-28 protocol and the earlier versions,
+# which start with `initialize`, are supported.
 #
 # Controllers can also be served as their own MCP server (`@[AC::MCP(endpoint: true)]`),
 # and tools can render MCP Apps cards (`@[AC::MCP(ui:)]`), see `ActionController::MCP`.
@@ -45,19 +47,20 @@ module ActionController::MCPServer
   # :nodoc:
   Log = ::Log.for("action-controller.mcp")
 
+  # stateless protocol versions, where every request carries its version in `_meta`
+  MODERN_VERSIONS = {"2026-07-28"}
+
+  # protocol versions that start with `initialize`, newest first
+  LEGACY_VERSIONS = {"2025-11-25", "2025-06-18", "2025-03-26"}
+
   # supported protocol versions, newest first
-  PROTOCOL_VERSIONS = {"2025-11-25", "2025-06-18", "2025-03-26"}
+  PROTOCOL_VERSIONS = MODERN_VERSIONS + LEGACY_VERSIONS
 
-  DEFAULT_INSTRUCTIONS = <<-TEXT
-    Tools are grouped into toolboxes. Call list_toolboxes to discover what is available,
-    open_toolbox to load the tools in a toolbox and close_toolbox once you no longer need them.
-    TEXT
-
-  PROXY_INSTRUCTIONS = <<-TEXT
-    #{DEFAULT_INSTRUCTIONS}
-    open_toolbox returns the definitions of the tools it loads. If they don't appear in your
-    available tools, run them with the tool named in their proxy field, passing the tool name
-    and its arguments: call_read_only for tools that only read data, call_tool for the rest.
+  TOOLBOX_INSTRUCTIONS = <<-TEXT
+    Tools are grouped into toolboxes. Call list_toolboxes to discover what is available and
+    open_toolbox for the definitions of the tools in a toolbox. Run them with the tool named
+    in their proxy field, passing the tool name and its arguments: call_read_only for tools
+    that only read data, call_tool for the rest.
     TEXT
 
   # location of the MCP description file, generated using `write_description`
@@ -69,8 +72,8 @@ module ActionController::MCPServer
   # :ditto:
   class_property server_version : String = "1.0.0"
 
-  # adds a `call_tool` meta tool that runs the tools in open toolboxes, for clients
-  # that don't refresh their tools when notified with `tools/list_changed`
+  # groups the tools into toolboxes, run by the `call_read_only` and `call_tool` meta
+  # tools. When disabled every tool is listed
   class_property? tool_proxy : Bool = true
 
   # usage instructions provided to the model, `nil` uses `toolbox_instructions` and an
@@ -81,9 +84,9 @@ module ActionController::MCPServer
     @@instructions || toolbox_instructions
   end
 
-  # explains how to use toolboxes, taking `tool_proxy` into account
+  # explains how to use toolboxes, empty when `tool_proxy` is disabled
   def self.toolbox_instructions : String
-    tool_proxy? ? PROXY_INSTRUCTIONS : DEFAULT_INSTRUCTIONS
+    tool_proxy? ? TOOLBOX_INSTRUCTIONS : ""
   end
 
   # request headers copied from the MCP request to the route being invoked,
@@ -116,8 +119,8 @@ module ActionController::MCPServer
     @@icons << JSON.parse(fields.merge(src: src).to_json)
   end
 
-  # sessions inactive for this period are discarded
-  class_property session_timeout : Time::Span = 30.minutes
+  # how long clients can cache the server description and lists (`ttlMs`), 2026-07-28 onwards
+  class_property cache_ttl : Time::Span = 5.minutes
 
   # response headers left out of tool results, matched case-insensitively. An entry
   # ending in `*` matches by prefix. Everything else (`Link`, `X-Total-Count`,
@@ -267,8 +270,8 @@ module ActionController::MCPServer
   private def mount_transport(router : Router, transport : Transport) : Transport
     path = transport.path
     router.post(path) { |context, _head| transport.post(context) }
-    router.get(path) { |context, head| transport.get(context, head) }
-    router.delete(path) { |context, _head| transport.delete(context) }
+    router.get(path) { |context, _head| transport.method_not_allowed(context) }
+    router.delete(path) { |context, _head| transport.method_not_allowed(context) }
     router.get(Transport::RESOURCE_METADATA_PATH + path) { |context, _head| transport.resource_metadata(context) }
     transport
   end

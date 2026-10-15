@@ -634,7 +634,7 @@ describe AC::Composition do
     headers = HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json, text/event-stream"}
     initialize = client.post("/mcp", headers: headers, body: {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}.to_json)
     initialize.status_code.should eq 200
-    headers["Mcp-Session-Id"] = initialize.headers["Mcp-Session-Id"]
+    initialize.headers["Mcp-Session-Id"]?.should be_nil
     catalog = AC::MCPServer.description(composition)
     box = catalog.toolboxes.first
     client.post("/mcp", headers: headers, body: {jsonrpc: "2.0", id: 2, method: "tools/call", params: {name: "open_toolbox", arguments: {name: box.name}}}.to_json).status_code.should eq 200
@@ -746,16 +746,16 @@ describe AC::Composition do
     endpoint = description.endpoints.first
     endpoint.bound.should eq ["tenant_id"]
     endpoint.toolbox.prompts.first.arguments.map(&.name).should eq ["tenant_id"]
-    transports = AC::MCPServer.mount_endpoints(composition)
-    transport = transports.first
+    AC::MCPServer.mount_endpoints(composition)
     headers = HTTP::Headers{"Content-Type" => "application/json", "Accept" => "application/json, text/event-stream"}
-    body = {jsonrpc: "2.0", id: 1, method: "initialize", params: {protocolVersion: "2025-11-25"}}.to_json
-    omitted = client.post("/composition/optional/auth/mcp", headers: headers, body: body)
-    included = client.post("/composition/optional/42/auth/mcp", headers: headers, body: body)
-    omitted_session = transport.sessions[omitted.headers["Mcp-Session-Id"]]?.should_not be_nil
-    included_session = transport.sessions[included.headers["Mcp-Session-Id"]]?.should_not be_nil
-    omitted_session.bound.should be_empty
-    included_session.bound.should eq({"tenant_id" => "42"})
+    body = {jsonrpc: "2.0", id: 1, method: "prompts/list"}.to_json
+    # the URL binds the optional segment, so only the URL without it asks for the argument
+    prompt_arguments = ->(path : String) do
+      response = client.post(path, headers: headers, body: body)
+      JSON.parse(response.body)["result"]["prompts"][0]["arguments"]?.try(&.as_a.map(&.["name"].as_s)) || [] of String
+    end
+    prompt_arguments.call("/composition/optional/auth/mcp").should eq ["tenant_id"]
+    prompt_arguments.call("/composition/optional/42/auth/mcp").should be_empty
   end
 
   it "relocates inherited tools, prompts and MCP instructions to the subclass base" do
@@ -774,7 +774,7 @@ describe AC::Composition do
   it "uses the spec helper's selected composition for MCP discovery" do
     helper = AC::SpecHelper.new(ComposableFirst::Base.handler)
     transport = AC::MCPServer.mount(helper, endpoints: false)
-    response = transport.protocol.handle("tools/call", JSON.parse(%({"name":"list_toolboxes"})).as_h, AC::MCPServer::Session.new("2025-11-25"), HTTP::Request.new("POST", "/mcp"), [] of String)
+    response = transport.protocol.handle("tools/call", JSON.parse(%({"name":"list_toolboxes"})).as_h, HTTP::Request.new("POST", "/mcp"), {} of String => String)
     result = JSON.parse(response)["structuredContent"]["toolboxes"].as_a
     result.size.should eq 1
     result.first["name"].as_s.should eq "pages"
@@ -899,32 +899,32 @@ describe AC::Composition do
     (plain_operation.parameters.should_not be_nil).should be_empty
   end
 
-  it "describes optional endpoint arguments according to the session's bound URL values" do
+  it "describes optional endpoint arguments according to the request's bound URL values" do
     composition = CompositionOptionalTypedHost.handler
     transport = AC::MCPServer.mount_endpoints(composition).first
     request = HTTP::Request.new("POST", "/mcp")
-    unbound = AC::MCPServer::Session.new("2025-11-25")
-    bound = AC::MCPServer::Session.new("2025-11-25", {"tenant_id" => "42"})
+    unbound = {} of String => String
+    bound = {"tenant_id" => "42"}
     protocol = transport.protocol
-    tools = JSON.parse(protocol.handle("tools/list", {} of String => JSON::Any, unbound, request, [] of String))["tools"].as_a
+    tools = JSON.parse(protocol.handle("tools/list", {} of String => JSON::Any, request, unbound))["tools"].as_a
     tool = tools.find!(&.["name"].==("show"))
     tool["inputSchema"]["required"].as_a.map(&.as_s).should eq ["tenant_id"]
-    bound_tools = JSON.parse(protocol.handle("tools/list", {} of String => JSON::Any, bound, request, [] of String))["tools"].as_a
+    bound_tools = JSON.parse(protocol.handle("tools/list", {} of String => JSON::Any, request, bound))["tools"].as_a
     bound_tools.find!(&.["name"].==("show"))["inputSchema"]["properties"].as_h.should be_empty
-    prompts = JSON.parse(protocol.handle("prompts/list", {} of String => JSON::Any, unbound, request, [] of String))["prompts"].as_a
+    prompts = JSON.parse(protocol.handle("prompts/list", {} of String => JSON::Any, request, unbound))["prompts"].as_a
     prompts.first["arguments"].as_a.first["required"].as_bool.should be_true
-    bound_prompts = JSON.parse(protocol.handle("prompts/list", {} of String => JSON::Any, bound, request, [] of String))["prompts"].as_a
+    bound_prompts = JSON.parse(protocol.handle("prompts/list", {} of String => JSON::Any, request, bound))["prompts"].as_a
     bound_prompts.first["arguments"].as_a.should be_empty
     call = JSON.parse(%({"name":"show","arguments":{"tenant_id":43}})).as_h
-    JSON.parse(protocol.handle("tools/call", call, unbound, request, [] of String))["isError"].as_bool.should be_false
+    JSON.parse(protocol.handle("tools/call", call, request, unbound))["isError"].as_bool.should be_false
     call = JSON.parse(%({"name":"show","arguments":{}})).as_h
-    JSON.parse(protocol.handle("tools/call", call, bound, request, [] of String))["isError"].as_bool.should be_false
+    JSON.parse(protocol.handle("tools/call", call, request, bound))["isError"].as_bool.should be_false
     call = JSON.parse(%({"name":"show","arguments":{"tenant_id":99}})).as_h
-    result = JSON.parse(protocol.handle("tools/call", call, bound, request, [] of String))
+    result = JSON.parse(protocol.handle("tools/call", call, request, bound))
     JSON.parse(result["content"].as_a.first["text"].as_s)["body"].as_i.should eq 42
     prompt_call = JSON.parse(%({"name":"describe_tenant","arguments":{}})).as_h
-    protocol.handle("prompts/get", prompt_call, bound, request, [] of String).should contain "Tenant 42"
-    repeated = JSON.parse(protocol.handle("tools/list", {} of String => JSON::Any, unbound, request, [] of String))["tools"].as_a
+    protocol.handle("prompts/get", prompt_call, request, bound).should contain "Tenant 42"
+    repeated = JSON.parse(protocol.handle("tools/list", {} of String => JSON::Any, request, unbound))["tools"].as_a
     repeated.find!(&.["name"].==("show"))["inputSchema"]["required"].as_a.map(&.as_s).should eq ["tenant_id"]
   end
 
