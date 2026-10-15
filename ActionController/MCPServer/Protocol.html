@@ -207,16 +207,6 @@
       
     </li>
   
-  <li class=" " data-id="action-controller/ActionController/MCPServer/Session" data-name="actioncontroller::mcpserver::session">
-      <a href="../../ActionController/MCPServer/Session.html">Session</a>
-      
-    </li>
-  
-  <li class=" " data-id="action-controller/ActionController/MCPServer/SessionStore" data-name="actioncontroller::mcpserver::sessionstore">
-      <a href="../../ActionController/MCPServer/SessionStore.html">SessionStore</a>
-      
-    </li>
-  
   <li class=" " data-id="action-controller/ActionController/MCPServer/Tool" data-name="actioncontroller::mcpserver::tool">
       <a href="../../ActionController/MCPServer/Tool.html">Tool</a>
       
@@ -232,8 +222,18 @@
       
     </li>
   
-  <li class=" " data-id="action-controller/ActionController/MCPServer/Transport" data-name="actioncontroller::mcpserver::transport">
+  <li class="parent " data-id="action-controller/ActionController/MCPServer/Transport" data-name="actioncontroller::mcpserver::transport">
       <a href="../../ActionController/MCPServer/Transport.html">Transport</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Transport/Era" data-name="actioncontroller::mcpserver::transport::era">
+      <a href="../../ActionController/MCPServer/Transport/Era.html">Era</a>
+      
+    </li>
+  
+</ul>
+
       
     </li>
   
@@ -467,7 +467,8 @@
     Overview
   </h2>
 
-  <p>implements the MCP methods for an established session</p>
+  <p>implements the MCP methods. Requests are independent, there are no sessions, so the
+results only depend on the request and the path params bound from its URL</p>
 
 
 
@@ -494,7 +495,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/protocol.cr#L21" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/protocol.cr#L24" target="_blank">
         action-controller/mcp/protocol.cr
       </a>
     
@@ -515,13 +516,17 @@
   
   <dl>
     
-      <dt class="entry-const" id="META_TOOLS">
-        <strong>META_TOOLS</strong> = <code>{<span class="s">&quot;{\&quot;name\&quot;:\&quot;list_toolboxes\&quot;,\&quot;description\&quot;:\&quot;Lists the available toolboxes, each groups related tools and prompts\&quot;,\&quot;inputSchema\&quot;:{\&quot;type\&quot;:\&quot;object\&quot;,\&quot;properties\&quot;:{}},\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;open_toolbox\&quot;,\&quot;description\&quot;:\&quot;Adds the tools and prompts in a toolbox to your available tools and prompts, returning the definitions of its tools\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">TOOLBOX_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;idempotentHint\&quot;:true}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;close_toolbox\&quot;,\&quot;description\&quot;:\&quot;Removes the tools and prompts in a toolbox, close toolboxes you are no longer using\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">TOOLBOX_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;idempotentHint\&quot;:true}}&quot;</span>}</code>
+      <dt class="entry-const" id="CACHEABLE">
+        <strong>CACHEABLE</strong> = <code>{<span class="s">&quot;server/discover&quot;</span>, <span class="s">&quot;tools/list&quot;</span>, <span class="s">&quot;prompts/list&quot;</span>, <span class="s">&quot;resources/list&quot;</span>, <span class="s">&quot;resources/read&quot;</span>}</code>
       </dt>
       
+      <dd class="entry-const-doc">
+        <p>methods whose results clients can cache, 2026-07-28 onwards</p>
+      </dd>
+      
     
-      <dt class="entry-const" id="PROMPTS_CHANGED">
-        <strong>PROMPTS_CHANGED</strong> = <code><span class="s">&quot;{\&quot;jsonrpc\&quot;:\&quot;2.0\&quot;,\&quot;method\&quot;:\&quot;notifications/prompts/list_changed\&quot;}&quot;</span></code>
+      <dt class="entry-const" id="META_TOOLS">
+        <strong>META_TOOLS</strong> = <code>{<span class="s">&quot;{\&quot;name\&quot;:\&quot;list_toolboxes\&quot;,\&quot;description\&quot;:\&quot;Lists the available toolboxes, each groups related tools and prompts\&quot;,\&quot;inputSchema\&quot;:{\&quot;type\&quot;:\&quot;object\&quot;,\&quot;properties\&quot;:{}},\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;open_toolbox\&quot;,\&quot;description\&quot;:\&quot;Returns the definitions of the tools in a toolbox and the names of its prompts\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">TOOLBOX_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;idempotentHint\&quot;:true}}&quot;</span>}</code>
       </dt>
       
     
@@ -531,17 +536,12 @@
       
     
       <dt class="entry-const" id="PROXY_TOOLS">
-        <strong>PROXY_TOOLS</strong> = <code>{<span class="s">&quot;{\&quot;name\&quot;:\&quot;call_read_only\&quot;,\&quot;description\&quot;:\&quot;Runs a tool that only reads data (proxy: call_read_only) from an open toolbox, use it when the tools returned by open_toolbox aren&#39;t in your available tools\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">PROXY_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;openWorldHint\&quot;:false}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;call_tool\&quot;,\&quot;description\&quot;:\&quot;Runs a tool that can change data (proxy: call_tool) from an open toolbox, use it when the tools returned by open_toolbox aren&#39;t in your available tools. Prefer call_read_only for tools that only read data\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">PROXY_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:false,\&quot;openWorldHint\&quot;:false}}&quot;</span>}</code>
+        <strong>PROXY_TOOLS</strong> = <code>{<span class="s">&quot;{\&quot;name\&quot;:\&quot;call_read_only\&quot;,\&quot;description\&quot;:\&quot;Runs a tool that only reads data (proxy: call_read_only) from a toolbox, as returned by open_toolbox\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">PROXY_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;openWorldHint\&quot;:false}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;call_tool\&quot;,\&quot;description\&quot;:\&quot;Runs a tool that can change data (proxy: call_tool) from a toolbox, as returned by open_toolbox. Prefer call_read_only for tools that only read data\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">PROXY_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:false,\&quot;openWorldHint\&quot;:false}}&quot;</span>}</code>
       </dt>
       
     
       <dt class="entry-const" id="TOOLBOX_ARGS">
         <strong>TOOLBOX_ARGS</strong> = <code><span class="s">&quot;{\&quot;type\&quot;:\&quot;object\&quot;,\&quot;properties\&quot;:{\&quot;name\&quot;:{\&quot;type\&quot;:\&quot;string\&quot;,\&quot;description\&quot;:\&quot;the toolbox name, as returned by list_toolboxes\&quot;}},\&quot;required\&quot;:[\&quot;name\&quot;]}&quot;</span></code>
-      </dt>
-      
-    
-      <dt class="entry-const" id="TOOLS_CHANGED">
-        <strong>TOOLS_CHANGED</strong> = <code><span class="s">&quot;{\&quot;jsonrpc\&quot;:\&quot;2.0\&quot;,\&quot;method\&quot;:\&quot;notifications/tools/list_changed\&quot;}&quot;</span></code>
       </dt>
       
     
@@ -586,6 +586,13 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
+        <a href="#discover_result%28request%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method" class="signature"><strong>#discover_result</strong>(request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String</a>
+        
+          <div class="summary"><p>the <code>server/discover</code> result, the server info is in the result's <code>_meta</code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#flat%3F%3ABool-instance-method" class="signature"><strong>#flat?</strong> : Bool</a>
         
           <div class="summary"><p>a controller endpoint lists every tool directly, there are no toolboxes</p></div>
@@ -593,16 +600,23 @@
       </li>
     
       <li class="entry-summary">
-        <a href="#handle%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%2Csession%3ASession%2Crequest%3AHTTP%3A%3ARequest%2Cemitted%3AArray%28String%29%29%3AString-instance-method" class="signature"><strong>#handle</strong>(method : String, params : Hash(String, JSON::Any), session : Session, request : HTTP::Request, emitted : Array(String)) : String</a>
+        <a href="#handle%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%2Crequest%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%2Cmodern%3ABool%3Dfalse%29%3AString-instance-method" class="signature"><strong>#handle</strong>(method : String, params : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String), modern : Bool = <span class="n">false</span>) : String</a>
         
-          <div class="summary"><p>returns the JSON result of the request, any notifications generated are appended to <code>emitted</code> for delivery before the result</p></div>
+          <div class="summary"><p>returns the JSON result of the request.</p></div>
         
       </li>
     
       <li class="entry-summary">
         <a href="#initialize_result%28protocol_version%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method" class="signature"><strong>#initialize_result</strong>(protocol_version : String, request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String</a>
         
-          <div class="summary"><p>the <code>initialize</code> result for the negotiated protocol version</p></div>
+          <div class="summary"><p>the <code>initialize</code> result for the negotiated protocol version, before 2026-07-28</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#server_info%28json%3AJSON%3A%3ABuilder%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%29%3ANil-instance-method" class="signature"><strong>#server_info</strong>(json : JSON::Builder, request : HTTP::Request | Nil = <span class="n">nil</span>) : Nil</a>
+        
+          <div class="summary"><p>the server's <code>Implementation</code>, its name, version and icons</p></div>
         
       </li>
     
@@ -666,7 +680,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/protocol.cr#L41" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/protocol.cr#L43" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -687,6 +701,27 @@
     Instance Method Detail
   </h2>
   
+    <div class="entry-detail" id="discover_result(request:HTTP::Request|Nil=nil,bound:Hash(String,String)={}ofString=&gt;String):String-instance-method">
+      <div class="signature">
+        
+        def <strong>discover_result</strong>(request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String
+
+        <a class="method-permalink" href="#discover_result%28request%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the <code>server/discover</code> result, the server info is in the result's <code>_meta</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/protocol.cr#L75" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
     <div class="entry-detail" id="flat?:Bool-instance-method">
       <div class="signature">
         
@@ -703,29 +738,28 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/protocol.cr#L45" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/protocol.cr#L47" target="_blank">View source</a>]
         
       </div>
     </div>
   
-    <div class="entry-detail" id="handle(method:String,params:Hash(String,JSON::Any),session:Session,request:HTTP::Request,emitted:Array(String)):String-instance-method">
+    <div class="entry-detail" id="handle(method:String,params:Hash(String,JSON::Any),request:HTTP::Request,bound:Hash(String,String),modern:Bool=false):String-instance-method">
       <div class="signature">
         
-        def <strong>handle</strong>(method : String, params : Hash(String, JSON::Any), session : <a href="../../ActionController/MCPServer/Session.html">Session</a>, request : HTTP::Request, emitted : Array(String)) : String
+        def <strong>handle</strong>(method : String, params : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String), modern : Bool = <span class="n">false</span>) : String
 
-        <a class="method-permalink" href="#handle%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%2Csession%3ASession%2Crequest%3AHTTP%3A%3ARequest%2Cemitted%3AArray%28String%29%29%3AString-instance-method">#</a>
+        <a class="method-permalink" href="#handle%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%2Crequest%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%2Cmodern%3ABool%3Dfalse%29%3AString-instance-method">#</a>
       </div>
       
         <div class="doc">
           
-          <p>returns the JSON result of the request, any notifications generated are
-appended to <code>emitted</code> for delivery before the result</p>
+          <p>returns the JSON result of the request. <code>modern</code> requests use 2026-07-28 or later</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/protocol.cr#L99" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/protocol.cr#L116" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -740,15 +774,36 @@ appended to <code>emitted</code> for delivery before the result</p>
       
         <div class="doc">
           
-          <p>the <code>initialize</code> result for the negotiated protocol version</p>
-<p>an endpoint's <code>instructions</code> method is run with the session's <code>bound</code> path params,
+          <p>the <code>initialize</code> result for the negotiated protocol version, before 2026-07-28</p>
+<p>an endpoint's <code>instructions</code> method is run with the <code>bound</code> path params,
 raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError</a></code> or <code><a href="../../ActionController/MCPServer/Unauthorized.html">Unauthorized</a></code> if it fails</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/protocol.cr#L58" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/protocol.cr#L60" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="server_info(json:JSON::Builder,request:HTTP::Request|Nil=nil):Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>server_info</strong>(json : JSON::Builder, request : HTTP::Request | Nil = <span class="n">nil</span>) : Nil
+
+        <a class="method-permalink" href="#server_info%28json%3AJSON%3A%3ABuilder%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%29%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the server's <code>Implementation</code>, its name, version and icons</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/protocol.cr#L89" target="_blank">View source</a>]
         
       </div>
     </div>

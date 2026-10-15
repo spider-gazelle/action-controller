@@ -207,16 +207,6 @@
       
     </li>
   
-  <li class=" " data-id="action-controller/ActionController/MCPServer/Session" data-name="actioncontroller::mcpserver::session">
-      <a href="../../ActionController/MCPServer/Session.html">Session</a>
-      
-    </li>
-  
-  <li class=" " data-id="action-controller/ActionController/MCPServer/SessionStore" data-name="actioncontroller::mcpserver::sessionstore">
-      <a href="../../ActionController/MCPServer/SessionStore.html">SessionStore</a>
-      
-    </li>
-  
   <li class=" " data-id="action-controller/ActionController/MCPServer/Tool" data-name="actioncontroller::mcpserver::tool">
       <a href="../../ActionController/MCPServer/Tool.html">Tool</a>
       
@@ -232,8 +222,18 @@
       
     </li>
   
-  <li class=" current" data-id="action-controller/ActionController/MCPServer/Transport" data-name="actioncontroller::mcpserver::transport">
+  <li class="parent open current" data-id="action-controller/ActionController/MCPServer/Transport" data-name="actioncontroller::mcpserver::transport">
       <a href="../../ActionController/MCPServer/Transport.html">Transport</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Transport/Era" data-name="actioncontroller::mcpserver::transport::era">
+      <a href="../../ActionController/MCPServer/Transport/Era.html">Era</a>
+      
+    </li>
+  
+</ul>
+
       
     </li>
   
@@ -467,7 +467,11 @@
     Overview
   </h2>
 
-  <p>implements the <a href="https://modelcontextprotocol.io/specification/2025-11-25/basic/transports#streamable-http">Streamable HTTP</a> transport</p>
+  <p>implements the <a href="https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http">Streamable HTTP</a>
+transport, statelessly. Each POST is handled on its own, so the requests of a client can
+be served by any instance of the application.</p>
+<p>2026-07-28 requests carry their protocol version and client capabilities in <code>_meta</code>,
+earlier versions start with <code>initialize</code> and no session is created</p>
 
 
 
@@ -494,7 +498,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L12" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L17" target="_blank">
         action-controller/mcp/transport.cr
       </a>
     
@@ -515,18 +519,47 @@
   
   <dl>
     
-      <dt class="entry-const" id="KEEPALIVE">
-        <strong>KEEPALIVE</strong> = <code><span class="n">25</span>.seconds</code>
+      <dt class="entry-const" id="META_CAPABILITIES">
+        <strong>META_CAPABILITIES</strong> = <code><span class="s">&quot;io.modelcontextprotocol/clientCapabilities&quot;</span></code>
       </dt>
+      
+    
+      <dt class="entry-const" id="META_SERVER_INFO">
+        <strong>META_SERVER_INFO</strong> = <code><span class="s">&quot;io.modelcontextprotocol/serverInfo&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="META_SUBSCRIPTION">
+        <strong>META_SUBSCRIPTION</strong> = <code><span class="s">&quot;io.modelcontextprotocol/subscriptionId&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="META_VERSION">
+        <strong>META_VERSION</strong> = <code><span class="s">&quot;io.modelcontextprotocol/protocolVersion&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="METHOD_HEADER">
+        <strong>METHOD_HEADER</strong> = <code><span class="s">&quot;Mcp-Method&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="NAME_HEADER">
+        <strong>NAME_HEADER</strong> = <code><span class="s">&quot;Mcp-Name&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="NAMED_METHODS">
+        <strong>NAMED_METHODS</strong> = <code>{<span class="s">&quot;tools/call&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;name&quot;</span>, <span class="s">&quot;prompts/get&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;name&quot;</span>, <span class="s">&quot;resources/read&quot;</span> <span class="o">=&gt;</span> <span class="s">&quot;uri&quot;</span>}</code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>methods that name a tool, prompt or resource in the <code>Mcp-Name</code> header</p>
+      </dd>
       
     
       <dt class="entry-const" id="RESOURCE_METADATA_PATH">
         <strong>RESOURCE_METADATA_PATH</strong> = <code><span class="s">&quot;/.well-known/oauth-protected-resource&quot;</span></code>
-      </dt>
-      
-    
-      <dt class="entry-const" id="SESSION_HEADER">
-        <strong>SESSION_HEADER</strong> = <code><span class="s">&quot;Mcp-Session-Id&quot;</span></code>
       </dt>
       
     
@@ -588,16 +621,9 @@
       </li>
     
       <li class="entry-summary">
-        <a href="#delete%28context%3AHTTP%3A%3AServer%3A%3AContext%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method" class="signature"><strong>#delete</strong>(context : HTTP::Server::Context) : HTTP::Server::Context</a>
+        <a href="#method_not_allowed%28context%3AHTTP%3A%3AServer%3A%3AContext%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method" class="signature"><strong>#method_not_allowed</strong>(context : HTTP::Server::Context) : HTTP::Server::Context</a>
         
-          <div class="summary"><p>terminates the session</p></div>
-        
-      </li>
-    
-      <li class="entry-summary">
-        <a href="#get%28context%3AHTTP%3A%3AServer%3A%3AContext%2Chead_request%3ABool%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method" class="signature"><strong>#get</strong>(context : HTTP::Server::Context, head_request : Bool) : HTTP::Server::Context</a>
-        
-          <div class="summary"><p>opens an event stream for server to client messages</p></div>
+          <div class="summary"><p>there are no event streams or sessions, so GET and DELETE aren't supported</p></div>
         
       </li>
     
@@ -624,11 +650,6 @@
         <a href="#resource_metadata%28context%3AHTTP%3A%3AServer%3A%3AContext%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method" class="signature"><strong>#resource_metadata</strong>(context : HTTP::Server::Context) : HTTP::Server::Context</a>
         
           <div class="summary"><p>OAuth 2.0 protected resource metadata, see <code><a href="../../ActionController/MCPServer.html#resource_metadata%3AProc%28HTTP%3A%3ARequest%2CResourceMetadata%29%7CNil-class-method">MCPServer.resource_metadata</a></code></p></div>
-        
-      </li>
-    
-      <li class="entry-summary">
-        <a href="#sessions%3ASessionStore-instance-method" class="signature"><strong>#sessions</strong> : SessionStore</a>
         
       </li>
     
@@ -692,7 +713,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L29" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L47" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -724,7 +745,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L19" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L37" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -745,49 +766,28 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L26" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L44" target="_blank">View source</a>]
         
       </div>
     </div>
   
-    <div class="entry-detail" id="delete(context:HTTP::Server::Context):HTTP::Server::Context-instance-method">
+    <div class="entry-detail" id="method_not_allowed(context:HTTP::Server::Context):HTTP::Server::Context-instance-method">
       <div class="signature">
         
-        def <strong>delete</strong>(context : <a href="../../HTTP/Server/Context.html">HTTP::Server::Context</a>) : <a href="../../HTTP/Server/Context.html">HTTP::Server::Context</a>
+        def <strong>method_not_allowed</strong>(context : <a href="../../HTTP/Server/Context.html">HTTP::Server::Context</a>) : <a href="../../HTTP/Server/Context.html">HTTP::Server::Context</a>
 
-        <a class="method-permalink" href="#delete%28context%3AHTTP%3A%3AServer%3A%3AContext%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method">#</a>
+        <a class="method-permalink" href="#method_not_allowed%28context%3AHTTP%3A%3AServer%3A%3AContext%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method">#</a>
       </div>
       
         <div class="doc">
           
-          <p>terminates the session</p>
+          <p>there are no event streams or sessions, so GET and DELETE aren't supported</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L119" target="_blank">View source</a>]
-        
-      </div>
-    </div>
-  
-    <div class="entry-detail" id="get(context:HTTP::Server::Context,head_request:Bool):HTTP::Server::Context-instance-method">
-      <div class="signature">
-        
-        def <strong>get</strong>(context : <a href="../../HTTP/Server/Context.html">HTTP::Server::Context</a>, head_request : Bool) : <a href="../../HTTP/Server/Context.html">HTTP::Server::Context</a>
-
-        <a class="method-permalink" href="#get%28context%3AHTTP%3A%3AServer%3A%3AContext%2Chead_request%3ABool%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method">#</a>
-      </div>
-      
-        <div class="doc">
-          
-          <p>opens an event stream for server to client messages</p>
-        </div>
-      
-      <br/>
-      <div>
-        
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L86" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L97" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -808,7 +808,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L23" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L41" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -829,7 +829,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L36" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L54" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -845,7 +845,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L20" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L38" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -866,23 +866,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L128" target="_blank">View source</a>]
-        
-      </div>
-    </div>
-  
-    <div class="entry-detail" id="sessions:SessionStore-instance-method">
-      <div class="signature">
-        
-        def <strong>sessions</strong> : <a href="../../ActionController/MCPServer/SessionStore.html">SessionStore</a>
-
-        <a class="method-permalink" href="#sessions%3ASessionStore-instance-method">#</a>
-      </div>
-      
-      <br/>
-      <div>
-        
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L18" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L103" target="_blank">View source</a>]
         
       </div>
     </div>

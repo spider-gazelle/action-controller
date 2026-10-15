@@ -207,16 +207,6 @@
       
     </li>
   
-  <li class=" " data-id="action-controller/ActionController/MCPServer/Session" data-name="actioncontroller::mcpserver::session">
-      <a href="../ActionController/MCPServer/Session.html">Session</a>
-      
-    </li>
-  
-  <li class=" " data-id="action-controller/ActionController/MCPServer/SessionStore" data-name="actioncontroller::mcpserver::sessionstore">
-      <a href="../ActionController/MCPServer/SessionStore.html">SessionStore</a>
-      
-    </li>
-  
   <li class=" " data-id="action-controller/ActionController/MCPServer/Tool" data-name="actioncontroller::mcpserver::tool">
       <a href="../ActionController/MCPServer/Tool.html">Tool</a>
       
@@ -232,8 +222,18 @@
       
     </li>
   
-  <li class=" " data-id="action-controller/ActionController/MCPServer/Transport" data-name="actioncontroller::mcpserver::transport">
+  <li class="parent " data-id="action-controller/ActionController/MCPServer/Transport" data-name="actioncontroller::mcpserver::transport">
       <a href="../ActionController/MCPServer/Transport.html">Transport</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Transport/Era" data-name="actioncontroller::mcpserver::transport::era">
+      <a href="../ActionController/MCPServer/Transport/Era.html">Era</a>
+      
+    </li>
+  
+</ul>
+
       
     </li>
   
@@ -468,14 +468,15 @@
   <p>Exposes the application's annotated routes as an <a href="https://modelcontextprotocol.io">MCP</a> server
 using the Streamable HTTP transport.</p>
 <p>Controllers are presented as toolboxes and their routes as tools. To keep the
-model's context lean a session starts with these tools, plus any root tools:</p>
+model's context lean only these tools are listed, plus any root tools:</p>
 <ul>
 <li><code>list_toolboxes</code> lists the controllers and their descriptions</li>
-<li><code>open_toolbox(name)</code> adds the controller's routes to the session's tool set</li>
-<li><code>close_toolbox(name)</code> removes them again</li>
-<li><code>call_read_only(name, arguments)</code> and <code>call_tool(name, arguments)</code> run tools from open
-toolboxes, for clients that don't refresh their tools (when <code>tool_proxy</code> is enabled)</li>
+<li><code>open_toolbox(name)</code> returns the definitions of the controller's tools</li>
+<li><code>call_read_only(name, arguments)</code> and <code>call_tool(name, arguments)</code> run the tools</li>
 </ul>
+<p>The server is stateless, there are no sessions, so requests can be served by any
+instance of the application. Both the 2026-07-28 protocol and the earlier versions,
+which start with <code>initialize</code>, are supported.</p>
 <p>Controllers can also be served as their own MCP server (<code>@[<a href="../ActionController/MCP.html">AC::MCP</a>(endpoint: true)]</code>),
 and tools can render MCP Apps cards (<code>@[<a href="../ActionController/MCP.html">AC::MCP</a>(ui:)]</code>), see <code><a href="../ActionController/MCP.html">ActionController::MCP</a></code>.</p>
 <p>Tool calls are dispatched in-process through the application router, so
@@ -531,70 +532,63 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L42" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L44" target="_blank">
         action-controller/mcp.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/auth.cr#L3" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/auth.cr#L3" target="_blank">
         action-controller/mcp/auth.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/description.cr#L1" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/description.cr#L1" target="_blank">
         action-controller/mcp/description.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/icons.cr#L4" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/icons.cr#L4" target="_blank">
         action-controller/mcp/icons.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/invoker.cr#L5" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/invoker.cr#L5" target="_blank">
         action-controller/mcp/invoker.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/previewer.cr#L5" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/previewer.cr#L5" target="_blank">
         action-controller/mcp/previewer.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/protocol.cr#L1" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/protocol.cr#L1" target="_blank">
         action-controller/mcp/protocol.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/session.cr#L3" target="_blank">
-        action-controller/mcp/session.cr
-      </a>
-    
-    <br/>
-  
-    
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/transport.cr#L1" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/transport.cr#L1" target="_blank">
         action-controller/mcp/transport.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/ui.cr#L3" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/ui.cr#L3" target="_blank">
         action-controller/mcp/ui.cr
       </a>
     
@@ -615,13 +609,26 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
   
   <dl>
     
-      <dt class="entry-const" id="DEFAULT_INSTRUCTIONS">
-        <strong>DEFAULT_INSTRUCTIONS</strong> = <code><span class="s">&quot;Tools are grouped into toolboxes. Call list_toolboxes to discover what is available,\nopen_toolbox to load the tools in a toolbox and close_toolbox once you no longer need them.&quot;</span></code>
+      <dt class="entry-const" id="LEGACY_VERSIONS">
+        <strong>LEGACY_VERSIONS</strong> = <code>{<span class="s">&quot;2025-11-25&quot;</span>, <span class="s">&quot;2025-06-18&quot;</span>, <span class="s">&quot;2025-03-26&quot;</span>}</code>
       </dt>
+      
+      <dd class="entry-const-doc">
+        <p>protocol versions that start with <code>initialize</code>, newest first</p>
+      </dd>
+      
+    
+      <dt class="entry-const" id="MODERN_VERSIONS">
+        <strong>MODERN_VERSIONS</strong> = <code>{<span class="s">&quot;2026-07-28&quot;</span>}</code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>stateless protocol versions, where every request carries its version in <code>_meta</code></p>
+      </dd>
       
     
       <dt class="entry-const" id="PROTOCOL_VERSIONS">
-        <strong>PROTOCOL_VERSIONS</strong> = <code>{<span class="s">&quot;2025-11-25&quot;</span>, <span class="s">&quot;2025-06-18&quot;</span>, <span class="s">&quot;2025-03-26&quot;</span>}</code>
+        <strong>PROTOCOL_VERSIONS</strong> = <code><span class="t">MODERN_VERSIONS</span> <span class="o">+</span> <span class="t">LEGACY_VERSIONS</span></code>
       </dt>
       
       <dd class="entry-const-doc">
@@ -629,8 +636,8 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       </dd>
       
     
-      <dt class="entry-const" id="PROXY_INSTRUCTIONS">
-        <strong>PROXY_INSTRUCTIONS</strong> = <code><span class="s">&quot;</span><span class="i">#{</span><span class="t">DEFAULT_INSTRUCTIONS</span><span class="i">}</span><span class="s">\nopen_toolbox returns the definitions of the tools it loads. If they don&#39;t appear in your\navailable tools, run them with the tool named in their proxy field, passing the tool name\nand its arguments: call_read_only for tools that only read data, call_tool for the rest.&quot;</span></code>
+      <dt class="entry-const" id="TOOLBOX_INSTRUCTIONS">
+        <strong>TOOLBOX_INSTRUCTIONS</strong> = <code><span class="s">&quot;Tools are grouped into toolboxes. Call list_toolboxes to discover what is available and\nopen_toolbox for the definitions of the tools in a toolbox. Run them with the tool named\nin their proxy field, passing the tool name and its arguments: call_read_only for tools\nthat only read data, call_tool for the rest.&quot;</span></code>
       </dt>
       
     
@@ -704,6 +711,20 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
         <a href="#authenticator%3D%28authenticator%3AProc%28HTTP%3A%3ARequest%2CBool%29%7CNil%29-class-method" class="signature"><strong>.authenticator=</strong>(authenticator : Proc(HTTP::Request, Bool) | Nil)</a>
         
           <div class="summary"><p>authenticates MCP requests, returning <code>true</code> if the request is permitted.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#cache_ttl%3ATime%3A%3ASpan-class-method" class="signature"><strong>.cache_ttl</strong> : Time::Span</a>
+        
+          <div class="summary"><p>how long clients can cache the server description and lists (<code>ttlMs</code>), 2026-07-28 onwards</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#cache_ttl%3D%28cache_ttl%3ATime%3A%3ASpan%29-class-method" class="signature"><strong>.cache_ttl=</strong>(cache_ttl : Time::Span)</a>
+        
+          <div class="summary"><p>how long clients can cache the server description and lists (<code>ttlMs</code>), 2026-07-28 onwards</p></div>
         
       </li>
     
@@ -811,37 +832,23 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       </li>
     
       <li class="entry-summary">
-        <a href="#session_timeout%3ATime%3A%3ASpan-class-method" class="signature"><strong>.session_timeout</strong> : Time::Span</a>
-        
-          <div class="summary"><p>sessions inactive for this period are discarded</p></div>
-        
-      </li>
-    
-      <li class="entry-summary">
-        <a href="#session_timeout%3D%28session_timeout%3ATime%3A%3ASpan%29-class-method" class="signature"><strong>.session_timeout=</strong>(session_timeout : Time::Span)</a>
-        
-          <div class="summary"><p>sessions inactive for this period are discarded</p></div>
-        
-      </li>
-    
-      <li class="entry-summary">
         <a href="#tool_proxy%3D%28tool_proxy%3ABool%29-class-method" class="signature"><strong>.tool_proxy=</strong>(tool_proxy : Bool)</a>
         
-          <div class="summary"><p>adds a <code>call_tool</code> meta tool that runs the tools in open toolboxes, for clients that don't refresh their tools when notified with <code>tools/list_changed</code></p></div>
+          <div class="summary"><p>groups the tools into toolboxes, run by the <code>call_read_only</code> and <code>call_tool</code> meta tools.</p></div>
         
       </li>
     
       <li class="entry-summary">
         <a href="#tool_proxy%3F%3ABool-class-method" class="signature"><strong>.tool_proxy?</strong> : Bool</a>
         
-          <div class="summary"><p>adds a <code>call_tool</code> meta tool that runs the tools in open toolboxes, for clients that don't refresh their tools when notified with <code>tools/list_changed</code></p></div>
+          <div class="summary"><p>groups the tools into toolboxes, run by the <code>call_read_only</code> and <code>call_tool</code> meta tools.</p></div>
         
       </li>
     
       <li class="entry-summary">
         <a href="#toolbox_instructions%3AString-class-method" class="signature"><strong>.toolbox_instructions</strong> : String</a>
         
-          <div class="summary"><p>explains how to use toolboxes, taking <code>tool_proxy</code> into account</p></div>
+          <div class="summary"><p>explains how to use toolboxes, empty when <code>tool_proxy</code> is disabled</p></div>
         
       </li>
     
@@ -1003,7 +1010,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L95" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L98" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1025,7 +1032,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L95" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L98" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1046,7 +1053,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L163" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L166" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1067,7 +1074,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L163" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L166" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1090,7 +1097,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L160" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L163" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1113,7 +1120,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L160" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L163" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1135,7 +1142,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L154" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L157" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1157,7 +1164,49 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L154" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L157" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="cache_ttl:Time::Span-class-method">
+      <div class="signature">
+        
+        def self.<strong>cache_ttl</strong> : Time::Span
+
+        <a class="method-permalink" href="#cache_ttl%3ATime%3A%3ASpan-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>how long clients can cache the server description and lists (<code>ttlMs</code>), 2026-07-28 onwards</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L123" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="cache_ttl=(cache_ttl:Time::Span)-class-method">
+      <div class="signature">
+        
+        def self.<strong>cache_ttl=</strong>(cache_ttl : Time::Span)
+
+        <a class="method-permalink" href="#cache_ttl%3D%28cache_ttl%3ATime%3A%3ASpan%29-class-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>how long clients can cache the server description and lists (<code>ttlMs</code>), 2026-07-28 onwards</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L123" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1178,7 +1227,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L64" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L67" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1199,7 +1248,7 @@ Routes can be excluded using <code>@[<a href="../ActionController/MCP.html">AC::
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L64" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L67" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1222,7 +1271,7 @@ ending in <code>*</code> matches by prefix. Everything else (<code>Link</code>, 
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L125" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L128" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1245,7 +1294,7 @@ ending in <code>*</code> matches by prefix. Everything else (<code>Link</code>, 
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L125" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L128" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1267,7 +1316,7 @@ typically used for authentication</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L91" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L94" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1289,7 +1338,7 @@ typically used for authentication</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L91" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L94" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1310,7 +1359,7 @@ typically used for authentication</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L106" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L109" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1326,7 +1375,7 @@ typically used for authentication</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L80" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L83" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1348,7 +1397,7 @@ empty string provides none. Include <code><a href="../ActionController/MCPServer
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L78" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L81" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1370,7 +1419,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L167" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L170" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1392,7 +1441,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L167" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L170" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1413,7 +1462,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L67" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L70" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1434,7 +1483,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L67" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L70" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1455,7 +1504,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L70" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L73" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1476,49 +1525,7 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L70" target="_blank">View source</a>]
-        
-      </div>
-    </div>
-  
-    <div class="entry-detail" id="session_timeout:Time::Span-class-method">
-      <div class="signature">
-        
-        def self.<strong>session_timeout</strong> : Time::Span
-
-        <a class="method-permalink" href="#session_timeout%3ATime%3A%3ASpan-class-method">#</a>
-      </div>
-      
-        <div class="doc">
-          
-          <p>sessions inactive for this period are discarded</p>
-        </div>
-      
-      <br/>
-      <div>
-        
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L120" target="_blank">View source</a>]
-        
-      </div>
-    </div>
-  
-    <div class="entry-detail" id="session_timeout=(session_timeout:Time::Span)-class-method">
-      <div class="signature">
-        
-        def self.<strong>session_timeout=</strong>(session_timeout : Time::Span)
-
-        <a class="method-permalink" href="#session_timeout%3D%28session_timeout%3ATime%3A%3ASpan%29-class-method">#</a>
-      </div>
-      
-        <div class="doc">
-          
-          <p>sessions inactive for this period are discarded</p>
-        </div>
-      
-      <br/>
-      <div>
-        
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L120" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L73" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1533,14 +1540,14 @@ refresh access tokens. The request is provided for multi-tenant deployments</p>
       
         <div class="doc">
           
-          <p>adds a <code>call_tool</code> meta tool that runs the tools in open toolboxes, for clients
-that don't refresh their tools when notified with <code>tools/list_changed</code></p>
+          <p>groups the tools into toolboxes, run by the <code>call_read_only</code> and <code>call_tool</code> meta
+tools. When disabled every tool is listed</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L74" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L77" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1555,14 +1562,14 @@ that don't refresh their tools when notified with <code>tools/list_changed</code
       
         <div class="doc">
           
-          <p>adds a <code>call_tool</code> meta tool that runs the tools in open toolboxes, for clients
-that don't refresh their tools when notified with <code>tools/list_changed</code></p>
+          <p>groups the tools into toolboxes, run by the <code>call_read_only</code> and <code>call_tool</code> meta
+tools. When disabled every tool is listed</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L74" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L77" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1577,13 +1584,13 @@ that don't refresh their tools when notified with <code>tools/list_changed</code
       
         <div class="doc">
           
-          <p>explains how to use toolboxes, taking <code>tool_proxy</code> into account</p>
+          <p>explains how to use toolboxes, empty when <code>tool_proxy</code> is disabled</p>
         </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L85" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L88" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1605,7 +1612,7 @@ that don't refresh their tools when notified with <code>tools/list_changed</code
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L99" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L102" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1627,7 +1634,7 @@ that don't refresh their tools when notified with <code>tools/list_changed</code
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L99" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L102" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1649,7 +1656,7 @@ with a <code>.meta.json</code> file next to it, i.e. <code>bookings/card.meta.js
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L103" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L106" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1671,7 +1678,7 @@ with a <code>.meta.json</code> file next to it, i.e. <code>bookings/card.meta.js
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L103" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L106" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1707,7 +1714,7 @@ with a <code>.meta.json</code> file next to it, i.e. <code>bookings/card.meta.js
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L171" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L174" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1730,7 +1737,7 @@ routes, however it will not include the documentation comments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L194" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L197" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1751,7 +1758,7 @@ routes, however it will not include the documentation comments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L209" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L212" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1772,7 +1779,7 @@ routes, however it will not include the documentation comments</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L277" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L280" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1795,7 +1802,7 @@ which requires access to the source code</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/description.cr#L421" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/description.cr#L421" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1819,7 +1826,7 @@ other argument is passed through as is</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L115" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L118" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1844,7 +1851,7 @@ see <code><a href="../ActionController/MCPServer.html#mount_endpoints%28router%3
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L229" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L232" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1881,7 +1888,7 @@ for excluding it from release builds.</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp/previewer.cr#L25" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp/previewer.cr#L25" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1902,7 +1909,7 @@ for excluding it from release builds.</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L249" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L252" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1923,7 +1930,7 @@ for excluding it from release builds.</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L244" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L247" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1944,7 +1951,7 @@ for excluding it from release builds.</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/ba52ce479ecb26617533123c8437c610dc700465/src/action-controller/mcp.cr#L218" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/96582e9b46ba88f894506b46a098b57885be5fba/src/action-controller/mcp.cr#L221" target="_blank">View source</a>]
         
       </div>
     </div>
