@@ -197,6 +197,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/RequestContext" data-name="actioncontroller::mcpserver::requestcontext">
+      <a href="../../ActionController/MCPServer/RequestContext.html">RequestContext</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/MCPServer/ResourceMetadata" data-name="actioncontroller::mcpserver::resourcemetadata">
       <a href="../../ActionController/MCPServer/ResourceMetadata.html">ResourceMetadata</a>
       
@@ -204,6 +209,11 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/RPCError" data-name="actioncontroller::mcpserver::rpcerror">
       <a href="../../ActionController/MCPServer/RPCError.html">RPCError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/StreamedResult" data-name="actioncontroller::mcpserver::streamedresult">
+      <a href="../../ActionController/MCPServer/StreamedResult.html">StreamedResult</a>
       
     </li>
   
@@ -249,6 +259,26 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/Unauthorized" data-name="actioncontroller::mcpserver::unauthorized">
       <a href="../../ActionController/MCPServer/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/MCPServer/URITemplate" data-name="actioncontroller::mcpserver::uritemplate">
+      <a href="../../ActionController/MCPServer/URITemplate.html">URITemplate</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/URITemplate/Error" data-name="actioncontroller::mcpserver::uritemplate::error">
+      <a href="../../ActionController/MCPServer/URITemplate/Error.html">Error</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Watcher" data-name="actioncontroller::mcpserver::watcher">
+      <a href="../../ActionController/MCPServer/Watcher.html">Watcher</a>
       
     </li>
   
@@ -495,7 +525,7 @@ results only depend on the request and the path params bound from its URL</p>
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/protocol.cr#L24" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L24" target="_blank">
         action-controller/mcp/protocol.cr
       </a>
     
@@ -517,7 +547,7 @@ results only depend on the request and the path params bound from its URL</p>
   <dl>
     
       <dt class="entry-const" id="CACHEABLE">
-        <strong>CACHEABLE</strong> = <code>{<span class="s">&quot;server/discover&quot;</span>, <span class="s">&quot;tools/list&quot;</span>, <span class="s">&quot;prompts/list&quot;</span>, <span class="s">&quot;resources/list&quot;</span>, <span class="s">&quot;resources/read&quot;</span>}</code>
+        <strong>CACHEABLE</strong> = <code>{<span class="s">&quot;server/discover&quot;</span>, <span class="s">&quot;tools/list&quot;</span>, <span class="s">&quot;prompts/list&quot;</span>, <span class="s">&quot;resources/list&quot;</span>, <span class="s">&quot;resources/templates/list&quot;</span>, <span class="s">&quot;resources/read&quot;</span>}</code>
       </dt>
       
       <dd class="entry-const-doc">
@@ -586,6 +616,13 @@ results only depend on the request and the path params bound from its URL</p>
   <ul class="list-summary">
     
       <li class="entry-summary">
+        <a href="#cache_ttl%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%29%3ATime%3A%3ASpan-instance-method" class="signature"><strong>#cache_ttl</strong>(method : String, params : Hash(String, JSON::Any)) : Time::Span</a>
+        
+          <div class="summary"><p>how long the result can be cached, resource templates can set their own</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#discover_result%28request%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method" class="signature"><strong>#discover_result</strong>(request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String</a>
         
           <div class="summary"><p>the <code>server/discover</code> result, the server info is in the result's <code>_meta</code></p></div>
@@ -607,6 +644,13 @@ results only depend on the request and the path params bound from its URL</p>
       </li>
     
       <li class="entry-summary">
+        <a href="#handle_streamed%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%2Crequest%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%2Cmodern%3ABool%3Dfalse%29%3AString%7CStreamedResult-instance-method" class="signature"><strong>#handle_streamed</strong>(method : String, params : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String), modern : Bool = <span class="n">false</span>) : String | StreamedResult</a>
+        
+          <div class="summary"><p>returns the JSON result of the request, or a <code><a href="../../ActionController/MCPServer/StreamedResult.html">StreamedResult</a></code> for long running routes, which the caller must close</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#initialize_result%28protocol_version%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method" class="signature"><strong>#initialize_result</strong>(protocol_version : String, request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String</a>
         
           <div class="summary"><p>the <code>initialize</code> result for the negotiated protocol version, before 2026-07-28</p></div>
@@ -614,9 +658,23 @@ results only depend on the request and the path params bound from its URL</p>
       </li>
     
       <li class="entry-summary">
+        <a href="#long_running%3F%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%29%3ABool-instance-method" class="signature"><strong>#long_running?</strong>(method : String, params : Hash(String, JSON::Any)) : Bool</a>
+        
+          <div class="summary"><p>true if the request runs a long running route, which is streamed</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#server_info%28json%3AJSON%3A%3ABuilder%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%29%3ANil-instance-method" class="signature"><strong>#server_info</strong>(json : JSON::Builder, request : HTTP::Request | Nil = <span class="n">nil</span>) : Nil</a>
         
           <div class="summary"><p>the server's <code>Implementation</code>, its name, version and icons</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#subscribable%3F%28uri%3AString%29%3ATuple%28Tool%2CHash%28String%2CString%29%29%7CNil-instance-method" class="signature"><strong>#subscribable?</strong>(uri : String) : Tuple(Tool, Hash(String, String)) | Nil</a>
+        
+          <div class="summary"><p>the subscribable resource tool matching the URI, and its template variables</p></div>
         
       </li>
     
@@ -680,7 +738,7 @@ results only depend on the request and the path params bound from its URL</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/protocol.cr#L43" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L43" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -701,10 +759,31 @@ results only depend on the request and the path params bound from its URL</p>
     Instance Method Detail
   </h2>
   
+    <div class="entry-detail" id="cache_ttl(method:String,params:Hash(String,JSON::Any)):Time::Span-instance-method">
+      <div class="signature">
+        
+        def <strong>cache_ttl</strong>(method : String, params : Hash(String, JSON::Any)) : Time::Span
+
+        <a class="method-permalink" href="#cache_ttl%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%29%3ATime%3A%3ASpan-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>how long the result can be cached, resource templates can set their own</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L262" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
     <div class="entry-detail" id="discover_result(request:HTTP::Request|Nil=nil,bound:Hash(String,String)={}ofString=&gt;String):String-instance-method">
       <div class="signature">
         
-        def <strong>discover_result</strong>(request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String
+        def <strong>discover_result</strong>(request : <a href="../../HTTP/Request.html">HTTP::Request</a> | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String
 
         <a class="method-permalink" href="#discover_result%28request%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method">#</a>
       </div>
@@ -717,7 +796,7 @@ results only depend on the request and the path params bound from its URL</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/protocol.cr#L75" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L75" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -738,7 +817,7 @@ results only depend on the request and the path params bound from its URL</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/protocol.cr#L47" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L47" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -746,7 +825,7 @@ results only depend on the request and the path params bound from its URL</p>
     <div class="entry-detail" id="handle(method:String,params:Hash(String,JSON::Any),request:HTTP::Request,bound:Hash(String,String),modern:Bool=false):String-instance-method">
       <div class="signature">
         
-        def <strong>handle</strong>(method : String, params : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String), modern : Bool = <span class="n">false</span>) : String
+        def <strong>handle</strong>(method : String, params : Hash(String, JSON::Any), request : <a href="../../HTTP/Request.html">HTTP::Request</a>, bound : Hash(String, String), modern : Bool = <span class="n">false</span>) : String
 
         <a class="method-permalink" href="#handle%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%2Crequest%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%2Cmodern%3ABool%3Dfalse%29%3AString-instance-method">#</a>
       </div>
@@ -759,7 +838,29 @@ results only depend on the request and the path params bound from its URL</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/protocol.cr#L116" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L123" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="handle_streamed(method:String,params:Hash(String,JSON::Any),request:HTTP::Request,bound:Hash(String,String),modern:Bool=false):String|StreamedResult-instance-method">
+      <div class="signature">
+        
+        def <strong>handle_streamed</strong>(method : String, params : Hash(String, JSON::Any), request : <a href="../../HTTP/Request.html">HTTP::Request</a>, bound : Hash(String, String), modern : Bool = <span class="n">false</span>) : String | <a href="../../ActionController/MCPServer/StreamedResult.html">StreamedResult</a>
+
+        <a class="method-permalink" href="#handle_streamed%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%2Crequest%3AHTTP%3A%3ARequest%2Cbound%3AHash%28String%2CString%29%2Cmodern%3ABool%3Dfalse%29%3AString%7CStreamedResult-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>returns the JSON result of the request, or a <code><a href="../../ActionController/MCPServer/StreamedResult.html">StreamedResult</a></code> for long running
+routes, which the caller must close</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L139" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -767,7 +868,7 @@ results only depend on the request and the path params bound from its URL</p>
     <div class="entry-detail" id="initialize_result(protocol_version:String,request:HTTP::Request|Nil=nil,bound:Hash(String,String)={}ofString=&gt;String):String-instance-method">
       <div class="signature">
         
-        def <strong>initialize_result</strong>(protocol_version : String, request : HTTP::Request | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String
+        def <strong>initialize_result</strong>(protocol_version : String, request : <a href="../../HTTP/Request.html">HTTP::Request</a> | Nil = <span class="n">nil</span>, bound : Hash(String, String) = {} <span class="k">of</span> <span class="t">String</span> <span class="o">=&gt;</span> <span class="t">String</span>) : String
 
         <a class="method-permalink" href="#initialize_result%28protocol_version%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%2Cbound%3AHash%28String%2CString%29%3D%7B%7DofString%3D%3EString%29%3AString-instance-method">#</a>
       </div>
@@ -782,7 +883,28 @@ raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError<
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/protocol.cr#L60" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L60" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="long_running?(method:String,params:Hash(String,JSON::Any)):Bool-instance-method">
+      <div class="signature">
+        
+        def <strong>long_running?</strong>(method : String, params : Hash(String, JSON::Any)) : Bool
+
+        <a class="method-permalink" href="#long_running%3F%28method%3AString%2Cparams%3AHash%28String%2CJSON%3A%3AAny%29%29%3ABool-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>true if the request runs a long running route, which is streamed</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L245" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -790,7 +912,7 @@ raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError<
     <div class="entry-detail" id="server_info(json:JSON::Builder,request:HTTP::Request|Nil=nil):Nil-instance-method">
       <div class="signature">
         
-        def <strong>server_info</strong>(json : JSON::Builder, request : HTTP::Request | Nil = <span class="n">nil</span>) : Nil
+        def <strong>server_info</strong>(json : JSON::Builder, request : <a href="../../HTTP/Request.html">HTTP::Request</a> | Nil = <span class="n">nil</span>) : Nil
 
         <a class="method-permalink" href="#server_info%28json%3AJSON%3A%3ABuilder%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%29%3ANil-instance-method">#</a>
       </div>
@@ -803,7 +925,28 @@ raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError<
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/protocol.cr#L89" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L89" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="subscribable?(uri:String):Tuple(Tool,Hash(String,String))|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>subscribable?</strong>(uri : String) : Tuple(<a href="../../ActionController/MCPServer/Tool.html">Tool</a>, Hash(String, String)) | Nil
+
+        <a class="method-permalink" href="#subscribable%3F%28uri%3AString%29%3ATuple%28Tool%2CHash%28String%2CString%29%29%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the subscribable resource tool matching the URI, and its template variables</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/protocol.cr#L240" target="_blank">View source</a>]
         
       </div>
     </div>

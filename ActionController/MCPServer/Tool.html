@@ -197,6 +197,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/RequestContext" data-name="actioncontroller::mcpserver::requestcontext">
+      <a href="../../ActionController/MCPServer/RequestContext.html">RequestContext</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/MCPServer/ResourceMetadata" data-name="actioncontroller::mcpserver::resourcemetadata">
       <a href="../../ActionController/MCPServer/ResourceMetadata.html">ResourceMetadata</a>
       
@@ -204,6 +209,11 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/RPCError" data-name="actioncontroller::mcpserver::rpcerror">
       <a href="../../ActionController/MCPServer/RPCError.html">RPCError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/StreamedResult" data-name="actioncontroller::mcpserver::streamedresult">
+      <a href="../../ActionController/MCPServer/StreamedResult.html">StreamedResult</a>
       
     </li>
   
@@ -249,6 +259,26 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/Unauthorized" data-name="actioncontroller::mcpserver::unauthorized">
       <a href="../../ActionController/MCPServer/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/MCPServer/URITemplate" data-name="actioncontroller::mcpserver::uritemplate">
+      <a href="../../ActionController/MCPServer/URITemplate.html">URITemplate</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/URITemplate/Error" data-name="actioncontroller::mcpserver::uritemplate::error">
+      <a href="../../ActionController/MCPServer/URITemplate/Error.html">Error</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Watcher" data-name="actioncontroller::mcpserver::watcher">
+      <a href="../../ActionController/MCPServer/Watcher.html">Watcher</a>
       
     </li>
   
@@ -524,7 +554,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L41" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L41" target="_blank">
         action-controller/mcp/description.cr
       </a>
     
@@ -547,7 +577,7 @@
   <ul class="list-summary">
     
       <li class="entry-summary">
-        <a href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cverb%3AString%2Cpath%3AString%2Cparams%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolParam%29%2Cbody%3ANil%7CString%2Cinput_schema%3AJSON%3A%3AAny%2Croot%3ABool%3Dfalse%2Cbehaviour%3ANil%7CArray%28String%29%3Dnil%2Cui%3ANil%7CString%3Dnil%2Cvisibility%3ANil%7CArray%28String%29%3Dnil%2Ctitle%3ANil%7CString%3Dnil%2Cicons%3ANil%7CArray%28JSON%3A%3AAny%29%3Dnil%29-class-method" class="signature"><strong>.new</strong>(name : String, description : Nil | String, verb : String, path : String, params : Array(ActionController::MCPServer::ToolParam), body : Nil | String, input_schema : JSON::Any, root : Bool = <span class="n">false</span>, behaviour : Nil | Array(String) = <span class="n">nil</span>, ui : Nil | String = <span class="n">nil</span>, visibility : Nil | Array(String) = <span class="n">nil</span>, title : Nil | String = <span class="n">nil</span>, icons : Nil | Array(JSON::Any) = <span class="n">nil</span>)</a>
+        <a href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cverb%3AString%2Cpath%3AString%2Cparams%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolParam%29%2Cbody%3ANil%7CString%2Cinput_schema%3AJSON%3A%3AAny%2Croot%3ABool%3Dfalse%2Cbehaviour%3ANil%7CArray%28String%29%3Dnil%2Cui%3ANil%7CString%3Dnil%2Cvisibility%3ANil%7CArray%28String%29%3Dnil%2Ctitle%3ANil%7CString%3Dnil%2Cicons%3ANil%7CArray%28JSON%3A%3AAny%29%3Dnil%2Cresource%3ANil%7CString%3Dnil%2Cmime_type%3ANil%7CString%3Dnil%2Csubscribe%3ABool%3Dfalse%2Ccache_ttl%3AInt32%7CNil%3Dnil%2Clong_running%3ABool%3Dfalse%2Cmax_bytes%3AInt64%7CNil%3Dnil%29-class-method" class="signature"><strong>.new</strong>(name : String, description : Nil | String, verb : String, path : String, params : Array(ActionController::MCPServer::ToolParam), body : Nil | String, input_schema : JSON::Any, root : Bool = <span class="n">false</span>, behaviour : Nil | Array(String) = <span class="n">nil</span>, ui : Nil | String = <span class="n">nil</span>, visibility : Nil | Array(String) = <span class="n">nil</span>, title : Nil | String = <span class="n">nil</span>, icons : Nil | Array(JSON::Any) = <span class="n">nil</span>, resource : Nil | String = <span class="n">nil</span>, mime_type : Nil | String = <span class="n">nil</span>, subscribe : Bool = <span class="n">false</span>, cache_ttl : Int32 | Nil = <span class="n">nil</span>, long_running : Bool = <span class="n">false</span>, max_bytes : Int64 | Nil = <span class="n">nil</span>)</a>
         
       </li>
     
@@ -611,6 +641,13 @@
       </li>
     
       <li class="entry-summary">
+        <a href="#cache_ttl%3AInt32%7CNil-instance-method" class="signature"><strong>#cache_ttl</strong> : Int32 | Nil</a>
+        
+          <div class="summary"><p>seconds a resource read can be cached, <code>nil</code> uses <code><a href="../../ActionController/MCPServer.html#cache_ttl%3ATime%3A%3ASpan-class-method">MCPServer.cache_ttl</a></code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#description%3AString%7CNil-instance-method" class="signature"><strong>#description</strong> : String | Nil</a>
         
       </li>
@@ -626,6 +663,27 @@
         <a href="#input_schema%3AJSON%3A%3AAny-instance-method" class="signature"><strong>#input_schema</strong> : JSON::Any</a>
         
           <div class="summary"><p>JSON schema describing the tool arguments</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#long_running%3F%3ABool-instance-method" class="signature"><strong>#long_running?</strong> : Bool</a>
+        
+          <div class="summary"><p>streams progress and spools the response to disk, see <code><a href="../../ActionController/MCPServer/RequestContext.html">MCPServer::RequestContext</a></code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#max_bytes%3AInt64%7CNil-instance-method" class="signature"><strong>#max_bytes</strong> : Int64 | Nil</a>
+        
+          <div class="summary"><p>the maximum response size, in bytes, of a long running route</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#mime_type%3AString%7CNil-instance-method" class="signature"><strong>#mime_type</strong> : String | Nil</a>
+        
+          <div class="summary"><p>the MIME type of the resource contents</p></div>
         
       </li>
     
@@ -668,9 +726,23 @@
       </li>
     
       <li class="entry-summary">
+        <a href="#resource%3AString%7CNil-instance-method" class="signature"><strong>#resource</strong> : String | Nil</a>
+        
+          <div class="summary"><p>the resource template the route is also readable as, i.e.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#root%3F%3ABool-instance-method" class="signature"><strong>#root?</strong> : Bool</a>
         
           <div class="summary"><p>always available, without opening the toolbox</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#subscribe%3F%3ABool-instance-method" class="signature"><strong>#subscribe?</strong> : Bool</a>
+        
+          <div class="summary"><p>clients can subscribe to updates of the resource</p></div>
         
       </li>
     
@@ -692,6 +764,13 @@
         <a href="#ui%3AString%7CNil-instance-method" class="signature"><strong>#ui</strong> : String | Nil</a>
         
           <div class="summary"><p>the MCP Apps card rendered for the tool, i.e.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#uri_template%3AURITemplate%7CNil-instance-method" class="signature"><strong>#uri_template</strong> : URITemplate | Nil</a>
+        
+          <div class="summary"><p>the parsed resource template</p></div>
         
       </li>
     
@@ -777,18 +856,18 @@
     Constructor Detail
   </h2>
   
-    <div class="entry-detail" id="new(name:String,description:Nil|String,verb:String,path:String,params:Array(ActionController::MCPServer::ToolParam),body:Nil|String,input_schema:JSON::Any,root:Bool=false,behaviour:Nil|Array(String)=nil,ui:Nil|String=nil,visibility:Nil|Array(String)=nil,title:Nil|String=nil,icons:Nil|Array(JSON::Any)=nil)-class-method">
+    <div class="entry-detail" id="new(name:String,description:Nil|String,verb:String,path:String,params:Array(ActionController::MCPServer::ToolParam),body:Nil|String,input_schema:JSON::Any,root:Bool=false,behaviour:Nil|Array(String)=nil,ui:Nil|String=nil,visibility:Nil|Array(String)=nil,title:Nil|String=nil,icons:Nil|Array(JSON::Any)=nil,resource:Nil|String=nil,mime_type:Nil|String=nil,subscribe:Bool=false,cache_ttl:Int32|Nil=nil,long_running:Bool=false,max_bytes:Int64|Nil=nil)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(name : String, description : Nil | String, verb : String, path : String, params : Array(<a href="../../ActionController/MCPServer/ToolParam.html">ActionController::MCPServer::ToolParam</a>), body : Nil | String, input_schema : JSON::Any, root : Bool = <span class="n">false</span>, behaviour : Nil | Array(String) = <span class="n">nil</span>, ui : Nil | String = <span class="n">nil</span>, visibility : Nil | Array(String) = <span class="n">nil</span>, title : Nil | String = <span class="n">nil</span>, icons : Nil | Array(JSON::Any) = <span class="n">nil</span>)
+        def self.<strong>new</strong>(name : String, description : Nil | String, verb : String, path : String, params : Array(<a href="../../ActionController/MCPServer/ToolParam.html">ActionController::MCPServer::ToolParam</a>), body : Nil | String, input_schema : JSON::Any, root : Bool = <span class="n">false</span>, behaviour : Nil | Array(String) = <span class="n">nil</span>, ui : Nil | String = <span class="n">nil</span>, visibility : Nil | Array(String) = <span class="n">nil</span>, title : Nil | String = <span class="n">nil</span>, icons : Nil | Array(JSON::Any) = <span class="n">nil</span>, resource : Nil | String = <span class="n">nil</span>, mime_type : Nil | String = <span class="n">nil</span>, subscribe : Bool = <span class="n">false</span>, cache_ttl : Int32 | Nil = <span class="n">nil</span>, long_running : Bool = <span class="n">false</span>, max_bytes : Int64 | Nil = <span class="n">nil</span>)
 
-        <a class="method-permalink" href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cverb%3AString%2Cpath%3AString%2Cparams%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolParam%29%2Cbody%3ANil%7CString%2Cinput_schema%3AJSON%3A%3AAny%2Croot%3ABool%3Dfalse%2Cbehaviour%3ANil%7CArray%28String%29%3Dnil%2Cui%3ANil%7CString%3Dnil%2Cvisibility%3ANil%7CArray%28String%29%3Dnil%2Ctitle%3ANil%7CString%3Dnil%2Cicons%3ANil%7CArray%28JSON%3A%3AAny%29%3Dnil%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28name%3AString%2Cdescription%3ANil%7CString%2Cverb%3AString%2Cpath%3AString%2Cparams%3AArray%28ActionController%3A%3AMCPServer%3A%3AToolParam%29%2Cbody%3ANil%7CString%2Cinput_schema%3AJSON%3A%3AAny%2Croot%3ABool%3Dfalse%2Cbehaviour%3ANil%7CArray%28String%29%3Dnil%2Cui%3ANil%7CString%3Dnil%2Cvisibility%3ANil%7CArray%28String%29%3Dnil%2Ctitle%3ANil%7CString%3Dnil%2Cicons%3ANil%7CArray%28JSON%3A%3AAny%29%3Dnil%2Cresource%3ANil%7CString%3Dnil%2Cmime_type%3ANil%7CString%3Dnil%2Csubscribe%3ABool%3Dfalse%2Ccache_ttl%3AInt32%7CNil%3Dnil%2Clong_running%3ABool%3Dfalse%2Cmax_bytes%3AInt64%7CNil%3Dnil%29-class-method">#</a>
       </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L79" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L97" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -804,7 +883,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L43" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L43" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -820,7 +899,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L42" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L42" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -836,7 +915,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L42" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L42" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -852,7 +931,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L43" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L43" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -889,7 +968,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L64" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L64" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -910,7 +989,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L83" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L111" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -931,7 +1010,28 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L54" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L54" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="cache_ttl:Int32|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>cache_ttl</strong> : Int32 | Nil
+
+        <a class="method-permalink" href="#cache_ttl%3AInt32%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>seconds a resource read can be cached, <code>nil</code> uses <code><a href="../../ActionController/MCPServer.html#cache_ttl%3ATime%3A%3ASpan-class-method">MCPServer.cache_ttl</a></code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L89" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -947,7 +1047,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L46" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L46" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -968,7 +1068,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L74" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L74" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -989,7 +1089,70 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L58" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L58" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="long_running?:Bool-instance-method">
+      <div class="signature">
+        
+        def <strong>long_running?</strong> : Bool
+
+        <a class="method-permalink" href="#long_running%3F%3ABool-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>streams progress and spools the response to disk, see <code><a href="../../ActionController/MCPServer/RequestContext.html">MCPServer::RequestContext</a></code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L92" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="max_bytes:Int64|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>max_bytes</strong> : Int64 | Nil
+
+        <a class="method-permalink" href="#max_bytes%3AInt64%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the maximum response size, in bytes, of a long running route</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L95" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="mime_type:String|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>mime_type</strong> : String | Nil
+
+        <a class="method-permalink" href="#mime_type%3AString%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the MIME type of the resource contents</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L83" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1010,7 +1173,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L98" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L126" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1026,7 +1189,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L45" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L45" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1042,7 +1205,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L51" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L51" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1063,7 +1226,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L50" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L50" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1084,7 +1247,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L103" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L131" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1105,7 +1268,28 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L93" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L121" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="resource:String|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>resource</strong> : String | Nil
+
+        <a class="method-permalink" href="#resource%3AString%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the resource template the route is also readable as, i.e. <code>app://widgets/{id}</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L80" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1126,7 +1310,28 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L61" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L61" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="subscribe?:Bool-instance-method">
+      <div class="signature">
+        
+        def <strong>subscribe?</strong> : Bool
+
+        <a class="method-permalink" href="#subscribe%3F%3ABool-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>clients can subscribe to updates of the resource</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L86" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1147,7 +1352,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L70" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L70" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1170,7 +1375,7 @@ proxy tool that runs it and <code>ui: true</code> includes the MCP Apps metadata
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L110" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L138" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1191,7 +1396,28 @@ proxy tool that runs it and <code>ui: true</code> includes the MCP Apps metadata
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L77" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L77" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="uri_template:URITemplate|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>uri_template</strong> : <a href="../../ActionController/MCPServer/URITemplate.html">URITemplate</a> | Nil
+
+        <a class="method-permalink" href="#uri_template%3AURITemplate%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the parsed resource template</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L105" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1207,7 +1433,7 @@ proxy tool that runs it and <code>ui: true</code> includes the MCP Apps metadata
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L47" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L47" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1228,7 +1454,7 @@ proxy tool that runs it and <code>ui: true</code> includes the MCP Apps metadata
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/description.cr#L67" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/description.cr#L67" target="_blank">View source</a>]
         
       </div>
     </div>

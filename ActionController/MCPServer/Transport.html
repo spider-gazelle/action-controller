@@ -197,6 +197,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/RequestContext" data-name="actioncontroller::mcpserver::requestcontext">
+      <a href="../../ActionController/MCPServer/RequestContext.html">RequestContext</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/MCPServer/ResourceMetadata" data-name="actioncontroller::mcpserver::resourcemetadata">
       <a href="../../ActionController/MCPServer/ResourceMetadata.html">ResourceMetadata</a>
       
@@ -204,6 +209,11 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/RPCError" data-name="actioncontroller::mcpserver::rpcerror">
       <a href="../../ActionController/MCPServer/RPCError.html">RPCError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/StreamedResult" data-name="actioncontroller::mcpserver::streamedresult">
+      <a href="../../ActionController/MCPServer/StreamedResult.html">StreamedResult</a>
       
     </li>
   
@@ -249,6 +259,26 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/Unauthorized" data-name="actioncontroller::mcpserver::unauthorized">
       <a href="../../ActionController/MCPServer/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/MCPServer/URITemplate" data-name="actioncontroller::mcpserver::uritemplate">
+      <a href="../../ActionController/MCPServer/URITemplate.html">URITemplate</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/URITemplate/Error" data-name="actioncontroller::mcpserver::uritemplate::error">
+      <a href="../../ActionController/MCPServer/URITemplate/Error.html">Error</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Watcher" data-name="actioncontroller::mcpserver::watcher">
+      <a href="../../ActionController/MCPServer/Watcher.html">Watcher</a>
       
     </li>
   
@@ -498,7 +528,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/transport.cr#L17" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L17" target="_blank">
         action-controller/mcp/transport.cr
       </a>
     
@@ -621,6 +651,13 @@ earlier versions start with <code>initialize</code> and no session is created</p
       </li>
     
       <li class="entry-summary">
+        <a href="#close_subscriptions%3ANil-instance-method" class="signature"><strong>#close_subscriptions</strong> : Nil</a>
+        
+          <div class="summary"><p>completes every open <code>subscriptions/listen</code> stream, i.e.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#method_not_allowed%28context%3AHTTP%3A%3AServer%3A%3AContext%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method" class="signature"><strong>#method_not_allowed</strong>(context : HTTP::Server::Context) : HTTP::Server::Context</a>
         
           <div class="summary"><p>there are no event streams or sessions, so GET and DELETE aren't supported</p></div>
@@ -713,7 +750,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/transport.cr#L47" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L47" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -745,7 +782,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/transport.cr#L37" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L37" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -766,7 +803,29 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/transport.cr#L44" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L44" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="close_subscriptions:Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>close_subscriptions</strong> : Nil
+
+        <a class="method-permalink" href="#close_subscriptions%3ANil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>completes every open <code>subscriptions/listen</code> stream, i.e. when shutting down. Clients
+listen again, to another instance</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L433" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -787,7 +846,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/transport.cr#L97" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L227" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -808,7 +867,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/transport.cr#L41" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L41" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -829,7 +888,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/transport.cr#L54" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L54" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -845,7 +904,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/transport.cr#L38" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L38" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -866,7 +925,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/mcp/transport.cr#L103" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/transport.cr#L233" target="_blank">View source</a>]
         
       </div>
     </div>

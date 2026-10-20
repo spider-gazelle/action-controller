@@ -197,6 +197,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/RequestContext" data-name="actioncontroller::mcpserver::requestcontext">
+      <a href="../ActionController/MCPServer/RequestContext.html">RequestContext</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/MCPServer/ResourceMetadata" data-name="actioncontroller::mcpserver::resourcemetadata">
       <a href="../ActionController/MCPServer/ResourceMetadata.html">ResourceMetadata</a>
       
@@ -204,6 +209,11 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/RPCError" data-name="actioncontroller::mcpserver::rpcerror">
       <a href="../ActionController/MCPServer/RPCError.html">RPCError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/StreamedResult" data-name="actioncontroller::mcpserver::streamedresult">
+      <a href="../ActionController/MCPServer/StreamedResult.html">StreamedResult</a>
       
     </li>
   
@@ -249,6 +259,26 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/Unauthorized" data-name="actioncontroller::mcpserver::unauthorized">
       <a href="../ActionController/MCPServer/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/MCPServer/URITemplate" data-name="actioncontroller::mcpserver::uritemplate">
+      <a href="../ActionController/MCPServer/URITemplate.html">URITemplate</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/URITemplate/Error" data-name="actioncontroller::mcpserver::uritemplate::error">
+      <a href="../ActionController/MCPServer/URITemplate/Error.html">Error</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Watcher" data-name="actioncontroller::mcpserver::watcher">
+      <a href="../ActionController/MCPServer/Watcher.html">Watcher</a>
       
     </li>
   
@@ -512,21 +542,28 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L11" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L11" target="_blank">
         action-controller/base.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/composition.cr#L249" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/composition.cr#L249" target="_blank">
         action-controller/composition.cr
       </a>
     
     <br/>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/spec_helper.cr#L53" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/request_context.cr#L86" target="_blank">
+        action-controller/mcp/request_context.cr
+      </a>
+    
+    <br/>
+  
+    
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/spec_helper.cr#L53" target="_blank">
         action-controller/spec_helper.cr
       </a>
     
@@ -763,6 +800,13 @@
         <a href="#form_data-instance-method" class="signature"><strong>#form_data</strong></a>
         
           <div class="summary"><p>returns any data that could be parsed from the request body.</p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
+        <a href="#mcp_context%3AActionController%3A%3AMCPServer%3A%3ARequestContext%7CNil-instance-method" class="signature"><strong>#mcp_context</strong> : ActionController::MCPServer::RequestContext | Nil</a>
+        
+          <div class="summary"><p>the MCP request this route is running for, <code>nil</code> for regular HTTP requests.</p></div>
         
       </li>
     
@@ -1060,7 +1104,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/composition.cr#L251" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/composition.cr#L251" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1097,7 +1141,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L1016" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L1016" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1135,7 +1179,7 @@ once per route; keep the body thin and put the work in a regular method:</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L996" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L996" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1157,7 +1201,7 @@ once per route; keep the body thin and put the work in a regular method:</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L847" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L847" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1182,7 +1226,7 @@ once per route; keep the body thin and put the work in a regular method:</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L1006" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L1006" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1204,7 +1248,7 @@ once per route; keep the body thin and put the work in a regular method:</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L879" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L879" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1231,7 +1275,7 @@ no effect unless execution contexts are enabled (<code><a href="../ActionControl
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L46" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L46" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1257,7 +1301,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L1034" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L1034" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1283,7 +1327,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L1037" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L1037" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1305,7 +1349,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L879" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L879" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1321,7 +1365,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L50" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L50" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1342,7 +1386,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L860" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L860" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1364,7 +1408,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L879" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L879" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1380,7 +1424,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L97" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L97" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1402,7 +1446,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L879" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L879" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1424,7 +1468,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L879" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L879" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1446,7 +1490,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L879" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L879" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1468,7 +1512,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L922" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L922" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1491,7 +1535,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L1024" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L1024" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1507,7 +1551,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L66" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L66" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1523,7 +1567,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L58" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L58" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1544,7 +1588,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L903" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L903" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1577,7 +1621,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L173" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L173" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1598,7 +1642,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L1053" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L1053" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1619,7 +1663,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L168" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L168" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1640,7 +1684,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L200" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L200" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1661,7 +1705,7 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L264" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L264" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1683,7 +1727,29 @@ proxy headers, otherwise whether the connection is to a port <code><a href="../A
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L255" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L255" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="mcp_context:ActionController::MCPServer::RequestContext|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>mcp_context</strong> : <a href="../ActionController/MCPServer/RequestContext.html">ActionController::MCPServer::RequestContext</a> | Nil
+
+        <a class="method-permalink" href="#mcp_context%3AActionController%3A%3AMCPServer%3A%3ARequestContext%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the MCP request this route is running for, <code>nil</code> for regular HTTP requests.
+See <code><a href="../ActionController/MCPServer/RequestContext.html">ActionController::MCPServer::RequestContext</a></code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/mcp/request_context.cr#L89" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1705,7 +1771,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L217" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L217" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1726,7 +1792,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L211" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L211" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1747,7 +1813,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L211" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L211" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1769,7 +1835,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L190" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L190" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1790,7 +1856,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L184" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L184" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1811,7 +1877,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L208" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L208" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1832,7 +1898,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L208" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L208" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1853,7 +1919,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L281" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L281" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1874,7 +1940,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L276" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L276" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1895,7 +1961,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L271" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L271" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1916,7 +1982,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L1046" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L1046" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1937,7 +2003,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L208" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L208" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1958,7 +2024,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L208" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L208" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -1979,7 +2045,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L208" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L208" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -2000,7 +2066,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L208" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L208" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -2021,7 +2087,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L868" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L868" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -2042,7 +2108,7 @@ makes them available in one place</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L195" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L195" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -2064,7 +2130,7 @@ If it’s fresh and we don’t need to generate anything, a reply of 304 Not Mod
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/base.cr#L1080" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/base.cr#L1080" target="_blank">View source</a>]
         
       </div>
     </div>

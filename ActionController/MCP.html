@@ -197,6 +197,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/MCPServer/RequestContext" data-name="actioncontroller::mcpserver::requestcontext">
+      <a href="../ActionController/MCPServer/RequestContext.html">RequestContext</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/MCPServer/ResourceMetadata" data-name="actioncontroller::mcpserver::resourcemetadata">
       <a href="../ActionController/MCPServer/ResourceMetadata.html">ResourceMetadata</a>
       
@@ -204,6 +209,11 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/RPCError" data-name="actioncontroller::mcpserver::rpcerror">
       <a href="../ActionController/MCPServer/RPCError.html">RPCError</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/StreamedResult" data-name="actioncontroller::mcpserver::streamedresult">
+      <a href="../ActionController/MCPServer/StreamedResult.html">StreamedResult</a>
       
     </li>
   
@@ -249,6 +259,26 @@
   
   <li class=" " data-id="action-controller/ActionController/MCPServer/Unauthorized" data-name="actioncontroller::mcpserver::unauthorized">
       <a href="../ActionController/MCPServer/Unauthorized.html">Unauthorized</a>
+      
+    </li>
+  
+  <li class="parent " data-id="action-controller/ActionController/MCPServer/URITemplate" data-name="actioncontroller::mcpserver::uritemplate">
+      <a href="../ActionController/MCPServer/URITemplate.html">URITemplate</a>
+      
+        <ul>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/URITemplate/Error" data-name="actioncontroller::mcpserver::uritemplate::error">
+      <a href="../ActionController/MCPServer/URITemplate/Error.html">Error</a>
+      
+    </li>
+  
+</ul>
+
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/MCPServer/Watcher" data-name="actioncontroller::mcpserver::watcher">
+      <a href="../ActionController/MCPServer/Watcher.html">Watcher</a>
       
     </li>
   
@@ -485,6 +515,14 @@ replaces the defaults inferred from the HTTP verb: GET is <code>:read_only</code
 <code>:idempotent</code> and DELETE is <code>[:destructive, :idempotent]</code>. Read only tools can be run
 with the <code>call_read_only</code> proxy</li>
 <li><code>title: &quot;Book a room&quot;</code> is the tool or prompt's display name</li>
+<li><code>resource: &quot;app://widgets/{id}&quot;</code> (GET routes) also exposes the route as an MCP resource
+template. The variables are the route's path params, and <code>{?name,other}</code> its query
+params. <code>mime_type:</code> is the type of the resource contents, <code>cache_ttl:</code> (seconds) the
+time clients may cache a read and <code>subscribe: true</code> lets clients subscribe to updates,
+which requires a watcher, see <code><a href="../ActionController/MCPServer.html#watch%28template%3AString%2C%26block%3AHash%28String%2CString%29%2CHTTP%3A%3ARequest%2CProc%28Nil%29-%3EProc%28Nil%29%29%3ANil-instance-method">MCPServer.watch</a></code></li>
+<li><code>long_running: true</code> streams progress to MCP clients while the route runs, see
+<code><a href="../ActionController/MCPServer/RequestContext.html">MCPServer::RequestContext</a></code>, and spools its response to a temporary file rather than
+memory. <code>max_bytes:</code> limits the response size</li>
 </ul>
 <p>tools with <code>ui:</code> or <code>visibility: :card</code> are <code>root: true</code> unless annotated <code>root: false</code>,
 as hosts only render cards for, and let cards call, the tools in their tool list.
@@ -542,7 +580,7 @@ declared actions; a child controller annotation replaces those defaults.</p>
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/aaebe2d1bc720e7e7cf6631a9db7780dd4dcb4b7/src/action-controller/router/builder.cr#L116" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/0ea4f6d635bf998a869b809c701c787707493ecc/src/action-controller/router/builder.cr#L124" target="_blank">
         action-controller/router/builder.cr
       </a>
     
