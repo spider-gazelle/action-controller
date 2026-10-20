@@ -796,6 +796,54 @@ class McpRoot < ActionController::Base
   end
 end
 
+# resource templates, long running routes and subscriptions, see mcp_resources_spec
+class McpResources < ActionController::Base
+  base "/mcp_resources"
+
+  # the state of each widget
+  class_getter states = {"1" => %({"power":true})}
+
+  # the widgets whose logs were cancelled
+  class_getter cancelled = [] of String
+
+  # returns the state of a widget
+  @[AC::MCP(resource: "app://widgets/{id}/state", mime_type: "application/json", subscribe: true, cache_ttl: 0)]
+  @[AC::Route::GET("/:id/state")]
+  def state(id : String) : Nil
+    return head :forbidden if id == "secret"
+    return head :not_found unless state = McpResources.states[id]?
+    render json: state
+  end
+
+  # the widget's notes
+  @[AC::MCP(resource: "app://widgets/{id}/notes{?lang}")]
+  @[AC::Route::GET("/:id/notes", content_type: "text/plain")]
+  def notes(id : String, lang : String = "en") : String
+    "notes for #{id} in #{lang}"
+  end
+
+  # streams the widget's logs
+  @[AC::MCP(resource: "app://widgets/{id}/logs{?lines,delay_ms}", mime_type: "text/plain", long_running: true, max_bytes: 64)]
+  @[AC::Route::GET("/:id/logs")]
+  def logs(id : String, lines : Int32 = 3, delay_ms : Int32 = 0) : Nil
+    response.content_type = "text/plain"
+    @__render_called__ = true
+    lines.times do |index|
+      if context = mcp_context
+        if context.cancelled?
+          McpResources.cancelled << id
+          break
+        end
+        break if context.full?
+        context.progress(index + 1, lines)
+      end
+      response << "line #{index + 1}\n"
+      response.flush if delay_ms > 0
+      sleep delay_ms.milliseconds if delay_ms > 0
+    end
+  end
+end
+
 # a generic exception, like `Authly::Error(Code)`
 class GenericError(Code) < Exception
   def code : Int32

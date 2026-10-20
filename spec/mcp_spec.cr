@@ -41,6 +41,12 @@ class MCPTestClient
 
   # modern requests also carry the `_meta` fields and the method and name headers
   def post(body, accept = "application/json, text/event-stream", origin = nil) : HTTP::Client::Response
+    headers, payload = prepare(body, accept, origin)
+    HTTP::Client.post(@uri, headers: headers, body: payload)
+  end
+
+  # the headers and body of a request
+  def prepare(body, accept = "application/json, text/event-stream", origin = nil) : Tuple(HTTP::Headers, String)
     message = JSON.parse(body.to_json).as_h
     headers = headers(accept, origin)
     if modern? && (method = message["method"]?.try(&.as_s))
@@ -55,7 +61,7 @@ class MCPTestClient
         headers["Mcp-Name"] = name if {"tools/call", "prompts/get", "resources/read"}.includes?(method)
       end
     end
-    HTTP::Client.post(@uri, headers: headers, body: message.to_json)
+    {headers, message.to_json}
   end
 
   # `ui: true` advertises MCP Apps support. Modern clients don't initialize, they
@@ -1008,7 +1014,8 @@ describe ActionController::MCPServer do
       ActionController::MCPServer.ui_base = nil
       begin
         client = MCPTestClient.new
-        client.initialize_session["result"]["capabilities"]["resources"]?.should be_nil
+        # resources are advertised for the resource templates, but not the cards extension
+        client.initialize_session["result"]["capabilities"]["extensions"]?.should be_nil
         ui_tool.call(client, "mcp_ui_show")["_meta"]?.should be_nil
         client.request("resources/list").last["result"]["resources"].as_a.should be_empty
       ensure

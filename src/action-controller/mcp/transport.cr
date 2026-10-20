@@ -75,22 +75,152 @@ module ActionController::MCPServer
       return context unless era = era(context, id, method, params)
 
       modern = era.modern?
-      return listen(context, id) if modern && method == "subscriptions/listen"
+      return listen(context, id, params) if modern && method == "subscriptions/listen"
 
-      begin
-        result = @protocol.handle(method, params, context.request, bound_values(context), modern)
-      rescue error : RPCError
-        # unknown methods are a 404, so clients can tell them apart from legacy servers
-        status = modern && error.code == RPCError::METHOD_NOT_FOUND ? HTTP::Status::NOT_FOUND : HTTP::Status::OK
-        return rpc_error(context, id, error.code, error.message.as(String), status)
-      rescue Unauthorized
-        # the credentials are no longer valid, prompt the client to re-authenticate
-        AuthCache.fingerprint(context.request).try { |fingerprint| @auth_cache.delete(fingerprint) }
-        return unauthorized(context, invalid_token: true)
+      progress_token = params["_meta"]?.try(&.as_h?).try(&.["progressToken"]?)
+      context.request.mcp_context = request_context = RequestContext.new(progress_token)
+      if @protocol.long_running?(method, params) && accepts_event_stream?(context.request)
+        return stream(context, id, method, params, modern, request_context)
       end
 
-      result = complete(result, context.request, cacheable: Protocol::CACHEABLE.includes?(method)) if modern
-      respond(context, HTTP::Status::OK, "application/json", rpc_result(id, result))
+      outcome = handle(context, method, params, modern)
+      respond_with(context, id, method, params, modern, outcome)
+    end
+
+    # the outcome of a request, a result or an error
+    private alias Outcome = String | StreamedResult | RPCError | Unauthorized
+
+    private def handle(context, method : String, params : Hash(String, JSON::Any), modern : Bool) : Outcome
+      @protocol.handle_streamed(method, params, context.request, bound_values(context), modern)
+    rescue error : RPCError
+      error
+    rescue error : Unauthorized
+      error
+    end
+
+    # responds with the outcome as JSON
+    private def respond_with(context, id : JSON::Any, method : String, params : Hash(String, JSON::Any), modern : Bool, outcome : Outcome) : HTTP::Server::Context
+      case outcome
+      when String, StreamedResult
+        response = context.response
+        response.status = HTTP::Status::OK
+        response.content_type = "application/json"
+        write_result(response, id, method, params, modern, outcome, context.request)
+        context
+      when RPCError
+        # unknown methods are a 404, so clients can tell them apart from legacy servers
+        status = modern && outcome.code == RPCError::METHOD_NOT_FOUND ? HTTP::Status::NOT_FOUND : HTTP::Status::OK
+        rpc_error(context, id, outcome.code, outcome.message.as(String), status)
+      else
+        # unauthorized, the credentials are no longer valid so prompt the client to re-authenticate
+        AuthCache.fingerprint(context.request).try { |fingerprint| @auth_cache.delete(fingerprint) }
+        unauthorized(context, invalid_token: true)
+      end
+    end
+
+    # writes the JSON-RPC response of a result, streaming spooled results from disk
+    private def write_result(io : IO, id : JSON::Any, method : String, params : Hash(String, JSON::Any), modern : Bool, result : String | StreamedResult, request : HTTP::Request) : Nil
+      fields = modern ? completion_fields(request, Protocol::CACHEABLE.includes?(method), @protocol.cache_ttl(method, params)) : nil
+      case result
+      in String
+        result = merge_fields(fields, result) if fields
+        io << rpc_result(id, result)
+      in StreamedResult
+        begin
+          io << %({"jsonrpc":"2.0","id":) << id.to_json << %(,"result":{)
+          io << fields.lchop('{').rchop('}') << ',' if fields
+          result.write_fields(io)
+          io << "}}"
+        ensure
+          result.close
+        end
+      end
+    end
+
+    private def accepts_event_stream?(request : HTTP::Request) : Bool
+      !!request.headers["Accept"]?.try(&.includes?("text/event-stream"))
+    end
+
+    # runs a long running request. The response becomes an event stream once there's
+    # progress to report, or after `MCPServer.keep_alive`, until then errors (including
+    # a 401) are returned as regular responses. A client that disconnects cancels the request
+    private def stream(context, id : JSON::Any, method : String, params : Hash(String, JSON::Any), modern : Bool, request_context : RequestContext) : HTTP::Server::Context
+      response = context.response
+      lock = Mutex.new
+      started = false
+      disconnected = false
+
+      # writes an event, starting the stream if required. Returns false once disconnected
+      write = ->(event : String) do
+        lock.synchronize do
+          next false if disconnected
+          begin
+            unless started
+              started = true
+              start_event_stream(response)
+            end
+            response << event
+            response.flush
+            true
+          rescue IO::Error | HTTP::Server::ClientError
+            disconnected = true
+            request_context.cancel
+            false
+          end
+        end
+      end
+      request_context.notifier = ->(message : String) { write.call("event: message\ndata: #{message}\n\n"); nil }
+
+      outcome_channel = Channel(Outcome).new(1)
+      spawn(name: "mcp_request") { outcome_channel.send handle(context, method, params, modern) }
+
+      outcome = loop do
+        select
+        when received = outcome_channel.receive
+          break received
+        when timeout(MCPServer.keep_alive)
+          next if write.call(":\r\n")
+          # the client disconnected, discard the result once the route stops
+          spawn(name: "mcp_discard") do
+            discarded = outcome_channel.receive
+            discarded.close if discarded.is_a?(StreamedResult)
+          end
+          return context
+        end
+      end
+
+      lock.synchronize do
+        if disconnected
+          outcome.close if outcome.is_a?(StreamedResult)
+          return context
+        end
+        return respond_with(context, id, method, params, modern, outcome) unless started
+
+        # the stream has started, errors are sent as JSON-RPC errors
+        begin
+          response << "event: message\ndata: "
+          case outcome
+          when String, StreamedResult
+            write_result(response, id, method, params, modern, outcome, context.request)
+          when RPCError
+            response << rpc_error_body(id, outcome.code, outcome.message.as(String))
+          else
+            response << rpc_error_body(id, RPCError::INVALID_REQUEST, "Unauthorized")
+          end
+          response << "\n\n"
+          response.flush
+        rescue IO::Error | HTTP::Server::ClientError
+          request_context.cancel
+        end
+      end
+      context
+    end
+
+    private def start_event_stream(response : HTTP::Server::Response) : Nil
+      response.status = HTTP::Status::OK
+      response.content_type = "text/event-stream"
+      response.headers["Cache-Control"] = "no-cache"
+      response.headers["X-Accel-Buffering"] = "no"
     end
 
     # there are no event streams or sessions, so GET and DELETE aren't supported
@@ -236,27 +366,82 @@ module ActionController::MCPServer
       nil
     end
 
-    # there's nothing to subscribe to, the lists never change, so the subscription is
-    # acknowledged with no notifications and then completed
-    private def listen(context, id : JSON::Any) : HTTP::Server::Context
+    # subscribes to the resources requested that can be read with the request's
+    # credentials, see `MCPServer.watch`. The lists never change, so list changes are
+    # never acknowledged. With nothing to watch the subscription is completed straight away
+    private def listen(context, id : JSON::Any, params : Hash(String, JSON::Any)) : HTTP::Server::Context
       response = context.response
-      response.content_type = "text/event-stream"
-      response.headers["Cache-Control"] = "no-cache"
-      response.headers["X-Accel-Buffering"] = "no"
-      subscription = {META_SUBSCRIPTION => id}
-      write_event(response, {jsonrpc: "2.0", method: "notifications/subscriptions/acknowledged", params: {notifications: {} of String => String, _meta: subscription}}.to_json)
-      write_event(response, rpc_result(id, {resultType: "complete", _meta: subscription}.to_json))
+      start_event_stream(response)
+      subscription = Subscription.new(response, id)
+
+      begin
+        requested = params["notifications"]?.try(&.as_h?).try(&.["resourceSubscriptions"]?).try(&.as_a?) || [] of JSON::Any
+        requested.each do |value|
+          break if subscription.size >= MCPServer.max_subscriptions
+          next unless uri = value.as_s?
+          subscribe(subscription, uri, context)
+        end
+
+        notifications = subscription.size.zero? ? {} of String => Array(String) : {"resourceSubscriptions" => subscription.uris}
+        write_event(response, {jsonrpc: "2.0", method: "notifications/subscriptions/acknowledged", params: {notifications: notifications, _meta: subscription.meta}}.to_json)
+        if subscription.size.zero?
+          subscription.complete
+        else
+          track(subscription) { subscription.run }
+        end
+      rescue IO::Error | HTTP::Server::ClientError
+        # the client disconnected
+      ensure
+        subscription.stop
+      end
       context
     end
 
-    # adds the 2026-07-28 result fields: the result type, the server info and the cache
-    # hints of cacheable results. `result` is always a JSON object built by `Protocol`
-    private def complete(result : String, request : HTTP::Request, cacheable : Bool) : String
-      fields = JSON.build do |json|
+    # watches the resource for the subscription, if it's subscribable and readable
+    private def subscribe(subscription : Subscription, uri : String, context) : Nil
+      return if subscription.uris.includes?(uri)
+      return unless found = @protocol.subscribable?(uri)
+      tool, variables = found
+      template = tool.resource.as(String)
+      unless watcher = MCPServer.watchers[template]?
+        Log.warn { "MCP resource template #{template} is subscribable but has no watcher, see MCPServer.watch" }
+        return
+      end
+      return unless @invoker.readable?(tool, variables, context.request, bound_values(context))
+
+      changed = -> { subscription.changed(uri) }
+      stop = watcher.call(variables, context.request, changed)
+      subscription.add(uri, stop)
+    rescue error
+      Log.error(exception: error) { "MCP failed to subscribe to #{uri}" }
+    end
+
+    @subscriptions = Set(Subscription).new
+    @subscriptions_lock = Mutex.new
+
+    private def track(subscription : Subscription, &) : Nil
+      @subscriptions_lock.synchronize { @subscriptions << subscription }
+      begin
+        yield
+      ensure
+        @subscriptions_lock.synchronize { @subscriptions.delete(subscription) }
+      end
+    end
+
+    # completes every open `subscriptions/listen` stream, i.e. when shutting down. Clients
+    # listen again, to another instance
+    def close_subscriptions : Nil
+      @subscriptions_lock.synchronize { @subscriptions.dup }.each(&.close)
+    end
+
+    # the 2026-07-28 result fields: the result type, the server info and the cache hints
+    # of cacheable results
+    private def completion_fields(request : HTTP::Request, cacheable : Bool, ttl : Time::Span) : String
+      JSON.build do |json|
         json.object do
           json.field "resultType", "complete"
           if cacheable
-            json.field "ttlMs", MCPServer.cache_ttl.total_milliseconds.to_i64
+            json.field "ttlMs", ttl.total_milliseconds.to_i64
             # results can depend on the user's credentials
             json.field "cacheScope", MCPServer.auth_enabled? ? "private" : "public"
           end
@@ -265,6 +450,10 @@ module ActionController::MCPServer
           end
         end
       end
+    end
+
+    # merges the fields into the result, `result` is always a JSON object built by `Protocol`
+    private def merge_fields(fields : String, result : String) : String
       body = result.lstrip.lchop('{').lstrip
       body.starts_with?('}') ? fields : "#{fields.rchop('}')},#{body}"
     end
@@ -328,7 +517,11 @@ module ActionController::MCPServer
     end
 
     private def rpc_error(context, id : JSON::Any?, code : Int32, message : String, status : HTTP::Status = HTTP::Status::OK, data = nil) : HTTP::Server::Context
-      body = JSON.build do |json|
+      respond(context, status, "application/json", rpc_error_body(id, code, message, data))
+    end
+
+    private def rpc_error_body(id : JSON::Any?, code : Int32, message : String, data = nil) : String
+      JSON.build do |json|
         json.object do
           json.field "jsonrpc", "2.0"
           json.field "id", id
@@ -341,7 +534,6 @@ module ActionController::MCPServer
           end
         end
       end
-      respond(context, status, "application/json", body)
     end
   end
 end

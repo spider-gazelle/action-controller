@@ -122,6 +122,47 @@ module ActionController::MCPServer
   # how long clients can cache the server description and lists (`ttlMs`), 2026-07-28 onwards
   class_property cache_ttl : Time::Span = 5.minutes
 
+  # how often an SSE comment is sent on idle event streams, which keeps proxies from
+  # timing them out and detects clients that have disconnected
+  class_property keep_alive : Time::Span = 15.seconds
+
+  # how long a `subscriptions/listen` stream stays open, `nil` keeps it open until the
+  # client disconnects. The stream is then completed and clients listen again
+  class_property listen_timeout : Time::Span? = nil
+
+  # updates to a resource are sent at most once per period, clients read the resource
+  # for its current state so bursts of changes are coalesced
+  class_property update_debounce : Time::Span = 250.milliseconds
+
+  # the maximum number of resources a single `subscriptions/listen` can subscribe to
+  class_property max_subscriptions : Int32 = 100
+
+  # watches a resource for changes, see `watch`. Called with the template variables, the
+  # MCP request and a proc to call whenever the resource changes, it returns a proc that
+  # stops watching
+  alias Watcher = Proc(Hash(String, String), HTTP::Request, Proc(Nil), Proc(Nil))
+
+  # the watchers of resource templates with `@[AC::MCP(subscribe: true)]`
+  class_getter watchers : Hash(String, Watcher) = {} of String => Watcher
+
+  # watches the resources of a template for changes, so clients can subscribe to them
+  # using `subscriptions/listen`. The template must match a route annotated
+  # `@[AC::MCP(resource: template, subscribe: true)]`.
+  #
+  # A client can only subscribe to resources it can read: the route is requested before
+  # the watcher is called. The block is called once per subscription and returns a proc
+  # that stops watching, called when the client disconnects
+  #
+  # ```
+  # ActionController::MCPServer.watch("app://widgets/{id}") do |variables, _request, changed|
+  #   subscription = Widget.on_change(variables["id"]) { changed.call }
+  #   -> { subscription.cancel }
+  # end
+  # ```
+  def watch(template : String, &block : Hash(String, String), HTTP::Request, Proc(Nil) -> Proc(Nil)) : Nil
+    watchers[template] = block
+  end
+
   # response headers left out of tool results, matched case-insensitively. An entry
   # ending in `*` matches by prefix. Everything else (`Link`, `X-Total-Count`,
   # `Content-Range`, `Location`, `ETag`, ...) is returned to the model

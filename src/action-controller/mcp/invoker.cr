@@ -34,6 +34,105 @@ module ActionController::MCPServer
       to_result response
     end
 
+    # runs a long running route, its response is spooled to disk and streamed as the
+    # `CallToolResult`. A `String` result is an error
+    #
+    # raises `Unauthorized` if authentication is enabled and the route responds with a 401
+    def call_long_running(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request, bound : Hash(String, String) = {} of String => String) : String | StreamedResult
+      spooled = begin
+        dispatch_spooled build_request(tool, bind(arguments, bound), origin), tool.max_bytes
+      rescue error : ArgumentError
+        return MCPServer.tool_result(error.message.as(String), error: true)
+      rescue error
+        Log.error(exception: error) { "MCP tool #{tool.name} failed" }
+        return MCPServer.tool_result("500 Internal Server Error", error: true)
+      end
+
+      if spooled.status.unauthorized? && MCPServer.auth_enabled?
+        spooled.close
+        raise Unauthorized.new("#{tool.name} responded with 401")
+      end
+      StreamedToolResult.new(spooled)
+    end
+
+    # reads a resource by requesting its route, returning a `ReadResourceResult` JSON
+    # string, or a `StreamedResult` for long running routes.
+    #
+    # raises `RPCError` if the resource can't be read and `Unauthorized` if
+    # authentication is enabled and the route responds with a 401
+    def read(tool : Tool, uri : String, variables : Hash(String, String), origin : HTTP::Request, bound : Hash(String, String) = {} of String => String, modern : Bool = true) : String | StreamedResult
+      request = begin
+        build_request(tool, bind(variables.transform_values { |value| JSON::Any.new(value) }, bound), origin)
+      rescue error : ArgumentError
+        raise RPCError.new(RPCError::INVALID_PARAMS, error.message.as(String))
+      end
+
+      if tool.long_running?
+        spooled = begin
+          dispatch_spooled(request, tool.max_bytes)
+        rescue error
+          Log.error(exception: error) { "MCP resource #{uri} failed" }
+          raise RPCError.new(RPCError::INTERNAL_ERROR, "Failed to read #{uri}")
+        end
+        begin
+          check_read!(spooled.status, uri, modern) { spooled.body }
+        rescue error
+          spooled.close
+          raise error
+        end
+        return StreamedResourceResult.new(spooled, uri, tool.mime_type || spooled.mime_type)
+      end
+
+      response = begin
+        dispatch request
+      rescue error
+        Log.error(exception: error) { "MCP resource #{uri} failed" }
+        raise RPCError.new(RPCError::INTERNAL_ERROR, "Failed to read #{uri}")
+      end
+      check_read!(response.status, uri, modern) { response.body }
+
+      mime_type = tool.mime_type || response.mime_type.try(&.media_type)
+      JSON.build do |json|
+        json.object do
+          json.field "contents" do
+            json.array do
+              json.object do
+                json.field "uri", uri
+                json.field "mimeType", mime_type if mime_type
+                if MCPServer.text_mime_type?(mime_type)
+                  json.field "text", response.body
+                else
+                  json.field "blob", Base64.strict_encode(response.body)
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
+    # true if the resource can be read with the request's credentials
+    def readable?(tool : Tool, variables : Hash(String, String), origin : HTTP::Request, bound : Hash(String, String) = {} of String => String) : Bool
+      request = build_request(tool, bind(variables.transform_values { |value| JSON::Any.new(value) }, bound), origin)
+      request.mcp_context = nil
+      dispatch(request).status.success?
+    rescue error
+      Log.error(exception: error) { "MCP resource #{tool.resource} authorisation failed" }
+      false
+    end
+
+    # maps an unsuccessful resource read to an error
+    private def check_read!(status : HTTP::Status, uri : String, modern : Bool, & : -> String) : Nil
+      return if status.success?
+      raise Unauthorized.new("#{uri} responded with 401") if status.unauthorized? && MCPServer.auth_enabled?
+      if status.not_found?
+        raise RPCError.new(modern ? RPCError::INVALID_PARAMS : RPCError::RESOURCE_NOT_FOUND, "Resource not found: #{uri}")
+      end
+      body = yield
+      message = body.empty? ? "#{status.code} #{status.description}" : "#{status.code} #{status.description}: #{body}"
+      raise RPCError.new(status.client_error? ? RPCError::INVALID_PARAMS : RPCError::INTERNAL_ERROR, message)
+    end
+
     # requests the route provided with the forwarded credentials, returning `true` on success
     def probe(path : String, origin : HTTP::Request) : Bool
       headers = forwarded_headers(origin)
@@ -149,6 +248,23 @@ module ActionController::MCPServer
       HTTP::Client::Response.from_io(response_io)
     end
 
+    # runs the route, writing its response to a temporary file
+    def dispatch_spooled(request : HTTP::Request, max_bytes : Int64?) : Spooled
+      # allow for the headers and chunked encoding
+      limit = max_bytes.try { |bytes| bytes + bytes // 64 + 64 * 1024 }
+      spool = Spool.new(limit, request.mcp_context)
+      begin
+        response = HTTP::Server::Response.new(spool)
+        @route_handler.call HTTP::Server::Context.new(request, response)
+        response.close
+        spool.flush
+        Spooled.new(spool, max_bytes)
+      rescue error
+        spool.delete
+        raise error
+      end
+    end
+
     # the credential headers copied from the MCP request
     def forwarded_headers(origin : HTTP::Request) : HTTP::Headers
       headers = HTTP::Headers.new
@@ -197,6 +313,7 @@ module ActionController::MCPServer
 
       request = HTTP::Request.new(verb, resource, headers, body)
       request.remote_address = origin.remote_address
+      request.mcp_context = origin.mcp_context
       request
     end
 

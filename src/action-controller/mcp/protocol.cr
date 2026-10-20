@@ -23,7 +23,7 @@ module ActionController::MCPServer
   # results only depend on the request and the path params bound from its URL
   class Protocol
     # methods whose results clients can cache, 2026-07-28 onwards
-    CACHEABLE = {"server/discover", "tools/list", "prompts/list", "resources/list", "resources/read"}
+    CACHEABLE = {"server/discover", "tools/list", "prompts/list", "resources/list", "resources/templates/list", "resources/read"}
 
     TOOLBOX_ARGS = %({"type":"object","properties":{"name":{"type":"string","description":"the toolbox name, as returned by list_toolboxes"}},"required":["name"]})
 
@@ -62,7 +62,7 @@ module ActionController::MCPServer
       JSON.build do |json|
         json.object do
           json.field "protocolVersion", protocol_version
-          json.field("capabilities") { capabilities(json) }
+          json.field("capabilities") { capabilities(json, modern: false) }
           json.field("serverInfo") { server_info(json, request) }
           if text = instructions.presence
             json.field "instructions", text
@@ -77,7 +77,7 @@ module ActionController::MCPServer
       JSON.build do |json|
         json.object do
           json.field "supportedVersions", PROTOCOL_VERSIONS
-          json.field("capabilities") { capabilities(json) }
+          json.field("capabilities") { capabilities(json, modern: true) }
           if text = instructions.presence
             json.field "instructions", text
           end
@@ -94,15 +94,22 @@ module ActionController::MCPServer
       end
     end
 
-    # the lists never change, toolboxes are opened by returning their tools
-    private def capabilities(json : JSON::Builder) : Nil
+    # the lists never change, toolboxes are opened by returning their tools. Resources can
+    # be subscribed to using `subscriptions/listen`, 2026-07-28 onwards
+    private def capabilities(json : JSON::Builder, modern : Bool) : Nil
       json.object do
         json.field("tools") { json.object { json.field "listChanged", false } }
         if description.prompts?
           json.field("prompts") { json.object { json.field "listChanged", false } }
         end
+        if ui? || !description.resource_tools.empty?
+          json.field("resources") do
+            json.object do
+              json.field "subscribe", true if modern && description.subscriptions?
+            end
+          end
+        end
         if ui?
-          json.field("resources") { json.object { } }
           json.field "extensions" do
             json.object do
               json.field(UI::EXTENSION) { json.object { } }
@@ -114,17 +121,34 @@ module ActionController::MCPServer
 
     # returns the JSON result of the request. `modern` requests use 2026-07-28 or later
     def handle(method : String, params : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String), modern : Bool = false) : String
+      result = handle_streamed(method, params, request, bound, modern)
+      return result if result.is_a?(String)
+      begin
+        String.build do |io|
+          io << '{'
+          result.write_fields(io)
+          io << '}'
+        end
+      ensure
+        result.close
+      end
+    end
+
+    # returns the JSON result of the request, or a `StreamedResult` for long running
+    # routes, which the caller must close
+    def handle_streamed(method : String, params : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String), modern : Bool = false) : String | StreamedResult
       case method
       when "ping"
         raise RPCError.new(RPCError::METHOD_NOT_FOUND, "Method not found: #{method}") if modern
         "{}"
-      when "server/discover" then discover_result(request, bound)
-      when "tools/list"      then list_tools(request, bound)
-      when "tools/call"      then call_tool(params, request, bound)
-      when "prompts/list"    then list_prompts(request, bound)
-      when "prompts/get"     then get_prompt(params, request, bound)
-      when "resources/list"  then list_resources
-      when "resources/read"  then read_resource(params, modern)
+      when "server/discover"          then discover_result(request, bound)
+      when "tools/list"               then list_tools(request, bound)
+      when "tools/call"               then call_tool(params, request, bound)
+      when "prompts/list"             then list_prompts(request, bound)
+      when "prompts/get"              then get_prompt(params, request, bound)
+      when "resources/list"           then list_resources
+      when "resources/read"           then read_resource(params, request, bound, modern)
+      when "resources/templates/list" then list_resource_templates(request)
       else
         raise RPCError.new(RPCError::METHOD_NOT_FOUND, "Method not found: #{method}")
       end
@@ -178,11 +202,70 @@ module ActionController::MCPServer
       end
     end
 
-    # a missing resource is invalid params from 2026-07-28
-    private def read_resource(params : Hash(String, JSON::Any), modern : Bool) : String
+    # cards, or a route matching a resource template. A missing resource is invalid
+    # params from 2026-07-28
+    private def read_resource(params : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String), modern : Bool) : String | StreamedResult
       uri = params["uri"]?.try(&.as_s?)
       raise RPCError.new(RPCError::INVALID_PARAMS, "Missing resource uri") unless uri
-      UI.read(uri) || raise RPCError.new(modern ? RPCError::INVALID_PARAMS : RPCError::RESOURCE_NOT_FOUND, "Resource not found: #{uri}")
+      not_found = RPCError.new(modern ? RPCError::INVALID_PARAMS : RPCError::RESOURCE_NOT_FOUND, "Resource not found: #{uri}")
+      return UI.read(uri) || raise not_found if uri.starts_with?(UI::SCHEME)
+
+      tool, variables = description.resource?(uri) || raise not_found
+      @invoker.read(tool, uri, variables, request, bound, modern)
+    end
+
+    # the routes readable as resources
+    private def list_resource_templates(request : HTTP::Request) : String
+      JSON.build do |json|
+        json.object do
+          json.field "resourceTemplates" do
+            json.array do
+              description.resource_tools.each do |tool|
+                json.object do
+                  json.field "uriTemplate", tool.resource
+                  json.field "name", tool.name
+                  json.field "title", tool.title if tool.title
+                  json.field "description", tool.description if tool.description
+                  json.field "mimeType", tool.mime_type if tool.mime_type
+                  Icons.to_json(json, tool.icons, host(request))
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
+    # the subscribable resource tool matching the URI, and its template variables
+    def subscribable?(uri : String) : Tuple(Tool, Hash(String, String))?
+      description.resource?(uri).try { |found| found if found[0].subscribe? }
+    end
+
+    # true if the request runs a long running route, which is streamed
+    def long_running?(method : String, params : Hash(String, JSON::Any)) : Bool
+      case method
+      when "tools/call"
+        name = params["name"]?.try(&.as_s?)
+        if name.in?("call_tool", "call_read_only") && !flat? && MCPServer.tool_proxy?
+          name = params["arguments"]?.try(&.["name"]?).try(&.as_s?)
+        end
+        !!name.try { |tool_name| description.tool?(tool_name).try(&.[1].long_running?) }
+      when "resources/read"
+        uri = params["uri"]?.try(&.as_s?)
+        !!uri.try { |resource| description.resource?(resource).try(&.[0].long_running?) }
+      else
+        false
+      end
+    end
+
+    # how long the result can be cached, resource templates can set their own
+    def cache_ttl(method : String, params : Hash(String, JSON::Any)) : Time::Span
+      if method == "resources/read" && (uri = params["uri"]?.try(&.as_s?))
+        if ttl = description.resource?(uri).try(&.[0].cache_ttl)
+          return ttl.seconds
+        end
+      end
+      MCPServer.cache_ttl
     end
 
     # the host icon paths are relative to
@@ -208,7 +291,7 @@ module ActionController::MCPServer
       end
     end
 
-    private def call_tool(params : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String)) : String
+    private def call_tool(params : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String)) : String | StreamedResult
       name = params["name"]?.try(&.as_s?)
       raise RPCError.new(RPCError::INVALID_PARAMS, "Missing tool name") unless name
       arguments = params["arguments"]?.try(&.as_h?) || {} of String => JSON::Any
@@ -230,15 +313,15 @@ module ActionController::MCPServer
     end
 
     # any tool can be called directly, whether or not it's listed
-    private def direct_call(name : String, arguments : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String)) : String
+    private def direct_call(name : String, arguments : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String)) : String | StreamedResult
       found = description.tool?(name)
       raise RPCError.new(RPCError::INVALID_PARAMS, "Unknown tool: #{name}") unless found
-      @invoker.call(found[1], arguments, request, bound)
+      invoke(found[1], arguments, request, bound)
     end
 
     # runs a tool on behalf of the model, mistakes are tool errors so the model can
     # correct itself
-    private def proxy_call(arguments : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String), read_only : Bool) : String
+    private def proxy_call(arguments : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String), read_only : Bool) : String | StreamedResult
       name = arguments["name"]?.try(&.as_s?)
       return MCPServer.tool_result("Missing the name of the tool to call", error: true) unless name
       tool_arguments = arguments["arguments"]?.try(&.as_h?) || {} of String => JSON::Any
@@ -247,7 +330,11 @@ module ActionController::MCPServer
       return MCPServer.tool_result("Unknown tool: #{name.inspect}, use open_toolbox to find the available tools", error: true) unless tool
       return MCPServer.tool_result("Tool #{name} can change data, run it with call_tool", error: true) if read_only && !tool.read_only?
 
-      @invoker.call(tool, tool_arguments, request, bound)
+      invoke(tool, tool_arguments, request, bound)
+    end
+
+    private def invoke(tool : Tool, arguments : Hash(String, JSON::Any), request : HTTP::Request, bound : Hash(String, String)) : String | StreamedResult
+      tool.long_running? ? @invoker.call_long_running(tool, arguments, request, bound) : @invoker.call(tool, arguments, request, bound)
     end
 
     # every prompt, root prompts first. Users pick prompts, so they don't use the model's context

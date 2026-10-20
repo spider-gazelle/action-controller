@@ -80,6 +80,14 @@ end
 #   `:idempotent` and DELETE is `[:destructive, :idempotent]`. Read only tools can be run
 #   with the `call_read_only` proxy
 # * `title: "Book a room"` is the tool or prompt's display name
+# * `resource: "app://widgets/{id}"` (GET routes) also exposes the route as an MCP resource
+#   template. The variables are the route's path params, and `{?name,other}` its query
+#   params. `mime_type:` is the type of the resource contents, `cache_ttl:` (seconds) the
+#   time clients may cache a read and `subscribe: true` lets clients subscribe to updates,
+#   which requires a watcher, see `MCPServer.watch`
+# * `long_running: true` streams progress to MCP clients while the route runs, see
+#   `MCPServer::RequestContext`, and spools its response to a temporary file rather than
+#   memory. `max_bytes:` limits the response size
 #
 # tools with `ui:` or `visibility: :card` are `root: true` unless annotated `root: false`,
 # as hosts only render cards for, and let cards call, the tools in their tool list.
@@ -427,7 +435,29 @@ module ActionController::Route::Builder
       # are root items unless `root: false`
       {% mcp_root = true if mcp_root == nil && (mcp_ui || (mcp_visibility && !mcp_visibility.includes?("model"))) %}
 
+      # MCP resources: the route is also readable as a resource template, see `MCPServer`
+      {% mcp_resource = mcp_method_ann ? mcp_method_ann[:resource] : nil %}
+      {% mcp_subscribe = mcp_method_ann && mcp_method_ann[:subscribe] == true %}
+      {% raise "#{@type.name}##{method_name}: @[AC::MCP(subscribe: true)] requires a resource:" if mcp_subscribe && !mcp_resource %}
+      {% if mcp_resource %}
+        {% raise "#{@type.name}##{method_name}: @[AC::MCP(resource:)] applies to GET routes" if method.annotations(AC::Route::GET).empty? %}
+        {% raise "#{@type.name}##{method_name}: @[AC::MCP(resource: #{mcp_resource})] must be a URI template such as \"app://widgets/{id}\"" unless mcp_resource.is_a?(StringLiteral) && mcp_resource.includes?("://") %}
+      {% end %}
+      {% mcp_cache_ttl = mcp_method_ann ? mcp_method_ann[:cache_ttl] : nil %}
+
+      # long running routes stream progress over SSE and spool their response to disk
+      {% mcp_long_running = mcp_method_ann && mcp_method_ann[:long_running] == true %}
+      {% mcp_max_bytes = mcp_method_ann ? mcp_method_ann[:max_bytes] : nil %}
+      # subscriptions request the route to check access, which must be quick
+      {% raise "#{@type.name}##{method_name}: long running routes can't be subscribed to" if mcp_long_running && mcp_subscribe %}
+
       {% options = {
+           :mcp_resource      => mcp_resource,
+           :mcp_mime_type     => mcp_method_ann ? mcp_method_ann[:mime_type] : nil,
+           :mcp_subscribe     => mcp_subscribe,
+           :mcp_cache_ttl     => mcp_cache_ttl,
+           :mcp_long_running  => mcp_long_running,
+           :mcp_max_bytes     => mcp_max_bytes,
            :mcp_hide          => mcp_hide == true,
            :mcp_root          => mcp_root == true,
            :mcp_behaviour     => mcp_behaviour,

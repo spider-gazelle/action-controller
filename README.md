@@ -524,6 +524,88 @@ The previewer's pages and assets are compiled into your application only when
 out of release builds. The index is served without authentication, so don't mount it in
 production: it lists your card tools and their descriptions.
 
+### Resources
+
+A GET route can also be read as an MCP resource by annotating it with a URI template.
+The template's variables are the route's path params and, in a trailing `{?name,other}`,
+its query params:
+
+```crystal
+class Widgets < AC::Base
+  base "/widgets"
+
+  # the widget's current state
+  @[AC::MCP(resource: "app://widgets/{id}/state", mime_type: "application/json", cache_ttl: 0)]
+  @[AC::Route::GET("/:id/state")]
+  def state(id : Int64) : Widget::State
+    Widget.find!(id).state
+  end
+end
+```
+
+`resources/templates/list` lists the templates and `resources/read` runs the matching
+route in-process, like a tool call, so its filters and authentication apply. Its
+response becomes the resource contents, as text, or base64 for binary types. A `404` is
+reported as an unknown resource and other errors as JSON-RPC errors. `cache_ttl:`
+(seconds) is the `ttlMs` clients may cache a read for, it defaults to
+`MCPServer.cache_ttl`. The route remains a tool too.
+
+#### Subscriptions
+
+With `subscribe: true`, clients can subscribe to resources of the template using
+`subscriptions/listen` (2026-07-28 onwards), and are sent
+`notifications/resources/updated` when they change. They then read the resource for its
+current state. Register a watcher for the template, it's called once per subscription
+and returns a proc that stops watching:
+
+```crystal
+@[AC::MCP(resource: "app://widgets/{id}/state", mime_type: "application/json", subscribe: true)]
+
+ActionController::MCPServer.watch("app://widgets/{id}/state") do |variables, _request, changed|
+  subscription = Widget.on_change(variables["id"]) { changed.call }
+  -> { subscription.cancel }
+end
+```
+
+A resource is only watched if the client can read it: the route is requested with the
+client's credentials first. The listen stream is held open, with an SSE comment every
+`MCPServer.keep_alive`, until the client disconnects (the watchers are then stopped),
+`MCPServer.listen_timeout` expires (`nil`, the default, never does) or
+`Transport#close_subscriptions` is called, i.e. on shutdown. Bursts of changes are
+coalesced into one update per `MCPServer.update_debounce`. Your watchers see the changes
+made on the instance holding the stream, so use a shared channel (i.e. redis pub/sub)
+when running several instances.
+
+#### Long running routes
+
+Routes that take a while, such as capturing output for a period of time, can be
+annotated `long_running: true`. Their response is written to a temporary file rather
+than memory, limited to `max_bytes:`, and streamed to the client as the result. Clients
+that accept an event stream are kept informed while the route runs: the route can report
+progress, there's an SSE comment every `MCPServer.keep_alive`, and a client that
+disconnects cancels the request.
+
+```crystal
+# captures the widget's output
+@[AC::MCP(resource: "app://widgets/{id}/output{?seconds}", mime_type: "text/plain", long_running: true, max_bytes: 1_048_576)]
+@[AC::Route::GET("/:id/output")]
+def output(id : Int64, seconds : Int32 = 30) : Nil
+  response.content_type = "text/plain"
+  @__render_called__ = true
+  seconds.times do |second|
+    break if mcp_context.try { |context| context.cancelled? || context.full? }
+    response << Widget.find!(id).read_output
+    response.flush
+    mcp_context.try &.progress(second + 1, seconds)
+    sleep 1.second
+  end
+end
+```
+
+`mcp_context` is `nil` for regular HTTP requests. Progress is sent when the client
+provided a `progressToken`. The result isn't sent until the route returns, so clients
+that time out requests without progress may give up on long captures.
+
 ### Connecting a client
 
 Point any MCP client that supports Streamable HTTP at the mounted path, for example

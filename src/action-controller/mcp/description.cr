@@ -76,7 +76,35 @@ module ActionController::MCPServer
     # the MCP Apps card rendered for the tool, i.e. `ui://bookings/card.html`
     getter ui : String? = nil
 
-    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @behaviour = nil, @ui = nil, @visibility = nil, @title = nil, @icons = nil)
+    # the resource template the route is also readable as, i.e. `app://widgets/{id}`
+    getter resource : String? = nil
+
+    # the MIME type of the resource contents
+    getter mime_type : String? = nil
+
+    # clients can subscribe to updates of the resource
+    getter? subscribe : Bool = false
+
+    # seconds a resource read can be cached, `nil` uses `MCPServer.cache_ttl`
+    getter cache_ttl : Int32? = nil
+
+    # streams progress and spools the response to disk, see `MCPServer::RequestContext`
+    getter? long_running : Bool = false
+
+    # the maximum response size, in bytes, of a long running route
+    getter max_bytes : Int64? = nil
+
+    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @behaviour = nil, @ui = nil, @visibility = nil, @title = nil, @icons = nil, @resource = nil, @mime_type = nil, @subscribe = false, @cache_ttl = nil, @long_running = false, @max_bytes = nil)
+    end
+
+    @[JSON::Field(ignore: true)]
+    @[YAML::Field(ignore: true)]
+    @uri_template : URITemplate? = nil
+
+    # the parsed resource template
+    def uri_template : URITemplate?
+      return unless template = resource
+      @uri_template ||= URITemplate.new(template)
     end
 
     # what the tool does, `@[AC::MCP(behaviour:)]` or inferred from the HTTP verb
@@ -349,6 +377,30 @@ module ActionController::MCPServer
       toolboxes.any? { |box| box.tools.any? { |tool| tool.ui || tool.visibility } }
     end
 
+    @[JSON::Field(ignore: true)]
+    @[YAML::Field(ignore: true)]
+    @resource_tools : Array(Tool)? = nil
+
+    # the tools that are readable as resource templates, the most specific templates first
+    def resource_tools : Array(Tool)
+      @resource_tools ||= toolboxes.flat_map(&.tools).select(&.resource).sort_by! { |tool| tool.uri_template.as(URITemplate).specificity }
+    end
+
+    # the resource tool whose template matches the URI, and the template variables
+    def resource?(uri : String) : Tuple(Tool, Hash(String, String))?
+      resource_tools.each do |tool|
+        if variables = tool.uri_template.as(URITemplate).match(uri)
+          return {tool, variables}
+        end
+      end
+      nil
+    end
+
+    # true if any resource template can be subscribed to
+    def subscriptions? : Bool
+      resource_tools.any?(&.subscribe?)
+    end
+
     # the tools available without opening a toolbox
     def root_tools : Array(Tool)
       toolboxes.flat_map { |box| box.tools.select(&.root?) }
@@ -409,7 +461,7 @@ module ActionController::MCPServer
 
   # :nodoc:
   # `global`: listed by the global server, `endpoint`: the endpoint path it's served on
-  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, behaviour: Array(String)?, global: Bool, endpoint: String?, ui: String?, visibility: Array(String)?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
+  alias RouteInfo = NamedTuple(controller: String, method: String, verb: String, route: String, root: Bool, behaviour: Array(String)?, global: Bool, endpoint: String?, ui: String?, visibility: Array(String)?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?, resource: String?, mime_type: String?, subscribe: Bool, cache_ttl: Int32?, long_running: Bool, max_bytes: Int64?)
 
   # :nodoc:
   alias PromptInfo = NamedTuple(controller: String, method: String, route: String, root: Bool, arguments: Array(PromptArgument), declared_arguments: Array(String), global: Bool, endpoint: String?, title: String?, icons: Array(String)?, toolbox_icons: Array(String)?)
@@ -447,6 +499,12 @@ module ActionController::MCPServer
               title: {{ details[:mcp_title] }}.as(String?),
               icons: {% if details[:mcp_icons] && !details[:mcp_icons].empty? %}[{% for icon in details[:mcp_icons] %}{{ icon }}.to_json, {% end %}].as(Array(String)?){% else %}nil.as(Array(String)?){% end %},
               toolbox_icons: {% if details[:mcp_toolbox_icons] && !details[:mcp_toolbox_icons].empty? %}[{% for icon in details[:mcp_toolbox_icons] %}{{ icon }}.to_json, {% end %}].as(Array(String)?){% else %}nil.as(Array(String)?){% end %},
+              resource: {{ details[:mcp_resource] }}.as(String?),
+              mime_type: {{ details[:mcp_mime_type] }}.as(String?),
+              subscribe: {{ details[:mcp_subscribe] == true }},
+              cache_ttl: {% if details[:mcp_cache_ttl] != nil %}({{ details[:mcp_cache_ttl] }}).to_i32.as(Int32?){% else %}nil.as(Int32?){% end %},
+              long_running: {{ details[:mcp_long_running] == true }},
+              max_bytes: {% if details[:mcp_max_bytes] != nil %}({{ details[:mcp_max_bytes] }}).to_i64.as(Int64?){% else %}nil.as(Int64?){% end %},
             },
           {% end %}
         {% end %}
@@ -744,7 +802,26 @@ module ActionController::MCPServer
     collect_definitions(JSON::Any.new(properties), schemas, definitions)
     input_schema["$defs"] = JSON::Any.new(definitions) unless definitions.empty?
 
-    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:behaviour], route[:ui], route[:visibility], route[:title], parse_icons(route[:icons]))
+    if template = route[:resource]
+      validate_resource_template!(template, route, params)
+    end
+
+    Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:behaviour], route[:ui], route[:visibility], route[:title], parse_icons(route[:icons]),
+      route[:resource], route[:mime_type], route[:subscribe], route[:cache_ttl], route[:long_running], route[:max_bytes])
+  end
+
+  # the template's path variables must be the route's path params and its query
+  # variables known query params, so every read maps onto the route
+  private def validate_resource_template!(template : String, route : RouteInfo, params : Array(ToolParam)) : Nil
+    parsed = URITemplate.new(template)
+    location = "#{route[:controller]}##{route[:method]}"
+    path_params = params.select(&.in.==("path")).map(&.name).sort!
+    unless parsed.path_variables.sort == path_params
+      raise ArgumentError.new("#{location}: resource template #{template} variables #{parsed.path_variables} must match the route's path params #{path_params}")
+    end
+    query_params = params.select(&.in.==("query")).map(&.name)
+    unknown = parsed.query_variables - query_params
+    raise ArgumentError.new("#{location}: resource template #{template} query variables #{unknown} aren't query params of the route") unless unknown.empty?
   end
 
   # :nodoc:
