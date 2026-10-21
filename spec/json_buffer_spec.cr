@@ -26,6 +26,24 @@ private struct ResponseOnlyJSON
   end
 end
 
+private struct SerializableJSON
+  include JSON::Serializable
+  getter message = "hello"
+
+  def initialize
+  end
+end
+
+private struct BuilderAndResponseJSON
+  def to_json(json : JSON::Builder) : Nil
+    json.string "via builder"
+  end
+
+  def to_json(output : HTTP::Server::Response) : Nil
+    output << %("via response")
+  end
+end
+
 class JSONBufferCustomController < ActionController::Base
   base "/json_buffer_custom"
 
@@ -109,6 +127,33 @@ describe ActionController::JSONBuffer do
     wire.should contain "Content-Length: 19\r\n"
     wire.should_not contain "Transfer-Encoding: chunked"
     wire.ends_with?(%({"message":"hello"})).should be_true
+  end
+
+  it "lets the native response close a JSON::Serializable value with a known length" do
+    bytes = IO::Memory.new
+    response = HTTP::Server::Response.new(bytes)
+    ActionController::JSONBuffer.serialize(response, SerializableJSON.new)
+    response.close
+    wire = bytes.to_s
+    wire.should contain "Content-Length: 19\r\n"
+    wire.should_not contain "Transfer-Encoding: chunked"
+  end
+
+  it "keeps the response for a type that also serializes through a builder" do
+    bytes = IO::Memory.new
+    response = HTTP::Server::Response.new(bytes)
+    ActionController::JSONBuffer.serialize(response, BuilderAndResponseJSON.new)
+    response.close
+    bytes.to_s.should contain %("via response")
+  end
+
+  it "keeps the response when any type in a union specializes it" do
+    bytes = IO::Memory.new
+    response = HTTP::Server::Response.new(bytes)
+    value = [SerializableJSON.new, ResponseOnlyJSON.new].sample.as(SerializableJSON | ResponseOnlyJSON)
+    ActionController::JSONBuffer.serialize(response, value)
+    response.close
+    bytes.to_s.should match(/"(message|response_only)"/)
   end
 
   it "keeps bounded writes when the HTTP output is wrapped" do
