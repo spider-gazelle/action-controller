@@ -40,7 +40,7 @@ require "./spec_helper"
       handler.compiled?.should be_true
     end
 
-    {% if flag?(:preview_mt) %}
+    {% if flag?(:preview_mt) || (compare_versions(Crystal::VERSION, "1.21.0") >= 0 && !flag?(:without_mt)) %}
       it "publishes a complete lazy snapshot to concurrent readers" do
         handler = AC::Router::RouteHandler.new
         handler.add_route("GET", "/parallel/:id", {compiled_action("parallel"), false})

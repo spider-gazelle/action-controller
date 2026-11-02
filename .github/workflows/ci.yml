@@ -10,20 +10,15 @@ jobs:
     uses: PlaceOS/.github/.github/workflows/crystal-style.yml@main
 
   test:
-    name: "${{ !matrix.stable && '🚧 ' || '' }}crystal: ${{ matrix.crystal }}, MT: ${{ matrix.MT && '☑' || '☐' }}"
+    name: "${{ !matrix.stable && '🚧 ' || '' }}crystal: ${{ matrix.crystal }}"
     strategy:
       fail-fast: false
       matrix:
-        MT: [true, false]
         stable: [true]
         crystal:
           - latest
         include:
           - crystal: nightly
-            MT: true
-            stable: false
-          - crystal: nightly
-            MT: false
             stable: false
     runs-on: ubuntu-latest
     steps:
@@ -37,10 +32,9 @@ jobs:
 
       - name: Install dependencies
         run: shards install --ignore-crystal-version --skip-postinstall --skip-executables
-      - name: Test ${{ matrix.MT && 'Multithreaded' || '' }}
+      - name: Test
         run: |
           crystal spec \
           --error-trace \
-          ${{ matrix.MT && '-Dpreview_mt' || '' }} \
           --order random \
           --verbose
