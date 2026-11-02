@@ -3,6 +3,24 @@ require "./open_api"
 class ActionController::Server
   include Router
 
+  # An HTTP::Server that disables Nagle's algorithm on its TCP listeners.
+  #
+  # Accepted connections inherit TCP_NODELAY from the listening socket. Without
+  # it a small write that follows an earlier write on a keep-alive connection,
+  # such as the terminating chunk of a flushed response, waits for the client's
+  # delayed ACK (about 40ms on Linux). Every `bind_*` method, including TLS,
+  # binds through `#bind(Socket::Server)`.
+  class HTTPServer < HTTP::Server
+    def bind(socket : Socket::Server) : Nil
+      listener = socket
+      {% unless flag?(:without_openssl) %}
+        listener = listener.wrapped if listener.is_a?(OpenSSL::SSL::Server)
+      {% end %}
+      listener.tcp_nodelay = true if listener.is_a?(TCPServer)
+      super
+    end
+  end
+
   # :nodoc:
   BEFORE_HANDLERS = [] of HTTP::Handler
 
@@ -49,7 +67,7 @@ class ActionController::Server
     @processes = 0
     @process_closed = Channel(Nil).new
     init_routes
-    @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+    @socket = HTTPServer.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   # create an instance of the application with tls
@@ -57,7 +75,7 @@ class ActionController::Server
     @processes = 0
     @process_closed = Channel(Nil).new
     init_routes
-    @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+    @socket = HTTPServer.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   private def init_routes
@@ -67,7 +85,7 @@ class ActionController::Server
   # :nodoc:
   def reload
     return unless @socket.closed?
-    @socket = HTTP::Server.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
+    @socket = HTTPServer.new(BEFORE_HANDLERS + [route_handler] + AFTER_HANDLERS)
   end
 
   # the host address the server is configured to run on
