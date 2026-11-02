@@ -6,23 +6,40 @@
 module ActionController::JSONBuffer
   LIMIT = 4096
 
+  # Output that isn't an IO is handed to the value unchanged.
   def self.serialize(output, value)
     value.to_json(output)
   end
 
-  # Buffers any value that serializes through `#to_json(IO)`. A type that
-  # specializes `#to_json` for a narrower IO, such as HTTP::Server::Response,
-  # keeps the original IO. Containers need no check: they hand their
-  # elements a JSON::Builder, never the IO.
+  # Buffers the value unless one of the types it can hold at runtime defines a
+  # `#to_json` overload that may want the original IO, such as one restricted
+  # to HTTP::Server::Response. Buffering lets JSON::Builder#end_document flush
+  # into the buffer instead of the response, so a small body is sent with a
+  # Content-Length rather than committing the response to chunked encoding.
+  #
+  # The check runs at compile time and fails closed: subclasses and module
+  # includers are considered (the value may be any of them), and any argument
+  # restriction other than IO or JSON::Builder keeps the original IO. Containers
+  # need no special handling, they hand their elements a JSON::Builder.
   def self.serialize(output : IO, value : T) forall T
     {% begin %}
       {% types = T.union? ? T.union_types : [T] %}
+      {% for type in types %}
+        {% for runtime_type in type.all_subclasses %}
+          {% types << runtime_type unless types.includes?(runtime_type) %}
+        {% end %}
+        {% if type.module? %}
+          {% for includer in type.includers %}
+            {% types << includer unless types.includes?(includer) %}
+          {% end %}
+        {% end %}
+      {% end %}
       {% specialized = types.any? do |type|
            ([type] + type.ancestors).any? do |owner|
              owner.methods.any? do |method|
-               restriction = method.args.size == 1 && method.args[0].restriction
-               method.name == "to_json" && restriction.is_a?(Path) &&
-                 (resolved = restriction.resolve?) && resolved != ::IO && resolved < ::IO
+               restriction = method.name.stringify == "to_json" && !method.args.empty? && method.args[0].restriction
+               resolved = restriction.is_a?(Path) && restriction.resolve?
+               restriction && resolved != ::IO && resolved != ::JSON::Builder
              end
            end
          end %}
