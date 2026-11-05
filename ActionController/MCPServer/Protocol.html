@@ -535,7 +535,7 @@ results only depend on the request and the path params bound from its URL</p>
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L24" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L24" target="_blank">
         action-controller/mcp/protocol.cr
       </a>
     
@@ -565,6 +565,15 @@ results only depend on the request and the path params bound from its URL</p>
       </dd>
       
     
+      <dt class="entry-const" id="CARD_DESCRIPTION_LIMIT">
+        <strong>CARD_DESCRIPTION_LIMIT</strong> = <code><span class="n">100</span></code>
+      </dt>
+      
+      <dd class="entry-const-doc">
+        <p>the longest Server Card description permitted</p>
+      </dd>
+      
+    
       <dt class="entry-const" id="META_TOOLS">
         <strong>META_TOOLS</strong> = <code>{<span class="s">&quot;{\&quot;name\&quot;:\&quot;list_toolboxes\&quot;,\&quot;description\&quot;:\&quot;Lists the available toolboxes, each groups related tools and prompts\&quot;,\&quot;inputSchema\&quot;:{\&quot;type\&quot;:\&quot;object\&quot;,\&quot;properties\&quot;:{}},\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;open_toolbox\&quot;,\&quot;description\&quot;:\&quot;Returns the definitions of the tools in a toolbox and the names of its prompts\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">TOOLBOX_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;idempotentHint\&quot;:true}}&quot;</span>}</code>
       </dt>
@@ -577,6 +586,11 @@ results only depend on the request and the path params bound from its URL</p>
     
       <dt class="entry-const" id="PROXY_TOOLS">
         <strong>PROXY_TOOLS</strong> = <code>{<span class="s">&quot;{\&quot;name\&quot;:\&quot;call_read_only\&quot;,\&quot;description\&quot;:\&quot;Runs a tool that only reads data (proxy: call_read_only) from a toolbox, as returned by open_toolbox\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">PROXY_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:true,\&quot;openWorldHint\&quot;:false}}&quot;</span>, <span class="s">&quot;{\&quot;name\&quot;:\&quot;call_tool\&quot;,\&quot;description\&quot;:\&quot;Runs a tool that can change data (proxy: call_tool) from a toolbox, as returned by open_toolbox. Prefer call_read_only for tools that only read data\&quot;,\&quot;inputSchema\&quot;:</span><span class="i">#{</span><span class="t">PROXY_ARGS</span><span class="i">}</span><span class="s">,\&quot;annotations\&quot;:{\&quot;readOnlyHint\&quot;:false,\&quot;openWorldHint\&quot;:false}}&quot;</span>}</code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="SERVER_CARD_SCHEMA">
+        <strong>SERVER_CARD_SCHEMA</strong> = <code><span class="s">&quot;https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json&quot;</span></code>
       </dt>
       
     
@@ -675,6 +689,13 @@ results only depend on the request and the path params bound from its URL</p>
       </li>
     
       <li class="entry-summary">
+        <a href="#server_card%28url%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%29%3AString-instance-method" class="signature"><strong>#server_card</strong>(url : String, request : HTTP::Request | Nil = <span class="n">nil</span>) : String</a>
+        
+          <div class="summary"><p>the <a href="https://modelcontextprotocol.io/seps/2127-mcp-server-cards">Server Card</a>, a static description of how to connect to the server at <code>url</code></p></div>
+        
+      </li>
+    
+      <li class="entry-summary">
         <a href="#server_info%28json%3AJSON%3A%3ABuilder%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%29%3ANil-instance-method" class="signature"><strong>#server_info</strong>(json : JSON::Builder, request : HTTP::Request | Nil = <span class="n">nil</span>) : Nil</a>
         
           <div class="summary"><p>the server's <code>Implementation</code>, its name, version and icons</p></div>
@@ -748,7 +769,7 @@ results only depend on the request and the path params bound from its URL</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L43" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L43" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -785,7 +806,7 @@ results only depend on the request and the path params bound from its URL</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L262" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L328" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -806,7 +827,7 @@ results only depend on the request and the path params bound from its URL</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L75" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L75" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -827,7 +848,7 @@ results only depend on the request and the path params bound from its URL</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L47" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L47" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -848,7 +869,7 @@ results only depend on the request and the path params bound from its URL</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L123" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L189" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -870,7 +891,7 @@ routes, which the caller must close</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L139" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L205" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -893,7 +914,7 @@ raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError<
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L60" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L60" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -914,7 +935,29 @@ raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError<
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L245" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L311" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="server_card(url:String,request:HTTP::Request|Nil=nil):String-instance-method">
+      <div class="signature">
+        
+        def <strong>server_card</strong>(url : String, request : <a href="../../HTTP/Request.html">HTTP::Request</a> | Nil = <span class="n">nil</span>) : String
+
+        <a class="method-permalink" href="#server_card%28url%3AString%2Crequest%3AHTTP%3A%3ARequest%7CNil%3Dnil%29%3AString-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the <a href="https://modelcontextprotocol.io/seps/2127-mcp-server-cards">Server Card</a>, a
+static description of how to connect to the server at <code>url</code></p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L113" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -935,7 +978,7 @@ raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError<
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L89" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L89" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -956,7 +999,7 @@ raising <code><a href="../../ActionController/MCPServer/RPCError.html">RPCError<
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/protocol.cr#L240" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/protocol.cr#L306" target="_blank">View source</a>]
         
       </div>
     </div>

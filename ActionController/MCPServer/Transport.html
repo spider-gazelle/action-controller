@@ -538,7 +538,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L17" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L19" target="_blank">
         action-controller/mcp/transport.cr
       </a>
     
@@ -600,6 +600,16 @@ earlier versions start with <code>initialize</code> and no session is created</p
     
       <dt class="entry-const" id="RESOURCE_METADATA_PATH">
         <strong>RESOURCE_METADATA_PATH</strong> = <code><span class="s">&quot;/.well-known/oauth-protected-resource&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="SERVER_CARD_PATH">
+        <strong>SERVER_CARD_PATH</strong> = <code><span class="s">&quot;/server-card&quot;</span></code>
+      </dt>
+      
+    
+      <dt class="entry-const" id="SERVER_CARD_TYPE">
+        <strong>SERVER_CARD_TYPE</strong> = <code><span class="s">&quot;application/mcp-server-card+json&quot;</span></code>
       </dt>
       
     
@@ -700,6 +710,13 @@ earlier versions start with <code>initialize</code> and no session is created</p
         
       </li>
     
+      <li class="entry-summary">
+        <a href="#server_card%28context%3AHTTP%3A%3AServer%3A%3AContext%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method" class="signature"><strong>#server_card</strong>(context : HTTP::Server::Context) : HTTP::Server::Context</a>
+        
+          <div class="summary"><p>the server's <a href="https://modelcontextprotocol.io/seps/2127-mcp-server-cards">Server Card</a>, public and cacheable so browser based clients and registries can fetch it before connecting.</p></div>
+        
+      </li>
+    
   </ul>
 
 
@@ -760,7 +777,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L47" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L51" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -792,7 +809,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L37" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L41" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -813,7 +830,7 @@ earlier versions start with <code>initialize</code> and no session is created</p
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L44" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L48" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -835,7 +852,7 @@ listen again, to another instance</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L433" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L472" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -856,7 +873,7 @@ listen again, to another instance</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L227" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L231" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -877,7 +894,7 @@ listen again, to another instance</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L41" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L45" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -898,7 +915,7 @@ listen again, to another instance</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L54" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L58" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -914,7 +931,7 @@ listen again, to another instance</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L38" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L42" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -935,7 +952,30 @@ listen again, to another instance</p>
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/d631709c9788a6f4f38b2cd78ec385a6153fb666/src/action-controller/mcp/transport.cr#L233" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L237" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
+    <div class="entry-detail" id="server_card(context:HTTP::Server::Context):HTTP::Server::Context-instance-method">
+      <div class="signature">
+        
+        def <strong>server_card</strong>(context : <a href="../../HTTP/Server/Context.html">HTTP::Server::Context</a>) : <a href="../../HTTP/Server/Context.html">HTTP::Server::Context</a>
+
+        <a class="method-permalink" href="#server_card%28context%3AHTTP%3A%3AServer%3A%3AContext%29%3AHTTP%3A%3AServer%3A%3AContext-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>the server's <a href="https://modelcontextprotocol.io/seps/2127-mcp-server-cards">Server Card</a>,
+public and cacheable so browser based clients and registries can fetch it before
+connecting. <code>OPTIONS</code> answers CORS preflight requests</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/8c57e56aaf49463ddfd08531781fe51109675afd/src/action-controller/mcp/transport.cr#L250" target="_blank">View source</a>]
         
       </div>
     </div>

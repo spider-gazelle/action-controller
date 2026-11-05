@@ -1182,6 +1182,11 @@ for the server's own icon.</p>
   mcp.description_path <span class="o">=</span> <span class="s">&quot;mcp.yml&quot;</span>                 <span class="c"># relative to the working directory</span>
   mcp.server_name <span class="o">=</span> <span class="s">&quot;my-app&quot;</span>
   mcp.server_version <span class="o">=</span> <span class="s">&quot;1.2.0&quot;</span>
+  mcp.server_title <span class="o">=</span> <span class="s">&quot;My App&quot;</span>                     <span class="c"># display name, also in the Server Card</span>
+  mcp.website_url <span class="o">=</span> <span class="s">&quot;https://example.com/docs&quot;</span>
+  mcp.server_description <span class="o">=</span> <span class="s">&quot;Manages widgets&quot;</span>      <span class="c"># Server Card description, 100 characters max</span>
+  mcp.server_card <span class="o">=</span> <span class="n">true</span>                          <span class="c"># serve &lt;path&gt;/server-card, see Server Cards</span>
+  mcp.server_card_ttl <span class="o">=</span> <span class="n">1</span>.hour                    <span class="c"># Cache-Control max-age of Server Cards</span>
   mcp.instructions <span class="o">=</span> <span class="s">&quot;About my-app. </span><span class="i">#{</span>mcp.toolbox_instructions<span class="i">}</span><span class="s">&quot;</span> <span class="c"># nil (default): toolbox usage only, &quot;&quot;: none</span>
   mcp.tool_proxy <span class="o">=</span> <span class="n">true</span>                           <span class="c"># the call_read_only and call_tool meta tools</span>
   mcp.forward_headers <span class="o">=</span> [<span class="s">&quot;Authorization&quot;</span>, <span class="s">&quot;Cookie&quot;</span>, <span class="s">&quot;X-API-Key&quot;</span>] <span class="c"># copied onto tool requests</span>
@@ -1202,6 +1207,39 @@ for the server's own icon.</p>
     <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span><span class="t">::</span><span class="t">ResourceMetadata</span>.new(authorization_servers: [<span class="s">&quot;https://auth.example.com&quot;</span>])
   <span class="k">end</span>
 <span class="k">end</span></code></pre>
+<h3><a id="server-cards" class="anchor" href="#server-cards">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Server Cards</h3>
+<p>Each mounted server, including controller endpoints, serves an
+<a href="https://modelcontextprotocol.io/seps/2127-mcp-server-cards">MCP Server Card</a> at
+<code>&lt;path&gt;/server-card</code>, i.e. <code>/mcp/server-card</code>. The card tells clients and registries how to
+connect before they connect: the server's name, version, title, description, icons and its
+Streamable HTTP URL with the supported protocol versions. Tools, resources and prompts are
+never listed, clients list them once connected.</p>
+<pre><code class="language-json">{
+  &quot;$schema&quot;: &quot;https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json&quot;,
+  &quot;name&quot;: &quot;com.example/my-app&quot;,
+  &quot;description&quot;: &quot;Manages widgets&quot;,
+  &quot;version&quot;: &quot;1.2.0&quot;,
+  &quot;title&quot;: &quot;My App&quot;,
+  &quot;remotes&quot;: [{&quot;type&quot;: &quot;streamable-http&quot;, &quot;url&quot;: &quot;https://example.com/mcp&quot;, &quot;supportedProtocolVersions&quot;: [&quot;2026-07-28&quot;, &quot;2025-11-25&quot;, &quot;2025-06-18&quot;, &quot;2025-03-26&quot;]}]
+}</code></pre>
+<ul>
+<li>Cards are named in reverse-DNS form. A <code>server_name</code> with a namespace (<code>com.example/my-app</code>)
+is used as is, otherwise the namespace is the request host reversed: <code>my-app</code> served on
+<code>mcp.example.com</code> is <code>com.example.mcp/my-app</code>, and <code>local/my-app</code> on localhost or an IP
+address. Endpoints share the namespace, <code>com.example/&lt;controller&gt;</code>, and are described by
+the first paragraph of their controller's doc comment.</li>
+<li>Cards are public, they don't require authentication, and readable cross-origin. They're
+served as <code>application/mcp-server-card+json</code> with <code>Cache-Control: public</code> and an <code>ETag</code>, and
+<code>If-None-Match</code> requests are answered with <code>304</code>.</li>
+<li>The URL is built from the <code>Host</code> and <code>X-Forwarded-Proto</code> headers, like the protected
+resource metadata.</li>
+<li>Link to the cards from an <a href="https://agenticresourcediscovery.org">AI Catalog</a> to make the
+servers discoverable. <code>server_card = false</code> stops serving them.</li>
+</ul>
 <h3><a id="transport-notes" class="anchor" href="#transport-notes">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
