@@ -40,13 +40,17 @@ require "./spec_helper"
       handler.compiled?.should be_true
     end
 
-    {% if flag?(:preview_mt) || (compare_versions(Crystal::VERSION, "1.21.0") >= 0 && !flag?(:without_mt)) %}
+    # readers race to build the lazy snapshot, so the losers wait on the compile lock.
+    # They run as fibers of a parallel execution context: waiting suspends the fiber,
+    # which a bare `Thread.new` can't do as it has no scheduler
+    {% if AC::ExecutionContext::ENABLED %}
       it "publishes a complete lazy snapshot to concurrent readers" do
         handler = AC::Router::RouteHandler.new
         handler.add_route("GET", "/parallel/:id", {compiled_action("parallel"), false})
         results = Channel(String?).new(8)
-        threads = Array.new(8) do |index|
-          Thread.new do
+        readers = Fiber::ExecutionContext::Parallel.new("compiled-routes-spec", 8)
+        8.times do |index|
+          readers.spawn do
             error = nil
             100.times do |number|
               value = "#{index}-#{number}"
@@ -62,7 +66,6 @@ require "./spec_helper"
           end
         end
         8.times { results.receive.should be_nil }
-        threads.each(&.join)
         handler.compiled?.should be_true
       end
     {% end %}
