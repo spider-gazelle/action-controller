@@ -72,6 +72,25 @@ module ActionController::MCPServer
   # :ditto:
   class_property server_version : String = "1.0.0"
 
+  # the server's display name, reported to clients and in its Server Card
+  class_property server_title : String? = nil
+
+  # the server's homepage or documentation, reported to clients and in its Server Card
+  class_property website_url : String? = nil
+
+  # what the server does, for its Server Card. Up to 100 characters, longer descriptions
+  # are truncated. Defaults to `server_title` or `server_name`
+  class_property server_description : String? = nil
+
+  # serves an [MCP Server Card](https://modelcontextprotocol.io/seps/2127-mcp-server-cards)
+  # at `<path>/server-card` for each server mounted, so clients and registries can discover
+  # how to connect before connecting. Cards name the server `server_name` in reverse-DNS
+  # form, a name without a namespace is given the request host's (`com.example.mcp/my-app`)
+  class_property? server_card : Bool = true
+
+  # how long clients and caches can keep a Server Card
+  class_property server_card_ttl : Time::Span = 1.hour
+
   # groups the tools into toolboxes, run by the `call_read_only` and `call_tool` meta
   # tools. When disabled every tool is listed
   class_property? tool_proxy : Bool = true
@@ -314,6 +333,10 @@ module ActionController::MCPServer
     router.get(path) { |context, _head| transport.method_not_allowed(context) }
     router.delete(path) { |context, _head| transport.method_not_allowed(context) }
     router.get(Transport::RESOURCE_METADATA_PATH + path) { |context, _head| transport.resource_metadata(context) }
+    if server_card?
+      router.get(path + Transport::SERVER_CARD_PATH) { |context, _head| transport.server_card(context) }
+      router.options(path + Transport::SERVER_CARD_PATH) { |context, _head| transport.server_card(context) }
+    end
     transport
   end
 
@@ -353,7 +376,9 @@ module ActionController::MCPServer
       end
     end
     declarations.each do |(owner, path)|
-      [{path, %w[GET HEAD POST DELETE]}, {Transport::RESOURCE_METADATA_PATH + path, %w[GET HEAD]}].each do |(endpoint_path, methods)|
+      paths = [{path, %w[GET HEAD POST DELETE]}, {Transport::RESOURCE_METADATA_PATH + path, %w[GET HEAD]}]
+      paths << {path + Transport::SERVER_CARD_PATH, %w[GET HEAD OPTIONS]} if server_card?
+      paths.each do |(endpoint_path, methods)|
         Router::RouteHandler.optional_variants(endpoint_path, glob: true).each do |(variant, _)|
           methods.each do |method|
             key = {method, Composition.pattern(variant)}

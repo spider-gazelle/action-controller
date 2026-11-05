@@ -775,6 +775,11 @@ ActionController::MCPServer.tap do |mcp|
   mcp.description_path = "mcp.yml"                 # relative to the working directory
   mcp.server_name = "my-app"
   mcp.server_version = "1.2.0"
+  mcp.server_title = "My App"                     # display name, also in the Server Card
+  mcp.website_url = "https://example.com/docs"
+  mcp.server_description = "Manages widgets"      # Server Card description, 100 characters max
+  mcp.server_card = true                          # serve <path>/server-card, see Server Cards
+  mcp.server_card_ttl = 1.hour                    # Cache-Control max-age of Server Cards
   mcp.instructions = "About my-app. #{mcp.toolbox_instructions}" # nil (default): toolbox usage only, "": none
   mcp.tool_proxy = true                           # the call_read_only and call_tool meta tools
   mcp.forward_headers = ["Authorization", "Cookie", "X-API-Key"] # copied onto tool requests
@@ -796,6 +801,39 @@ ActionController::MCPServer.tap do |mcp|
   end
 end
 ```
+
+### Server Cards
+
+Each mounted server, including controller endpoints, serves an
+[MCP Server Card](https://modelcontextprotocol.io/seps/2127-mcp-server-cards) at
+`<path>/server-card`, i.e. `/mcp/server-card`. The card tells clients and registries how to
+connect before they connect: the server's name, version, title, description, icons and its
+Streamable HTTP URL with the supported protocol versions. Tools, resources and prompts are
+never listed, clients list them once connected.
+
+```json
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json",
+  "name": "com.example/my-app",
+  "description": "Manages widgets",
+  "version": "1.2.0",
+  "title": "My App",
+  "remotes": [{"type": "streamable-http", "url": "https://example.com/mcp", "supportedProtocolVersions": ["2026-07-28", "2025-11-25", "2025-06-18", "2025-03-26"]}]
+}
+```
+
+* Cards are named in reverse-DNS form. A `server_name` with a namespace (`com.example/my-app`)
+  is used as is, otherwise the namespace is the request host reversed: `my-app` served on
+  `mcp.example.com` is `com.example.mcp/my-app`, and `local/my-app` on localhost or an IP
+  address. Endpoints share the namespace, `com.example/<controller>`, and are described by
+  the first paragraph of their controller's doc comment.
+* Cards are public, they don't require authentication, and readable cross-origin. They're
+  served as `application/mcp-server-card+json` with `Cache-Control: public` and an `ETag`, and
+  `If-None-Match` requests are answered with `304`.
+* The URL is built from the `Host` and `X-Forwarded-Proto` headers, like the protected
+  resource metadata.
+* Link to the cards from an [AI Catalog](https://agenticresourcediscovery.org) to make the
+  servers discoverable. `server_card = false` stops serving them.
 
 ### Transport notes
 

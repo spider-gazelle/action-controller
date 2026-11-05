@@ -966,6 +966,157 @@ describe ActionController::MCPServer do
     end
   end
 
+  describe "server cards" do
+    card_uri = ->(path : String) { URI.parse("http://127.0.0.1:#{MCP_PORT}#{path}/server-card") }
+    versions = [MODERN_VERSION, "2025-11-25", "2025-06-18", "2025-03-26"]
+
+    it "describes how to connect to the global server" do
+      response = HTTP::Client.get(card_uri.call("/mcp"), headers: HTTP::Headers{"Accept" => "application/mcp-server-card+json"})
+      response.status_code.should eq 200
+      response.content_type.should eq "application/mcp-server-card+json"
+      card = JSON.parse(response.body)
+      card["$schema"].should eq "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json"
+      card["name"].should eq "local/action-controller"
+      card["version"].should eq "1.0.0"
+      card["description"].should eq "action-controller"
+      card["title"]?.should be_nil
+      card["icons"].should eq JSON.parse(%([{"src": "https://127.0.0.1:#{MCP_PORT}/logo.png", "sizes": ["48x48"]}]))
+      card["remotes"].should eq JSON.parse([{type: "streamable-http", url: "http://127.0.0.1:#{MCP_PORT}/mcp", supportedProtocolVersions: versions}].to_json)
+      # primitives are listed at runtime, never in the card
+      card.as_h.keys.sort!.should eq ["$schema", "description", "icons", "name", "remotes", "version"]
+    end
+
+    it "is public, cacheable and readable cross-origin" do
+      with_mcp_auth(transport, authenticator: ->(_request : HTTP::Request) { false }) do
+        response = HTTP::Client.get(card_uri.call("/mcp"), headers: HTTP::Headers{"Origin" => "https://elsewhere.example"})
+        response.status_code.should eq 200
+        response.headers["Access-Control-Allow-Origin"].should eq "*"
+        response.headers["Access-Control-Allow-Methods"].should eq "GET"
+        response.headers["Access-Control-Allow-Headers"].should eq "Content-Type, If-None-Match"
+        response.headers["Access-Control-Expose-Headers"].should eq "ETag"
+        response.headers["Cache-Control"].should eq "public, max-age=3600"
+        response.headers["ETag"].should match /\A"[0-9a-f]{32}"\z/
+
+        preflight = HTTP::Client.options(card_uri.call("/mcp"), headers: HTTP::Headers{
+          "Origin"                         => "https://elsewhere.example",
+          "Access-Control-Request-Method"  => "GET",
+          "Access-Control-Request-Headers" => "if-none-match",
+        })
+        preflight.status_code.should eq 204
+        preflight.headers["Access-Control-Allow-Origin"].should eq "*"
+        preflight.headers["Access-Control-Allow-Headers"].should eq "Content-Type, If-None-Match"
+
+        HTTP::Client.head(card_uri.call("/mcp")).status_code.should eq 200
+      end
+    end
+
+    it "revalidates using the entity tag" do
+      etag = HTTP::Client.get(card_uri.call("/mcp")).headers["ETag"]
+      {etag, "W/#{etag}", %("other", #{etag}), "*"}.each do |tag|
+        response = HTTP::Client.get(card_uri.call("/mcp"), headers: HTTP::Headers{"If-None-Match" => tag})
+        response.status_code.should eq 304
+        response.body.should be_empty
+        response.headers["ETag"].should eq etag
+        response.headers["Cache-Control"].should eq "public, max-age=3600"
+      end
+      HTTP::Client.get(card_uri.call("/mcp"), headers: HTTP::Headers{"If-None-Match" => %("stale")}).status_code.should eq 200
+    end
+
+    it "advertises the public URL" do
+      card = JSON.parse(HTTP::Client.get(card_uri.call("/mcp"), headers: HTTP::Headers{"X-Forwarded-Proto" => "https", "Host" => "mcp.example.com"}).body)
+      card["remotes"][0]["url"].should eq "https://mcp.example.com/mcp"
+      card["icons"][0]["src"].should eq "https://mcp.example.com/logo.png"
+    end
+
+    it "names the server in the host's namespace" do
+      name = ->(path : String, host : String) do
+        JSON.parse(HTTP::Client.get(card_uri.call(path), headers: HTTP::Headers{"Host" => host}).body)["name"].as_s
+      end
+      name.call("/mcp", "placeos.acme.com").should eq "com.acme.placeos/action-controller"
+      name.call("/mcp", "PlaceOS.Acme.com.:8443").should eq "com.acme.placeos/action-controller"
+      name.call("/mcp_account/acme/mcp", "placeos.acme.com").should eq "com.acme.placeos/mcp_account"
+
+      # hosts that aren't domain names
+      {"localhost:3000", "10.0.0.1", "[::1]:3000"}.each do |host|
+        name.call("/mcp", host).should eq "local/action-controller"
+      end
+
+      # the card agrees with the server info, apart from the namespace
+      info = MCPTestClient.new(modern: true).initialize_session["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]
+      info["name"].should eq "action-controller"
+    end
+
+    it "describes controller endpoints at their bound URL" do
+      card = JSON.parse(HTTP::Client.get(card_uri.call("/mcp_account/acme/mcp")).body)
+      card["name"].should eq "local/mcp_account"
+      card["description"].should eq "Manages an account, call show to look up its widgets"
+      card["remotes"][0]["url"].should eq "http://127.0.0.1:#{MCP_PORT}/mcp_account/acme/mcp"
+      card["icons"][0]["src"].as_s.should start_with "data:image/svg+xml;base64,"
+
+      JSON.parse(HTTP::Client.get(card_uri.call("/mcp_shared/assistant")).body)["remotes"][0]["url"].should eq "http://127.0.0.1:#{MCP_PORT}/mcp_shared/assistant"
+    end
+
+    it "matches the configured server identity" do
+      ActionController::MCPServer.server_name = "com.example/widgets"
+      ActionController::MCPServer.server_version = "2.1.0"
+      ActionController::MCPServer.server_title = "Widgets"
+      ActionController::MCPServer.website_url = "https://example.com/docs"
+      ActionController::MCPServer.server_description = "Manage widgets " * 10
+
+      card = JSON.parse(HTTP::Client.get(card_uri.call("/mcp")).body)
+      card["name"].should eq "com.example/widgets"
+      card["version"].should eq "2.1.0"
+      card["title"].should eq "Widgets"
+      card["websiteUrl"].should eq "https://example.com/docs"
+      description = card["description"].as_s
+      description.size.should eq 100
+      description.should start_with "Manage widgets Manage widgets"
+      description.should end_with "…"
+
+      # the card agrees with the server info clients see once connected
+      info = MCPTestClient.new(modern: true).initialize_session["result"]["_meta"]["io.modelcontextprotocol/serverInfo"]
+      {"name", "version", "title", "websiteUrl", "icons"}.each { |field| info[field].should eq card[field] }
+
+      # endpoints share the namespace, but not the global server's title or website
+      endpoint = JSON.parse(HTTP::Client.get(card_uri.call("/mcp_account/acme/mcp")).body)
+      endpoint["name"].should eq "com.example/mcp_account"
+      endpoint["version"].should eq "2.1.0"
+      endpoint["title"]?.should be_nil
+      endpoint["websiteUrl"]?.should be_nil
+    ensure
+      ActionController::MCPServer.server_name = "action-controller"
+      ActionController::MCPServer.server_version = "1.0.0"
+      ActionController::MCPServer.server_title = nil
+      ActionController::MCPServer.website_url = nil
+      ActionController::MCPServer.server_description = nil
+    end
+
+    it "falls back to the title for the description" do
+      ActionController::MCPServer.server_title = "Widgets"
+      JSON.parse(HTTP::Client.get(card_uri.call("/mcp")).body)["description"].should eq "Widgets"
+    ensure
+      ActionController::MCPServer.server_title = nil
+    end
+
+    it "rejects routes that conflict with the card" do
+      other = ActionController::Server.new(MCP_PORT + 1, "127.0.0.1")
+      other.get("/cards/mcp/server-card") { |context, _head| context }
+      expect_raises(ArgumentError, /conflicting MCP endpoint GET \/cards\/mcp\/server-card/) do
+        ActionController::MCPServer.mount(other, "/cards/mcp", endpoints: false)
+      end
+    end
+
+    it "can be disabled" do
+      ActionController::MCPServer.server_card = false
+      other = ActionController::Server.new(MCP_PORT + 2, "127.0.0.1")
+      other.get("/cards/mcp/server-card") { |context, _head| context }
+      ActionController::MCPServer.mount(other, "/cards/mcp", endpoints: false)
+      other.route_handler.registered_routes.should_not contain({"OPTIONS", "/cards/mcp/server-card"})
+    ensure
+      ActionController::MCPServer.server_card = true
+    end
+  end
+
   describe "UI cards" do
     ui_tool = ->(client : MCPTestClient, name : String) { client.tools.find!(&.["name"].==(name)) }
     read = ->(client : MCPTestClient, uri : String) {

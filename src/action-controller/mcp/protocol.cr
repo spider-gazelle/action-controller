@@ -89,9 +89,75 @@ module ActionController::MCPServer
     def server_info(json : JSON::Builder, request : HTTP::Request? = nil) : Nil
       json.object do
         json.field "name", flat? ? endpoint.name : MCPServer.server_name
-        json.field "version", MCPServer.server_version
-        Icons.to_json(json, flat? ? endpoint.toolbox.icons : MCPServer.icons, request.try { |req| host(req) })
+        identity_fields(json, request)
       end
+    end
+
+    # the fields shared by the server info and Server Card, after the name
+    private def identity_fields(json : JSON::Builder, request : HTTP::Request?) : Nil
+      json.field "version", MCPServer.server_version
+      unless flat?
+        MCPServer.server_title.try { |title| json.field "title", title }
+        MCPServer.website_url.try { |url| json.field "websiteUrl", url }
+      end
+      Icons.to_json(json, flat? ? endpoint.toolbox.icons : MCPServer.icons, request.try { |req| host(req) })
+    end
+
+    SERVER_CARD_SCHEMA = "https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json"
+
+    # the longest Server Card description permitted
+    CARD_DESCRIPTION_LIMIT = 100
+
+    # the [Server Card](https://modelcontextprotocol.io/seps/2127-mcp-server-cards), a
+    # static description of how to connect to the server at `url`
+    def server_card(url : String, request : HTTP::Request? = nil) : String
+      JSON.build do |json|
+        json.object do
+          json.field "$schema", SERVER_CARD_SCHEMA
+          json.field "name", card_name(request)
+          json.field "description", card_description
+          identity_fields(json, request)
+          json.field "remotes" do
+            json.array do
+              json.object do
+                json.field "type", "streamable-http"
+                json.field "url", url
+                json.field "supportedProtocolVersions", PROTOCOL_VERSIONS
+              end
+            end
+          end
+        end
+      end
+    end
+
+    # cards are named in reverse-DNS form. A `server_name` without a namespace is given
+    # the request host's, i.e. `my-app` on `mcp.example.com` is `com.example.mcp/my-app`,
+    # and an endpoint shares the global server's namespace, `com.example.mcp/mcp_account`
+    private def card_name(request : HTTP::Request?) : String
+      global = MCPServer.server_name
+      namespace, slash, _name = global.partition('/')
+      namespace = host_namespace(request) if slash.empty?
+      return "#{namespace}/#{endpoint.name}" if flat?
+      slash.empty? ? "#{namespace}/#{global}" : global
+    end
+
+    # the request host reversed, ignoring the port. Hosts that aren't domain names
+    # (localhost, IP addresses) are `local`
+    private def host_namespace(request : HTTP::Request?) : String
+      hostname = request.try(&.hostname).try(&.downcase.rchop('.'))
+      return "local" if hostname.nil? || !hostname.includes?('.') || hostname.includes?(':') || hostname.matches?(/\A[\d.]+\z/)
+      hostname.split('.').reverse!.join('.')
+    end
+
+    # an endpoint is described by the first paragraph of its controller's doc comment
+    private def card_description : String
+      text = if flat?
+               endpoint.toolbox.description.try(&.split("\n\n").first.gsub(/\s+/, ' ').strip.presence) || endpoint.name
+             else
+               MCPServer.server_description.presence || MCPServer.server_title.presence || MCPServer.server_name
+             end
+      return text if text.size <= CARD_DESCRIPTION_LIMIT
+      "#{text[0, CARD_DESCRIPTION_LIMIT - 1].rstrip}…"
     end
 
     # the lists never change, toolboxes are opened by returning their tools. Resources can

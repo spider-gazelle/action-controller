@@ -1,3 +1,5 @@
+require "digest/sha256"
+
 module ActionController::MCPServer
   # :nodoc:
   # MCP prompts are routes that are not exposed via HTTP
@@ -19,6 +21,8 @@ module ActionController::MCPServer
     METHOD_HEADER          = "Mcp-Method"
     NAME_HEADER            = "Mcp-Name"
     RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource"
+    SERVER_CARD_PATH       = "/server-card"
+    SERVER_CARD_TYPE       = "application/mcp-server-card+json"
 
     META_VERSION      = "io.modelcontextprotocol/protocolVersion"
     META_CAPABILITIES = "io.modelcontextprotocol/clientCapabilities"
@@ -238,6 +242,41 @@ module ActionController::MCPServer
       metadata = builder.call(context.request)
       resource = context.request.path.lchop(RESOURCE_METADATA_PATH)
       respond(context, HTTP::Status::OK, "application/json", metadata.to_json(public_url(context.request, resource)))
+    end
+
+    # the server's [Server Card](https://modelcontextprotocol.io/seps/2127-mcp-server-cards),
+    # public and cacheable so browser based clients and registries can fetch it before
+    # connecting. `OPTIONS` answers CORS preflight requests
+    def server_card(context : HTTP::Server::Context) : HTTP::Server::Context
+      request = context.request
+      headers = context.response.headers
+      headers["Access-Control-Allow-Origin"] = "*"
+      headers["Access-Control-Allow-Methods"] = "GET"
+      headers["Access-Control-Allow-Headers"] = "Content-Type, If-None-Match"
+      headers["Access-Control-Expose-Headers"] = "ETag"
+      if request.method == "OPTIONS"
+        context.response.status = HTTP::Status::NO_CONTENT
+        return context
+      end
+
+      card = @protocol.server_card(public_url(request, request.path.rchop(SERVER_CARD_PATH)), request)
+      etag = %("#{Digest::SHA256.hexdigest(card)[0, 32]}")
+      headers["ETag"] = etag
+      headers["Cache-Control"] = "public, max-age=#{MCPServer.server_card_ttl.total_seconds.to_i}"
+      if not_modified?(request, etag)
+        context.response.status = HTTP::Status::NOT_MODIFIED
+        return context
+      end
+      respond(context, HTTP::Status::OK, SERVER_CARD_TYPE, card)
+    end
+
+    # `If-None-Match` lists the entity tags the client has, weak or strong, or `*`
+    private def not_modified?(request : HTTP::Request, etag : String) : Bool
+      return false unless header = request.headers["If-None-Match"]?
+      header.split(',').any? do |tag|
+        tag = tag.strip
+        tag == "*" || tag.lchop("W/") == etag
+      end
     end
 
     # checks the request is authenticated when authentication is enabled
