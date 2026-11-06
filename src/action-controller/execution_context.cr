@@ -98,12 +98,12 @@ module ActionController
 
       {% if ::ActionController::ExecutionContext::ENABLED %}
         module ActionController::ExecutionContext
-          @@context_{{san.id}} : ::Fiber::ExecutionContext::Parallel? = nil
+          @@context_{{ san.id }} : ::Fiber::ExecutionContext::Parallel? = nil
 
-          # the lazily created "{{name.id}}" execution context
-          def self.context_{{san.id}} : ::Fiber::ExecutionContext::Parallel
-            @@context_{{san.id}} || @@mutex.synchronize do
-              @@context_{{san.id}} ||= ::Fiber::ExecutionContext::Parallel.new({{name}}, @@parallelism_overrides[{{name}}]? || {{parallelism}})
+          # the lazily created "{{ name.id }}" execution context
+          def self.context_{{ san.id }} : ::Fiber::ExecutionContext::Parallel
+            @@context_{{ san.id }} || @@mutex.synchronize do
+              @@context_{{ san.id }} ||= ::Fiber::ExecutionContext::Parallel.new({{ name }}, @@parallelism_overrides[{{ name }}]? || {{ parallelism }})
             end
           end
         end
@@ -127,8 +127,8 @@ module ActionController
         # buffered (capacity 1) so the worker can hand back the result and return
         # its stack to the pool without waiting for a rendezvous.
         %done = ::Channel(::Exception?).new(1)
-        {% if context %}{{context}}{% else %}::ActionController::ExecutionContext.response_context{% end %}.spawn do
-          {{block.body}}
+        {% if context %}{{ context }}{% else %}::ActionController::ExecutionContext.response_context{% end %}.spawn do
+          {{ block.body }}
           %done.send nil
         rescue %error
           %done.send %error
@@ -137,7 +137,7 @@ module ActionController
           raise %error
         end
       {% else %}
-        {{block.body}}
+        {{ block.body }}
       {% end %}
     end
 

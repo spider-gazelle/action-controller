@@ -12,7 +12,7 @@ describe "end to end requests and responses" do
     result = client.get("/bob_jane/")
     result.body.should eq("index")
     cookie = result.headers["Set-Cookie"]
-    cookie.starts_with?("_test_session_=").should eq(true)
+    cookie.starts_with?("_test_session_=").should be_true
 
     cookie = cookie.split("%3B")[0]
     result = client.get("/bob_jane/redirect", headers: HTTP::Headers{"Cookie" => cookie})
@@ -23,7 +23,7 @@ describe "end to end requests and responses" do
     result = client.get("/bob_jane/modified_session")
     result.body.should eq("ok")
     cookie = result.headers["Set-Cookie"]
-    cookie.starts_with?("_test_session_=").should eq(true)
+    cookie.starts_with?("_test_session_=").should be_true
     cookie.should contain "domain=bobjane.com"
   end
 
@@ -146,7 +146,7 @@ describe "end to end requests and responses" do
 
   it "should work with HEAD requests" do
     result = client.head("/hello/around")
-    result.body.empty?.should eq(true)
+    result.body.empty?.should be_true
     result.status_code.should eq(200)
   end
 

@@ -297,7 +297,17 @@ module ActionController::MCPServer
         next unless value = arguments[param.name]?
         next if value.raw.nil?
         case param.in
-        when "query"  then query.add(param.name, param_value(value))
+        when "query"
+          # only a `ToolParam` knows how an array is encoded, a `PromptArgument` is always a string
+          if (items = value.as_a?) && param.responds_to?(:explode)
+            if param.explode == false
+              query.add(param.name, items.join(',') { |item| param_value(item) })
+            else
+              items.each { |item| query.add(param.name, param_value(item)) }
+            end
+          else
+            query.add(param.name, param_value(value))
+          end
         when "header" then headers[param.name] = param_value(value)
         end
       end
@@ -404,7 +414,7 @@ module ActionController::MCPServer
 
   # :nodoc:
   def tool_result(text : String, error : Bool = false, structured : Hash(String, JSON::Any)? = nil) : String
-    JSON.build { |json|
+    JSON.build do |json|
       json.object do
         json.field "content" do
           json.array do
@@ -417,6 +427,6 @@ module ActionController::MCPServer
         json.field "structuredContent", structured if structured
         json.field "isError", error
       end
-    }
+    end
   end
 end

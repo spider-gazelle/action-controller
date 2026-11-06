@@ -8,11 +8,11 @@ module ActionController::BodyParser
 
   struct FileUpload
     @[Deprecated("Use FileUpload#file instead to avoid loading the file into memory")]
-    getter body : IO {
+    getter body : IO do
       io = IO::Memory.new
       io << File.read(@file.path)
       io.rewind
-    }
+    end
 
     getter file : File
 

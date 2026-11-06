@@ -177,6 +177,27 @@ class Books < Application
 end
 ```
 
+### Array and Set parameters
+
+A query parameter typed `Array(T)` or `Set(T)` is read from every repetition of
+its name, `?tag=a&tag=b` (form bodies too), each element converted as a `T`
+would be, including any `config:` for the parameter. An element that does not
+convert is a `Param::ValueError` naming its index and value. The OpenAPI
+document describes it with `explode: true`, which is how generated clients and
+browsers send arrays. Path and header parameters, and collections of
+collections, are compile time errors.
+
+```crystal
+@[AC::Route::GET("/", config: {kind: {from_value: true}})]
+def index(tag : Array(String) = [] of String, kind : Set(Kind)? = nil)
+  # ?tag=a&tag=b&kind=0&kind=1
+end
+```
+
+A custom converter still takes the whole value, so a comma separated list stays
+possible, and is documented with `explode: false`. MCP tool calls join the
+elements with commas for it, so an element can't contain a comma.
+
 ## MCP Server
 
 Action Controller can expose your annotated routes to LLM clients as a

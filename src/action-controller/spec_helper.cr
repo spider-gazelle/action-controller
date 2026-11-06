@@ -92,20 +92,18 @@ class HotTopic::Client(T) < HTTP::Client
       # emulate the upgrade request processing
       app_error = nil
       spawn do
-        begin
-          @app.call(context)
-          if upgrade_handler = response.upgrade_handler
-            upgrade_handler.call(remote_io)
-          else
-            # the handshake was rejected (e.g. by a filter), send the response
-            # so the client isn't left waiting for one
-            response.close
-          end
-        rescue error
-          app_error = error
-        ensure
-          remote_write.close
+        @app.call(context)
+        if upgrade_handler = response.upgrade_handler
+          upgrade_handler.call(remote_io)
+        else
+          # the handshake was rejected (e.g. by a filter), send the response
+          # so the client isn't left waiting for one
+          response.close
         end
+      rescue error
+        app_error = error
+      ensure
+        remote_write.close
       end
 
       handshake_response = begin

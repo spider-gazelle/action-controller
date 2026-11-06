@@ -13,6 +13,7 @@ module ActionController::OpenAPI
     schema: String,
     docs: String?,
     example: String?,
+    exploded: Bool?,
   )
 
   # :nodoc:
@@ -193,7 +194,7 @@ module ActionController::OpenAPI
   # :nodoc:
   # the schema of a type, in the JSON Schema dialect of the OpenAPI version being generated
   macro introspect_schema(type)
-    (openapi_3_0 ? ::JSON::Schema.introspect({{type}}, openapi: true, refs: definitions) : ::JSON::Schema.introspect({{type}}, refs: definitions))
+    (openapi_3_0 ? ::JSON::Schema.introspect({{ type }}, openapi: true, refs: definitions) : ::JSON::Schema.introspect({{ type }}, refs: definitions))
   end
 
   # :nodoc:
@@ -227,7 +228,7 @@ module ActionController::OpenAPI
 
         {% request_body = details[:request_body].id %}
         {% if request_body.stringify != "Nil" %}
-          add_schema(response_types, definitions, {{request_body.stringify}}, introspect_schema({{ request_body }}))
+          add_schema(response_types, definitions, {{ request_body.stringify }}, introspect_schema({{ request_body }}))
         {% end %}
 
         {% responses = {} of Nil => Nil %}
@@ -263,9 +264,9 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            add_schema(response_types, definitions, {{resolved_klass.stringify}}, introspect_schema({{ resolved_klass }}))
+            add_schema(response_types, definitions, {{ resolved_klass.stringify }}, introspect_schema({{ resolved_klass }}))
           {% end %}
-          route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
+          route_response[{{ route_key }}][{ {{ is_array }}, {{ resolved_klass.stringify }} }] = ({{ response_code }}).to_i
         {% end %}
         {% end %}
       {% end %}
@@ -304,16 +305,16 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            add_schema(response_types, definitions, {{resolved_klass.stringify}}, introspect_schema({{ resolved_klass }}))
+            add_schema(response_types, definitions, {{ resolved_klass.stringify }}, introspect_schema({{ resolved_klass }}))
           {% end %}
-          route_response[{{exception_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
+          route_response[{{ exception_key }}][{ {{ is_array }}, {{ resolved_klass.stringify }} }] = ({{ response_code }}).to_i
         {% end %}
       {% end %}
 
       filters = {
         {% for filter_key, details in Route::Builder::OPENAPI_FILTERS %}
           {% params = details[:params] %}
-          {{filter_key}} => {
+          {{ filter_key }} => {
             controller: {{ details[:controller] }},
             method: {{ details[:method] }},
             wrapper_method: {{ details[:wrapper_method] }},
@@ -328,6 +329,7 @@ module ActionController::OpenAPI
                   schema: introspect_schema({{ param[:schema] }}).to_json,
                   docs: {{ param[:docs] }}.as(String?),
                   example: {{ param[:example] }}.as(String?),
+                  exploded: ({{ param[:exploded] ? true : nil }}).as(Bool?),
                 },
               {% end %}
             ]{% if params.empty? %} of Params{% end %},
@@ -337,12 +339,12 @@ module ActionController::OpenAPI
 
       exceptions = {
         {% for exception_key, details in Route::Builder::OPENAPI_ERRORS %}
-          {{exception_key}} => {
+          {{ exception_key }} => {
             method: {{ details[:method] }},
             controller: {{ details[:controller] }},
             exception_name: {{ details[:exception] }},
             exception_key: {{ exception_key }},
-            responses: route_response[{{exception_key}}]
+            responses: route_response[{{ exception_key }}]
           },
         {% end %}
       }{% if Route::Builder::OPENAPI_ERRORS.empty? %} of String => ExceptionHandler{% end %}
@@ -359,15 +361,15 @@ module ActionController::OpenAPI
         {% filters = Base::OPENAPI_FILTER_MAP[route_key] %}
         {% errors = Base::OPENAPI_ERRORS_MAP[route_key] %}
 
-        route_filters = {{filters}}{% if filters.empty? %} of String{% end %}
-        route_errors = {{errors}}{% if errors.empty? %} of String{% end %}
+        route_filters = {{ filters }}{% if filters.empty? %} of String{% end %}
+        route_errors = {{ errors }}{% if errors.empty? %} of String{% end %}
         route_class = {{ details[:controller] }}
         class_description, filter_keys, error_keys = find_matching(descriptions, route_class, filters, exceptions, route_filters, route_errors)
 
         {% params = details[:params] %}
 
-        routes[{{route_key}}] = {
-          route_lookup: {{route_key}},
+        routes[{{ route_key }}] = {
+          route_lookup: {{ route_key }},
           verb: {{ details[:verb] }},
           route: {{ details[:route] }},
           params: [
@@ -379,6 +381,7 @@ module ActionController::OpenAPI
                 schema: introspect_schema({{ param[:schema] }}).to_json,
                 docs: {{ param[:docs] }}.as(String?),
                 example: {{ param[:example] }}.as(String?),
+                exploded: ({{ param[:exploded] ? true : nil }}).as(Bool?),
               },
             {% end %}
           ]{% if params.empty? %} of Params{% end %},
@@ -388,7 +391,7 @@ module ActionController::OpenAPI
           error_handlers: error_keys,
           controller: {{ details[:controller] }},
           request_body: {{ details[:request_body].id.stringify }},
-          route_responses: route_response[{{route_key}}]
+          route_responses: route_response[{{ route_key }}]
         }
         {% end %}
       {% end %}
@@ -418,9 +421,9 @@ module ActionController::OpenAPI
         parameters = route[:params].compact_map do |param|
           if param[:in] == :path && !path_names.includes?(param[:name])
             next if param[:schema] == %({"type":"null"})
-            {name: param[:name], in: :query, required: param[:required], schema: param[:schema], docs: param[:docs], example: param[:example]}
+            {name: param[:name], in: :query, required: param[:required], schema: param[:schema], docs: param[:docs], example: param[:example], exploded: param[:exploded]}
           elsif param[:in] == :query && path_names.includes?(param[:name])
-            {name: param[:name], in: :path, required: param[:required], schema: param[:schema], docs: param[:docs], example: param[:example]}
+            {name: param[:name], in: :path, required: param[:required], schema: param[:schema], docs: param[:docs], example: param[:example], exploded: param[:exploded]}
           else
             param
           end
@@ -436,6 +439,7 @@ module ActionController::OpenAPI
             schema:   %({"type":"null"}),
             docs:     nil.as(String?),
             example:  nil.as(String?),
+            exploded: nil.as(Bool?),
           }
         end
         placed["#{index}:#{key}"] = route.merge(route: path, params: parameters, original_params: route[:params])
@@ -552,6 +556,7 @@ module ActionController::OpenAPI
         param.schema = JSON.parse(raw_param[:schema])
         param.description = raw_param[:docs]
         param.example = raw_param[:example].try { |example| JSON::Any.new(example) }
+        param.explode = true if raw_param[:exploded]
         if param.in == "path" && (original = route[:original_params].find { |source| source[:name] == param.name && source[:in] == :query })
           fallback = param.dup
           fallback.in = "query"
@@ -594,6 +599,7 @@ module ActionController::OpenAPI
           param.schema = JSON.parse(raw_param[:schema])
           param.description = raw_param[:docs]
           param.example = raw_param[:example].try { |example| JSON::Any.new(example) }
+          param.explode = true if raw_param[:exploded]
           params << param
         end
       end
@@ -605,9 +611,9 @@ module ActionController::OpenAPI
           param.required = true
           param.schema = JSON::Any.new({"type" => JSON::Any.new("string")}) if schema.nil? || schema["type"]? == "null"
         elsif param.in == "query" && schema_type(schema, schemas) == "array"
-          # array params are a single comma separated value
+          # one value per repetition of the name, or a single comma separated value for a converter
           param.style = "form"
-          param.explode = false
+          param.explode = param.explode == true
         end
 
         if example = param.example.try(&.as_s?)

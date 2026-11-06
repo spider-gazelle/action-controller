@@ -379,3 +379,51 @@ describe "Accept header parsing" do
     formats_for.call("text/html;\tapplication/xml").should eq ["text/html", "\tapplication/xml"]
   end
 end
+
+describe "repeated query params" do
+  client = AC::SpecHelper.client
+
+  it "reads an array from every repetition of the name, converting each element" do
+    client.get("/filtering/repeated?tag=a&tag=b").body.should eq %(["a", "b"]|nil|[])
+    client.get("/filtering/repeated?count=1&count=2&kind=fresh&kind=stale").body.should eq %([]|[1, 2]|[Filtering::Flavour::Fresh, Filtering::Flavour::Stale])
+    client.get("/filtering/repeated?tag=one").body.should eq %(["one"]|nil|[])
+  end
+
+  it "falls back to the default, or nil, when the name is absent" do
+    client.get("/filtering/repeated").body.should eq %([]|nil|[])
+  end
+
+  it "rejects an element that does not convert, naming its index and value" do
+    error = expect_raises(AC::Route::Param::ValueError, %(invalid parameter value for 'count' at index 1: "x")) do
+      client.get("/filtering/repeated?count=1&count=x")
+    end
+    error.parameter.should eq "count"
+    error.restriction.should eq "(Array(Int32) | Nil)"
+    expect_raises(AC::Route::Param::ValueError, %(invalid parameter value for 'kind' at index 1: "rotten")) do
+      client.get("/filtering/repeated?kind=fresh&kind=rotten")
+    end
+  end
+
+  it "requires an array with no default" do
+    expect_raises(AC::Route::Param::MissingError, "missing required parameter 'id'") do
+      client.get("/filtering/repeated/set")
+    end
+  end
+
+  it "reads a Set, collapsing repetitions" do
+    client.get("/filtering/repeated/set?id=1&id=1").body.should eq %([1, 1]|Set{}|nil)
+    client.get("/filtering/repeated/set?id=2&tag=a&tag=b&tag=a&kind=fresh&kind=fresh").body.should eq %([2]|Set{"a", "b"}|Set{Filtering::Flavour::Fresh})
+    expect_raises(AC::Route::Param::ValueError, %(invalid parameter value for 'kind' at index 0: "rotten")) do
+      client.get("/filtering/repeated/set?id=1&kind=rotten")
+    end
+  end
+
+  it "reads repetitions from a form body, applying converter config to each element" do
+    headers = HTTP::Headers{"Content-Type" => "application/x-www-form-urlencoded"}
+    result = client.post("/filtering/repeated/form", headers: headers, body: "tag=a&tag=b&level=1&level=0&flag=yes&flag=no")
+    result.body.should eq %(["a", "b"]|[Filtering::Flavour::Stale, Filtering::Flavour::Fresh]|[true, false])
+    expect_raises(AC::Route::Param::ValueError, %(invalid parameter value for 'level' at index 0: "7")) do
+      client.post("/filtering/repeated/form", headers: headers, body: "tag=a&level=7")
+    end
+  end
+end

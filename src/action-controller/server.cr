@@ -125,7 +125,6 @@ class ActionController::Server
         @socket.bind_tcp(@host, @port, @reuse_port)
       end
     end
-    "Listening on #{print_addresses}"
     @socket.listen
   end
 
@@ -137,7 +136,7 @@ class ActionController::Server
 
   # Prints the addresses that the server is listening on
   def print_addresses
-    @socket.addresses.join(" , ") { |socket|
+    @socket.addresses.join(" , ") do |socket|
       family = socket.family
 
       case socket.family
@@ -150,7 +149,7 @@ class ActionController::Server
       else
         raise "Unsupported family type: #{family} (#{family.value})"
       end
-    }
+    end
   end
 
   # Launches additional worker processes
@@ -224,13 +223,13 @@ class ActionController::Server
   def self.print_routes
     headers = {"Controller", :Action, :Verb, "URI Pattern"}
     sizes = component_sizes(*headers)
-    self.routes.each do |route|
+    routes.each do |route|
       route_size = component_sizes(*route)
       sizes = max_size(sizes, route_size)
     end
 
     print_route(sizes, headers)
-    self.routes.each { |route| print_route(sizes, route) }
+    routes.each { |route| print_route(sizes, route) }
   end
 
   protected def self.component_sizes(*args) : Array(Int32)

@@ -144,9 +144,9 @@ module ActionController::Route::Param
     %}
     {% for convert, klass in bigs %}
       # :nodoc:
-      struct Convert{{klass}} < Conversion
+      struct Convert{{ klass }} < Conversion
         def convert(raw : String)
-          raw.{{convert}}?
+          raw.{{ convert }}?
         end
       end
     {% end %}
@@ -161,12 +161,12 @@ module ActionController::Route::Param
     %}
     {% for convert, klass in floats %}
       # :nodoc:
-      struct Convert{{klass}} < Conversion
+      struct Convert{{ klass }} < Conversion
         def initialize(@whitespace : Bool = true, @strict : Bool = true)
         end
 
         def convert(raw : String)
-          raw.{{convert}}?(
+          raw.{{ convert }}?(
             whitespace: @whitespace,
             strict: @strict,
           )
@@ -192,12 +192,12 @@ module ActionController::Route::Param
     %}
     {% for convert, klass in ints %}
       # :nodoc:
-      struct Convert{{klass}} < Conversion
+      struct Convert{{ klass }} < Conversion
         def initialize(@base : Int32 = 10, @whitespace : Bool = true, @underscore : Bool = false, @prefix : Bool = false, @strict : Bool = true, @leading_zero_is_octal : Bool = false)
         end
 
         def convert(raw : String)
-          raw.{{convert}}?(
+          raw.{{ convert }}?(
             base: @base,
             whitespace: @whitespace,
             underscore: @underscore,

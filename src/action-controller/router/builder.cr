@@ -5,15 +5,15 @@ require "../prompt_message"
 # Create the method annotations
 {% begin %}
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
-    # define a new route that responds to {{http_method.upcase}} requests
+    # define a new route that responds to {{ http_method.upcase }} requests
     #
     # ```crystal
-    # @[AC::Route::{{http_method.upcase}}("/my/route/:name")]
+    # @[AC::Route::{{ http_method.upcase }}("/my/route/:name")]
     # def my_route_name(name : String) : String
     #   name
     # end
     # ```
-    annotation ActionController::Route::{{http_method.upcase.id}}
+    annotation ActionController::Route::{{ http_method.upcase.id }}
     end
   {% end %}
 {% end %}
@@ -262,9 +262,9 @@ module ActionController::Route::Builder
   macro __build_transformer_functions__
       {% for type, block in RESPONDERS %}
         # :nodoc:
-        def self.transform_{{type.gsub(/\W/, "_").id}}(%instance, {{block.args.splat}}, *_args)
+        def self.transform_{{ type.gsub(/\W/, "_").id }}(%instance, {{ block.args.splat }}, *_args)
           __yield__(%instance) do
-            {{block.body}}
+            {{ block.body }}
           end
         end
       {% end %}
@@ -276,19 +276,19 @@ module ActionController::Route::Builder
       protected def __transform_response__(responds_with, response, result, function) : Nil
         case responds_with
         {% for type, _block in RESPONDERS %}
-          when {{type}}
-            {{@type.name.id}}.transform_{{type.gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, function)
+          when {{ type }}
+            {{ @type.name.id }}.transform_{{ type.gsub(/\W/, "_").id }}(self, response, result, {{ @type.name.underscore.symbolize }}, function)
         {% end %}
         else
           # return the default, which is allowed in HTTP 1.1
           # we've checked the accepts header at the top of the function and this might be an error response
-          {{@type.name.id}}.transform_{{DEFAULT_RESPONDER[0].gsub(/\W/, "_").id}}(self, response, result, {{@type.name.underscore.symbolize}}, function)
+          {{ @type.name.id }}.transform_{{ DEFAULT_RESPONDER[0].gsub(/\W/, "_").id }}(self, response, result, {{ @type.name.underscore.symbolize }}, function)
         end
       end
 
       RESPONDER_LIST = [
         {% for type, _block in RESPONDERS %}
-          {{type}},
+          {{ type }},
         {% end %}
       ]
 
@@ -315,14 +315,14 @@ module ActionController::Route::Builder
 
       {% for type, block in PARSERS %}
         # :nodoc:
-        def self.parse_{{type.gsub(/\W/, "_").id}}({{block.args.splat}}, **_ignore)
-          {{block.body}}
+        def self.parse_{{ type.gsub(/\W/, "_").id }}({{ block.args.splat }}, **_ignore)
+          {{ block.body }}
         end
       {% end %}
 
       PARSER_LIST = [
         {% for type, _block in PARSERS %}
-          {{type}},
+          {{ type }},
         {% end %}
       ]
 
@@ -554,6 +554,7 @@ module ActionController::Route::Builder
           # support annotation based filters
           {% if route_method == AC::Route::Filter %}
             {% required_params = [] of StringLiteral %}
+            {% optional_params = [] of StringLiteral %}
             {% filter_type = ann[0].id %}
             {% function_wrapper_name = "_#{filter_type.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
 
@@ -564,13 +565,14 @@ module ActionController::Route::Builder
             {% open_api_route[:params] = open_api_params %}
             {% OPENAPI_FILTERS[@type.name.stringify + "#" + method_name.stringify] = open_api_route %}
 
-            {{filter_type}}({{function_wrapper_name.symbolize}}, only: {{ann[:only]}}, except: {{ann[:except]}}, filter_name: {{method_name}})
+            {{ filter_type }}({{ function_wrapper_name.symbolize }}, only: {{ ann[:only] }}, except: {{ ann[:except] }}, filter_name: {{ method_name }})
 
             # :nodoc:
-            def {{function_wrapper_name}}
+            def {{ function_wrapper_name }}
           {% elsif route_method == AC::Route::Exception %}
             # annotation based exception handlers
             {% required_params = [] of StringLiteral %}
+            {% optional_params = [] of StringLiteral %}
             {% exception_type = ann[0].resolve %}
             # an uninstantiated generic (`MyError` for `MyError(T)`) handles every instance
             {% if ann[0].is_a?(Path) && !exception_type.type_vars.empty? %}
@@ -586,15 +588,15 @@ module ActionController::Route::Builder
             {% open_api_route[:method] = method_name.stringify %}
             {% OPENAPI_ERRORS[@type.name.stringify + "#" + exception_class] = open_api_route %}
 
-            rescue_from {{exception_class.id}}, {{function_wrapper_name.symbolize}}
+            rescue_from {{ exception_class.id }}, {{ function_wrapper_name.symbolize }}
 
             # :nodoc:
-            def {{function_wrapper_name}}(error : {{exception_class.id}})
+            def {{ function_wrapper_name }}(error : {{ exception_class.id }})
               # Check we can satisfy the accepts header, if provided
               {% if content_type %}
-                responds_with = {{content_type}}
+                responds_with = {{ content_type }}
               {% else %}
-                responds_with = {{@type.name.id}}.can_respond_with?(accepts_formats) || DEFAULT_RESPONDER[0]
+                responds_with = {{ @type.name.id }}.can_respond_with?(accepts_formats) || DEFAULT_RESPONDER[0]
               {% end %}
           {% else %}
             # annotation based route
@@ -638,8 +640,8 @@ module ActionController::Route::Builder
 
             # add a redirect helper (yes, it will only match the last route applied)
             {% if lower_route_method.stringify == "get" && !ann[:internal] %}
-              def self.{{method_name.id}}(**tuple_parts)
-                route = {{"/" + full_route.join("/")}}
+              def self.{{ method_name.id }}(**tuple_parts)
+                route = {{ "/" + full_route.join("/") }}
                 ActionController::Support.build_route(route, nil, **tuple_parts)
               end
             {% end %}
@@ -648,17 +650,17 @@ module ActionController::Route::Builder
             # build the standard route definition helper (get "/route")
             {% if route_method == AC::Route::WebSocket %}
               # :nodoc:
-              ws {{ann[0]}}, reference: {{method_name}} do |socket|
+              ws {{ ann[0] }}, reference: {{ method_name }} do |socket|
             {% else %}
               # :nodoc:
-              {{lower_route_method}} {{ann[0]}}, reference: {{method_name}}, execution_context: {{ann[:execution_context]}}, internal: {{ann[:internal] == true}} do
+              {{ lower_route_method }} {{ ann[0] }}, reference: {{ method_name }}, execution_context: {{ ann[:execution_context] }}, internal: {{ ann[:internal] == true }} do
 
                 # Check we can satisfy the accepts header, if provided
                 {% if content_type %}
-                  responds_with = {{content_type}}
+                  responds_with = {{ content_type }}
                 {% else %}
-                  responds_with = {{@type.name.id}}.can_respond_with?(accepts_formats)
-                  raise AC::Route::NotAcceptable.new("no renderer available for #{accepts_formats.join(" or ")}, accepts #{RESPONDER_LIST.join(" or ")}", {{@type.name.id}}.accepts) unless responds_with
+                  responds_with = {{ @type.name.id }}.can_respond_with?(accepts_formats)
+                  raise AC::Route::NotAcceptable.new("no renderer available for #{accepts_formats.join(" or ")}, accepts #{RESPONDER_LIST.join(" or ")}", {{ @type.name.id }}.accepts) unless responds_with
                 {% end %}
             {% end %}
           {% end %}
@@ -669,29 +671,32 @@ module ActionController::Route::Builder
             # Write the method body
             {% if method.args.empty? || ({AC::Route::Exception, AC::Route::WebSocket}.includes?(route_method) && method.args.size == 1) %}
               {% if route_method == AC::Route::WebSocket %}
-                {{method_name.id}}(socket)
+                {{ method_name.id }}(socket)
               {% elsif route_method == AC::Route::Exception %}
-                result = {{method_name.id}}(error)
+                result = {{ method_name.id }}(error)
               {% else %}
-                result = {{method_name.id}} {% if route_method == AC::Route::Filter && ann[0] == :around_action %} { yield } {% end %}
+                result = {{ method_name.id }} {% if route_method == AC::Route::Filter && ann[0] == :around_action %} { yield } {% end %}
               {% end %}
             {% else %}
               # check we can parse the body if a content type is provided
               {% string_body_possible = false %}
               {% if body_argument != "%" %}
                 body_type = request_content_type || {{ DEFAULT_PARSER[0] }}
-                unless {{@type.name.id}}.can_parse?(body_type)
+                unless {{ @type.name.id }}.can_parse?(body_type)
                   # special case for mime type text/plain and String body types
                   {% for arg, arg_index in method.args %}
                     {% if body_argument == arg.name.id.stringify %}
-                      {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
+                      # `T | U?` resolves to a nested union: flatten it, `T | U | Nil` order
+                      {% union_types = [] of Nil %}
+                      {% arg.restriction.resolve.union_types.each { |type| type.union_types.each { |inner| union_types << inner unless union_types.includes?(inner) } } %}
+                      {% union_types = parse_type(union_types.map(&.stringify).join(" | ")).resolve.union_types.reject(&.nilable?) %}
                       {% if union_types.includes?(String) %}
                         {% string_body_possible = true %}
                         if body_type != "text/plain"
-                          raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{@type.name.id}}.parsable)
+                          raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{ @type.name.id }}.parsable)
                         end
                       {% else %}
-                        raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{@type.name.id}}.parsable)
+                        raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{ @type.name.id }}.parsable)
                       {% end %}
                     {% end %}
                   {% end %}
@@ -728,12 +733,34 @@ module ActionController::Route::Builder
                       {% open_api_params[query_param_name] = open_api_param %}
                     {% end %}
 
+                    {% collection = nil %}
                     # Calculate the conversions required to meet the desired restrictions
                     {% if arg.restriction %}
                       {% open_api_param[:schema] = arg.restriction.resolve %}
 
                       # Check if restriction is optional
                       {% nilable = arg.restriction.resolve.nilable? %}
+                      # `T | U?` resolves to a nested union: flatten it, in the order of `T | U | Nil`,
+                      # which converters are tried in (and which `reject(&.nilable?)` would drop `U` from)
+                      {% union_types = [] of Nil %}
+                      {% arg.restriction.resolve.union_types.each { |type| type.union_types.each { |inner| union_types << inner unless union_types.includes?(inner) } } %}
+                      {% union_types = parse_type(union_types.map(&.stringify).join(" | ")).resolve.union_types.reject(&.nilable?) %}
+
+                      # an Array or Set is read from every repetition of the param's name,
+                      # each element converted (and configured) as a param of its type would be
+                      {% if !custom_converter && body_argument != string_name && union_types.size == 1 && {"Array", "Set"}.includes?(union_types[0].name(generic_args: false).stringify) %}
+                        {% collection = union_types[0] %}
+                        {% if required_params.includes?(string_name) || optional_params.includes?(string_name) || open_api_param.has_key?(:header) %}
+                          {% raise "#{@type}##{method_name}: #{string_name.id} : #{collection} can only be a query parameter" %}
+                        {% end %}
+                        {% union_types = [] of Nil %}
+                        {% collection.type_vars[0].resolve.union_types.each { |type| type.union_types.each { |inner| union_types << inner unless union_types.includes?(inner) } } %}
+                        {% union_types = parse_type(union_types.map(&.stringify).join(" | ")).resolve.union_types.reject(&.nilable?) %}
+                        {% if union_types.any? { |type| {"Array", "Set"}.includes?(type.name(generic_args: false).stringify) } %}
+                          {% raise "#{@type}##{method_name}: #{string_name.id} : #{collection} has collections for elements, which a query parameter can't hold" %}
+                        {% end %}
+                        {% open_api_param[:exploded] = true %}
+                      {% end %}
 
                       # Check if there are any custom converters
                       {% if custom_converter %}
@@ -745,14 +772,14 @@ module ActionController::Route::Builder
 
                       # Check for custom converter arguments (assumes a single type)
                       {% elsif converter_args %}
-                        {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
                         {% if union_types[0] < Enum %}
                           {% if converter_args[:from_value] %}
                             {% restrictions = [union_types[0].stringify + ".from_value?(param_value.to_i64)"] %}
                           {% else %}
                             {% restrictions = ["::AC::Route::Param::ConvertEnum(" + union_types[0].stringify + ").convert(param_value)"] %}
                           {% end %}
-                          {% if converter_args[:strict] %}
+                          # an element that doesn't convert always raises, so strict only applies to a single value
+                          {% if converter_args[:strict] && !collection %}
                             # strict: a provided but unparsable value raises a ValueError (bad request)
                             # instead of resolving to nil, which nilable params silently ignore
                             {% if open_api_param.has_key?(:header) %}
@@ -771,7 +798,6 @@ module ActionController::Route::Builder
 
                       # There are a bunch of types this might be
                       {% else %}
-                        {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
                         {% restrictions = union_types.map do |type|
                              if type.resolve < Enum
                                ("::AC::Route::Param::ConvertEnum(" + type.stringify + ").convert(param_value)")
@@ -790,15 +816,15 @@ module ActionController::Route::Builder
                     {% open_api_param[:required] = open_api_param[:required] || (!nilable && arg.default_value.stringify == "") %}
 
                     # Build the argument named tuple with the correct types
-                    {{arg.name.id}}: (
+                    {{ arg.name.id }}: (
                       {% if body_argument == string_name %}
                         {% open_api_route[:request_body] = arg.restriction.resolve %}
 
                         if body_io = @__context__.request.body
                           case body_type
                           {% for type, _block in PARSERS %}
-                            when {{type}}
-                              {{@type.name.id}}.parse_{{type.gsub(/\W/, "_").id}}({{ arg.restriction }}, body_io, request: @__context__.request)
+                            when {{ type }}
+                              {{ @type.name.id }}.parse_{{ type.gsub(/\W/, "_").id }}({{ arg.restriction }}, body_io, request: @__context__.request)
                           {% end %}
                           {% if string_body_possible == true %}
                             when "text/plain"
@@ -807,35 +833,48 @@ module ActionController::Route::Builder
                           end
                         {% if arg.default_value.stringify != "" %}
                         else
-                          {{arg.default_value}}
+                          {{ arg.default_value }}
                         {% end %}
                         end
 
                       # handle header params
                       {% elsif open_api_param.has_key?(:header) %}
-                        if param_value = @__context__.request.headers.fetch({{open_api_param[:header]}}, nil)
-                          {{restrictions.join(" || ").id}}
+                        if param_value = @__context__.request.headers.fetch({{ open_api_param[:header] }}, nil)
+                          {{ restrictions.join(" || ").id }}
                         {% if arg.default_value.stringify != "" %}
                         else
-                          {{arg.default_value}}
+                          {{ arg.default_value }}
                         {% end %}
                         end
 
                       # Required route param, so we ensure it
                       {% elsif required_params.includes? string_name %}
-                        if param_value = route_params[{{query_param_name}}]?
-                          {{restrictions.join(" || ").id}}
+                        if param_value = route_params[{{ query_param_name }}]?
+                          {{ restrictions.join(" || ").id }}
                         else
-                          ::ActionController::Base.__raise_missing_param__({{query_param_name}}, {{arg.restriction.resolve.stringify}})
+                          ::ActionController::Base.__raise_missing_param__({{ query_param_name }}, {{ arg.restriction.resolve.stringify }})
                         end
 
                       # An optional route param, might be passed as an query param (not the case for headers)
+                      # A collection, one element per repetition of the name
+                      {% elsif collection %}
+                        values = params.fetch_all({{ query_param_name }})
+                        if values.empty?
+                          {% if arg.default_value.stringify != "" %}
+                            {{ arg.default_value }}
+                          {% end %}
+                        else
+                          values.map_with_index do |param_value, index|
+                            element = {{ restrictions.join(" || ").id }}
+                            element.nil? ? ::ActionController::Base.__raise_element_error__({{ query_param_name }}, index, param_value, {{ arg.restriction.resolve.stringify }}) : element
+                          end{% if collection.name(generic_args: false).stringify == "Set" %}.to_set{% end %}
+                        end
                       {% elsif !open_api_param.has_key?(:header) %}
-                        if param_value = params[{{query_param_name}}]?
-                          {{restrictions.join(" || ").id}}
+                        if param_value = params[{{ query_param_name }}]?
+                          {{ restrictions.join(" || ").id }}
                         {% if arg.default_value.stringify != "" %}
                         else
-                          {{arg.default_value}}
+                          {{ arg.default_value }}
                         {% end %}
                         end
                       {% end %}
@@ -844,9 +883,9 @@ module ActionController::Route::Builder
                     ){% if !nilable %}.tap { |result|
                       if result.nil?
                         {% if open_api_param.has_key?(:header) %}
-                          ::ActionController::Base.__raise_header_error__(@__context__.request.headers, {{open_api_param[:header]}}, {{arg.restriction.resolve.stringify}})
+                          ::ActionController::Base.__raise_header_error__(@__context__.request.headers, {{ open_api_param[:header] }}, {{ arg.restriction.resolve.stringify }})
                         {% else %}
-                          ::ActionController::Base.__raise_param_error__(params, {{query_param_name}}, {{arg.restriction.resolve.stringify}})
+                          ::ActionController::Base.__raise_param_error__(params, {{ query_param_name }}, {{ arg.restriction.resolve.stringify }})
                         {% end %}
                       end
                     }.not_nil!{% end %},
@@ -855,11 +894,11 @@ module ActionController::Route::Builder
               }
 
               {% if route_method == AC::Route::WebSocket %}
-                {{method_name.id}}(socket, **args)
+                {{ method_name.id }}(socket, **args)
               {% elsif route_method == AC::Route::Exception %}
-                result = {{method_name.id}}(error, **args)
+                result = {{ method_name.id }}(error, **args)
               {% else %}
-                result = {{method_name.id}}(**args){% if route_method == AC::Route::Filter && ann[0] == :around_action %} { yield } {% end %}
+                result = {{ method_name.id }}(**args){% if route_method == AC::Route::Filter && ann[0] == :around_action %} { yield } {% end %}
               {% end %}
             {% end %}
 
@@ -877,16 +916,16 @@ module ActionController::Route::Builder
               unless @__render_called__
                 responose = @__context__.response
                 {% if status_code_map.empty? %}
-                  response.status_code = ({{status_code}}).to_i
+                  response.status_code = ({{ status_code }}).to_i
                 {% else %}
                   case result
                     {% for result_klass, status_mapped in status_code_map %}
-                  when {{result_klass}}
+                  when {{ result_klass }}
                       {% open_api_route[:responses][result_klass] = status_mapped %}
-                      response.status_code = ({{status_mapped}}).to_i
+                      response.status_code = ({{ status_mapped }}).to_i
                     {% end %}
                   else
-                    response.status_code = ({{status_code}}).to_i
+                    response.status_code = ({{ status_code }}).to_i
                   end
                 {% end %}
                 content_type = response.headers["Content-Type"]?
@@ -909,10 +948,10 @@ module ActionController::Route::Builder
                 unless @__head_request__ || result.nil?
                   {% if ::ActionController::ExecutionContext::ENABLED && bound_execution_context == nil && ::ActionController::ExecutionContext::OFFLOAD_RESPONSES[0] %}
                     ::ActionController::ExecutionContext.offload do
-                      __transform_response__(responds_with, response, result, {{method_name.id.symbolize}})
+                      __transform_response__(responds_with, response, result, {{ method_name.id.symbolize }})
                     end
                   {% else %}
-                    __transform_response__(responds_with, response, result, {{method_name.id.symbolize}})
+                    __transform_response__(responds_with, response, result, {{ method_name.id.symbolize }})
                   {% end %}
                 end
                 @__render_called__ = true

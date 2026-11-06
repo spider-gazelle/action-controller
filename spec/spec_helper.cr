@@ -164,7 +164,7 @@ class Filtering < FilterOrdering
 
   # also tests for optional route params
   @[AC::Route::GET("/multistatus/?:id", status: {Int32 => 201, String => 202})]
-  def multistatus_test(id : Int32 | String | Nil)
+  def multistatus_test(id : Int32 | String?)
     id
   end
 
@@ -223,6 +223,41 @@ class Filtering < FilterOrdering
     is_a_bool : Bool,
   ) : Bool?
     is_a_bool
+  end
+
+  enum Flavour
+    Fresh
+    Stale
+  end
+
+  # an array is read from every repetition of the name: ?tag=a&tag=b
+  @[AC::Route::GET("/repeated", content_type: "text/plain")]
+  def repeated(
+    tag : Array(String) = [] of String,
+    count : Array(Int32)? = nil,
+    kind : Array(Flavour) = [] of Flavour,
+  ) : String
+    "#{tag.inspect}|#{count.inspect}|#{kind.inspect}"
+  end
+
+  # a Set collapses repetitions, and a required array has no default
+  @[AC::Route::GET("/repeated/set", content_type: "text/plain")]
+  def repeated_set(
+    id : Array(Int32),
+    tag : Set(String) = Set(String).new,
+    kind : Set(Flavour)? = nil,
+  ) : String
+    "#{id.inspect}|#{tag.inspect}|#{kind.inspect}"
+  end
+
+  # converter config applies to each element, which is also read from a form body
+  @[AC::Route::POST("/repeated/form", content_type: "text/plain", config: {level: {from_value: true, strict: true}, flag: {true_string: "yes"}})]
+  def repeated_form(
+    tag : Array(String),
+    level : Array(Flavour) = [] of Flavour,
+    flag : Array(Bool)? = nil,
+  ) : String
+    "#{tag.inspect}|#{level.inspect}|#{flag.inspect}"
   end
 
   # exercises the converters that no other route uses
