@@ -301,6 +301,22 @@ describe ActionController::OpenAPI do
       search["query"]["example"].should eq JSON::Any.new("anything")
     end
 
+    it "describes a raw body as binary, in the types the route consumes" do
+      upload = paths["/filtering/upload"]["post"]["requestBody"]
+      upload["required"].should be_true
+      upload["content"].as_h.keys.should eq ["application/pdf", "image/png"]
+      upload["content"]["image/png"]["schema"].should eq JSON.parse(%({"type":"string","format":"binary"}))
+      paths["/filtering/stream"]["post"]["requestBody"]["content"].as_h.keys.should eq ["application/octet-stream"]
+    end
+
+    it "lists only the types a parsed body consumes" do
+      paths["/filtering/json_only"]["post"]["requestBody"]["content"].as_h.keys.should eq ["application/json"]
+      paths["/filtering/some_entry"]["post"]["requestBody"]["content"].as_h.keys.should contain "application/yaml"
+      note = paths["/filtering/note"]["post"]["requestBody"]["content"]
+      note.as_h.keys.should eq ["application/json", "text/plain"]
+      note["text/plain"]["schema"]["type"].should eq "string"
+    end
+
     it "sends array query params as a single comma separated value when a converter parses them" do
       tags = params.call("/openapi_paths/{tenant}/search")["tags"]
       tags["style"].should eq "form"

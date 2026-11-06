@@ -427,3 +427,69 @@ describe "repeated query params" do
     end
   end
 end
+
+describe "request bodies a route consumes" do
+  client = AC::SpecHelper.client
+  typed = ->(type : String) { HTTP::Headers{"Content-Type" => type} }
+
+  it "binds a raw body as it is, in the types the route consumes" do
+    client.post("/filtering/upload", headers: typed.call("image/png"), body: "png!").body.should eq "4 bytes of image/png"
+    error = expect_raises(AC::Route::UnsupportedMediaType) do
+      client.post("/filtering/upload", headers: typed.call("application/json"), body: "{}")
+    end
+    error.accepts.should eq ["application/pdf", "image/png"]
+    expect_raises(AC::Route::UnsupportedMediaType) { client.post("/filtering/upload", body: "no type") }
+  end
+
+  it "binds a raw body of any type when the route does not say what it consumes" do
+    client.post("/filtering/stream", headers: typed.call("text/csv"), body: "a,b").body.should eq "A,B"
+  end
+
+  it "parses only the types the route consumes" do
+    client.post("/filtering/json_only", headers: typed.call("application/json"), body: "1.5").body.should eq "1.5"
+    error = expect_raises(AC::Route::UnsupportedMediaType) do
+      client.post("/filtering/json_only", headers: typed.call("application/yaml"), body: "1.5")
+    end
+    error.accepts.should eq ["application/json"]
+  end
+
+  it "requires a content type for a raw body the route consumes, and the body itself" do
+    expect_raises(AC::Route::UnsupportedMediaType, "a content type is required, one of application/pdf, image/png") do
+      client.post("/filtering/upload", body: "no type")
+    end
+    expect_raises(AC::Route::Param::MissingError, "missing request body for 'file'") do
+      client.post("/filtering/limited")
+    end
+  end
+
+  it "takes text/plain for a String body without a parser" do
+    client.post("/filtering/note", headers: typed.call("text/plain"), body: "hi there").body.should eq "hi there"
+    client.post("/filtering/note", headers: typed.call("application/json"), body: %("hi")).body.should eq "hi"
+  end
+
+  it "doesn't parse a raw body in a form type into params" do
+    result = client.post("/filtering/signed?sig=abc", headers: typed.call("application/x-www-form-urlencoded"), body: "a=1&b=2")
+    result.body.should eq %(abc|a=1&b=2|nil)
+  end
+
+  it "refuses a body larger than max_body_bytes" do
+    client.post("/filtering/limited", body: "12345678").body.should eq "8"
+    client.post("/filtering/limited_stream", body: "12345678").body.should eq "8"
+    client.post("/filtering/limited_json", headers: typed.call("application/json"), body: "[1,2,3]").body.should eq "6"
+    {"/filtering/limited", "/filtering/limited_stream"}.each do |path|
+      error = expect_raises(AC::Route::PayloadTooLarge, "request body is larger than 8 bytes") do
+        client.post(path, body: "123456789")
+      end
+      error.limit.should eq 8
+    end
+    expect_raises(AC::Route::PayloadTooLarge) do
+      client.post("/filtering/limited_json", headers: typed.call("application/json"), body: "[1,2,3,4,5]")
+    end
+  end
+
+  it "limits a body without a content length as it is read" do
+    body = AC::Route::LimitedBody.new(IO::Memory.new("123456789"), 8)
+    expect_raises(AC::Route::PayloadTooLarge) { body.gets_to_end }
+    AC::Route::LimitedBody.new(IO::Memory.new("12345678"), 8).gets_to_end.should eq "12345678"
+  end
+end

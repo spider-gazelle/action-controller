@@ -212,6 +212,10 @@ abstract class ActionController::Base
 
   @__params__ : URI::Params?
 
+  # :nodoc:
+  # set by the route when its body argument is raw, see `params`
+  setter __raw_body__ : Bool = false
+
   # parses all the params (query + route + body form data) and
   # makes them available in one place
   def params : URI::Params
@@ -221,7 +225,8 @@ abstract class ActionController::Base
       _params = ActionController::Base.extract_params(@__context__)
       # Add form data to params
       ctype = request_content_type
-      @__files__, @__form_data__ = ActionController::BodyParser.extract_form_data(request, ctype, _params) if ctype
+      # a raw body (`IO`, `Bytes`) reaches the action as it is, so a form isn't read from it
+      @__files__, @__form_data__ = ActionController::BodyParser.extract_form_data(request, ctype, _params) if ctype && !@__raw_body__
       @__params__ = _params
     end
   end
@@ -443,6 +448,11 @@ abstract class ActionController::Base
   end
 
   # :nodoc:
+  def self.__raise_missing_body__(name : String, type : String) : NoReturn
+    raise ::AC::Route::Param::MissingError.new("missing request body for '#{name}'", name, type)
+  end
+
+  # :nodoc:
   def self.__raise_header_error__(headers : HTTP::Headers, name : String, type : String) : NoReturn
     if headers.has_key?(name)
       raise ::AC::Route::Param::ValueError.new("invalid header value for '#{name}'", name, type)
@@ -541,6 +551,11 @@ abstract class ActionController::Base
 
           # Create an instance of the controller
           instance = {{ @type.name }}.new(context, :{{ reference_name }}, head_request)
+          {% route_metadata = ::ActionController::Route::Builder::OPENAPI_ROUTES[verb_route] %}
+          {% if route_metadata && ::ActionController::Route::Builder::RAW_BODY_TYPES.includes?(route_metadata[:request_body].stringify) %}
+            # filters reading params mustn't consume the raw body
+            instance.__raw_body__ = true
+          {% end %}
 
           # Check for errors
           {% if !RESCUE.empty? %}

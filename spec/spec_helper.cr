@@ -260,6 +260,57 @@ class Filtering < FilterOrdering
     "#{tag.inspect}|#{level.inspect}|#{flag.inspect}"
   end
 
+  # a raw body is bound as it is, in the types the route consumes
+  @[AC::Route::POST("/upload", body: :file, consumes: ["application/pdf", "image/png"], content_type: "text/plain")]
+  def upload(file : Bytes) : String
+    "#{file.size} bytes of #{request.headers["Content-Type"]?}"
+  end
+
+  @[AC::Route::POST("/stream", body: :file, content_type: "text/plain")]
+  def stream(file : IO) : String
+    file.gets_to_end.upcase
+  end
+
+  # a raw body in a text type, which MCP sends as that type
+  @[AC::Route::POST("/import", body: :csv, consumes: "text/csv", content_type: "text/plain")]
+  def import(csv : IO) : String
+    "#{request.headers["Content-Type"]?}: #{csv.gets_to_end.lines.size} rows"
+  end
+
+  # a raw body in a form type isn't parsed into params, which reading a query param would do
+  @[AC::Route::POST("/signed", body: :payload, consumes: "application/x-www-form-urlencoded", content_type: "text/plain")]
+  def signed(payload : Bytes, sig : String) : String
+    "#{sig}|#{String.new(payload)}|#{params["a"]?.inspect}"
+  end
+
+  # a String body takes text/plain without a parser
+  @[AC::Route::POST("/note", body: :note, consumes: ["application/json", "text/plain"], content_type: "text/plain")]
+  def note(note : String) : String
+    note
+  end
+
+  # a body larger than the route accepts
+  @[AC::Route::POST("/limited", body: :file, max_body_bytes: 8, content_type: "text/plain")]
+  def limited(file : Bytes) : String
+    file.size.to_s
+  end
+
+  @[AC::Route::POST("/limited_stream", body: :file, max_body_bytes: 8, content_type: "text/plain")]
+  def limited_stream(file : IO) : String
+    file.gets_to_end.size.to_s
+  end
+
+  @[AC::Route::POST("/limited_json", body: :value, max_body_bytes: 8, content_type: "text/plain")]
+  def limited_json(value : Array(Int32)) : String
+    value.sum.to_s
+  end
+
+  # a parsed body, in one of the registered types only
+  @[AC::Route::POST("/json_only", body: :value, consumes: "application/json", content_type: "text/plain")]
+  def json_only(value : Float64) : String
+    value.to_s
+  end
+
   # exercises the converters that no other route uses
   @[AC::Route::GET("/converters", content_type: "text/plain")]
   def converter_coverage(
