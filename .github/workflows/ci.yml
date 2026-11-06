@@ -6,24 +6,20 @@ on:
   schedule:
     - cron: "0 6 * * 1"
 jobs:
+  # runs the shard's own ameba: the ameba action reports through the checks
+  # API, which a fork's pull request (a read only token) can't write to
   crystal-style:
     name: Crystal Style
-    if: github.event_name != 'pull_request'
-    uses: PlaceOS/.github/.github/workflows/crystal-style.yml@main
-
-  # a fork's pull request gets a read only token, so the ameba action can't
-  # report through the checks API: run format and ameba directly instead
-  pull-request-style:
-    name: Crystal Style
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     container: crystallang/crystal:latest
     steps:
       - uses: actions/checkout@v4
       - name: Format
         run: crystal tool format --check
-      - name: Install ameba
+      - name: Install dependencies
         run: shards install --ignore-crystal-version
+      - name: Build ameba
+        run: crystal build lib/ameba/bin/ameba.cr -o bin/ameba --no-debug
       - name: Lint
         run: ./bin/ameba
 
