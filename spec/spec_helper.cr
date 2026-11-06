@@ -225,6 +225,21 @@ class Filtering < FilterOrdering
     is_a_bool
   end
 
+  enum Flavour
+    Fresh
+    Stale
+  end
+
+  # an array is read from every repetition of the name: ?tag=a&tag=b
+  @[AC::Route::GET("/repeated", content_type: "text/plain")]
+  def repeated(
+    tag : Array(String) = [] of String,
+    count : Array(Int32)? = nil,
+    kind : Array(Flavour) = [] of Flavour,
+  ) : String
+    "#{tag.inspect}|#{count.inspect}|#{kind.inspect}"
+  end
+
   # exercises the converters that no other route uses
   @[AC::Route::GET("/converters", content_type: "text/plain")]
   def converter_coverage(

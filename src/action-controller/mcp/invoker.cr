@@ -297,7 +297,16 @@ module ActionController::MCPServer
         next unless value = arguments[param.name]?
         next if value.raw.nil?
         case param.in
-        when "query"  then query.add(param.name, param_value(value))
+        when "query"
+          if (items = value.as_a?) && param.responds_to?(:explode)
+            if param.explode == false
+              query.add(param.name, items.join(',') { |item| param_value(item) })
+            else
+              items.each { |item| query.add(param.name, param_value(item)) }
+            end
+          else
+            query.add(param.name, param_value(value))
+          end
         when "header" then headers[param.name] = param_value(value)
         end
       end

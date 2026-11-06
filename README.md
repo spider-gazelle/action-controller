@@ -177,6 +177,22 @@ class Books < Application
 end
 ```
 
+### Array parameters
+
+A query parameter typed `Array(T)` is read from every repetition of its name,
+`?tag=a&tag=b`, each element converted as a `T` would be; an element that does
+not convert is a `Param::ValueError`. The OpenAPI document describes it with
+`explode: true`, which is how generated clients and browsers send arrays. A
+converter still takes the whole value, so a comma separated list stays
+possible, and is documented with `explode: false`:
+
+```crystal
+@[AC::Route::GET("/")]
+def index(tag : Array(String) = [] of String, kind : Array(Kind)? = nil)
+  # ?tag=a&tag=b&kind=fresh
+end
+```
+
 ## MCP Server
 
 Action Controller can expose your annotated routes to LLM clients as a

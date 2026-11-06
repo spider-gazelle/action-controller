@@ -369,6 +369,12 @@ describe ActionController::MCPServer do
       response.content_type.should eq "application/json"
     end
 
+    it "sends an array argument as one query value per element" do
+      client = MCPTestClient.new(modern: true)
+      result = client.call("filtering_repeated", {"tag" => ["a", "b"], "count" => [1, 2]})
+      result["structuredContent"]["body"].should eq %(["a", "b"]|[1, 2]|[])
+    end
+
     it "discovers the server" do
       response = MCPTestClient.new(modern: true).initialize_session
       response["id"].should eq 1

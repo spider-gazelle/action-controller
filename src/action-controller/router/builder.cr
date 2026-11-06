@@ -728,6 +728,7 @@ module ActionController::Route::Builder
                       {% open_api_params[query_param_name] = open_api_param %}
                     {% end %}
 
+                    {% repeated = false %}
                     # Calculate the conversions required to meet the desired restrictions
                     {% if arg.restriction %}
                       {% open_api_param[:schema] = arg.restriction.resolve %}
@@ -772,6 +773,13 @@ module ActionController::Route::Builder
                       # There are a bunch of types this might be
                       {% else %}
                         {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
+                        # an array is read from the query string, one element per repetition of the name
+                        {% if union_types.size == 1 && union_types[0].name(generic_args: false) == "Array" %}
+                          {% raise "#{@type}##{method_name}: #{string_name} is an Array, which only a query parameter can be" if required_params.includes?(string_name) || open_api_param.has_key?(:header) %}
+                          {% repeated = true %}
+                          {% open_api_param[:exploded] = true %}
+                          {% union_types = union_types[0].type_vars[0].resolve.union_types.reject(&.nilable?) %}
+                        {% end %}
                         {% restrictions = union_types.map do |type|
                              if type.resolve < Enum
                                ("::AC::Route::Param::ConvertEnum(" + type.stringify + ").convert(param_value)")
@@ -830,6 +838,21 @@ module ActionController::Route::Builder
                         end
 
                       # An optional route param, might be passed as an query param (not the case for headers)
+                      {% elsif repeated %}
+                        values = params.fetch_all({{ query_param_name }})
+                        if values.empty?
+                          {% if arg.default_value.stringify != "" %}
+                            {{ arg.default_value }}
+                          {% else %}
+                            nil
+                          {% end %}
+                        else
+                          values.map do |param_value|
+                            ({{ restrictions.join(" || ").id }}).tap { |element|
+                              ::ActionController::Base.__raise_param_error__(params, {{ query_param_name }}, {{ arg.restriction.resolve.stringify }}) if element.nil?
+                            }.not_nil!
+                          end
+                        end
                       {% elsif !open_api_param.has_key?(:header) %}
                         if param_value = params[{{query_param_name}}]?
                           {{restrictions.join(" || ").id}}

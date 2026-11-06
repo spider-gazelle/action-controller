@@ -301,11 +301,20 @@ describe ActionController::OpenAPI do
       search["query"]["example"].should eq JSON::Any.new("anything")
     end
 
-    it "sends array query params as a single comma separated value" do
+    it "sends array query params as a single comma separated value when a converter parses them" do
       tags = params.call("/openapi_paths/{tenant}/search")["tags"]
       tags["style"].should eq "form"
       tags["explode"].should eq false
       params.call("/openapi_paths/{tenant}/search")["limit"]["explode"]?.should be_nil
+    end
+
+    it "sends an array query param as one value per repetition of the name otherwise" do
+      tag = params.call("/filtering/repeated")["tag"]
+      tag["schema"]["type"].should eq "array"
+      tag["schema"]["items"]["type"].should eq "string"
+      tag["style"].should eq "form"
+      tag["explode"].should be_true
+      params.call("/filtering/repeated")["kind"]["schema"]["items"]["$ref"].should eq "#/components/schemas/Filtering.Flavour"
     end
 
     it "keeps optional path segments optional for MCP tools" do

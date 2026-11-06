@@ -33,7 +33,11 @@ module ActionController::MCPServer
     # path, query or header
     getter in : String
 
-    def initialize(@name, @in)
+    # for an array: one value per repetition of the name (`nil`, the default) or a
+    # single comma separated value (`false`)
+    getter explode : Bool? = nil
+
+    def initialize(@name, @in, @explode = nil)
     end
   end
 
@@ -768,7 +772,7 @@ module ActionController::MCPServer
     operation.parameters.try &.each do |param|
       param_name = param.name.as(String)
       in_path = param.in == "path"
-      params << ToolParam.new(param_name, param.in.as(String))
+      params << ToolParam.new(param_name, param.in.as(String), param.explode)
       # bound from the endpoint URL rather than provided by the model
       next if in_path && bound.includes?(param_name)
 

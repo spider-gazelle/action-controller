@@ -379,3 +379,27 @@ describe "Accept header parsing" do
     formats_for.call("text/html;\tapplication/xml").should eq ["text/html", "\tapplication/xml"]
   end
 end
+
+describe "repeated query params" do
+  client = AC::SpecHelper.client
+
+  it "reads an array from every repetition of the name, converting each element" do
+    client.get("/filtering/repeated?tag=a&tag=b").body.should eq %(["a", "b"]|nil|[])
+    client.get("/filtering/repeated?count=1&count=2&kind=fresh&kind=stale").body.should eq %([]|[1, 2]|[Filtering::Flavour::Fresh, Filtering::Flavour::Stale])
+    client.get("/filtering/repeated?tag=one").body.should eq %(["one"]|nil|[])
+  end
+
+  it "falls back to the default, or nil, when the name is absent" do
+    client.get("/filtering/repeated").body.should eq %([]|nil|[])
+  end
+
+  it "rejects an element that does not convert" do
+    error = expect_raises(AC::Route::Param::ValueError, "invalid parameter value for 'count'") do
+      client.get("/filtering/repeated?count=1&count=x")
+    end
+    error.restriction.should eq "(Array(Int32) | Nil)"
+    expect_raises(AC::Route::Param::ValueError, "invalid parameter value for 'kind'") do
+      client.get("/filtering/repeated?kind=fresh&kind=rotten")
+    end
+  end
+end
