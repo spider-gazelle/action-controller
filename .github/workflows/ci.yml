@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: shards install --ignore-crystal-version
       - name: Build ameba
-        run: crystal build lib/ameba/bin/ameba.cr -o bin/ameba --no-debug
+        run: mkdir -p bin && crystal build lib/ameba/bin/ameba.cr -o bin/ameba --no-debug
       - name: Lint
         run: ./bin/ameba
 
