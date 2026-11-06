@@ -19,6 +19,10 @@ class ActionController::Error < Exception
   class Conflict < ActionController::Error
   end
 
+  # raised if Session::MAX_COOKIE_SIZE is exceeded by a cookie
+  class CookieSizeExceeded < ActionController::Error
+  end
+
   # provides a response object for rendering errors
   struct CommonResponse
     include JSON::Serializable
@@ -59,9 +63,9 @@ class ActionController::Error < Exception
   end
 end
 
-# raised if Session::MAX_COOKIE_SIZE is exceeded by a cookie
-class ActionController::CookieSizeExceeded < ActionController::Error
-end
+# :nodoc:
+# DEPRECATED: use `ActionController::Error::CookieSizeExceeded`
+alias ActionController::CookieSizeExceeded = ActionController::Error::CookieSizeExceeded
 
 # the signature of the cookie session is invalid, the cookie may have been tampered with
 class ActionController::InvalidSignature < ActionController::Error

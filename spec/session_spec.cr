@@ -54,7 +54,7 @@ describe ActionController::Session do
         session["key"] = "a" * 3014
         cookies = HTTP::Cookies.new
 
-        expect_raises(ActionController::CookieSizeExceeded) do
+        expect_raises(ActionController::Error::CookieSizeExceeded) do
           session.encode(cookies)
         end
       end

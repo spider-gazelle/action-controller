@@ -80,7 +80,7 @@ class ActionController::Session
     else
       data = @encoder.prepare(to_json)
       age = settings.max_age
-      raise CookieSizeExceeded.new("#{data.size} > #{MAX_COOKIE_SIZE}") if data.size > MAX_COOKIE_SIZE
+      raise Error::CookieSizeExceeded.new("#{data.size} > #{MAX_COOKIE_SIZE}") if data.size > MAX_COOKIE_SIZE
     end
 
     @modified = false
