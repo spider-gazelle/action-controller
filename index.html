@@ -499,885 +499,151 @@
   </svg>
 </a>Spider-Gazelle Action Controller</h1>
 <p><a href="https://github.com/spider-gazelle/action-controller/actions/workflows/ci.yml"><img src="https://github.com/spider-gazelle/action-controller/actions/workflows/ci.yml/badge.svg" alt="CI" /></a></p>
-<p>Extending <a href="https://github.com/luckyframework/lucky_router">lucky_router</a> for a Rails like DSL without the overhead. See the <a href="https://spider-gazelle.net/">docs site</a> for usage details</p>
-<h2><a id="composable-applications" class="anchor" href="#composable-applications">
+<p>A fast, type-safe web framework for <a href="https://crystal-lang.org">Crystal</a>. Write a method
+with typed arguments and a return type, and Action Controller parses the request, renders
+the response, documents the route in OpenAPI and serves it to AI agents over MCP.</p>
+<p><strong>Read the guide at <a href="https://spider-gazelle.net/">spider-gazelle.net</a>.</strong></p>
+<h2><a id="features" class="anchor" href="#features">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
   </svg>
-</a>Composable applications</h2>
-<p>Every controller class provides <code>.handler</code>, which returns a fresh <code>HTTP::Handler</code> serving that class and its concrete descendants. It also works on an abstract application base such as the template's <code>App::Base</code>:</p>
-<pre><code class="language-crystal"><span class="t">HTTP</span><span class="t">::</span><span class="t">Server</span>.new([
-  <span class="t">App</span><span class="t">::</span><span class="t">Base</span>.handler,
-  <span class="t">OtherAC</span><span class="t">::</span><span class="t">App</span><span class="t">::</span><span class="t">Base</span>.handler,
-  <span class="t">HTTP</span><span class="t">::</span><span class="t">StaticFileHandler</span>.new(<span class="s">&quot;www&quot;</span>, directory_listing: <span class="n">false</span>),
-])</code></pre>
-<p>A route miss calls the next handler. A matched action keeps its response, including a deliberate 404 or an authentication failure. Application filters run only when one of that application's routes matches. Use a fresh handler for each server or chain; request controllers still take an <code><a href="HTTP/Server/Context.html">HTTP::Server::Context</a></code> in their constructor.</p>
-<p>Explicit compositions and apps with mounts isolate matched routes from path parameters set by upstream handlers. Route misses preserve the context for the next handler. Ordinary automatic routing retains its existing path parameter behavior.</p>
-<p>For one server with unified route listing, OpenAPI and MCP, select application roots in <code>config.cr</code>, after requiring their controllers:</p>
-<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">Server</span>.compose(<span class="t">App</span><span class="t">::</span><span class="t">Base</span>, <span class="t">OtherAC</span><span class="t">::</span><span class="t">App</span><span class="t">::</span><span class="t">Base</span>)</code></pre>
-<p>This is a compile-time declaration, so it also applies to the template's <code>--routes</code>, <code>--docs</code> and <code>--mcp</code> options, which execute before configuration initialization. Declare it once. Existing <code>Server.new</code>, <code>Server.before</code>, <code>Server.after</code>, OpenAPI and MCP calls work unchanged. Without a declaration, controllers are discovered automatically as before. Reusable apps should expose their controllers in a library entry point; require their executable startup and global configuration only when running them standalone.</p>
-<h3><a id="mounting-controllers-and-apps" class="anchor" href="#mounting-controllers-and-apps">
+</a>Features</h2>
+<ul>
+<li><strong>Strong parameters:</strong> path, query, header, form and body values become typed
+arguments, and invalid input is rejected before your code runs.</li>
+<li><strong>OpenAPI 3.1 generation:</strong> the document is built from your routes, types and doc
+comments, so it stays in step with the code.</li>
+<li><strong>MCP server:</strong> your routes become tools that Claude, ChatGPT and other agents can
+call through your filters and authentication, with prompts, resources, subscriptions
+and UI cards.</li>
+<li><strong>Content negotiation:</strong> JSON and YAML out of the box, plus your own parsers and
+responders. Binary types, such as <a href="https://github.com/spider-gazelle/bindata">BinData</a>,
+are read and written as they are.</li>
+<li><strong>Filters, exception handlers and WebSockets,</strong> declared with annotations and inherited
+by subclasses.</li>
+<li><strong>Composable applications:</strong> mount controllers or whole apps under other paths, with
+one routing table, OpenAPI document and MCP server.</li>
+<li><strong>Performance:</strong> routes compile into a single routing trie with direct dispatch, and
+heavy routes can run on their own <a href="CONTEXTS.md">execution contexts</a>. See how it
+compares in the <a href="https://web-frameworks-benchmark.netlify.app/result?l=crystal">web frameworks benchmark</a>.</li>
+</ul>
+<h2><a id="installation" class="anchor" href="#installation">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
   </svg>
-</a>Mounting controllers and apps</h3>
-<pre><code class="language-crystal"><span class="k">class</span> <span class="t">MyApp</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
-  base <span class="s">&quot;/myapp/&quot;</span>
-  mount <span class="s">&quot;/auth/&quot;</span>, <span class="t">OtherAC</span><span class="t">::</span><span class="t">App</span><span class="t">::</span><span class="t">OAuth2</span>
-<span class="k">end</span></code></pre>
-<p>The mount replaces the target's base. If <code>OAuth2</code> has <code>base &quot;/oauth2&quot;</code> and a <code>/token</code> action, the public URL is <code>/myapp/auth/token</code>. Targets can use names relative to the declaring controller's namespace and can be declared later. A mounted application base includes its descendants, preserving their paths relative to that base. For example, an app with <code>base &quot;/api&quot;</code> and a descendant controller with <code>base &quot;/api/users&quot;</code> mounted at <code>/service</code> exposes that controller at <code>/service/users</code>. Controller bases outside the app base retain their whole path beneath the mount. <code>base</code> continues to set each controller's own path; it does not implicitly prefix descendants.</p>
-<p>Mounts can be nested or repeated. Mount-only targets are excluded from standalone automatic discovery. Explicitly selecting an application includes its descendants independently of mounts declared in other applications; its own mount declarations determine which descendants are relocated. Mounting a whole application likewise includes its complete subtree. Mounted controllers keep their own filters and exception handlers. Parent controllers' filters apply to their own actions. Requests retain their public path, and unmatched mounted routes continue downstream.</p>
-<p>Parameterized mounts such as <code>mount &quot;/accounts/:account_id/auth&quot;, OAuth2</code> bind those parameters for controller filters and actions, OpenAPI and MCP. Mounts must preserve any required parameters from the target's original routes as required parameters. Cycles, ambiguous parameter names and conflicting public operations are rejected. Explicit composition also checks equivalent parameterized routes and generated HEAD operations. MCP endpoint conflicts are checked against the actual router before endpoints are registered.</p>
-<p>Optional mount segments retain the action's argument requirements. If a query argument becomes an optional path segment, OpenAPI describes its query form on URLs that omit the segment; required action and filter arguments stay required in MCP. Replacing a base that contains an optional parameter moves declared arguments back to queries. If the replacement makes that segment mandatory, tools and prompts require its value. MCP endpoint listings omit only arguments bound by the request URL, so clients connected without an optional segment can still supply that argument.</p>
-<p>Use <code>route_path(:action, ...)</code> inside an action to generate a URL using the current mounted base and bound path parameters:</p>
-<pre><code class="language-crystal">redirect_to route_path(<span class="n">:token</span>)</code></pre>
-<p>Explicit URL arguments override bound path values. Helpers encode individual path segments and support optional (<code>?:</code>) and glob (<code>*:</code>) segments; later optional segments require earlier ones. Existing class URL helpers such as <code>OAuth2.token</code> retain their original URLs. Outside a request, use <code>composition.url_for(OAuth2, :token, ...)</code>; supply <code>mount_base:</code> to choose between repeated mounts.</p>
-<h3><a id="independent-compositions-and-catalogs" class="anchor" href="#independent-compositions-and-catalogs">
+</a>Installation</h2>
+<p>Start from the <a href="https://github.com/spider-gazelle/spider-gazelle">application template</a>,
+which includes logging, specs, Docker, OpenAPI and MCP, or add the shard to <code>shard.yml</code>:</p>
+<pre><code class="language-yaml">dependencies:
+  action-controller:
+    github: spider-gazelle/action-controller</code></pre>
+<p>See <a href="https://spider-gazelle.net/getting_started/">your first app</a> for a walkthrough.</p>
+<h2><a id="strong-parameters" class="anchor" href="#strong-parameters">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
   </svg>
-</a>Independent compositions and catalogs</h3>
-<pre><code class="language-crystal">composition <span class="o">=</span> <span class="t">AC</span><span class="t">::</span><span class="t">Composition</span>.new([<span class="t">MyApp</span>.name, <span class="t">AnotherApp</span><span class="t">::</span><span class="t">Base</span>.name])
-server <span class="o">=</span> <span class="t">AC</span><span class="t">::</span><span class="t">Server</span>.new(composition: composition)
-<span class="t">AC</span><span class="t">::</span><span class="t">MCPServer</span>.mount(server, <span class="s">&quot;/mcp&quot;</span>)
-
-docs <span class="o">=</span> <span class="t">AC</span><span class="t">::</span><span class="t">OpenAPI</span>.generate_open_api_docs(
-  title: <span class="s">&quot;Combined API&quot;</span>, version: <span class="s">&quot;1.0&quot;</span>, composition: composition,
-)
-<span class="t">AC</span><span class="t">::</span><span class="t">MCPServer</span>.write_description(<span class="s">&quot;combined-mcp.yml&quot;</span>, composition: composition)
-client <span class="o">=</span> <span class="t">AC</span><span class="t">::</span><span class="t">SpecHelper</span>.new(composition).hot_topic</code></pre>
-<p>For direct controller tests, <code>spec_instance</code> accepts the same composition and binds the requested mount's base and path parameters without executing actions or filters. Existing calls use the configured default composition:</p>
-<pre><code class="language-crystal">instance <span class="o">=</span> <span class="t">OtherAC</span><span class="t">::</span><span class="t">App</span><span class="t">::</span><span class="t">OAuth2</span>.spec_instance(
-  <span class="t">HTTP</span><span class="t">::</span><span class="t">Request</span>.new(<span class="s">&quot;GET&quot;</span>, <span class="s">&quot;/myapp/auth/token&quot;</span>), composition: composition,
-)
-instance.route_path(<span class="n">:token</span>) <span class="c"># =&gt; &quot;/myapp/auth/token&quot;</span></code></pre>
-<p>OpenAPI uses public mounted paths and distinct operation IDs. MCP uses the same composition for tool calls, prompts, internal instructions, and relocated controller endpoints. Repeated mounts receive separate toolboxes and unique tool/prompt names. Existing visibility annotations and authentication settings still apply; the host owns global MCP configuration and UI asset locations.</p>
-<p>For controller inheritance, the nearest controller with an <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(...)]</code> annotation supplies defaults for both inherited and newly declared actions. A child controller annotation replaces those defaults; method annotations take precedence. Icons use the nearest controller that declares them; a method's icons take precedence. Children can change or disable inherited endpoints, enable an endpoint using inherited instructions, and override the instructions method.</p>
-<p>MCP description caches are scoped to the composition and description file. Generated files include a composition identity incorporating the catalog version; a mismatched file is regenerated from compiled metadata without source comments. Regenerate descriptions with <code>--mcp</code> or <code>write_description</code> to retain those comments. Legacy description files remain supported for ordinary apps without explicit composition or mounts.</p>
-<p>Controller selection, mount expansion, conflict validation and catalog projection run during compilation or initialization. <code>Server</code> registers all placements in one routing table. Exact static routes use the existing allocation-free lookup; dynamic routes traverse LuckyRouter's trie using temporary byte views, copying captures only after a successful match. Escaped paths retain its original decoder. Ordinary controller routes retain direct dispatch procs, which outperform the tested callable-object and integer dispatch alternatives with mixed targets. Relocated routes bind their public base on the request context, without allocating a placement or rewriting the request. Warmed MCP descriptions use atomic cache snapshots, without taking the catalog lock or hashing the composition. Explicit handler chains perform another lookup for every handler that misses. See <a href="benchmarks/README.md">the performance benchmark</a> for repeatable comparisons and their limits.</p>
-<h2><a id="strong-parameter-usage" class="anchor" href="#strong-parameter-usage">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Strong Parameter Usage</h2>
+</a>Strong parameters</h2>
+<p>Arguments are read from the path, query string, headers or body by name, and converted
+to their type. A required argument that's missing, or a value that doesn't convert,
+raises an error your controller can turn into a <code>400</code>:</p>
 <pre><code class="language-crystal"><span class="k">require</span> <span class="s">&quot;action-controller&quot;</span>
 
-<span class="c"># Abstract classes don&#39;t generate routes</span>
 <span class="k">abstract</span> <span class="k">class</span> <span class="t">Application</span> <span class="o">&lt;</span> <span class="t">ActionController</span><span class="t">::</span><span class="t">Base</span>
-  <span class="c"># A filter can raise or render to prevent a route being executed</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Filter</span>(<span class="n">:before_action</span>)]
-  <span class="k">def</span> <span class="m">ensure_authenticated</span>
-    render <span class="n">:unauthorized</span> <span class="k">unless</span> cookies[<span class="s">&quot;user&quot;</span>]?
-  <span class="k">end</span>
-
-  <span class="c"># You can define controller level exception handlers for consistent error messages</span>
-  <span class="c"># note, the first param is always the error object</span>
   @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Exception</span>(<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">Param</span><span class="t">::</span><span class="t">Error</span>, status_code: <span class="t">HTTP</span><span class="t">::</span><span class="t">Status</span><span class="t">::</span><span class="t">BAD_REQUEST</span>)]
-  <span class="k">def</span> <span class="m">route_param_error</span>(error, id : <span class="t">Int64</span>?)
-    <span class="c"># as id is nillable, it will look for a supplied id (route, query, formdata)</span>
-    <span class="c"># and set it if one was found and it could be converted</span>
-    {
-      error:       error.message,
-      parameter:   error.parameter,
-      restriction: error.restriction,
-    }
+  <span class="k">def</span> <span class="m">invalid_param</span>(error) : <span class="t">NamedTuple</span>(error: <span class="t">String</span>?, parameter: <span class="t">String</span>?)
+    {error: error.message, parameter: error.parameter}
   <span class="k">end</span>
 <span class="k">end</span>
 
-<span class="c"># Full inheritance support (concrete classes generate routes)</span>
+<span class="c"># Manages the books in the library</span>
 <span class="k">class</span> <span class="t">Books</span> <span class="o">&lt;</span> <span class="t">Application</span>
-  <span class="c"># this is automatically configured based on class name and namespace</span>
-  <span class="c"># it can be overriden here</span>
   base <span class="s">&quot;/books&quot;</span>
 
-  <span class="c"># route =&gt; &quot;/books/?book=1234&quot;</span>
+  <span class="k">struct</span> <span class="t">Book</span>
+    <span class="k">include</span> <span class="t">JSON</span><span class="t">::</span><span class="t">Serializable</span>
+    getter title : <span class="t">String</span>
+    getter year : <span class="t">Int32</span>
+
+    <span class="k">def</span> <span class="m">initialize</span>(@title, @year)
+    <span class="k">end</span>
+  <span class="k">end</span>
+
+  <span class="k">enum</span> <span class="t">Genre</span>
+    <span class="t">Fiction</span>
+    <span class="t">History</span>
+    <span class="t">Science</span>
+  <span class="k">end</span>
+
+  <span class="c"># Searches the catalogue</span>
+  <span class="c"># GET /books?genre=history&amp;tag=war&amp;tag=empire&amp;limit=5</span>
   @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/&quot;</span>)]
-  <span class="k">def</span> <span class="m">index</span>(book : <span class="t">UInt64</span>? <span class="o">=</span> <span class="n">nil</span>) : <span class="t">Array</span>(<span class="t">String</span>)?
-    <span class="c"># redirecting renders a response, so nothing is returned</span>
-    <span class="k">return</span> redirect_to <span class="t">Books</span>.show(id: book) <span class="k">if</span> book
-    [<span class="s">&quot;book1&quot;</span>, <span class="s">&quot;book2&quot;</span>]
+  <span class="k">def</span> <span class="m">index</span>(
+    genre : <span class="t">Genre</span>? <span class="o">=</span> <span class="n">nil</span>,
+    tag : <span class="t">Array</span>(<span class="t">String</span>) <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">String</span>,
+    @[<span class="t">AC</span><span class="t">::</span><span class="t">Param</span><span class="t">::</span><span class="t">Info</span>(description: <span class="s">&quot;results per page&quot;</span>)]
+    limit : <span class="t">Int32</span> <span class="o">=</span> <span class="n">20</span>,
+  ) : <span class="t">Array</span>(<span class="t">Book</span>)
+    <span class="o">[]</span> <span class="k">of</span> <span class="t">Book</span>
   <span class="k">end</span>
 
-  <span class="c"># Params are automatically extracted and converted to the correct type</span>
-  <span class="c"># here `id` in the route matches the `id` parameter in the function</span>
-  <span class="c"># route =&gt; &quot;/books/0FF/hex&quot;</span>
-  <span class="c"># route =&gt; &quot;/books/123&quot;</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id/hex&quot;</span>, config: {id: {base: <span class="n">16</span>}})]
+  <span class="c"># Fetches a book by its ID, in decimal or hex</span>
+  <span class="c"># GET /books/42 or /books/2A/hex</span>
   @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id&quot;</span>)]
-  <span class="k">def</span> <span class="m">show</span>(id : <span class="t">UInt64</span>) : <span class="t">NamedTuple</span>(id: <span class="t">UInt64</span>, name: <span class="t">String</span>)
-    {id: id, name: <span class="s">&quot;book1&quot;</span>}
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id/hex&quot;</span>, config: {id: {base: <span class="n">16</span>}})]
+  <span class="k">def</span> <span class="m">show</span>(id : <span class="t">UInt64</span>) : <span class="t">Book</span>
+    <span class="t">Book</span>.new(title: <span class="s">&quot;Dune&quot;</span>, year: <span class="n">1965</span>)
   <span class="k">end</span>
 
-  <span class="k">enum</span> <span class="t">Colour</span>
-    <span class="t">Red</span>
-    <span class="t">Blue</span>
-    <span class="t">Green</span>
+  <span class="c"># Adds a book</span>
+  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/&quot;</span>, body: <span class="n">:book</span>, status_code: <span class="t">HTTP</span><span class="t">::</span><span class="t">Status</span><span class="t">::</span><span class="t">CREATED</span>)]
+  <span class="k">def</span> <span class="m">create</span>(book : <span class="t">Book</span>) : <span class="t">Book</span>
+    book
   <span class="k">end</span>
-
-  <span class="c"># route =&gt; &quot;/books/set_colour/RED&quot;</span>
-  <span class="c"># route =&gt; &quot;/books/set_colour/colour_value/2&quot;</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/set_colour/:colour&quot;</span>)]
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/set_colour/colour_value/:colour&quot;</span>, config: {colour: {from_value: <span class="n">true</span>}})]
-  <span class="k">def</span> <span class="m">set_colour</span>(colour : <span class="t">Colour</span>) : <span class="t">String</span>
-    colour.to_s
-  <span class="k">end</span>
-
-  <span class="c"># a nilable enum param silently resolves to nil when the value doesn&#39;t parse.</span>
-  <span class="c"># `strict: true` raises `AC::Route::Param::ValueError` (bad request) instead,</span>
-  <span class="c"># while an absent param still resolves to the default</span>
-  <span class="c"># route =&gt; &quot;/books/tint?colour=RED&quot;</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/tint&quot;</span>, config: {colour: {strict: <span class="n">true</span>}})]
-  <span class="k">def</span> <span class="m">tint</span>(colour : <span class="t">Colour</span>? <span class="o">=</span> <span class="n">nil</span>) : <span class="t">String</span>
-    colour.to_s
-  <span class="k">end</span>
-
-  <span class="c"># Websocket support, the first param is always the socket object</span>
-  <span class="c"># route =&gt; &quot;/books/:id/realtime&quot;</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">WebSocket</span>(<span class="s">&quot;/:id/realtime&quot;</span>)]
-  <span class="k">def</span> <span class="m">realtime</span>(socket, id : <span class="t">UInt64</span>)
-    <span class="t">SOCKETS</span> <span class="o">&lt;&lt;</span> socket
-
-    socket.on_message <span class="k">do</span> <span class="o">|</span>message<span class="o">|</span>
-      <span class="t">SOCKETS</span>.each { <span class="o">|</span>sock<span class="o">|</span> sock.send <span class="s">&quot;Echo back from server: </span><span class="i">#{</span>message<span class="i">}</span><span class="s">&quot;</span> }
-    <span class="k">end</span>
-
-    socket.on_close <span class="k">do</span>
-      <span class="t">SOCKETS</span>.delete(socket)
-    <span class="k">end</span>
-  <span class="k">end</span>
-
-  <span class="t">SOCKETS</span> <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">HTTP</span><span class="t">::</span><span class="t">WebSocket</span>
 <span class="k">end</span></code></pre>
-<h3><a id="array-and-set-parameters" class="anchor" href="#array-and-set-parameters">
+<p>Optional arguments take their default, enums parse by name or value, arrays and sets
+collect every repetition of a name, and custom converters handle anything else. See
+<a href="https://spider-gazelle.net/guides/parameters/">parameters</a> and
+<a href="https://spider-gazelle.net/guides/responses/">responses</a>.</p>
+<h2><a id="open-api" class="anchor" href="#open-api">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
   </svg>
-</a>Array and Set parameters</h3>
-<p>A query parameter typed <code>Array(T)</code> or <code>Set(T)</code> is read from every repetition of
-its name, <code>?tag=a&amp;tag=b</code> (form bodies too), each element converted as a <code>T</code>
-would be, including any <code>config:</code> for the parameter. An element that does not
-convert is a <code>Param::ValueError</code> naming its index and value. The OpenAPI
-document describes it with <code>explode: true</code>, which is how generated clients and
-browsers send arrays. Path and header parameters, and collections of
-collections, are compile time errors.</p>
-<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/&quot;</span>, config: {kind: {from_value: <span class="n">true</span>}})]
-<span class="k">def</span> <span class="m">index</span>(tag : <span class="t">Array</span>(<span class="t">String</span>) <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">String</span>, kind : <span class="t">Set</span>(<span class="t">Kind</span>)? <span class="o">=</span> <span class="n">nil</span>)
-  <span class="c"># ?tag=a&amp;tag=b&amp;kind=0&amp;kind=1</span>
-<span class="k">end</span></code></pre>
-<p>A custom converter still takes the whole value, so a comma separated list stays
-possible, and is documented with <code>explode: false</code>. MCP tool calls join the
-elements with commas for it, so an element can't contain a comma.</p>
-<h3><a id="request-bodies" class="anchor" href="#request-bodies">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Request bodies</h3>
-<p>A route's body (<code>body: :name</code>) is parsed from any of the registered parsers,
-and the OpenAPI document lists them all. <code>consumes:</code> narrows that to one type
-or a list, so a JSON route stops advertising YAML; a request in another type
-raises a <code>Route::UnsupportedMediaType</code> (rescue it to answer 415). A <code>String</code> body can also consume
-<code>text/plain</code>, which needs no parser.</p>
-<p>A body typed <code>IO</code> or <code>Bytes</code> is bound as it is, with no parser: any type
-unless <code>consumes:</code> says which, and described as <code>string</code>/<code>binary</code>. It isn't
-read as a form either, so a route taking a signed webhook as
-<code>application/x-www-form-urlencoded</code> gets the exact bytes, and query params
-still work:</p>
-<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/upload&quot;</span>, body: <span class="n">:file</span>, consumes: [<span class="s">&quot;application/pdf&quot;</span>, <span class="s">&quot;image/png&quot;</span>], max_body_bytes: <span class="n">10_000_000</span>)]
-<span class="k">def</span> <span class="m">upload</span>(file : <span class="t">Bytes</span>) : <span class="t">Nil</span>
-  <span class="c"># file holds the request body</span>
-<span class="k">end</span></code></pre>
-<p><code>max_body_bytes:</code> limits any body argument: a larger body, by its
-<code>Content-Length</code> or as it is read, raises a <code>Route::PayloadTooLarge</code> (rescue
-it to answer 413).</p>
-<p>A raw body route is an MCP tool only when it consumes a text type (<code>text/*</code>,
-JSON, XML, YAML or a form), which the tool takes as a string and sends as the
-first such type. A binary only route is left out, as a model can't write its
-bytes in a JSON string.</p>
-<h3><a id="binary-bodies-and-responses" class="anchor" href="#binary-bodies-and-responses">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Binary bodies and responses</h3>
-<p>A type that is IO serialisable, with <code>T.from_io(io, format)</code> and
-<code>obj.to_io(io, format)</code> such as a <a href="https://github.com/spider-gazelle/bindata">BinData</a>
-class, is read from a body and written as a response as it is, with no parser or
-responder. So are <code>Bytes</code> and <code>IO</code> responses (an <code>IO</code> is closed once it's copied).
-The response is <code>application/octet-stream</code> unless the route sets <code>content_type:</code>, and
-the OpenAPI document describes both as <code>string</code>/<code>binary</code>. <code>byte_format:</code> sets the byte
-order (<code>IO::ByteFormat::SystemEndian</code> by default); a BinData class uses its own
-<code>endian</code>. Numbers are IO serialisable too, but stay JSON.</p>
-<pre><code class="language-crystal"><span class="k">class</span> <span class="t">Packet</span> <span class="o">&lt;</span> <span class="t">BinData</span>
-  endian big
-
-  field id : <span class="t">UInt16</span>
-  field flags : <span class="t">UInt8</span>
-<span class="k">end</span>
-
-@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/packets&quot;</span>, body: <span class="n">:packet</span>, consumes: <span class="s">&quot;application/x-packet&quot;</span>, content_type: <span class="s">&quot;application/x-packet&quot;</span>)]
-<span class="k">def</span> <span class="m">echo</span>(packet : <span class="t">Packet</span>) : <span class="t">Packet</span>
-  packet
-<span class="k">end</span></code></pre>
-<p>A route whose response is binary, other than an image or audio, isn't an MCP tool.</p>
+</a>OpenAPI</h2>
+<p>The routes above describe themselves: paths, parameters, schemas for <code>Book</code> and
+<code>Genre</code>, status codes, and the doc comments as summaries. Generate the document with the
+template's <code>--docs</code> flag, or in code:</p>
+<pre><code class="language-crystal">docs <span class="o">=</span> <span class="t">ActionController</span><span class="t">::</span><span class="t">OpenAPI</span>.generate_open_api_docs(title: <span class="s">&quot;Library&quot;</span>, version: <span class="s">&quot;1.0.0&quot;</span>)
+<span class="t">File</span>.write(<span class="s">&quot;openapi.yml&quot;</span>, docs.to_yaml)</code></pre>
+<p>See <a href="https://spider-gazelle.net/openapi/">OpenAPI</a>.</p>
 <h2><a id="mcp-server" class="anchor" href="#mcp-server">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
   </svg>
-</a>MCP Server</h2>
-<p>Action Controller can expose your annotated routes to LLM clients as a
-<a href="https://modelcontextprotocol.io">Model Context Protocol</a> server using the
-Streamable HTTP transport.</p>
-<p>Controllers are presented as <strong>toolboxes</strong>, their route methods as <strong>tools</strong>, and methods
-annotated with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(prompt: true)]</code> as <strong>prompts</strong>. To keep the model's context
-lean, only four tools are listed, plus any <a href="#root-tools-and-prompts">root items</a>:</p>
-<p>| tool | description |
-|------|-------------|
-| <code>list_toolboxes</code> | lists the controllers, their descriptions (the class comment), and their tool and prompt counts |
-| <code>open_toolbox(name)</code> | returns the definitions of the controller's tools and the names of its prompts |
-| <code>call_read_only(name, arguments)</code> | runs a read only tool from a toolbox |
-| <code>call_tool(name, arguments)</code> | runs any tool from a toolbox. Both proxies refuse <code>visibility: :card</code> tools |</p>
-<p>The server is stateless: opening a toolbox changes nothing, so the tool list is the same
-for every request and any instance of your application can serve any request.
-<code>open_toolbox</code> returns each tool's name, description, <code>inputSchema</code>, annotations and
-<code>proxy</code> (the proxy tool to run it with), and the model runs them through the proxies.
-Calls through a proxy behave exactly like direct calls, and clients can also call any
-tool directly. Every prompt is listed, as users pick prompts they don't use the model's
-context. Card only tools (<code>visibility: :card</code>) are listed too, so cards can call them.</p>
-<p>There are two proxies so clients can tell reads from writes: <code>call_read_only</code> is hinted
-<code>readOnlyHint: true</code> (so ChatGPT, for example, doesn't ask the user to confirm each call)
-and refuses tools that aren't read only. A tool is read only if it's a GET route,
-unless overridden with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(behaviour:)]</code>. <code>MCPServer.tool_proxy = false</code> removes
-the toolboxes, listing every tool instead.</p>
-<p>Tool calls and prompts are dispatched in-process through the application router, so
-filters, authentication, controller exception handlers and responders behave exactly
-as they would for a regular HTTP request. (<code>Server.before</code> handlers are not run.)</p>
-<h3><a id="setup" class="anchor" href="#setup">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Setup</h3>
-<p>The MCP server is an optional feature:</p>
+</a>MCP server</h2>
+<p>Mount the <a href="https://modelcontextprotocol.io">Model Context Protocol</a> server and every
+annotated route is a tool, described by the same comments and types:</p>
 <pre><code class="language-crystal"><span class="k">require</span> <span class="s">&quot;action-controller/server&quot;</span>
 <span class="k">require</span> <span class="s">&quot;action-controller/mcp&quot;</span>
 
 server <span class="o">=</span> <span class="t">ActionController</span><span class="t">::</span><span class="t">Server</span>.new
 <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.mount(server, <span class="s">&quot;/mcp&quot;</span>)
 server.run</code></pre>
-<p><code>mount</code> registers a <code>POST</code> handler at the path provided (<code>GET</code> and <code>DELETE</code> respond
-<code>405</code>), the OAuth
-protected resource metadata at <code>/.well-known/oauth-protected-resource&lt;path&gt;</code>, and any
-<a href="#controller-endpoints">controller endpoints</a> (<code>endpoints: false</code> skips them).</p>
-<h3><a id="tool-descriptions-mcp.yml" class="anchor" href="#tool-descriptions-mcp.yml">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Tool descriptions (<code>mcp.yml</code>)</h3>
-<p>Like the OpenAPI generator, descriptions come from the comments in your source
-code. Binaries don't ship with source, so you generate a description file at
-build time and deploy it with the binary. It is lazily loaded the first time an
-MCP client connects.</p>
-<pre><code class="language-crystal"><span class="c"># e.g. behind a `--mcp` command line switch in your app</span>
-<span class="k">if</span> <span class="t">ARGV</span>.includes?(<span class="s">&quot;--mcp&quot;</span>)
-  <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.write_description(<span class="s">&quot;mcp.yml&quot;</span>)
-  exit <span class="n">0</span>
-<span class="k">end</span></code></pre>
-<p>Run it from the project root (it needs <code>crystal</code> and the source, like the OpenAPI
-generator), then ship <code>mcp.yml</code> next to the binary:</p>
-<pre><code class="language-shell">crystal build src/app.cr -o bin/app
-./bin/app --mcp</code></pre>
-<p>If the file is missing, the description is generated from the compiled routes
-without the documentation comments, and a warning is logged.</p>
-<p>The file contains, for each controller:</p>
-<ul>
-<li>the toolbox name (snake case controller name) and description (class comment).
-The module namespace shared by every controller is omitted, so
-<code>PlaceOS::Api::Zones</code> and <code>PlaceOS::Api::Groups::Users</code> become <code>zones</code> and
-<code>groups_users</code></li>
-<li>a tool per controller method. A method with several route annotations is a single
-tool, using its first <code>GET</code> route (otherwise its first route)
-<ul>
-<li>the tool name, <code>&lt;toolbox&gt;_&lt;method&gt;</code></li>
-<li>the description, from the method comment</li>
-<li>an input schema built from the route params, <code>@[<a href="ActionController/Param/Info.html">AC::Param::Info</a>]</code> descriptions
-and examples, and the request body</li>
-</ul>
-</li>
-<li>a prompt per prompt method, named <code>&lt;toolbox&gt;_&lt;method&gt;</code>, with the method comment as
-the description and the arguments taken from the method params</li>
-</ul>
-<p>Each tool's input schema is a self-contained JSON schema. Path, query and header
-params are top-level properties, and the request body is the <code>body</code> property.</p>
-<pre><code class="language-crystal"><span class="c"># Manages the widgets in your account</span>
-<span class="k">class</span> <span class="t">Widgets</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
-  base <span class="s">&quot;/widgets&quot;</span>
-
-  <span class="c"># returns the widget requested</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id&quot;</span>)]
-  <span class="k">def</span> <span class="m">show</span>(
-    id : <span class="t">Int64</span>,
-    @[<span class="t">AC</span><span class="t">::</span><span class="t">Param</span><span class="t">::</span><span class="t">Info</span>(description: <span class="s">&quot;include usage stats&quot;</span>, example: <span class="s">&quot;true&quot;</span>)]
-    detailed : <span class="t">Bool</span> <span class="o">=</span> <span class="n">false</span>,
-  ) : <span class="t">Widget</span>
-    <span class="t">Widget</span>.find(id, detailed)
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-<p>Here the toolbox <code>widgets</code> contains the tool <code>widgets_show</code>, which takes the
-arguments <code>{&quot;id&quot;: 1, &quot;detailed&quot;: true}</code>.</p>
-<p>WebSocket and <code>OPTIONS</code> routes, and routes without annotations, are not exposed.</p>
-<h3><a id="prompts" class="anchor" href="#prompts">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Prompts</h3>
-<p><a href="https://modelcontextprotocol.io/specification/2025-11-25/server/prompts">Prompts</a> are
-reusable message templates that users select in their MCP client. Mark a controller
-method with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(prompt: true)]</code>. It must return a <code>String</code>, which becomes a single
-user message, or an <code>Array(<a href="ActionController/PromptMessage.html">AC::PromptMessage</a>)</code> for a conversation:</p>
-<pre><code class="language-crystal"><span class="k">class</span> <span class="t">Widgets</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
-  base <span class="s">&quot;/widgets&quot;</span>
-
-  <span class="c"># summarise a widget for the user</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(prompt: <span class="n">true</span>)]
-  <span class="k">def</span> <span class="m">summarise</span>(
-    id : <span class="t">Int64</span>,
-    @[<span class="t">AC</span><span class="t">::</span><span class="t">Param</span><span class="t">::</span><span class="t">Info</span>(description: <span class="s">&quot;the tone of the summary&quot;</span>)]
-    tone : <span class="t">String</span> <span class="o">=</span> <span class="s">&quot;casual&quot;</span>,
-  ) : <span class="t">String</span>
-    <span class="s">&quot;Summarise this widget in a </span><span class="i">#{</span>tone<span class="i">}</span><span class="s"> tone: </span><span class="i">#{</span><span class="t">Widget</span>.find(id).to_json<span class="i">}</span><span class="s">&quot;</span>
-  <span class="k">end</span>
-
-  <span class="c"># starts a widget review</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(prompt: <span class="n">true</span>)]
-  <span class="k">def</span> <span class="m">review</span>(id : <span class="t">Int64</span>) : <span class="t">Array</span>(<span class="t">AC</span><span class="t">::</span><span class="t">PromptMessage</span>)
-    [
-      <span class="t">AC</span><span class="t">::</span><span class="t">PromptMessage</span>.user(<span class="s">&quot;Review widget </span><span class="i">#{</span>id<span class="i">}</span><span class="s">&quot;</span>),
-      <span class="t">AC</span><span class="t">::</span><span class="t">PromptMessage</span>.assistant(<span class="s">&quot;Which aspects should I focus on?&quot;</span>),
-    ]
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-<ul>
-<li>Prompts are <strong>not HTTP routes</strong>. They are only available to MCP clients and don't
-appear in the OpenAPI docs or route list.</li>
-<li>Arguments are parsed exactly like route params (converters, <code>config:</code>, defaults and
-<code>@[<a href="ActionController/Param/Info.html">AC::Param::Info</a>]</code>). Non-nilable arguments without a default are required.</li>
-<li>The controller's filters and exception handlers apply, so <code>before_action</code>
-authentication and model loading work as they do for routes. A filter that responds
-with <code>401</code> triggers re-authentication when <a href="#authentication-optional">authentication</a> is
-enabled. Other errors are returned to the client as JSON-RPC errors.</li>
-<li>Prompts belong to their controller's toolbox and are listed once it's opened, unless
-they are root prompts.</li>
-</ul>
-<h3><a id="root-tools-and-prompts" class="anchor" href="#root-tools-and-prompts">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Root tools and prompts</h3>
-<p>Items marked <code>root: true</code> are always available, without opening a toolbox. Use this for
-the handful of tools or prompts that most conversations need:</p>
-<pre><code class="language-crystal"><span class="k">class</span> <span class="t">Widgets</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
-  <span class="c"># always listed and callable</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(root: <span class="n">true</span>)]
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/colours&quot;</span>)]
-  <span class="k">def</span> <span class="m">colours</span> : <span class="t">Array</span>(<span class="t">String</span>)
-    [<span class="s">&quot;red&quot;</span>, <span class="s">&quot;green&quot;</span>]
-  <span class="k">end</span>
-
-  <span class="c"># always listed</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(prompt: <span class="n">true</span>, root: <span class="n">true</span>)]
-  <span class="k">def</span> <span class="m">getting_started</span> : <span class="t">String</span>
-    <span class="s">&quot;Explain how to use the widget tools&quot;</span>
-  <span class="k">end</span>
-<span class="k">end</span>
-
-<span class="c"># every route and prompt in the controller is a root item</span>
-@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(root: <span class="n">true</span>)]
-<span class="k">class</span> <span class="t">Status</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
-<span class="k">end</span></code></pre>
-<p>Root items keep their <code>&lt;toolbox&gt;_&lt;method&gt;</code> names. Toolboxes that only contain root items
-are not listed by <code>list_toolboxes</code>.</p>
-<h3><a id="controller-endpoints" class="anchor" href="#controller-endpoints">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Controller endpoints</h3>
-<p>A controller can also be served as its own MCP server, for example one per account or
-room. Annotate the class with <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(endpoint: true)]</code> and it's served at
-<code>&lt;base&gt;/mcp</code> (or a sub path, <code>endpoint: &quot;/assistant&quot;</code>):</p>
-<pre><code class="language-crystal"><span class="c"># Controls a room, look up its state before changing it</span>
-@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(endpoint: <span class="n">true</span>)]
-<span class="k">class</span> <span class="t">Room</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
-  base <span class="s">&quot;/rooms/:room_id&quot;</span>
-
-  <span class="c"># the room state</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/state&quot;</span>)]
-  <span class="k">def</span> <span class="m">state</span>(room_id : <span class="t">String</span>) : <span class="t">State</span>
-    <span class="t">State</span>.<span class="k">for</span>(room_id)
-  <span class="k">end</span>
-
-  <span class="c"># turns the lights on or off</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/lights&quot;</span>)]
-  <span class="k">def</span> <span class="m">lights</span>(room_id : <span class="t">String</span>, on : <span class="t">Bool</span>) : <span class="t">Nil</span>
-    <span class="t">Lights</span>.set(room_id, on)
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-<p>Connecting to <code>/rooms/boardroom/mcp</code> lists <code>state</code> and <code>lights</code> directly:</p>
-<ul>
-<li>
-<p><strong>Bound path params:</strong> the base path params (<code>room_id</code>) come from the endpoint URL.
-They're left out of the tool arguments, every request is bound to the URL it was sent to.</p>
-</li>
-<li>
-<p><strong>No toolboxes:</strong> there are no meta tools or proxies, every tool and prompt is listed,
-named by its method.</p>
-</li>
-<li>
-<p><strong>Instructions:</strong> the controller's doc comment is given to the model as the server's
-instructions, and the server is named after the controller. Define an <code>instructions</code>
-method to build them for each client instead:</p>
-<pre><code class="language-crystal"><span class="c"># runs like a route when a client connects: filters run and path params are available</span>
-<span class="k">def</span> <span class="m">instructions</span>(room_id : <span class="t">String</span>) : <span class="t">String</span>
-  <span class="s">&quot;You control the </span><span class="i">#{</span><span class="t">Room</span>.find!(room_id).name<span class="i">}</span><span class="s">, look up its state before changing it.&quot;</span>
-<span class="k">end</span></code></pre>
-<p>It isn't an HTTP route or a tool. If it fails, for example the filters respond 403 or
-the room doesn't exist, the client can't connect: <code>initialize</code> returns the error (a 401
-challenges the client to sign in again).</p>
-</li>
-<li>
-<p><strong>Visibility:</strong> the controller is hidden from the global server unless it's also
-annotated <code>hide: false</code>. A method annotated <code>hide: true</code> is hidden from both.</p>
-</li>
-<li>
-<p><strong>Shared configuration:</strong> authentication, forwarded headers and tool results use the
-<code>MCPServer</code> configuration, and tool calls run the controller's filters, so check access
-to the room (or account) in a <code>before_action</code>. The protected resource metadata is
-served for each endpoint URL.</p>
-</li>
-</ul>
-<p><code>MCPServer.mount</code> mounts the endpoints too (<code>endpoints: false</code> skips them), and
-<code>write_description</code> includes them in <code>mcp.yml</code>.</p>
-<h3><a id="ui-cards-mcp-apps" class="anchor" href="#ui-cards-mcp-apps">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>UI cards (MCP Apps)</h3>
-<p>Tools can render an interactive HTML card in the conversation, using the
-<a href="https://github.com/modelcontextprotocol/ext-apps">MCP Apps</a> extension supported by
-Claude, ChatGPT, VS Code and Microsoft 365 Copilot. Cards are static HTML files in a
-folder:</p>
-<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.ui_base <span class="o">=</span> <span class="s">&quot;./cards&quot;</span>
-<span class="c"># the default card settings, a card can override them with a `&lt;card&gt;.meta.json` file</span>
-<span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.ui_meta <span class="o">=</span> <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span><span class="t">::</span><span class="t">UIMeta</span>.new(prefers_border: <span class="n">true</span>)
-
-<span class="k">class</span> <span class="t">Bookings</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
-  base <span class="s">&quot;/bookings&quot;</span>
-
-  <span class="c"># Shows a booking</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(ui: <span class="s">&quot;bookings/card.html&quot;</span>)] <span class="c"># ./cards/bookings/card.html</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id&quot;</span>)]
-  <span class="k">def</span> <span class="m">show</span>(id : <span class="t">String</span>) : <span class="t">Booking</span>
-    <span class="t">Booking</span>.find!(id)
-  <span class="k">end</span>
-
-  <span class="c"># Checks in to a booking, only the card can call this</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(visibility: <span class="n">:card</span>)]
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/:id/check_in&quot;</span>)]
-  <span class="k">def</span> <span class="m">check_in</span>(id : <span class="t">String</span>) : <span class="t">Booking</span>
-    <span class="t">Booking</span>.find!(id).check_in!
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-<ul>
-<li><strong>How it works:</strong> the tool's <code>_meta.ui.resourceUri</code> points at the card
-(<code>ui://bookings/card.html</code>). The host reads it with <code>resources/read</code> and renders it in a
-sandboxed iframe. It sends the card the tool's arguments and its result, the
-<code>{status, headers, body}</code> envelope as <code>structuredContent</code>.</li>
-<li><strong>Cards</strong> are self-contained HTML5 documents. By default hosts allow inline scripts and
-styles, but no external resources or network requests. Declare any domains a card needs
-in <code>ui_meta</code>, or in a sidecar such as <code>bookings/card.meta.json</code>:
-<code>{&quot;csp&quot;: {&quot;resourceDomains&quot;: [&quot;https://cdn.example.com&quot;]}, &quot;prefersBorder&quot;: false}</code>.</li>
-<li><strong>Talking to the host:</strong> cards use JSON-RPC over <code>postMessage</code> (<code>ui/initialize</code>, then
-<code>ui/notifications/tool-result</code>), with or without the <code>@modelcontextprotocol/ext-apps</code>
-SDK. They can call tools too, such as <code>visibility: :card</code> tools.</li>
-<li><strong>Caching:</strong> hosts cache cards by URI, so tools advertise
-<code>ui://bookings/card.html?v=&lt;content hash&gt;</code>. A changed card gets a new URI.</li>
-<li><strong>Root by default:</strong> hosts only render cards for, and let cards call, the tools in
-their tool list. So tools with <code>ui:</code> or <code>visibility: :card</code> are root items, listed without
-opening their toolbox, unless annotated <code>root: false</code>.</li>
-<li><code>ui:</code> paths are relative to <code>ui_base</code> and must be <code>.html</code> files (checked at compile
-time). Nothing outside <code>ui_base</code> is served. Hosts without MCP Apps support ignore the
-card metadata and show the text result.</li>
-</ul>
-<h4><a id="previewing-cards" class="anchor" href="#previewing-cards">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Previewing cards</h4>
-<p>The card previewer is a test harness that renders cards in your browser, as a host would.
-Mount it in development:</p>
-<pre><code class="language-crystal">server.run <span class="k">do</span>
-  <span class="o">{%</span> <span class="k">unless</span> flag?(<span class="n">:release</span>) <span class="o">%}</span>
-    server.mount_mcp_card_previewer(<span class="s">&quot;/mcp/card/preview&quot;</span>)
-  <span class="o">{%</span> <span class="k">end</span> <span class="o">%}</span>
-<span class="k">end</span></code></pre>
-<p><code>/mcp/card/preview</code> lists the cards and the tools that render them. A tool's page has a
-form for its arguments and renders the card once the required arguments are filled in,
-straight away when they're all optional. Switch between desktop, tablet and mobile
-viewports and light and dark themes, and inspect the messages between the card and the
-host, the tool result and anything the card sends to the model.</p>
-<p>The page is an MCP client of the global MCP server, at the path given to
-<code>MCPServer.mount</code> (mount it first, or pass <code>mcp: &quot;/prefix/mcp&quot;</code>), using protocol version
-<code>2026-07-28</code>. It discovers the server, calls the tool, reads
-the card and runs it in a sandboxed iframe with the card's CSP. Tools the card calls go
-through the same client, with the rules hosts apply: only listed tools, not
-<code>visibility: :model</code> tools. Add request headers, such as <code>Authorization</code>, in the page;
-they're kept for the browser tab. Cookies are sent automatically.</p>
-<p>Everything can be set in the URL, for links and automated tests:</p>
-<pre><code class="language-crystal"><span class="s">/mcp/</span>card<span class="o">/</span>preview<span class="o">/</span>tools<span class="o">/</span>bookings_show?id<span class="o">=</span><span class="n">42</span><span class="o">&amp;</span>viewport_size<span class="o">=</span>mobile<span class="o">&amp;</span>theme<span class="o">=</span>dark<span class="o">&amp;</span>header.<span class="t">Authorization</span><span class="o">=</span><span class="t">Bearer</span><span class="o">%</span><span class="n">20</span>token</code></pre>
-<ul>
-<li>tool arguments by name, objects and arrays as JSON</li>
-<li><code>viewport_size</code>: <code>desktop</code> (1280px), <code>tablet</code> (768px) or <code>mobile</code> (375px)</li>
-<li><code>theme</code>: <code>light</code> or <code>dark</code></li>
-<li><code>header.&lt;Name&gt;</code>: a request header. Tokens in URLs end up in logs and browser history,
-so use test credentials</li>
-</ul>
-<p>Tests can wait for <code>#stage[data-state=&quot;ready&quot;]</code> (or <code>&quot;error&quot;</code>), then inspect the card in
-the <code>#card</code> iframe. <code>window.cardPreviewer</code> exposes the <code>state</code>, the tool <code>result</code> and the
-message <code>log</code>.</p>
-<p>The previewer's pages and assets are compiled into your application only when
-<code>mount_mcp_card_previewer</code> is called, so the <code>flag?(:release)</code> check above leaves them
-out of release builds. The index is served without authentication, so don't mount it in
-production: it lists your card tools and their descriptions.</p>
-<h3><a id="resources" class="anchor" href="#resources">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Resources</h3>
-<p>A GET route can also be read as an MCP resource by annotating it with a URI template.
-The template's variables are the route's path params and, in a trailing <code>{?name,other}</code>,
-its query params:</p>
-<pre><code class="language-crystal"><span class="k">class</span> <span class="t">Widgets</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
-  base <span class="s">&quot;/widgets&quot;</span>
-
-  <span class="c"># the widget&#39;s current state</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(resource: <span class="s">&quot;app://widgets/{id}/state&quot;</span>, mime_type: <span class="s">&quot;application/json&quot;</span>, cache_ttl: <span class="n">0</span>)]
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id/state&quot;</span>)]
-  <span class="k">def</span> <span class="m">state</span>(id : <span class="t">Int64</span>) : <span class="t">Widget</span><span class="t">::</span><span class="t">State</span>
-    <span class="t">Widget</span>.find!(id).state
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-<p><code>resources/templates/list</code> lists the templates and <code>resources/read</code> runs the matching
-route in-process, like a tool call, so its filters and authentication apply. Its
-response becomes the resource contents, as text, or base64 for binary types. A <code>404</code> is
-reported as an unknown resource and other errors as JSON-RPC errors. <code>cache_ttl:</code>
-(seconds) is the <code>ttlMs</code> clients may cache a read for, it defaults to
-<code>MCPServer.cache_ttl</code>. The route remains a tool too.</p>
-<h4><a id="subscriptions" class="anchor" href="#subscriptions">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Subscriptions</h4>
-<p>With <code>subscribe: true</code>, clients can subscribe to resources of the template using
-<code>subscriptions/listen</code> (2026-07-28 onwards), and are sent
-<code>notifications/resources/updated</code> when they change. They then read the resource for its
-current state. Register a watcher for the template, it's called once per subscription
-and returns a proc that stops watching:</p>
-<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(resource: <span class="s">&quot;app://widgets/{id}/state&quot;</span>, mime_type: <span class="s">&quot;application/json&quot;</span>, subscribe: <span class="n">true</span>)]
-
-<span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.watch(<span class="s">&quot;app://widgets/{id}/state&quot;</span>) <span class="k">do</span> <span class="o">|</span>variables, _request, changed<span class="o">|</span>
-  subscription <span class="o">=</span> <span class="t">Widget</span>.on_change(variables[<span class="s">&quot;id&quot;</span>]) { changed.call }
-  <span class="o">-&gt;</span> { subscription.cancel }
-<span class="k">end</span></code></pre>
-<p>A resource is only watched if the client can read it: the route is requested with the
-client's credentials first. The listen stream is held open, with an SSE comment every
-<code>MCPServer.keep_alive</code>, until the client disconnects (the watchers are then stopped),
-<code>MCPServer.listen_timeout</code> expires (<code>nil</code>, the default, never does) or
-<code>Transport#close_subscriptions</code> is called, i.e. on shutdown. Bursts of changes are
-coalesced into one update per <code>MCPServer.update_debounce</code>. Your watchers see the changes
-made on the instance holding the stream, so use a shared channel (i.e. redis pub/sub)
-when running several instances.</p>
-<h4><a id="long-running-routes" class="anchor" href="#long-running-routes">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Long running routes</h4>
-<p>Routes that take a while, such as capturing output for a period of time, can be
-annotated <code>long_running: true</code>. Their response is written to a temporary file rather
-than memory, limited to <code>max_bytes:</code>, and streamed to the client as the result. Clients
-that accept an event stream are kept informed while the route runs: the route can report
-progress, there's an SSE comment every <code>MCPServer.keep_alive</code>, and a client that
-disconnects cancels the request.</p>
-<pre><code class="language-crystal"><span class="c"># captures the widget&#39;s output</span>
-@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(resource: <span class="s">&quot;app://widgets/{id}/output{?seconds}&quot;</span>, mime_type: <span class="s">&quot;text/plain&quot;</span>, long_running: <span class="n">true</span>, max_bytes: <span class="n">1_048_576</span>)]
-@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/:id/output&quot;</span>)]
-<span class="k">def</span> <span class="m">output</span>(id : <span class="t">Int64</span>, seconds : <span class="t">Int32</span> <span class="o">=</span> <span class="n">30</span>) : <span class="t">Nil</span>
-  response.content_type <span class="o">=</span> <span class="s">&quot;text/plain&quot;</span>
-  @__render_called__ <span class="o">=</span> <span class="n">true</span>
-  seconds.times <span class="k">do</span> <span class="o">|</span>second<span class="o">|</span>
-    <span class="k">break</span> <span class="k">if</span> mcp_context.try { <span class="o">|</span>context<span class="o">|</span> context.cancelled? <span class="o">||</span> context.full? }
-    response <span class="o">&lt;&lt;</span> <span class="t">Widget</span>.find!(id).read_output
-    response.flush
-    mcp_context.try <span class="o">&amp;</span>.progress(second <span class="o">+</span> <span class="n">1</span>, seconds)
-    sleep <span class="n">1</span>.second
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-<p><code>mcp_context</code> is <code>nil</code> for regular HTTP requests. Progress is sent when the client
-provided a <code>progressToken</code>. The result isn't sent until the route returns, so clients
-that time out requests without progress may give up on long captures.</p>
-<h3><a id="connecting-a-client" class="anchor" href="#connecting-a-client">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Connecting a client</h3>
-<p>Point any MCP client that supports Streamable HTTP at the mounted path, for example
-with Claude Code:</p>
-<pre><code class="language-shell">claude mcp add --transport http my-app http://localhost:3000/mcp \
-  --header &quot;Authorization: Bearer &lt;token&gt;&quot;</code></pre>
-<p>Headers in <code>forward_headers</code> (by default <code>Authorization</code>, <code>Cookie</code> and <code>X-API-Key</code>) are
-copied onto every tool call, so your existing authentication filters apply.</p>
-<h3><a id="authentication-optional" class="anchor" href="#authentication-optional">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Authentication (optional)</h3>
-<p>By default the MCP endpoint itself is open. Anyone can connect and browse the
-toolboxes, and each tool call is authenticated by your routes using the forwarded
-headers. A route that responds with <code>401</code> is reported to the model as a tool error.</p>
-<p>This works well for static credentials such as API keys, but MCP clients only sign
-in, or refresh an expired token, when the <strong>MCP endpoint itself</strong> responds with
-HTTP <code>401</code> and a <code>WWW-Authenticate</code> challenge. Enable authentication to get that
-behaviour. It is enabled when any of the following are configured.</p>
-<p><strong>Validating credentials:</strong> choose one of these.</p>
-<pre><code class="language-crystal"><span class="c"># a route that requires authentication, requested in-process with the forwarded headers.</span>
-<span class="c"># A 2xx response means the request is authenticated, no shared code required</span>
-<span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.auth_probe <span class="o">=</span> <span class="s">&quot;/api/users/current&quot;</span>
-
-<span class="c"># or a custom check</span>
-<span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.authenticator <span class="o">=</span> <span class="o">-&gt;</span>(request : <span class="t">HTTP</span><span class="t">::</span><span class="t">Request</span>) <span class="k">do</span>
-  <span class="t">MyAuth</span>.valid_token?(request.headers[<span class="s">&quot;Authorization&quot;</span>]?)
-<span class="k">end</span></code></pre>
-<p><strong>Advertising your OAuth authorization server:</strong> this lets clients sign in
-interactively and refresh tokens automatically. It uses
-<a href="https://www.rfc-editor.org/rfc/rfc9728">RFC 9728</a> protected resource metadata,
-served at <code>/.well-known/oauth-protected-resource/mcp</code> (<code>/mcp</code> being the mount
-path). The block receives the request, so multi-tenant applications can respond
-per host.</p>
-<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.resource_metadata <span class="o">=</span> <span class="o">-&gt;</span>(request : <span class="t">HTTP</span><span class="t">::</span><span class="t">Request</span>) <span class="k">do</span>
-  <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span><span class="t">::</span><span class="t">ResourceMetadata</span>.new(
-    authorization_servers: [<span class="s">&quot;https://</span><span class="i">#{</span>request.hostname<span class="i">}</span><span class="s">&quot;</span>],
-    scopes_supported: [<span class="s">&quot;public&quot;</span>],
-  )
-<span class="k">end</span></code></pre>
-<p>The authorization server must publish
-<a href="https://www.rfc-editor.org/rfc/rfc8414">RFC 8414</a> metadata and support the
-authorization code flow with PKCE. MCP clients also need a way to obtain a client
-id: dynamic client registration, client ID metadata documents, or a pre-registered
-client. Without <code>authenticator</code> or <code>auth_probe</code>, requests only need to present
-credentials, and invalid ones are rejected when a tool is called.</p>
-<p>When authentication is enabled:</p>
-<ul>
-<li>Every <code>POST</code>, <code>GET</code> and <code>DELETE</code> to the MCP endpoint is checked, including
-<code>initialize</code>. A failure returns <code>401</code> with
-<code>WWW-Authenticate: Bearer resource_metadata=&quot;…&quot;, scope=&quot;…&quot;, error=&quot;invalid_token&quot;</code>.
-The <code>resource_metadata</code> and <code>scope</code> parameters are included when <code>resource_metadata</code> is configured.</li>
-<li>Successful checks are cached per credential for <code>auth_cache_ttl</code> (default 1 minute),
-so the probe isn't run for every message.</li>
-<li>If a tool call is rejected by a route with <code>401</code>, for example because the token
-expired mid-session, the MCP endpoint returns HTTP <code>401</code> instead of a tool error.
-The client then refreshes its token and retries. A <code>403</code> is still reported to the model as a tool error.</li>
-</ul>
-<p>Choosing an approach:</p>
-<p>| Scenario | Configuration |
-|----------|---------------|
-| Public or anonymous API | nothing |
-| Agents with long lived credentials | nothing, or <code>auth_probe</code> to reject bad keys at connect time. Clients send a header, e.g. <code>--header &quot;X-API-Key: …&quot;</code> |
-| Interactive users with OAuth | <code>auth_probe</code> (or <code>authenticator</code>) + <code>resource_metadata</code> |</p>
-<p>For example, a multi-tenant API whose tokens are issued by an OAuth server on the same host:</p>
-<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.tap <span class="k">do</span> <span class="o">|</span>mcp<span class="o">|</span>
-  mcp.auth_probe <span class="o">=</span> <span class="s">&quot;/api/engine/v2/users/current&quot;</span>
-  mcp.resource_metadata <span class="o">=</span> <span class="o">-&gt;</span>(request : <span class="t">HTTP</span><span class="t">::</span><span class="t">Request</span>) <span class="k">do</span>
-    <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span><span class="t">::</span><span class="t">ResourceMetadata</span>.new(
-      authorization_servers: [<span class="s">&quot;https://</span><span class="i">#{</span>request.hostname<span class="i">}</span><span class="s">&quot;</span>],
-      scopes_supported: [<span class="s">&quot;public&quot;</span>],
-    )
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-<h3><a id="annotation-options-and-hiding-routes" class="anchor" href="#annotation-options-and-hiding-routes">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Annotation options and hiding routes</h3>
-<p><code>@[<a href="ActionController/MCP.html">AC::MCP</a>]</code> options can be applied to a controller or a method, and the method level
-annotation takes precedence:</p>
-<p>| option | description |
-|--------|-------------|
-| <code>hide: true</code> | excludes the routes / prompts from MCP |
-| <code>root: true</code> | always available, without opening the toolbox |
-| <code>prompt: true</code> | the method is an MCP prompt (methods only) |
-| <code>title: &quot;Book a room&quot;</code> | the tool or prompt's display name (methods only) |
-| <code>behaviour: :read_only</code> | what the tool does, see below |
-| <code>visibility: :card</code> | who can call the tool: <code>:model</code>, <code>:card</code> or both (the default) |
-| <code>ui: &quot;bookings/card.html&quot;</code> | renders this HTML card for the tool's results, see <a href="#ui-cards-mcp-apps">UI cards</a> |
-| <code>endpoint: true</code> | serves the controller as its own MCP server at <code>&lt;base&gt;/mcp</code> (controllers only), see <a href="#controller-endpoints">controller endpoints</a> |</p>
-<p>Tools with <code>ui:</code> or <code>visibility: :card</code> default to <code>root: true</code>.</p>
-<p><strong>Behaviour</strong> tells hosts what a tool does, which they use to decide what to confirm with
-the user. It's a symbol or an array of <code>:read_only</code>, <code>:additive</code>, <code>:destructive</code>,
-<code>:idempotent</code>, <code>:open_world</code> and <code>:closed_world</code>. By default it's inferred from the HTTP
-verb: GET is <code>:read_only</code>, PUT is <code>:idempotent</code> and DELETE is
-<code>[:destructive, :idempotent]</code>. Setting it replaces the default, and contradictions are
-compile errors. Read only tools can be run with the <code>call_read_only</code> proxy.</p>
-<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(behaviour: <span class="n">:read_only</span>)]                <span class="c"># a POST search</span>
-@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(behaviour: [<span class="n">:additive</span>, <span class="n">:open_world</span>])]  <span class="c"># a POST that sends an email</span>
-@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(behaviour: <span class="n">:destructive</span>)]              <span class="c"># a PUT that replaces data</span></code></pre>
-<p><strong>Visibility</strong> controls who can call a tool in hosts that support
-<a href="#ui-cards-mcp-apps">UI cards</a>: <code>:card</code> tools are hidden from the model, and <code>:model</code>
-tools can't be called by cards. Hosts enforce it, and the <code>call_tool</code> and
-<code>call_read_only</code> proxies refuse <code>:card</code> tools, but it isn't access control: a client can
-still call a tool by name.</p>
-<p><strong>Upgrading:</strong> <code>read_only:</code> was replaced by <code>behaviour:</code> (<code>read_only: true</code> is
-<code>behaviour: :read_only</code>), and <code>card_only:</code> by <code>visibility: :card</code>. The old names are
-compile errors. Regenerate <code>mcp.yml</code> after upgrading.</p>
-<p><strong>Icons</strong> are added with <code>@[<a href="ActionController/Icon.html">AC::Icon</a>]</code>, which you can repeat for different sizes and
-themes. On a controller they're the default for its tools and prompts, and the icon of
-its toolbox and <a href="#controller-endpoints">endpoint</a>:</p>
-<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Icon</span>(src: <span class="s">&quot;icons/book.svg&quot;</span>, sizes: [<span class="s">&quot;any&quot;</span>])]
-@[<span class="t">AC</span><span class="t">::</span><span class="t">Icon</span>(src: <span class="s">&quot;icons/book-dark.svg&quot;</span>, sizes: [<span class="s">&quot;any&quot;</span>], theme: <span class="s">&quot;dark&quot;</span>)]
-@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/&quot;</span>)]
-<span class="k">def</span> <span class="m">create</span>(booking : <span class="t">Booking</span>) : <span class="t">Booking</span></code></pre>
-<p><code>src</code> is sent as is when it's an <code>https:</code> or <code>data:</code> URL. A file in <code>MCPServer.ui_base</code>
-is sent as a <code>data:</code> URL, and anything else is a path on the current host. Every other
-argument is passed through as is. Use <code>MCPServer.icon &quot;icons/logo.svg&quot;, sizes: [&quot;any&quot;]</code>
-for the server's own icon.</p>
-<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(hide: <span class="n">true</span>)] <span class="c"># hide every route in the controller</span>
-<span class="k">class</span> <span class="t">Internal</span> <span class="o">&lt;</span> <span class="t">AC</span><span class="t">::</span><span class="t">Base</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">MCP</span>(hide: <span class="n">false</span>)] <span class="c"># method annotations take precedence</span>
-  @[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/status&quot;</span>)]
-  <span class="k">def</span> <span class="m">status</span> : <span class="t">String</span>
-    <span class="s">&quot;ok&quot;</span>
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-<h3><a id="configuration" class="anchor" href="#configuration">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Configuration</h3>
-<pre><code class="language-crystal"><span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span>.tap <span class="k">do</span> <span class="o">|</span>mcp<span class="o">|</span>
-  mcp.description_path <span class="o">=</span> <span class="s">&quot;mcp.yml&quot;</span>                 <span class="c"># relative to the working directory</span>
-  mcp.server_name <span class="o">=</span> <span class="s">&quot;my-app&quot;</span>
-  mcp.server_version <span class="o">=</span> <span class="s">&quot;1.2.0&quot;</span>
-  mcp.server_title <span class="o">=</span> <span class="s">&quot;My App&quot;</span>                     <span class="c"># display name, also in the Server Card</span>
-  mcp.website_url <span class="o">=</span> <span class="s">&quot;https://example.com/docs&quot;</span>
-  mcp.server_description <span class="o">=</span> <span class="s">&quot;Manages widgets&quot;</span>      <span class="c"># Server Card description, 100 characters max</span>
-  mcp.server_card <span class="o">=</span> <span class="n">true</span>                          <span class="c"># serve &lt;path&gt;/server-card, see Server Cards</span>
-  mcp.server_card_ttl <span class="o">=</span> <span class="n">1</span>.hour                    <span class="c"># Cache-Control max-age of Server Cards</span>
-  mcp.instructions <span class="o">=</span> <span class="s">&quot;About my-app. </span><span class="i">#{</span>mcp.toolbox_instructions<span class="i">}</span><span class="s">&quot;</span> <span class="c"># nil (default): toolbox usage only, &quot;&quot;: none</span>
-  mcp.tool_proxy <span class="o">=</span> <span class="n">true</span>                           <span class="c"># the call_read_only and call_tool meta tools</span>
-  mcp.forward_headers <span class="o">=</span> [<span class="s">&quot;Authorization&quot;</span>, <span class="s">&quot;Cookie&quot;</span>, <span class="s">&quot;X-API-Key&quot;</span>] <span class="c"># copied onto tool requests</span>
-  mcp.allowed_origins <span class="o">=</span> [<span class="s">&quot;https://app.example.com&quot;</span>]              <span class="c"># &quot;*&quot; allows any origin</span>
-  mcp.cache_ttl <span class="o">=</span> <span class="n">5</span>.minutes                       <span class="c"># how long 2026-07-28 clients cache lists (ttlMs)</span>
-  mcp.excluded_response_headers <span class="o">+=</span> [<span class="s">&quot;X-Runtime&quot;</span>]  <span class="c"># left out of tool results, `*` matches a prefix</span>
-  mcp.icon <span class="s">&quot;icons/logo.svg&quot;</span>, sizes: [<span class="s">&quot;any&quot;</span>]       <span class="c"># the server&#39;s icon, see Icons above</span>
-
-  <span class="c"># UI cards (MCP Apps), see above</span>
-  mcp.ui_base <span class="o">=</span> <span class="s">&quot;./cards&quot;</span>
-  mcp.ui_meta <span class="o">=</span> <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span><span class="t">::</span><span class="t">UIMeta</span>.new(prefers_border: <span class="n">true</span>)
-
-  <span class="c"># authentication, all optional (see above)</span>
-  mcp.auth_probe <span class="o">=</span> <span class="s">&quot;/api/users/current&quot;</span>
-  mcp.authenticator <span class="o">=</span> <span class="o">-&gt;</span>(request : <span class="t">HTTP</span><span class="t">::</span><span class="t">Request</span>) { <span class="n">true</span> }
-  mcp.auth_cache_ttl <span class="o">=</span> <span class="n">1</span>.minute
-  mcp.resource_metadata <span class="o">=</span> <span class="o">-&gt;</span>(request : <span class="t">HTTP</span><span class="t">::</span><span class="t">Request</span>) <span class="k">do</span>
-    <span class="t">ActionController</span><span class="t">::</span><span class="t">MCPServer</span><span class="t">::</span><span class="t">ResourceMetadata</span>.new(authorization_servers: [<span class="s">&quot;https://auth.example.com&quot;</span>])
-  <span class="k">end</span>
-<span class="k">end</span></code></pre>
-<h3><a id="server-cards" class="anchor" href="#server-cards">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Server Cards</h3>
-<p>Each mounted server, including controller endpoints, serves an
-<a href="https://modelcontextprotocol.io/seps/2127-mcp-server-cards">MCP Server Card</a> at
-<code>&lt;path&gt;/server-card</code>, i.e. <code>/mcp/server-card</code>. The card tells clients and registries how to
-connect before they connect: the server's name, version, title, description, icons and its
-Streamable HTTP URL with the supported protocol versions. Tools, resources and prompts are
-never listed, clients list them once connected.</p>
-<pre><code class="language-json">{
-  &quot;$schema&quot;: &quot;https://static.modelcontextprotocol.io/schemas/v1/server-card.schema.json&quot;,
-  &quot;name&quot;: &quot;com.example/my-app&quot;,
-  &quot;description&quot;: &quot;Manages widgets&quot;,
-  &quot;version&quot;: &quot;1.2.0&quot;,
-  &quot;title&quot;: &quot;My App&quot;,
-  &quot;remotes&quot;: [{&quot;type&quot;: &quot;streamable-http&quot;, &quot;url&quot;: &quot;https://example.com/mcp&quot;, &quot;supportedProtocolVersions&quot;: [&quot;2026-07-28&quot;, &quot;2025-11-25&quot;, &quot;2025-06-18&quot;, &quot;2025-03-26&quot;]}]
-}</code></pre>
-<ul>
-<li>Cards are named in reverse-DNS form. A <code>server_name</code> with a namespace (<code>com.example/my-app</code>)
-is used as is, otherwise the namespace is the request host reversed: <code>my-app</code> served on
-<code>mcp.example.com</code> is <code>com.example.mcp/my-app</code>, and <code>local/my-app</code> on localhost or an IP
-address. Endpoints share the namespace, <code>com.example/&lt;controller&gt;</code>, and are described by
-the first paragraph of their controller's doc comment.</li>
-<li>Cards are public, they don't require authentication, and readable cross-origin. They're
-served as <code>application/mcp-server-card+json</code> with <code>Cache-Control: public</code> and an <code>ETag</code>, and
-<code>If-None-Match</code> requests are answered with <code>304</code>.</li>
-<li>The URL is built from the <code>Host</code> and <code>X-Forwarded-Proto</code> headers, like the protected
-resource metadata.</li>
-<li>Link to the cards from an <a href="https://agenticresourcediscovery.org">AI Catalog</a> to make the
-servers discoverable. <code>server_card = false</code> stops serving them.</li>
-</ul>
-<h3><a id="transport-notes" class="anchor" href="#transport-notes">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Transport notes</h3>
-<ul>
-<li>Implements Streamable HTTP for protocol versions <code>2026-07-28</code>, <code>2025-11-25</code>, <code>2025-06-18</code> and <code>2025-03-26</code>.</li>
-<li><strong>Stateless:</strong> there are no sessions, so multi-node deployments don't need sticky sessions
-or shared storage. When authentication is enabled every request is authenticated.</li>
-<li><code>2026-07-28</code> clients don't initialize: each request carries its protocol version and client
-capabilities in <code>_meta</code>, and the <code>MCP-Protocol-Version</code>, <code>Mcp-Method</code> and <code>Mcp-Name</code> headers
-must match the body (<code>400</code> otherwise). <code>server/discover</code> describes the server, results include
-<code>resultType</code>, the server info in <code>_meta</code>, and lists <code>ttlMs</code> and <code>cacheScope</code> (<code>private</code> when
-authentication is enabled). <code>subscriptions/listen</code> is acknowledged with nothing to notify,
-as the lists never change.</li>
-<li>Earlier versions start with <code>initialize</code>, which returns no <code>Mcp-Session-Id</code>. Any session id
-a client sends is ignored, and clients without an <code>MCP-Protocol-Version</code> header are treated
-as <code>2025-03-26</code>.</li>
-<li><code>POST</code> returns <code>application/json</code>. <code>GET</code> and <code>DELETE</code> respond <code>405</code>, there are no event
-streams or sessions to end.</li>
-<li><code>Origin</code> headers must be same-origin or listed in <code>allowed_origins</code>, which protects against DNS rebinding.</li>
-<li>Unhandled exceptions raised by a route are logged and returned as a generic <code>500</code> tool error.</li>
-</ul>
-<h3><a id="tool-results" class="anchor" href="#tool-results">
-  <svg class="octicon-link" aria-hidden="true">
-    <use href="#octicon-link"/>
-  </svg>
-</a>Tool results</h3>
-<p>A tool call returns the route's response as <code>{status, headers, body}</code>, both as the text
-content and as <code>structuredContent</code>:</p>
-<pre><code class="language-json">{
-  &quot;status&quot;: 200,
-  &quot;headers&quot;: {&quot;X-Total-Count&quot;: &quot;120&quot;, &quot;Link&quot;: &quot;&lt;/api/users?page=2&gt;; rel=\&quot;next\&quot;&quot;},
-  &quot;body&quot;: [{&quot;id&quot;: 1, &quot;name&quot;: &quot;Steve&quot;}]
-}</code></pre>
-<ul>
-<li><code>body</code> is the parsed JSON, or the text of any other response. It's left out when empty,
-and so is <code>headers</code>.</li>
-<li>Headers matching <code>excluded_response_headers</code> are left out. By default these are
-<code>Date</code>, <code>Content-Length</code>, <code>X-Request-ID</code>, <code>Content-Type</code>, cookies and credentials,
-transport headers (<code>Connection</code>, <code>Transfer-Encoding</code> ...) and browser policy headers
-(<code>Strict-Transport-Security</code>, <code>Access-Control-*</code> ...). Everything else, such as
-<code>Link</code>, <code>X-Total-Count</code>, <code>Content-Range</code> and <code>Location</code>, is returned so the model can
-page through results.</li>
-<li>Responses with a status of 400 or above set <code>isError</code> (except <code>401</code> when
-authentication is enabled, see above).</li>
-<li>Images and audio are returned as an <code>image</code> or <code>audio</code> content block, followed by the
-envelope without a body.</li>
-</ul>
+<p>Calls are dispatched through the router with the client's headers, so filters,
+authentication and exception handlers apply as they do to any request. Controllers are
+listed as toolboxes to keep the model's context small, and <code>@[<a href="ActionController/MCP.html">AC::MCP</a>(...)]</code> adds
+prompts, resources and UI cards. See <a href="https://spider-gazelle.net/mcp/">MCP</a>.</p>
 <h2><a id="more-information" class="anchor" href="#more-information">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
   </svg>
 </a>More information</h2>
 <ul>
-<li>For more details on usage, see <a href="https://spider-gazelle.net/">the documentation</a>.</li>
-<li>Also see <a href="https://spider-gazelle.github.io/action-controller/ActionController.html">detailed project documentation</a></li>
-<li>Running heavy endpoints on dedicated scheduler pools: <a href="CONTEXTS.md">Execution Contexts</a></li>
+<li><a href="https://spider-gazelle.net/">The guide</a>: routing, filters, errors, sessions,
+WebSockets, testing, composition and deployment</li>
+<li><a href="https://spider-gazelle.github.io/action-controller/ActionController.html">API reference</a></li>
+<li><a href="CONTEXTS.md">Execution contexts</a>: run heavy routes on dedicated scheduler pools</li>
+<li><a href="https://web-frameworks-benchmark.netlify.app/result?l=crystal">Web frameworks benchmark results</a>,
+and the <a href="benchmarks/README.md">routing benchmarks</a> in this repo</li>
 </ul>
 </div>
 </body>
