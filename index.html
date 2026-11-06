@@ -367,6 +367,11 @@
       
     </li>
   
+  <li class=" " data-id="action-controller/ActionController/Route/LimitedBody" data-name="actioncontroller::route::limitedbody">
+      <a href="ActionController/Route/LimitedBody.html">LimitedBody</a>
+      
+    </li>
+  
   <li class=" " data-id="action-controller/ActionController/Route/NotAcceptable" data-name="actioncontroller::route::notacceptable">
       <a href="ActionController/Route/NotAcceptable.html">NotAcceptable</a>
       
@@ -409,6 +414,11 @@
   
   <li class=" " data-id="action-controller/ActionController/Route/PATCH" data-name="actioncontroller::route::patch">
       <a href="ActionController/Route/PATCH.html">PATCH</a>
+      
+    </li>
+  
+  <li class=" " data-id="action-controller/ActionController/Route/PayloadTooLarge" data-name="actioncontroller::route::payloadtoolarge">
+      <a href="ActionController/Route/PayloadTooLarge.html">PayloadTooLarge</a>
       
     </li>
   
@@ -657,6 +667,32 @@ collections, are compile time errors.</p>
 <p>A custom converter still takes the whole value, so a comma separated list stays
 possible, and is documented with <code>explode: false</code>. MCP tool calls join the
 elements with commas for it, so an element can't contain a comma.</p>
+<h3><a id="request-bodies" class="anchor" href="#request-bodies">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Request bodies</h3>
+<p>A route's body (<code>body: :name</code>) is parsed from any of the registered parsers,
+and the OpenAPI document lists them all. <code>consumes:</code> narrows that to one type
+or a list, so a JSON route stops advertising YAML; a request in another type
+raises a <code>Route::UnsupportedMediaType</code> (rescue it to answer 415). A <code>String</code> body can also consume
+<code>text/plain</code>, which needs no parser.</p>
+<p>A body typed <code>IO</code> or <code>Bytes</code> is bound as it is, with no parser: any type
+unless <code>consumes:</code> says which, and described as <code>string</code>/<code>binary</code>. It isn't
+read as a form either, so a route taking a signed webhook as
+<code>application/x-www-form-urlencoded</code> gets the exact bytes, and query params
+still work:</p>
+<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/upload&quot;</span>, body: <span class="n">:file</span>, consumes: [<span class="s">&quot;application/pdf&quot;</span>, <span class="s">&quot;image/png&quot;</span>], max_body_bytes: <span class="n">10_000_000</span>)]
+<span class="k">def</span> <span class="m">upload</span>(file : <span class="t">Bytes</span>) : <span class="t">Nil</span>
+  <span class="c"># file holds the request body</span>
+<span class="k">end</span></code></pre>
+<p><code>max_body_bytes:</code> limits any body argument: a larger body, by its
+<code>Content-Length</code> or as it is read, raises a <code>Route::PayloadTooLarge</code> (rescue
+it to answer 413).</p>
+<p>A raw body route is an MCP tool only when it consumes a text type (<code>text/*</code>,
+JSON, XML, YAML or a form), which the tool takes as a string and sends as the
+first such type. A binary only route is left out, as a model can't write its
+bytes in a JSON string.</p>
 <h2><a id="mcp-server" class="anchor" href="#mcp-server">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
