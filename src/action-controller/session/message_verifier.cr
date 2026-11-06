@@ -29,7 +29,7 @@ class ActionController::MessageVerifier
   end
 
   def verify(signed_message) : String
-    verified(signed_message) || raise(InvalidSignature.new)
+    verified(signed_message) || raise(Error::InvalidSignature.new)
   end
 
   def verify_raw(signed_message : String) : Bytes
@@ -37,7 +37,7 @@ class ActionController::MessageVerifier
     if digest && valid_message?(data, digest)
       decode(data)
     else
-      raise(InvalidSignature.new)
+      raise(Error::InvalidSignature.new)
     end
   end
 

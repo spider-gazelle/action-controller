@@ -132,9 +132,9 @@ class ActionController::Composition
   # Builds a public URL outside a request. Specify mount_base for repeated mounts.
   def url_for(controller : Base.class, action : Symbol, mount_base : String? = nil, hash_parts : Hash((String | Symbol), (Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol)?)? = nil, **tuple_parts) : String
     matches = placements.select { |placement| placement.controller.name == controller.name && (!mount_base || self.class.join("/", mount_base) == self.class.join("/", placement.base)) }
-    raise InvalidRoute.new("select mount_base for #{controller.name}: expected one placement, found #{matches.size}") unless matches.size == 1
+    raise Error::InvalidRoute.new("select mount_base for #{controller.name}: expected one placement, found #{matches.size}") unless matches.size == 1
     placement = matches.first
-    route = placement.controller.routes.find(&.[1].==(action)) || raise InvalidRoute.new("unknown action #{controller.name}##{action}")
+    route = placement.controller.routes.find(&.[1].==(action)) || raise Error::InvalidRoute.new("unknown action #{controller.name}##{action}")
     Support.build_route(placement.path(route[3]), hash_parts, **tuple_parts)
   end
 

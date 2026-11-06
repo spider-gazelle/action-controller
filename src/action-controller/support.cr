@@ -57,7 +57,7 @@ module ActionController::Support
           segments << URI.encode_path_segment(value.to_s)
         elsif value
           if omitted = optional_missing
-            raise ActionController::InvalidRoute.new("optional route parameter :#{key} requires :#{omitted} for #{route}")
+            raise ActionController::Error::InvalidRoute.new("optional route parameter :#{key} requires :#{omitted} for #{route}")
           end
           segments << (segment.starts_with?("*:") ? URI.encode_path(value) : URI.encode_path_segment(value))
         else
@@ -67,7 +67,7 @@ module ActionController::Support
         segments << segment
       end
     end
-    raise ActionController::InvalidRoute.new("route parameters missing :#{missing.join(", :")} for #{route}") unless missing.empty?
+    raise ActionController::Error::InvalidRoute.new("route parameters missing :#{missing.join(", :")} for #{route}") unless missing.empty?
     route = segments.join('/')
     route = "/" if route.empty?
 

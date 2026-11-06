@@ -23,6 +23,14 @@ class ActionController::Error < Exception
   class CookieSizeExceeded < ActionController::Error
   end
 
+  # the signature of the cookie session is invalid, the cookie may have been tampered with
+  class InvalidSignature < ActionController::Error
+  end
+
+  # raised if a required route parameter is missing
+  class InvalidRoute < ActionController::Error
+  end
+
   # provides a response object for rendering errors
   struct CommonResponse
     include JSON::Serializable
@@ -67,10 +75,10 @@ end
 # DEPRECATED: use `ActionController::Error::CookieSizeExceeded`
 alias ActionController::CookieSizeExceeded = ActionController::Error::CookieSizeExceeded
 
-# the signature of the cookie session is invalid, the cookie may have been tampered with
-class ActionController::InvalidSignature < ActionController::Error
-end
+# :nodoc:
+# DEPRECATED: use `ActionController::Error::InvalidSignature`
+alias ActionController::InvalidSignature = ActionController::Error::InvalidSignature
 
-# raised if a required route parameter is missing
-class ActionController::InvalidRoute < ActionController::Error
-end
+# :nodoc:
+# DEPRECATED: use `ActionController::Error::InvalidRoute`
+alias ActionController::InvalidRoute = ActionController::Error::InvalidRoute

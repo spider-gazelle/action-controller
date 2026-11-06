@@ -38,7 +38,7 @@ describe ActionController::Base do
   end
 
   it "should raise a BadRoute error if a route param is missing" do
-    expect_raises(ActionController::InvalidRoute, "route parameters missing :id") do
+    expect_raises(ActionController::Error::InvalidRoute, "route parameters missing :id") do
       HelloWorld.show
     end
   end

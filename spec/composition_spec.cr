@@ -523,7 +523,7 @@ describe AC::Composition do
     client.get("/composition/accounts/42/auth/redirect").headers["Location"].should eq "/composition/accounts/42/auth/token"
     composition.url_for(CompositionOAuth, :token, account_id: 42).should eq "/composition/accounts/42/auth/token"
     repeated = CompositionHost.handler
-    expect_raises(AC::InvalidRoute, /mount_base/) { repeated.url_for(CompositionOAuth, :token) }
+    expect_raises(AC::Error::InvalidRoute, /mount_base/) { repeated.url_for(CompositionOAuth, :token) }
     repeated.url_for(CompositionOAuth, :token, mount_base: "/composition/host/backup").should eq "/composition/host/backup/token"
   end
 
@@ -725,7 +725,7 @@ describe AC::Composition do
     AC::Support.build_route("/root/?:id/detail/*:rest").should eq "/root/detail"
     parts = {"id" => "old", :page => 1} of (String | Symbol) => (Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol)?
     AC::Support.build_route("/root/:id", parts, id: "new", page: 2).should eq "/root/new?page=2"
-    expect_raises(AC::InvalidRoute, /optional route parameter/) do
+    expect_raises(AC::Error::InvalidRoute, /optional route parameter/) do
       AC::Support.build_route("/root/?:id/detail/*:rest", rest: "file")
     end
   end

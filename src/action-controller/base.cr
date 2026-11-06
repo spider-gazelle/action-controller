@@ -887,7 +887,7 @@ abstract class ActionController::Base
 
   # Builds a URL with this request's mounted base and bound path parameters.
   def route_path(action : Symbol, hash_parts : Hash((String | Symbol), (Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol)?)? = nil, **tuple_parts) : String
-    route = self.class.__route_list__.find(&.[1].==(action)) || raise InvalidRoute.new("unknown action #{self.class.name}##{action}")
+    route = self.class.__route_list__.find(&.[1].==(action)) || raise Error::InvalidRoute.new("unknown action #{self.class.name}##{action}")
     bound = {} of (String | Symbol) => (Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol)?
     path = Composition.join(base_route, Composition.relative(route[3], self.class.base_route))
     path_keys = path.split('/').select(&.includes?(':')).map { |part| part.split(':', 2)[1] }
