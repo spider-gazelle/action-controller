@@ -638,6 +638,25 @@ instance.route_path(<span class="n">:token</span>) <span class="c"># =&gt; &quot
 
   <span class="t">SOCKETS</span> <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">HTTP</span><span class="t">::</span><span class="t">WebSocket</span>
 <span class="k">end</span></code></pre>
+<h3><a id="array-and-set-parameters" class="anchor" href="#array-and-set-parameters">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Array and Set parameters</h3>
+<p>A query parameter typed <code>Array(T)</code> or <code>Set(T)</code> is read from every repetition of
+its name, <code>?tag=a&amp;tag=b</code> (form bodies too), each element converted as a <code>T</code>
+would be, including any <code>config:</code> for the parameter. An element that does not
+convert is a <code>Param::ValueError</code> naming its index and value. The OpenAPI
+document describes it with <code>explode: true</code>, which is how generated clients and
+browsers send arrays. Path and header parameters, and collections of
+collections, are compile time errors.</p>
+<pre><code class="language-crystal">@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">GET</span>(<span class="s">&quot;/&quot;</span>, config: {kind: {from_value: <span class="n">true</span>}})]
+<span class="k">def</span> <span class="m">index</span>(tag : <span class="t">Array</span>(<span class="t">String</span>) <span class="o">=</span> <span class="o">[]</span> <span class="k">of</span> <span class="t">String</span>, kind : <span class="t">Set</span>(<span class="t">Kind</span>)? <span class="o">=</span> <span class="n">nil</span>)
+  <span class="c"># ?tag=a&amp;tag=b&amp;kind=0&amp;kind=1</span>
+<span class="k">end</span></code></pre>
+<p>A custom converter still takes the whole value, so a comma separated list stays
+possible, and is documented with <code>explode: false</code>. MCP tool calls join the
+elements with commas for it, so an element can't contain a comma.</p>
 <h2><a id="mcp-server" class="anchor" href="#mcp-server">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>

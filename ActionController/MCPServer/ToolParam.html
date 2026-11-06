@@ -564,7 +564,7 @@
   </h2>
   
     
-      <a href="https://github.com/spider-gazelle/action-controller/blob/4da3bd23cf98349493e91dc45fd6a260ccb65473/src/action-controller/mcp/description.cr#L27" target="_blank">
+      <a href="https://github.com/spider-gazelle/action-controller/blob/83091d499ceb1b32506730c2ffc91f48ebf7431d/src/action-controller/mcp/description.cr#L27" target="_blank">
         action-controller/mcp/description.cr
       </a>
     
@@ -592,7 +592,7 @@
       </li>
     
       <li class="entry-summary">
-        <a href="#new%28name%3AString%2Cin__arg0%3AString%29-class-method" class="signature"><strong>.new</strong>(name : String, in __arg0 : String)</a>
+        <a href="#new%28name%3AString%2Cin__arg0%3AString%2Cexplode%3ABool%7CNil%3Dnil%29-class-method" class="signature"><strong>.new</strong>(name : String, in __arg0 : String, explode : Bool | Nil = <span class="n">nil</span>)</a>
         
       </li>
     
@@ -628,6 +628,13 @@
     Instance Method Summary
   </h2>
   <ul class="list-summary">
+    
+      <li class="entry-summary">
+        <a href="#explode%3ABool%7CNil-instance-method" class="signature"><strong>#explode</strong> : Bool | Nil</a>
+        
+          <div class="summary"><p>for an array: one value per repetition of the name (<code>nil</code>, the default) or a single comma separated value (<code>false</code>)</p></div>
+        
+      </li>
     
       <li class="entry-summary">
         <a href="#in%3AString-instance-method" class="signature"><strong>#in</strong> : String</a>
@@ -735,23 +742,23 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/4da3bd23cf98349493e91dc45fd6a260ccb65473/src/action-controller/mcp/description.cr#L29" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/83091d499ceb1b32506730c2ffc91f48ebf7431d/src/action-controller/mcp/description.cr#L29" target="_blank">View source</a>]
         
       </div>
     </div>
   
-    <div class="entry-detail" id="new(name:String,in__arg0:String)-class-method">
+    <div class="entry-detail" id="new(name:String,in__arg0:String,explode:Bool|Nil=nil)-class-method">
       <div class="signature">
         
-        def self.<strong>new</strong>(name : String, in __arg0 : String)
+        def self.<strong>new</strong>(name : String, in __arg0 : String, explode : Bool | Nil = <span class="n">nil</span>)
 
-        <a class="method-permalink" href="#new%28name%3AString%2Cin__arg0%3AString%29-class-method">#</a>
+        <a class="method-permalink" href="#new%28name%3AString%2Cin__arg0%3AString%2Cexplode%3ABool%7CNil%3Dnil%29-class-method">#</a>
       </div>
       
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/4da3bd23cf98349493e91dc45fd6a260ccb65473/src/action-controller/mcp/description.cr#L36" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/83091d499ceb1b32506730c2ffc91f48ebf7431d/src/action-controller/mcp/description.cr#L40" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -767,7 +774,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/4da3bd23cf98349493e91dc45fd6a260ccb65473/src/action-controller/mcp/description.cr#L28" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/83091d499ceb1b32506730c2ffc91f48ebf7431d/src/action-controller/mcp/description.cr#L28" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -783,7 +790,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/4da3bd23cf98349493e91dc45fd6a260ccb65473/src/action-controller/mcp/description.cr#L28" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/83091d499ceb1b32506730c2ffc91f48ebf7431d/src/action-controller/mcp/description.cr#L28" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -799,7 +806,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/4da3bd23cf98349493e91dc45fd6a260ccb65473/src/action-controller/mcp/description.cr#L29" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/83091d499ceb1b32506730c2ffc91f48ebf7431d/src/action-controller/mcp/description.cr#L29" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -820,6 +827,28 @@
     Instance Method Detail
   </h2>
   
+    <div class="entry-detail" id="explode:Bool|Nil-instance-method">
+      <div class="signature">
+        
+        def <strong>explode</strong> : Bool | Nil
+
+        <a class="method-permalink" href="#explode%3ABool%7CNil-instance-method">#</a>
+      </div>
+      
+        <div class="doc">
+          
+          <p>for an array: one value per repetition of the name (<code>nil</code>, the default) or a
+single comma separated value (<code>false</code>)</p>
+        </div>
+      
+      <br/>
+      <div>
+        
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/83091d499ceb1b32506730c2ffc91f48ebf7431d/src/action-controller/mcp/description.cr#L38" target="_blank">View source</a>]
+        
+      </div>
+    </div>
+  
     <div class="entry-detail" id="in:String-instance-method">
       <div class="signature">
         
@@ -836,7 +865,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/4da3bd23cf98349493e91dc45fd6a260ccb65473/src/action-controller/mcp/description.cr#L34" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/83091d499ceb1b32506730c2ffc91f48ebf7431d/src/action-controller/mcp/description.cr#L34" target="_blank">View source</a>]
         
       </div>
     </div>
@@ -852,7 +881,7 @@
       <br/>
       <div>
         
-          [<a href="https://github.com/spider-gazelle/action-controller/blob/4da3bd23cf98349493e91dc45fd6a260ccb65473/src/action-controller/mcp/description.cr#L31" target="_blank">View source</a>]
+          [<a href="https://github.com/spider-gazelle/action-controller/blob/83091d499ceb1b32506730c2ffc91f48ebf7431d/src/action-controller/mcp/description.cr#L31" target="_blank">View source</a>]
         
       </div>
     </div>
