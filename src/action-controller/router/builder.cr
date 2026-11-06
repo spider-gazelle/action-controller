@@ -554,6 +554,7 @@ module ActionController::Route::Builder
           # support annotation based filters
           {% if route_method == AC::Route::Filter %}
             {% required_params = [] of StringLiteral %}
+            {% optional_params = [] of StringLiteral %}
             {% filter_type = ann[0].id %}
             {% function_wrapper_name = "_#{filter_type.stringify.underscore.gsub(/\:\:/, "_").id}_#{method_name}_wrapper_".id %}
 
@@ -571,6 +572,7 @@ module ActionController::Route::Builder
           {% elsif route_method == AC::Route::Exception %}
             # annotation based exception handlers
             {% required_params = [] of StringLiteral %}
+            {% optional_params = [] of StringLiteral %}
             {% exception_type = ann[0].resolve %}
             # an uninstantiated generic (`MyError` for `MyError(T)`) handles every instance
             {% if ann[0].is_a?(Path) && !exception_type.type_vars.empty? %}
@@ -728,13 +730,28 @@ module ActionController::Route::Builder
                       {% open_api_params[query_param_name] = open_api_param %}
                     {% end %}
 
-                    {% repeated = false %}
+                    {% collection = nil %}
                     # Calculate the conversions required to meet the desired restrictions
                     {% if arg.restriction %}
                       {% open_api_param[:schema] = arg.restriction.resolve %}
 
                       # Check if restriction is optional
                       {% nilable = arg.restriction.resolve.nilable? %}
+                      {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
+
+                      # an Array or Set is read from every repetition of the param's name,
+                      # each element converted (and configured) as a param of its type would be
+                      {% if !custom_converter && body_argument != string_name && union_types.size == 1 && {"Array", "Set"}.includes?(union_types[0].name(generic_args: false).stringify) %}
+                        {% collection = union_types[0] %}
+                        {% if required_params.includes?(string_name) || optional_params.includes?(string_name) || open_api_param.has_key?(:header) %}
+                          {% raise "#{@type}##{method_name}: #{string_name.id} : #{collection} can only be a query parameter" %}
+                        {% end %}
+                        {% union_types = collection.type_vars[0].resolve.union_types.reject(&.nilable?) %}
+                        {% if union_types.any? { |type| {"Array", "Set"}.includes?(type.name(generic_args: false).stringify) } %}
+                          {% raise "#{@type}##{method_name}: #{string_name.id} : #{collection} has collections for elements, which a query parameter can't hold" %}
+                        {% end %}
+                        {% open_api_param[:exploded] = true %}
+                      {% end %}
 
                       # Check if there are any custom converters
                       {% if custom_converter %}
@@ -746,14 +763,14 @@ module ActionController::Route::Builder
 
                       # Check for custom converter arguments (assumes a single type)
                       {% elsif converter_args %}
-                        {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
                         {% if union_types[0] < Enum %}
                           {% if converter_args[:from_value] %}
                             {% restrictions = [union_types[0].stringify + ".from_value?(param_value.to_i64)"] %}
                           {% else %}
                             {% restrictions = ["::AC::Route::Param::ConvertEnum(" + union_types[0].stringify + ").convert(param_value)"] %}
                           {% end %}
-                          {% if converter_args[:strict] %}
+                          # an element that doesn't convert always raises, so strict only applies to a single value
+                          {% if converter_args[:strict] && !collection %}
                             # strict: a provided but unparsable value raises a ValueError (bad request)
                             # instead of resolving to nil, which nilable params silently ignore
                             {% if open_api_param.has_key?(:header) %}
@@ -772,14 +789,6 @@ module ActionController::Route::Builder
 
                       # There are a bunch of types this might be
                       {% else %}
-                        {% union_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
-                        # an array is read from the query string, one element per repetition of the name
-                        {% if union_types.size == 1 && union_types[0].name(generic_args: false) == "Array" %}
-                          {% raise "#{@type}##{method_name}: #{string_name} is an Array, which only a query parameter can be" if required_params.includes?(string_name) || open_api_param.has_key?(:header) %}
-                          {% repeated = true %}
-                          {% open_api_param[:exploded] = true %}
-                          {% union_types = union_types[0].type_vars[0].resolve.union_types.reject(&.nilable?) %}
-                        {% end %}
                         {% restrictions = union_types.map do |type|
                              if type.resolve < Enum
                                ("::AC::Route::Param::ConvertEnum(" + type.stringify + ").convert(param_value)")
@@ -838,20 +847,18 @@ module ActionController::Route::Builder
                         end
 
                       # An optional route param, might be passed as an query param (not the case for headers)
-                      {% elsif repeated %}
+                      # A collection, one element per repetition of the name
+                      {% elsif collection %}
                         values = params.fetch_all({{ query_param_name }})
                         if values.empty?
                           {% if arg.default_value.stringify != "" %}
                             {{ arg.default_value }}
-                          {% else %}
-                            nil
                           {% end %}
                         else
-                          values.map do |param_value|
-                            ({{ restrictions.join(" || ").id }}).tap { |element|
-                              ::ActionController::Base.__raise_param_error__(params, {{ query_param_name }}, {{ arg.restriction.resolve.stringify }}) if element.nil?
-                            }.not_nil!
-                          end
+                          values.map_with_index do |param_value, index|
+                            element = {{ restrictions.join(" || ").id }}
+                            element.nil? ? ::ActionController::Base.__raise_element_error__({{ query_param_name }}, index, param_value, {{ arg.restriction.resolve.stringify }}) : element
+                          end{% if collection.name(generic_args: false).stringify == "Set" %}.to_set{% end %}
                         end
                       {% elsif !open_api_param.has_key?(:header) %}
                         if param_value = params[{{query_param_name}}]?

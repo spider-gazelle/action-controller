@@ -240,6 +240,26 @@ class Filtering < FilterOrdering
     "#{tag.inspect}|#{count.inspect}|#{kind.inspect}"
   end
 
+  # a Set collapses repetitions, and a required array has no default
+  @[AC::Route::GET("/repeated/set", content_type: "text/plain")]
+  def repeated_set(
+    id : Array(Int32),
+    tag : Set(String) = Set(String).new,
+    kind : Set(Flavour)? = nil,
+  ) : String
+    "#{id.inspect}|#{tag.inspect}|#{kind.inspect}"
+  end
+
+  # converter config applies to each element, which is also read from a form body
+  @[AC::Route::POST("/repeated/form", content_type: "text/plain", config: {level: {from_value: true, strict: true}, flag: {true_string: "yes"}})]
+  def repeated_form(
+    tag : Array(String),
+    level : Array(Flavour) = [] of Flavour,
+    flag : Array(Bool)? = nil,
+  ) : String
+    "#{tag.inspect}|#{level.inspect}|#{flag.inspect}"
+  end
+
   # exercises the converters that no other route uses
   @[AC::Route::GET("/converters", content_type: "text/plain")]
   def converter_coverage(

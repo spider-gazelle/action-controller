@@ -315,6 +315,11 @@ describe ActionController::OpenAPI do
       tag["style"].should eq "form"
       tag["explode"].should be_true
       params.call("/filtering/repeated")["kind"]["schema"]["items"]["$ref"].should eq "#/components/schemas/Filtering.Flavour"
+      set = params.call("/filtering/repeated/set")
+      set["tag"]["schema"]["type"].should eq "array"
+      set["tag"]["explode"].should be_true
+      set["id"]["required"].should be_true
+      set["id"]["explode"].should be_true
     end
 
     it "keeps optional path segments optional for MCP tools" do

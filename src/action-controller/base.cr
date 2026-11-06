@@ -437,6 +437,12 @@ abstract class ActionController::Base
   end
 
   # :nodoc:
+  # an element of an Array or Set param that doesn't convert, named by its index and value
+  def self.__raise_element_error__(name : String, index : Int32, value : String, type : String) : NoReturn
+    raise ::AC::Route::Param::ValueError.new("invalid parameter value for '#{name}' at index #{index}: #{value.inspect}", name, type)
+  end
+
+  # :nodoc:
   def self.__raise_header_error__(headers : HTTP::Headers, name : String, type : String) : NoReturn
     if headers.has_key?(name)
       raise ::AC::Route::Param::ValueError.new("invalid header value for '#{name}'", name, type)

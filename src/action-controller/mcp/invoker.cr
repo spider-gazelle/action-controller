@@ -298,6 +298,7 @@ module ActionController::MCPServer
         next if value.raw.nil?
         case param.in
         when "query"
+          # only a `ToolParam` knows how an array is encoded, a `PromptArgument` is always a string
           if (items = value.as_a?) && param.responds_to?(:explode)
             if param.explode == false
               query.add(param.name, items.join(',') { |item| param_value(item) })
