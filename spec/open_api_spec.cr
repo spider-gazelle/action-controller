@@ -312,6 +312,9 @@ describe ActionController::OpenAPI do
     it "lists only the types a parsed body consumes" do
       paths["/filtering/json_only"]["post"]["requestBody"]["content"].as_h.keys.should eq ["application/json"]
       paths["/filtering/some_entry"]["post"]["requestBody"]["content"].as_h.keys.should contain "application/yaml"
+      note = paths["/filtering/note"]["post"]["requestBody"]["content"]
+      note.as_h.keys.should eq ["application/json", "text/plain"]
+      note["text/plain"]["schema"]["type"].should eq "string"
     end
 
     it "sends array query params as a single comma separated value when a converter parses them" do

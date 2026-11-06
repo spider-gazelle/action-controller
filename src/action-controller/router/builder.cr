@@ -180,10 +180,51 @@ module ActionController::Route
   # we don't support the posted media type
   class UnsupportedMediaType < Error
   end
+
+  # the request body is larger than the route's `max_body_bytes:`
+  class PayloadTooLarge < Error
+    getter limit : Int64
+
+    def initialize(limit : Int)
+      @limit = limit.to_i64
+      super "request body is larger than #{@limit} bytes"
+    end
+  end
+
+  # a request body that raises `PayloadTooLarge` once more than `limit` bytes are read
+  class LimitedBody < IO
+    @read = 0_i64
+    @limit : Int64
+
+    def initialize(@io : IO, limit : Int)
+      @limit = limit.to_i64
+    end
+
+    # refuses a body whose `Content-Length` is over the limit before reading any of it
+    def self.wrap(io : IO, content_length : Int?, limit : Int) : IO
+      raise PayloadTooLarge.new(limit) if content_length && content_length > limit
+      new(io, limit)
+    end
+
+    def read(slice : Bytes) : Int32
+      count = @io.read(slice)
+      @read += count
+      raise PayloadTooLarge.new(@limit) if @read > @limit
+      count
+    end
+
+    def write(slice : Bytes) : Nil
+      raise IO::Error.new("a request body is read only")
+    end
+  end
 end
 
 # helpers for defining routes with strong parameters
 module ActionController::Route::Builder
+  # :nodoc:
+  # body types bound to the request body as they are (`IO`, `Bytes`), with no parser
+  RAW_BODY_TYPES = ["IO", "Slice(UInt8)"]
+
   # :nodoc:
   # filter name => Params used
   OPENAPI_FILTERS = {} of Nil => Nil
@@ -551,20 +592,29 @@ module ActionController::Route::Builder
           {% consumes = ann[:consumes] %}
           {% consumes = [consumes] if consumes && !consumes.is_a?(ArrayLiteral) %}
           {% raise "#{@type.name}##{method_name}: consumes needs a body argument, see body:" if consumes && body_argument == "%" %}
+          {% max_body_bytes = ann[:max_body_bytes] %}
+          {% raise "#{@type.name}##{method_name}: max_body_bytes needs a body argument, see body:" if max_body_bytes && body_argument == "%" %}
           {% raw_body = nil %}
-          {% if body_argument != "%" %}
-            {% for arg in method.args %}
-              {% if body_argument == arg.name.id.stringify && arg.restriction %}
-                {% body_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
-                {% if body_types.size == 1 && (body_types[0] <= IO || body_types[0].stringify == "Slice(UInt8)") %}
-                  {% raw_body = body_types[0] %}
-                {% end %}
+          {% string_body = false %}
+          {% for arg in method.args %}
+            {% if body_argument == arg.name.id.stringify && arg.restriction %}
+              # `T | U?` resolves to a nested union: flatten it
+              {% body_types = [] of Nil %}
+              {% arg.restriction.resolve.union_types.each { |type| type.union_types.each { |inner| body_types << inner unless body_types.includes?(inner) } } %}
+              {% body_types = body_types.reject(&.nilable?) %}
+              {% string_body = body_types.includes?(String) %}
+              {% if body_types.size == 1 && ::ActionController::Route::Builder::RAW_BODY_TYPES.includes?(body_types[0].stringify) %}
+                {% raw_body = body_types[0] %}
+              {% elsif body_types.size == 1 && body_types[0] < IO %}
+                {% raise "#{@type.name}##{method_name}: #{arg.name} : #{body_types[0]}, a raw body is typed IO or Bytes" %}
               {% end %}
             {% end %}
           {% end %}
           {% if consumes && !raw_body %}
             {% for type in consumes %}
-              {% raise "#{@type.name}##{method_name}: no parser registered for #{type}, see add_parser" unless PARSERS[type] %}
+              {% unless PARSERS[type] || (type == "text/plain" && string_body) %}
+                {% raise "#{@type.name}##{method_name}: no parser registered for #{type}, see add_parser" %}
+              {% end %}
             {% end %}
           {% end %}
           {% response_type = ann[:response_type] || method.return_type %}
@@ -705,10 +755,12 @@ module ActionController::Route::Builder
                 {% if consumes %}
                   body_type = request_content_type
                   unless body_type && {{ consumes }}.includes?(body_type)
-                    raise AC::Route::UnsupportedMediaType.new("#{body_type || "no content type"} is not accepted", {{ consumes }})
+                    raise AC::Route::UnsupportedMediaType.new(body_type ? "#{body_type} is not accepted" : "a content type is required, one of {{ consumes.join(", ").id }}", {{ consumes }})
                   end
                 {% end %}
               {% elsif body_argument != "%" && consumes %}
+                # a String body takes text/plain without a parser
+                {% string_body_possible = string_body && consumes.includes?("text/plain") && !PARSERS["text/plain"] %}
                 body_type = request_content_type || {{ DEFAULT_PARSER[0] }}
                 unless {{ consumes }}.includes?(body_type)
                   raise AC::Route::UnsupportedMediaType.new("#{body_type} is not accepted", {{ consumes }})
@@ -717,21 +769,13 @@ module ActionController::Route::Builder
                 body_type = request_content_type || {{ DEFAULT_PARSER[0] }}
                 unless {{ @type.name.id }}.can_parse?(body_type)
                   # special case for mime type text/plain and String body types
-                  {% for arg, arg_index in method.args %}
-                    {% if body_argument == arg.name.id.stringify %}
-                      # `T | U?` resolves to a nested union: flatten it, `T | U | Nil` order
-                      {% union_types = [] of Nil %}
-                      {% arg.restriction.resolve.union_types.each { |type| type.union_types.each { |inner| union_types << inner unless union_types.includes?(inner) } } %}
-                      {% union_types = parse_type(union_types.map(&.stringify).join(" | ")).resolve.union_types.reject(&.nilable?) %}
-                      {% if union_types.includes?(String) %}
-                        {% string_body_possible = true %}
-                        if body_type != "text/plain"
-                          raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{ @type.name.id }}.parsable)
-                        end
-                      {% else %}
-                        raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{ @type.name.id }}.parsable)
-                      {% end %}
-                    {% end %}
+                  {% if string_body %}
+                    {% string_body_possible = true %}
+                    if body_type != "text/plain"
+                      raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{ @type.name.id }}.parsable)
+                    end
+                  {% else %}
+                    raise AC::Route::UnsupportedMediaType.new("no parser available for #{body_type}", {{ @type.name.id }}.parsable)
                   {% end %}
                 end
               {% end %}
@@ -855,7 +899,10 @@ module ActionController::Route::Builder
                         {% open_api_route[:consumes] = consumes %}
 
                         if body_io = @__context__.request.body
-                          {% if raw_body <= IO %}body_io{% else %}body_io.getb_to_end{% end %}
+                          {% if max_body_bytes %}
+                            body_io = ::AC::Route::LimitedBody.wrap(body_io, @__context__.request.content_length, {{ max_body_bytes }})
+                          {% end %}
+                          {% if raw_body.stringify == "IO" %}body_io{% else %}body_io.getb_to_end{% end %}
                         {% if arg.default_value.stringify != "" %}
                         else
                           {{ arg.default_value }}
@@ -867,6 +914,9 @@ module ActionController::Route::Builder
                         {% open_api_route[:consumes] = consumes %}
 
                         if body_io = @__context__.request.body
+                          {% if max_body_bytes %}
+                            body_io = ::AC::Route::LimitedBody.wrap(body_io, @__context__.request.content_length, {{ max_body_bytes }})
+                          {% end %}
                           case body_type
                           {% for type, _block in PARSERS %}
                             {% if !consumes || consumes.includes?(type) %}
@@ -932,6 +982,8 @@ module ActionController::Route::Builder
                       if result.nil?
                         {% if open_api_param.has_key?(:header) %}
                           ::ActionController::Base.__raise_header_error__(@__context__.request.headers, {{ open_api_param[:header] }}, {{ arg.restriction.resolve.stringify }})
+                        {% elsif body_argument == string_name %}
+                          ::ActionController::Base.__raise_missing_body__({{ string_name }}, {{ arg.restriction.resolve.stringify }})
                         {% else %}
                           ::ActionController::Base.__raise_param_error__(params, {{ query_param_name }}, {{ arg.restriction.resolve.stringify }})
                         {% end %}

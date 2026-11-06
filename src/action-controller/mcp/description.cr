@@ -687,6 +687,8 @@ module ActionController::MCPServer
                   when "delete" then path.try &.delete
                   end
       next unless operation
+      # a model can't write a binary body's bytes in a JSON string
+      next if binary_only?(operation)
 
       toolbox = toolbox_for(toolboxes, route[:controller], namespace, descriptions, route[:toolbox_icons], identity, label)
       name = unique_name(tool_names, yield(toolbox, route[:method]))
@@ -794,8 +796,14 @@ module ActionController::MCPServer
       content = request_body.content
       if content && (media = content["application/json"]? || content.values.first?)
         body = properties.has_key?("body") ? "request_body" : "body"
-        body_type = content.keys.first? unless content.has_key?("application/json")
-        properties[body] = media.schema
+        if raw_body?(content)
+          # a raw body in a text type: the string is sent as it is
+          body_type = content.keys.find! { |type| textual?(type) }
+          properties[body] = JSON::Any.new({"type" => JSON::Any.new("string")})
+        else
+          body_type = content.keys.first? unless content.has_key?("application/json")
+          properties[body] = media.schema
+        end
         required << body if request_body.required
       end
     end
@@ -817,6 +825,22 @@ module ActionController::MCPServer
 
     Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:behaviour], route[:ui], route[:visibility], route[:title], parse_icons(route[:icons]),
       route[:resource], route[:mime_type], route[:subscribe], route[:cache_ttl], route[:long_running], route[:max_bytes], body_type)
+  end
+
+  # a raw body (`IO`, `Bytes`) is described as binary in every type it consumes
+  private def raw_body?(content : Hash(String, OpenAPI::Schema)) : Bool
+    content.values.all? { |media| media.schema["format"]? == "binary" }
+  end
+
+  # text a model can write in a JSON string
+  private def textual?(type : String) : Bool
+    type.starts_with?("text/") || type.ends_with?("json") || type.ends_with?("xml") || type.ends_with?("yaml") || type == "application/x-www-form-urlencoded"
+  end
+
+  # a raw body that consumes no text type
+  private def binary_only?(operation : OpenAPI::Operation) : Bool
+    return false unless content = operation.request_body.try(&.content)
+    raw_body?(content) && content.keys.none? { |type| textual?(type) }
   end
 
   # the template's path variables must be the route's path params and its query

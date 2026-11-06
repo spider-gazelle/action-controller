@@ -228,7 +228,7 @@ module ActionController::OpenAPI
         {% default_specified = details[:default_response][2] %}
 
         {% request_body = details[:request_body].id %}
-        {% if !["Nil", "IO", "Slice(UInt8)"].includes?(request_body.stringify) %}
+        {% if request_body.stringify != "Nil" && !::ActionController::Route::Builder::RAW_BODY_TYPES.includes?(request_body.stringify) %}
           add_schema(response_types, definitions, {{ request_body.stringify }}, introspect_schema({{ request_body }}))
         {% end %}
 
@@ -633,7 +633,7 @@ module ActionController::OpenAPI
 
       # see if there is any requirement for a request body
       if raw_req_body != "Nil"
-        req_body = if RAW_BODIES.includes?(raw_req_body)
+        req_body = if ::ActionController::Route::Builder::RAW_BODY_TYPES.includes?(raw_req_body)
                      binary_body(route[:consumes] || ["application/octet-stream"])
                    else
                      build_response(route[:consumes] || accepts, false, raw_req_body, nil)
@@ -772,10 +772,6 @@ module ActionController::OpenAPI
       end
     end
   end
-
-  # :nodoc:
-  # the body types bound as they are, see `consumes:`
-  RAW_BODIES = {"IO", "Slice(UInt8)"}
 
   # :nodoc:
   def binary_body(types : Array(String)) : Response

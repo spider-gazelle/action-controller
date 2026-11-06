@@ -375,9 +375,14 @@ describe ActionController::MCPServer do
       result["structuredContent"]["body"].should eq %(["a", "b"]|[1, 2]|[])
     end
 
-    it "sends a raw body as the first type the route consumes" do
+    it "leaves binary only raw body routes out, and sends a text raw body as its type" do
+      description = ActionController::MCPServer.description
+      description.tool?("filtering_upload").should be_nil
+      description.tool?("filtering_stream").should be_nil
+      _toolbox, import = description.tool?("filtering_import").should_not be_nil
+      import.input_schema["properties"]["body"].should eq JSON.parse(%({"type":"string"}))
       client = MCPTestClient.new(modern: true)
-      client.call("filtering_upload", {"body" => "abcd"})["structuredContent"]["body"].should eq "4 bytes of application/pdf"
+      client.call("filtering_import", {"body" => "a,b\nc,d\n"})["structuredContent"]["body"].should eq "text/csv: 2 rows"
     end
 
     it "discovers the server" do

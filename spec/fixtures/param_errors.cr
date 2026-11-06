@@ -1,4 +1,4 @@
-# each flag declares a collection parameter that can't be read from repetitions of its name
+# each flag declares a parameter the route builder rejects at compile time
 require "../../src/action-controller"
 
 class CollectionParams < AC::Base
@@ -18,6 +18,10 @@ class CollectionParams < AC::Base
       @[AC::Param::Info(header: "X-Tags")]
       tag : Array(String),
     ) : Nil
+    end
+  {% elsif flag?(:io_subclass_body) %}
+    @[AC::Route::POST("/", body: :file)]
+    def index(file : IO::Memory) : Nil
     end
   {% elsif flag?(:nested_param) %}
     @[AC::Route::GET("/")]

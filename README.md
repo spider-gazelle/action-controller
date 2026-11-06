@@ -203,19 +203,30 @@ elements with commas for it, so an element can't contain a comma.
 A route's body (`body: :name`) is parsed from any of the registered parsers,
 and the OpenAPI document lists them all. `consumes:` narrows that to one type
 or a list, so a JSON route stops advertising YAML; a request in another type
-is a `Route::UnsupportedMediaType`, a 415. A body typed `IO` or `Bytes` is
-bound as it is, with no parser: any type unless `consumes:` says which, and
-described as `string`/`binary`:
+raises a `Route::UnsupportedMediaType` (rescue it to answer 415). A `String` body can also consume
+`text/plain`, which needs no parser.
+
+A body typed `IO` or `Bytes` is bound as it is, with no parser: any type
+unless `consumes:` says which, and described as `string`/`binary`. It isn't
+read as a form either, so a route taking a signed webhook as
+`application/x-www-form-urlencoded` gets the exact bytes, and query params
+still work:
 
 ```crystal
-@[AC::Route::POST("/upload", body: :file, consumes: ["application/pdf", "image/png"])]
+@[AC::Route::POST("/upload", body: :file, consumes: ["application/pdf", "image/png"], max_body_bytes: 10_000_000)]
 def upload(file : Bytes) : Nil
   # file holds the request body
 end
 ```
 
-As an MCP tool, such a route takes its body as a string, sent as the first
-type it consumes.
+`max_body_bytes:` limits any body argument: a larger body, by its
+`Content-Length` or as it is read, raises a `Route::PayloadTooLarge` (rescue
+it to answer 413).
+
+A raw body route is an MCP tool only when it consumes a text type (`text/*`,
+JSON, XML, YAML or a form), which the tool takes as a string and sends as the
+first such type. A binary only route is left out, as a model can't write its
+bytes in a JSON string.
 
 ## MCP Server
 

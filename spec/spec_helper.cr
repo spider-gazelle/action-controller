@@ -271,6 +271,40 @@ class Filtering < FilterOrdering
     file.gets_to_end.upcase
   end
 
+  # a raw body in a text type, which MCP sends as that type
+  @[AC::Route::POST("/import", body: :csv, consumes: "text/csv", content_type: "text/plain")]
+  def import(csv : IO) : String
+    "#{request.headers["Content-Type"]?}: #{csv.gets_to_end.lines.size} rows"
+  end
+
+  # a raw body in a form type isn't parsed into params, which reading a query param would do
+  @[AC::Route::POST("/signed", body: :payload, consumes: "application/x-www-form-urlencoded", content_type: "text/plain")]
+  def signed(payload : Bytes, sig : String) : String
+    "#{sig}|#{String.new(payload)}|#{params["a"]?.inspect}"
+  end
+
+  # a String body takes text/plain without a parser
+  @[AC::Route::POST("/note", body: :note, consumes: ["application/json", "text/plain"], content_type: "text/plain")]
+  def note(note : String) : String
+    note
+  end
+
+  # a body larger than the route accepts
+  @[AC::Route::POST("/limited", body: :file, max_body_bytes: 8, content_type: "text/plain")]
+  def limited(file : Bytes) : String
+    file.size.to_s
+  end
+
+  @[AC::Route::POST("/limited_stream", body: :file, max_body_bytes: 8, content_type: "text/plain")]
+  def limited_stream(file : IO) : String
+    file.gets_to_end.size.to_s
+  end
+
+  @[AC::Route::POST("/limited_json", body: :value, max_body_bytes: 8, content_type: "text/plain")]
+  def limited_json(value : Array(Int32)) : String
+    value.sum.to_s
+  end
+
   # a parsed body, in one of the registered types only
   @[AC::Route::POST("/json_only", body: :value, consumes: "application/json", content_type: "text/plain")]
   def json_only(value : Float64) : String
