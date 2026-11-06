@@ -8,7 +8,24 @@ on:
 jobs:
   crystal-style:
     name: Crystal Style
+    if: github.event_name != 'pull_request'
     uses: PlaceOS/.github/.github/workflows/crystal-style.yml@main
+
+  # a fork's pull request gets a read only token, so the ameba action can't
+  # report through the checks API: run format and ameba directly instead
+  pull-request-style:
+    name: Crystal Style
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    container: crystallang/crystal:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Format
+        run: crystal tool format --check
+      - name: Install ameba
+        run: shards install --ignore-crystal-version
+      - name: Lint
+        run: ./bin/ameba
 
   test:
     name: "${{ !matrix.stable && '🚧 ' || '' }}crystal: ${{ matrix.crystal }}"
