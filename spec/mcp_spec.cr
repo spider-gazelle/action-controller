@@ -375,6 +375,11 @@ describe ActionController::MCPServer do
       result["structuredContent"]["body"].should eq %(["a", "b"]|[1, 2]|[])
     end
 
+    it "sends a raw body as the first type the route consumes" do
+      client = MCPTestClient.new(modern: true)
+      client.call("filtering_upload", {"body" => "abcd"})["structuredContent"]["body"].should eq "4 bytes of application/pdf"
+    end
+
     it "discovers the server" do
       response = MCPTestClient.new(modern: true).initialize_session
       response["id"].should eq 1

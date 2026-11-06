@@ -279,7 +279,7 @@ module ActionController::MCPServer
 
     # :nodoc:
     def build_request(tool : Tool, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : HTTP::Request
-      build(tool.verb.upcase, tool.path, tool.params, tool.body, arguments, origin)
+      build(tool.verb.upcase, tool.path, tool.params, tool.body, arguments, origin, tool.body_type)
     end
 
     private def bind(arguments : Hash(String, JSON::Any), bound : Hash(String, String)) : Hash(String, JSON::Any)
@@ -288,7 +288,7 @@ module ActionController::MCPServer
     end
 
     # params are `ToolParam` or `PromptArgument`, anything with a name and location
-    private def build(verb : String, path : String, params, body_key : String?, arguments : Hash(String, JSON::Any), origin : HTTP::Request) : HTTP::Request
+    private def build(verb : String, path : String, params, body_key : String?, arguments : Hash(String, JSON::Any), origin : HTTP::Request, body_type : String? = nil) : HTTP::Request
       headers = forwarded_headers(origin)
       headers["Accept"] = "application/json, */*;q=0.5"
 
@@ -314,8 +314,8 @@ module ActionController::MCPServer
 
       body = nil
       if body_key && (body_value = arguments[body_key]?)
-        headers["Content-Type"] = "application/json"
-        body = body_value.to_json
+        headers["Content-Type"] = body_type || "application/json"
+        body = body_type ? (body_value.as_s? || body_value.to_json) : body_value.to_json
       end
 
       resource = build_path(path, arguments)

@@ -260,6 +260,23 @@ class Filtering < FilterOrdering
     "#{tag.inspect}|#{level.inspect}|#{flag.inspect}"
   end
 
+  # a raw body is bound as it is, in the types the route consumes
+  @[AC::Route::POST("/upload", body: :file, consumes: ["application/pdf", "image/png"], content_type: "text/plain")]
+  def upload(file : Bytes) : String
+    "#{file.size} bytes of #{request.headers["Content-Type"]?}"
+  end
+
+  @[AC::Route::POST("/stream", body: :file, content_type: "text/plain")]
+  def stream(file : IO) : String
+    file.gets_to_end.upcase
+  end
+
+  # a parsed body, in one of the registered types only
+  @[AC::Route::POST("/json_only", body: :value, consumes: "application/json", content_type: "text/plain")]
+  def json_only(value : Float64) : String
+    value.to_s
+  end
+
   # exercises the converters that no other route uses
   @[AC::Route::GET("/converters", content_type: "text/plain")]
   def converter_coverage(

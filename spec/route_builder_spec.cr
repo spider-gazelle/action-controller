@@ -427,3 +427,29 @@ describe "repeated query params" do
     end
   end
 end
+
+describe "request bodies a route consumes" do
+  client = AC::SpecHelper.client
+  typed = ->(type : String) { HTTP::Headers{"Content-Type" => type} }
+
+  it "binds a raw body as it is, in the types the route consumes" do
+    client.post("/filtering/upload", headers: typed.call("image/png"), body: "png!").body.should eq "4 bytes of image/png"
+    error = expect_raises(AC::Route::UnsupportedMediaType) do
+      client.post("/filtering/upload", headers: typed.call("application/json"), body: "{}")
+    end
+    error.accepts.should eq ["application/pdf", "image/png"]
+    expect_raises(AC::Route::UnsupportedMediaType) { client.post("/filtering/upload", body: "no type") }
+  end
+
+  it "binds a raw body of any type when the route does not say what it consumes" do
+    client.post("/filtering/stream", headers: typed.call("text/csv"), body: "a,b").body.should eq "A,B"
+  end
+
+  it "parses only the types the route consumes" do
+    client.post("/filtering/json_only", headers: typed.call("application/json"), body: "1.5").body.should eq "1.5"
+    error = expect_raises(AC::Route::UnsupportedMediaType) do
+      client.post("/filtering/json_only", headers: typed.call("application/yaml"), body: "1.5")
+    end
+    error.accepts.should eq ["application/json"]
+  end
+end

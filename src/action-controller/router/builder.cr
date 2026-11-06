@@ -546,6 +546,27 @@ module ActionController::Route::Builder
           {% status_code = ann[:status_code] || HTTP::Status::OK %}
           {% status_code_map = ann[:status] || {} of TypeNode => Path %}
           {% body_argument = (ann[:body] || "%").id.stringify %} # % is an invalid argument name
+
+          # the content types the body may come in; a body typed IO or Bytes is bound as it is
+          {% consumes = ann[:consumes] %}
+          {% consumes = [consumes] if consumes && !consumes.is_a?(ArrayLiteral) %}
+          {% raise "#{@type.name}##{method_name}: consumes needs a body argument, see body:" if consumes && body_argument == "%" %}
+          {% raw_body = nil %}
+          {% if body_argument != "%" %}
+            {% for arg in method.args %}
+              {% if body_argument == arg.name.id.stringify && arg.restriction %}
+                {% body_types = arg.restriction.resolve.union_types.reject(&.nilable?) %}
+                {% if body_types.size == 1 && (body_types[0] <= IO || body_types[0].stringify == "Slice(UInt8)") %}
+                  {% raw_body = body_types[0] %}
+                {% end %}
+              {% end %}
+            {% end %}
+          {% end %}
+          {% if consumes && !raw_body %}
+            {% for type in consumes %}
+              {% raise "#{@type.name}##{method_name}: no parser registered for #{type}, see add_parser" unless PARSERS[type] %}
+            {% end %}
+          {% end %}
           {% response_type = ann[:response_type] || method.return_type %}
 
           {% open_api_route = {} of Nil => Nil %}
@@ -680,7 +701,19 @@ module ActionController::Route::Builder
             {% else %}
               # check we can parse the body if a content type is provided
               {% string_body_possible = false %}
-              {% if body_argument != "%" %}
+              {% if body_argument != "%" && raw_body %}
+                {% if consumes %}
+                  body_type = request_content_type
+                  unless body_type && {{ consumes }}.includes?(body_type)
+                    raise AC::Route::UnsupportedMediaType.new("#{body_type || "no content type"} is not accepted", {{ consumes }})
+                  end
+                {% end %}
+              {% elsif body_argument != "%" && consumes %}
+                body_type = request_content_type || {{ DEFAULT_PARSER[0] }}
+                unless {{ consumes }}.includes?(body_type)
+                  raise AC::Route::UnsupportedMediaType.new("#{body_type} is not accepted", {{ consumes }})
+                end
+              {% elsif body_argument != "%" %}
                 body_type = request_content_type || {{ DEFAULT_PARSER[0] }}
                 unless {{ @type.name.id }}.can_parse?(body_type)
                   # special case for mime type text/plain and String body types
@@ -817,14 +850,29 @@ module ActionController::Route::Builder
 
                     # Build the argument named tuple with the correct types
                     {{ arg.name.id }}: (
-                      {% if body_argument == string_name %}
+                      {% if body_argument == string_name && raw_body %}
+                        {% open_api_route[:request_body] = raw_body %}
+                        {% open_api_route[:consumes] = consumes %}
+
+                        if body_io = @__context__.request.body
+                          {% if raw_body <= IO %}body_io{% else %}body_io.getb_to_end{% end %}
+                        {% if arg.default_value.stringify != "" %}
+                        else
+                          {{ arg.default_value }}
+                        {% end %}
+                        end
+
+                      {% elsif body_argument == string_name %}
                         {% open_api_route[:request_body] = arg.restriction.resolve %}
+                        {% open_api_route[:consumes] = consumes %}
 
                         if body_io = @__context__.request.body
                           case body_type
                           {% for type, _block in PARSERS %}
+                            {% if !consumes || consumes.includes?(type) %}
                             when {{ type }}
                               {{ @type.name.id }}.parse_{{ type.gsub(/\W/, "_").id }}({{ arg.restriction }}, body_io, request: @__context__.request)
+                            {% end %}
                           {% end %}
                           {% if string_body_possible == true %}
                             when "text/plain"

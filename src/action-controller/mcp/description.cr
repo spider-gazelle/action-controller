@@ -57,6 +57,9 @@ module ActionController::MCPServer
     # the argument that holds the request body, if any
     getter body : String?
 
+    # the content type a body that is not JSON is sent as: the first the route consumes
+    getter body_type : String? = nil
+
     # JSON schema describing the tool arguments
     @[YAML::Field(converter: ActionController::MCPServer::JSONAnyConverter)]
     getter input_schema : JSON::Any
@@ -98,7 +101,7 @@ module ActionController::MCPServer
     # the maximum response size, in bytes, of a long running route
     getter max_bytes : Int64? = nil
 
-    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @behaviour = nil, @ui = nil, @visibility = nil, @title = nil, @icons = nil, @resource = nil, @mime_type = nil, @subscribe = false, @cache_ttl = nil, @long_running = false, @max_bytes = nil)
+    def initialize(@name, @description, @verb, @path, @params, @body, @input_schema, @root = false, @behaviour = nil, @ui = nil, @visibility = nil, @title = nil, @icons = nil, @resource = nil, @mime_type = nil, @subscribe = false, @cache_ttl = nil, @long_running = false, @max_bytes = nil, @body_type = nil)
     end
 
     @[JSON::Field(ignore: true)]
@@ -786,10 +789,12 @@ module ActionController::MCPServer
     end
 
     body = nil
+    body_type = nil
     if request_body = operation.request_body
       content = request_body.content
       if content && (media = content["application/json"]? || content.values.first?)
         body = properties.has_key?("body") ? "request_body" : "body"
+        body_type = content.keys.first? unless content.has_key?("application/json")
         properties[body] = media.schema
         required << body if request_body.required
       end
@@ -811,7 +816,7 @@ module ActionController::MCPServer
     end
 
     Tool.new(name, description, route[:verb], route[:route], params, body, json_schema(JSON::Any.new(input_schema)), route[:root], route[:behaviour], route[:ui], route[:visibility], route[:title], parse_icons(route[:icons]),
-      route[:resource], route[:mime_type], route[:subscribe], route[:cache_ttl], route[:long_running], route[:max_bytes])
+      route[:resource], route[:mime_type], route[:subscribe], route[:cache_ttl], route[:long_running], route[:max_bytes], body_type)
   end
 
   # the template's path variables must be the route's path params and its query

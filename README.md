@@ -198,6 +198,25 @@ A custom converter still takes the whole value, so a comma separated list stays
 possible, and is documented with `explode: false`. MCP tool calls join the
 elements with commas for it, so an element can't contain a comma.
 
+### Request bodies
+
+A route's body (`body: :name`) is parsed from any of the registered parsers,
+and the OpenAPI document lists them all. `consumes:` narrows that to one type
+or a list, so a JSON route stops advertising YAML; a request in another type
+is a `Route::UnsupportedMediaType`, a 415. A body typed `IO` or `Bytes` is
+bound as it is, with no parser: any type unless `consumes:` says which, and
+described as `string`/`binary`:
+
+```crystal
+@[AC::Route::POST("/upload", body: :file, consumes: ["application/pdf", "image/png"])]
+def upload(file : Bytes) : Nil
+  # file holds the request body
+end
+```
+
+As an MCP tool, such a route takes its body as a string, sent as the first
+type it consumes.
+
 ## MCP Server
 
 Action Controller can expose your annotated routes to LLM clients as a

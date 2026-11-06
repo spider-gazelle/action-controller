@@ -46,6 +46,7 @@ module ActionController::OpenAPI
     error_handlers: Array(String),
     controller: String,
     request_body: String,
+    consumes: Array(String)?,
     route_responses: Hash(Tuple(Bool, String), Int32),
   )
 
@@ -227,7 +228,7 @@ module ActionController::OpenAPI
         {% default_specified = details[:default_response][2] %}
 
         {% request_body = details[:request_body].id %}
-        {% if request_body.stringify != "Nil" %}
+        {% if !["Nil", "IO", "Slice(UInt8)"].includes?(request_body.stringify) %}
           add_schema(response_types, definitions, {{ request_body.stringify }}, introspect_schema({{ request_body }}))
         {% end %}
 
@@ -391,6 +392,7 @@ module ActionController::OpenAPI
           error_handlers: error_keys,
           controller: {{ details[:controller] }},
           request_body: {{ details[:request_body].id.stringify }},
+          consumes: {{ details[:consumes] }}.as(Array(String)?),
           route_responses: route_response[{{ route_key }}]
         }
         {% end %}
@@ -631,7 +633,11 @@ module ActionController::OpenAPI
 
       # see if there is any requirement for a request body
       if raw_req_body != "Nil"
-        req_body = build_response(accepts, false, raw_req_body, nil)
+        req_body = if RAW_BODIES.includes?(raw_req_body)
+                     binary_body(route[:consumes] || ["application/octet-stream"])
+                   else
+                     build_response(route[:consumes] || accepts, false, raw_req_body, nil)
+                   end
         req_body.required = true
         operation.request_body = req_body
       end
@@ -765,6 +771,17 @@ module ActionController::OpenAPI
         nil
       end
     end
+  end
+
+  # :nodoc:
+  # the body types bound as they are, see `consumes:`
+  RAW_BODIES = {"IO", "Slice(UInt8)"}
+
+  # :nodoc:
+  def binary_body(types : Array(String)) : Response
+    response = Response.new
+    response.content = types.to_h { |type| {type, Schema.new(%({"type":"string","format":"binary"}))} }
+    response
   end
 
   # :nodoc:
