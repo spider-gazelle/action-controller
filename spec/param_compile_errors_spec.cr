@@ -9,6 +9,7 @@ describe "param compile errors" do
     "header_param"        => {"an Array header", "tag : Array(String) can only be a query parameter"},
     "nested_param"        => {"a collection of collections", "tag : Array(Set(String)) has collections for elements, which a query parameter can't hold"},
     "io_subclass_body"    => {"a body typed as an IO subclass", "file : IO::Memory, a raw body is typed IO or Bytes"},
+    "byte_format_unused"  => {"byte_format: with nothing IO serialisable", "byte_format: needs an IO serialisable body or response"},
   }.each do |flag, (description, message)|
     it "rejects #{description}" do
       errors = IO::Memory.new

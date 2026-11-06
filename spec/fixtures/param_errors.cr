@@ -23,6 +23,11 @@ class CollectionParams < AC::Base
     @[AC::Route::POST("/", body: :file)]
     def index(file : IO::Memory) : Nil
     end
+  {% elsif flag?(:byte_format_unused) %}
+    @[AC::Route::GET("/", byte_format: IO::ByteFormat::BigEndian)]
+    def index : String
+      "json"
+    end
   {% elsif flag?(:nested_param) %}
     @[AC::Route::GET("/")]
     def index(tag : Array(Set(String))) : Nil

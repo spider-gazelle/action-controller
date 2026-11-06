@@ -493,3 +493,51 @@ describe "request bodies a route consumes" do
     AC::Route::LimitedBody.new(IO::Memory.new("12345678"), 8).gets_to_end.should eq "12345678"
   end
 end
+
+describe "IO serialisable bodies and responses" do
+  client = AC::SpecHelper.client
+  bytes = ->(values : Array(UInt8)) { String.new(Slice.new(values.size) { |index| values[index] }) }
+
+  it "reads a BinData body with from_io, without reading it as a form" do
+    client.post("/binary/packets", body: bytes.call([1, 2, 7] of UInt8)).body.should eq "258:7:"
+    form = HTTP::Headers{"Content-Type" => "application/x-www-form-urlencoded"}
+    client.post("/binary/packets?note=x", headers: form, body: "a=1").body.should eq "24893:49:x"
+  end
+
+  it "limits an IO serialisable body by its Content-Length" do
+    # from_io only reads the bytes it needs, so a real request's Content-Length refuses it
+    expect_raises(AC::Route::PayloadTooLarge) do
+      client.post("/binary/packets", headers: HTTP::Headers{"Content-Length" => "17"}, body: "x" * 17)
+    end
+  end
+
+  it "writes a BinData response as application/octet-stream" do
+    response = client.get("/binary/packets/258")
+    response.headers["Content-Type"].should eq "application/octet-stream"
+    response.body.to_slice.should eq Bytes[1, 2, 7]
+  end
+
+  it "reads and writes in the route's byte_format" do
+    headers = HTTP::Headers{"Content-Type" => "application/x-reading"}
+    response = client.post("/binary/readings", headers: headers, body: bytes.call([21, 0, 0, 0] of UInt8))
+    response.headers["Content-Type"].should eq "application/x-reading"
+    response.body.to_slice.should eq Bytes[42, 0, 0, 0]
+    expect_raises(AC::Route::UnsupportedMediaType) do
+      client.post("/binary/readings", body: bytes.call([21, 0, 0, 0] of UInt8))
+    end
+  end
+
+  it "writes Bytes and IO responses" do
+    image = client.get("/binary/image")
+    image.headers["Content-Type"].should eq "image/png"
+    image.body.to_slice.should eq Bytes[1, 2, 3]
+    stream = client.get("/binary/stream")
+    stream.headers["Content-Type"].should eq "application/octet-stream"
+    stream.body.should eq "streamed"
+  end
+
+  it "keeps reading a number body as JSON" do
+    headers = HTTP::Headers{"Content-Type" => "application/json"}
+    client.post("/binary/number", headers: headers, body: "41").body.should eq "42"
+  end
+end

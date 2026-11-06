@@ -309,6 +309,21 @@ describe ActionController::OpenAPI do
       paths["/filtering/stream"]["post"]["requestBody"]["content"].as_h.keys.should eq ["application/octet-stream"]
     end
 
+    it "describes IO serialisable bodies and responses as binary" do
+      binary = JSON.parse(%({"type":"string","format":"binary"}))
+      create = paths["/binary/packets"]["post"]
+      create["requestBody"]["content"].as_h.keys.should eq ["application/octet-stream"]
+      create["requestBody"]["content"]["application/octet-stream"]["schema"].should eq binary
+      show = paths["/binary/packets/{id}"]["get"]["responses"]["200"]["content"]
+      show.as_h.keys.should eq ["application/octet-stream"]
+      show["application/octet-stream"]["schema"].should eq binary
+      paths["/binary/readings"]["post"]["responses"]["200"]["content"].as_h.keys.should eq ["application/x-reading"]
+      paths["/binary/image"]["get"]["responses"]["200"]["content"]["image/png"]["schema"].should eq binary
+      schemas = JSON.parse(docs.to_json)["components"]["schemas"].as_h.keys
+      schemas.should_not contain "Packet"
+      schemas.should_not contain "Reading"
+    end
+
     it "lists only the types a parsed body consumes" do
       paths["/filtering/json_only"]["post"]["requestBody"]["content"].as_h.keys.should eq ["application/json"]
       paths["/filtering/some_entry"]["post"]["requestBody"]["content"].as_h.keys.should contain "application/yaml"

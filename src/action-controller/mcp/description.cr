@@ -687,8 +687,8 @@ module ActionController::MCPServer
                   when "delete" then path.try &.delete
                   end
       next unless operation
-      # a model can't write a binary body's bytes in a JSON string
-      next if binary_only?(operation)
+      # a model can't write a binary body's bytes in a JSON string, or read a binary response
+      next if binary_only?(operation) || binary_response?(operation)
 
       toolbox = toolbox_for(toolboxes, route[:controller], namespace, descriptions, route[:toolbox_icons], identity, label)
       name = unique_name(tool_names, yield(toolbox, route[:method]))
@@ -841,6 +841,16 @@ module ActionController::MCPServer
   private def binary_only?(operation : OpenAPI::Operation) : Bool
     return false unless content = operation.request_body.try(&.content)
     raw_body?(content) && content.keys.none? { |type| textual?(type) }
+  end
+
+  # a success response written as it is (IO, Bytes or IO serialisable) in a type a tool result
+  # can't hold: text goes in the envelope, and images and audio in their own content blocks
+  private def binary_response?(operation : OpenAPI::Operation) : Bool
+    operation.responses.any? do |code, response|
+      content = response.content
+      next false if !code.starts_with?('2') || content.nil? || content.empty?
+      raw_body?(content) && content.keys.none? { |type| textual?(type) || type.starts_with?("image/") || type.starts_with?("audio/") }
+    end
   end
 
   # the template's path variables must be the route's path params and its query
