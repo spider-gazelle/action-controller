@@ -135,9 +135,9 @@ module ActionController::Responders
     {% sole_body = [json, yaml, xml, html, text, binary, template, partial].select { |value| !value.nil? }.size == 1 %}
 
     {% if status.is_a?(SymbolLiteral) %}
-      %response.status_code = {{STATUS_CODES[status] || REDIRECTION_CODES[status]}}
+      %response.status_code = {{ STATUS_CODES[status] || REDIRECTION_CODES[status] }}
     {% else %}
-      %response.status_code = ({{status}}).to_i
+      %response.status_code = ({{ status }}).to_i
     {% end %}
 
     %ctype = %response.headers["Content-Type"]?
@@ -146,7 +146,7 @@ module ActionController::Responders
     %session.encode(%response.cookies) if %session && %session.modified?
 
     {% unless json.nil? %}
-      %response.content_type = {{MIME_TYPES[:json]}} unless %ctype
+      %response.content_type = {{ MIME_TYPES[:json] }} unless %ctype
       unless @__head_request__
         %json = %ret_val
         if %json.is_a?(String)
@@ -162,9 +162,9 @@ module ActionController::Responders
     {% end %}
 
     {% unless yaml.nil? %}
-      %response.content_type = {{MIME_TYPES[:yaml]}} unless %ctype
+      %response.content_type = {{ MIME_TYPES[:yaml] }} unless %ctype
       unless @__head_request__
-        %yaml = ({{yaml}})
+        %yaml = ({{ yaml }})
         if %yaml.is_a?(String)
           {% if sole_body %}
             ActionController::Responders.write_string(%response, %yaml)
@@ -178,9 +178,9 @@ module ActionController::Responders
     {% end %}
 
     {% unless xml.nil? %}
-      %response.content_type = {{MIME_TYPES[:xml]}} unless %ctype
+      %response.content_type = {{ MIME_TYPES[:xml] }} unless %ctype
       unless @__head_request__
-        %xml = ({{xml}})
+        %xml = ({{ xml }})
         {% if sole_body %}
           if %xml.is_a?(String)
             ActionController::Responders.write_string(%response, %xml)
@@ -194,9 +194,9 @@ module ActionController::Responders
     {% end %}
 
     {% unless html.nil? %}
-      %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
+      %response.content_type = {{ MIME_TYPES[:html] }} unless %ctype
       unless @__head_request__
-        %html = ({{html}})
+        %html = ({{ html }})
         {% if sole_body %}
           if %html.is_a?(String)
             ActionController::Responders.write_string(%response, %html)
@@ -210,9 +210,9 @@ module ActionController::Responders
     {% end %}
 
     {% unless text.nil? %}
-      %response.content_type = {{MIME_TYPES[:text]}} unless %ctype
+      %response.content_type = {{ MIME_TYPES[:text] }} unless %ctype
       unless @__head_request__
-        %text = ({{text}})
+        %text = ({{ text }})
         {% if sole_body %}
           if %text.is_a?(String)
             ActionController::Responders.write_string(%response, %text)
@@ -226,9 +226,9 @@ module ActionController::Responders
     {% end %}
 
     {% unless binary.nil? %}
-      %response.content_type = {{MIME_TYPES[:binary]}} unless %ctype
+      %response.content_type = {{ MIME_TYPES[:binary] }} unless %ctype
       unless @__head_request__
-        %binary = ({{binary}})
+        %binary = ({{ binary }})
         {% if sole_body %}
           if %binary.is_a?(String)
             ActionController::Responders.write_string(%response, %binary)
@@ -242,17 +242,17 @@ module ActionController::Responders
     {% end %}
 
     {% unless template.nil? %}
-      %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
+      %response.content_type = {{ MIME_TYPES[:html] }} unless %ctype
       {% if layout %}
-        template({{template}}, layout: {{layout}}, io: %response) unless @__head_request__
+        template({{ template }}, layout: {{ layout }}, io: %response) unless @__head_request__
       {% else %}
-        template({{template}}, io: %response) unless @__head_request__
+        template({{ template }}, io: %response) unless @__head_request__
       {% end %}
     {% end %}
 
     {% unless partial.nil? %}
-      %response.content_type = {{MIME_TYPES[:html]}} unless %ctype
-      template(partial: {{partial}}, io: %response) unless @__head_request__
+      %response.content_type = {{ MIME_TYPES[:html] }} unless %ctype
+      template(partial: {{ partial }}, io: %response) unless @__head_request__
     {% end %}
 
     @__render_called__ = true
@@ -269,7 +269,7 @@ module ActionController::Responders
   # end
   # ```
   macro head(status)
-    render({{status}}, true)
+    render({{ status }}, true)
   end
 
   # redirects the browser to a new route
@@ -287,12 +287,12 @@ module ActionController::Responders
     %session.encode(%response.cookies) if %session && %session.modified?
 
     {% if status.is_a?(SymbolLiteral) %}
-      %response.status_code = {{REDIRECTION_CODES[status]}}
+      %response.status_code = {{ REDIRECTION_CODES[status] }}
     {% else %}
-      %response.status_code = ({{status}}).to_i
+      %response.status_code = ({{ status }}).to_i
     {% end %}
 
-    %response.headers["Location"] = {{path}}
+    %response.headers["Location"] = {{ path }}
     @__render_called__ = true
     return
   end
@@ -317,15 +317,15 @@ module ActionController::Responders
   macro respond_with(status = :ok, &block)
     %resp = ::ActionController::Responders::SelectResponse.new(response, accepts_formats, @__head_request__)
     %resp.responses do
-      {{block.body}}
+      {{ block.body }}
     end
 
     %response = @__context__.response
     {% if status != :ok || status != 200 %}
       {% if status.is_a?(SymbolLiteral) %}
-        %response.status_code = {{STATUS_CODES[status]}}
+        %response.status_code = {{ STATUS_CODES[status] }}
       {% else %}
-        %response.status_code = ({{status}}).to_i
+        %response.status_code = ({{ status }}).to_i
       {% end %}
     {% end %}
 
@@ -396,7 +396,7 @@ module ActionController::Responders
 
     macro html(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:html] = ->(io : IO){ ({{obj}}).to_s(io) }
+        options[:html] = ->(io : IO){ ({{ obj }}).to_s(io) }
       {% else %}
         options[:html] = ->(io : IO){
           ({{ block.body }}).to_s(io)
@@ -406,7 +406,7 @@ module ActionController::Responders
 
     macro xml(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:xml] = ->(io : IO){ ({{obj}}).to_s(io) }
+        options[:xml] = ->(io : IO){ ({{ obj }}).to_s(io) }
       {% else %}
         options[:xml] = ->(io : IO){
           ({{ block.body }}).to_s(io)
@@ -417,7 +417,7 @@ module ActionController::Responders
     macro json(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
         options[:json] = ->(io : IO){
-          output = {{obj}}
+          output = {{ obj }}
           {% if obj.is_a?(String) %}
             output.to_s(io)
           {% else %}
@@ -439,7 +439,7 @@ module ActionController::Responders
     macro yaml(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
         options[:yaml] = ->(io : IO){
-          output = {{obj}}
+          output = {{ obj }}
           {% if obj.is_a?(String) %}
             output.to_s(io)
           {% else %}
@@ -458,7 +458,7 @@ module ActionController::Responders
 
     macro text(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:text] = ->(io : IO){ ({{obj}}).to_s(io) }
+        options[:text] = ->(io : IO){ ({{ obj }}).to_s(io) }
       {% else %}
         options[:text] = ->(io : IO){
           ({{ block.body }}).to_s(io)
@@ -468,7 +468,7 @@ module ActionController::Responders
 
     macro binary(obj = nil, &block : IO -> Nil)
       {% if block.is_a?(Nop) %}
-        options[:binary] = ->(io : IO){ ({{obj}}).to_s(io) }
+        options[:binary] = ->(io : IO){ ({{ obj }}).to_s(io) }
       {% else %}
         options[:binary] = ->(io : IO){
           ({{ block.body }}).to_s(io)

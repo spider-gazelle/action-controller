@@ -64,7 +64,7 @@ class ActionController::Session
 
     if cookie
       data = @encoder.extract(cookie.value).to_s
-      self.merge!(Hash(String, String | Int64 | Float64 | Bool).from_json(data))
+      merge!(Hash(String, String | Int64 | Float64 | Bool).from_json(data))
       @modified = false
       @existing = true
     end
@@ -72,13 +72,13 @@ class ActionController::Session
 
   def encode(cookies)
     # If there was no existing session and
-    return if !@existing && self.empty?
+    return if !@existing && empty?
 
-    if @existing && self.empty?
+    if @existing && empty?
       data = ""
       age = 0
     else
-      data = @encoder.prepare(self.to_json)
+      data = @encoder.prepare(to_json)
       age = settings.max_age
       raise CookieSizeExceeded.new("#{data.size} > #{MAX_COOKIE_SIZE}") if data.size > MAX_COOKIE_SIZE
     end

@@ -350,7 +350,7 @@ module ActionController::MCPServer
     {% begin %}
       concrete = [
         {% for klass in ::ActionController::Base::CONCRETE_CONTROLLERS.keys %}
-          {{klass.stringify}},
+          {{ klass.stringify }},
         {% end %}
       ] of String
 

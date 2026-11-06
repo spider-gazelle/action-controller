@@ -304,7 +304,7 @@ describe ActionController::OpenAPI do
     it "sends array query params as a single comma separated value when a converter parses them" do
       tags = params.call("/openapi_paths/{tenant}/search")["tags"]
       tags["style"].should eq "form"
-      tags["explode"].should eq false
+      tags["explode"].should be_false
       params.call("/openapi_paths/{tenant}/search")["limit"]["explode"]?.should be_nil
     end
 

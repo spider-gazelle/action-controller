@@ -414,7 +414,7 @@ module ActionController::MCPServer
 
   # :nodoc:
   def tool_result(text : String, error : Bool = false, structured : Hash(String, JSON::Any)? = nil) : String
-    JSON.build { |json|
+    JSON.build do |json|
       json.object do
         json.field "content" do
           json.array do
@@ -427,6 +427,6 @@ module ActionController::MCPServer
         json.field "structuredContent", structured if structured
         json.field "isError", error
       end
-    }
+    end
   end
 end

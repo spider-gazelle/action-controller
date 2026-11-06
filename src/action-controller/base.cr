@@ -71,19 +71,19 @@ abstract class ActionController::Base
       {% layout = layout || TEMPLATE_LAYOUT[@type.id] %}
 
       {% if (partial || !layout) && io %}
-        %content = render_template({{filename}}, {{io}})
+        %content = render_template({{ filename }}, {{ io }})
       {% else %}
-        %content = render_template({{filename}})
+        %content = render_template({{ filename }})
       {% end %}
 
       {% if !partial %}
         {% if layout %}
           {% if io %}
             content = %content
-            render_template({{layout}}, {{io}})
+            render_template({{ layout }}, {{ io }})
           {% else %}
             content = %content
-            render_template({{layout}})
+            render_template({{ layout }})
           {% end %}
         {% else %}
           %content
@@ -96,17 +96,17 @@ abstract class ActionController::Base
 
   macro partial(partial, io = nil)
     {% if io %}
-      template(partial: {{partial}}, io: {{io}})
+      template(partial: {{ partial }}, io: {{ io }})
     {% else %}
-      template(partial: {{partial}})
+      template(partial: {{ partial }})
     {% end %}
   end
 
   private macro render_template(filename, io = nil)
     {% if io %}
-      Kilt.embed({{TEMPLATE_PATH[@type.id] + filename}}, {{io}})
+      Kilt.embed({{ TEMPLATE_PATH[@type.id] + filename }}, {{ io }})
     {% else %}
-      Kilt.render({{TEMPLATE_PATH[@type.id] + filename}})
+      Kilt.render({{ TEMPLATE_PATH[@type.id] + filename }})
     {% end %}
   end
 
@@ -124,12 +124,12 @@ abstract class ActionController::Base
   MOUNTS = {} of Nil => Nil
 
   # :nodoc:
-  FILTER_TYPES = %w(ROUTES BEFORE AROUND AFTER RESCUE FORCE SKIP)
+  FILTER_TYPES = %w[ROUTES BEFORE AROUND AFTER RESCUE FORCE SKIP]
 
   {% for ftype in FILTER_TYPES %}
     # :nodoc:
     # klass => {function => options}
-    {{ftype.id}}_MAPPINGS = {} of Nil => Nil
+    {{ ftype.id }}_MAPPINGS = {} of Nil => Nil
   {% end %}
 
   # :nodoc:
@@ -138,19 +138,19 @@ abstract class ActionController::Base
       {% ltype = ftype.downcase %}
 
       # :nodoc:
-      macro __inherit_{{ltype.id}}_filters__
-        \{% {{ftype.id}}_MAPPINGS[@type.name.id] = LOCAL_{{ftype.id}} %}
+      macro __inherit_{{ ltype.id }}_filters__
+        \{% {{ ftype.id }}_MAPPINGS[@type.name.id] = LOCAL_{{ ftype.id }} %}
         \{% klasses = [@type.name.id] %}
         \{% @type.ancestors.each { |name| klasses.unshift(name) } %}
 
         # Create a mapping of all field names and types
         \{% for name in klasses %}
-          \{% filters = {{ftype.id}}_MAPPINGS[name.id] %}
+          \{% filters = {{ ftype.id }}_MAPPINGS[name.id] %}
 
           \{% if filters && !filters.empty? %}
             \{% for name, options in filters %}
-              \{% if !{{ftype.id}}[name] %}
-                \{% {{ftype.id}}[name] = options %}
+              \{% if !{{ ftype.id }}[name] %}
+                \{% {{ ftype.id }}[name] = options %}
               \{% end %}
             \{% end %}
           \{% end %}
@@ -287,14 +287,14 @@ abstract class ActionController::Base
     {% CONTROLLER_ANCESTORS[@type.name.id] = @type.ancestors.map(&.stringify) %}
     # :nodoc:
     # default namespace based on class
-    NAMESPACE = [{{"/" + @type.name.stringify.underscore.gsub(/\:\:/, "/")}}]
+    NAMESPACE = [{{ "/" + @type.name.stringify.underscore.gsub(/\:\:/, "/") }}]
 
     {% for ftype in FILTER_TYPES %}
       # :nodoc:
       # function => options
-      LOCAL_{{ftype.id}} = {} of Nil => Nil
+      LOCAL_{{ ftype.id }} = {} of Nil => Nil
       # :nodoc:
-      {{ftype.id}} = {} of Nil => Nil
+      {{ ftype.id }} = {} of Nil => Nil
     {% end %}
 
     {% TEMPLATE_LAYOUT[@type.id] = TEMPLATE_LAYOUT[@type.ancestors[0].id] %}
@@ -328,7 +328,7 @@ abstract class ActionController::Base
   macro __build_filter_mappings__
     {% for ftype in FILTER_TYPES %}
       {% ltype = ftype.downcase %}
-      __inherit_{{ltype.id}}_filters__
+      __inherit_{{ ltype.id }}_filters__
     {% end %}
   end
 
@@ -350,8 +350,8 @@ abstract class ActionController::Base
       {% for klass, details in RESCUE %}
         {% block = details[1] %}
         {% if block != nil %}
-          def {{details[0]}}({{details[1].args.splat}})
-            {{details[1].body}}
+          def {{ details[0] }}({{ details[1].args.splat }})
+            {{ details[1].body }}
           end
         {% end %}
       {% end %}
@@ -509,7 +509,7 @@ abstract class ActionController::Base
         {% OPENAPI_ERRORS_MAP[verb_route] = [] of Nil %}
 
         # :nodoc:
-        def self.{{(http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\W/, "_").id}}(context, head_request)
+        def self.{{ (http_method.id.stringify + "_" + NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\W/, "_").id }}(context, head_request)
           # Check if force SSL is set and redirect to HTTPS if HTTP
           {% force = false %}
           {% if FORCE[:force] %}
@@ -530,7 +530,7 @@ abstract class ActionController::Base
             if ActionController::Support.request_protocol(context.request) != :https
             {% if is_websocket %}
               response = context.response
-              response.status_code = {{STATUS_CODES[:precondition_failed]}}
+              response.status_code = {{ STATUS_CODES[:precondition_failed] }}
               response.content_type = MIME_TYPES[:text]
               response << "WebSocket Secure (wss://) connection required"
             {% else %}
@@ -540,7 +540,7 @@ abstract class ActionController::Base
           {% end %}
 
           # Create an instance of the controller
-          instance = {{@type.name}}.new(context, :{{reference_name}}, head_request)
+          instance = {{ @type.name }}.new(context, :{{ reference_name }}, head_request)
 
           # Check for errors
           {% if !RESCUE.empty? %}
@@ -586,7 +586,7 @@ abstract class ActionController::Base
             ActionController::Base.__yield__(instance) do
               {% for action in around_actions %}
                   break if render_called?
-                  {{action}} do
+                  {{ action }} do
               {% end %}
           {% end %}
 
@@ -617,7 +617,7 @@ abstract class ActionController::Base
             {% end %}
               {% for action in before_actions %}
                 break if render_called?
-                {{action}}
+                {{ action }}
               {% end %}
             {% if around_actions.empty? %}
               end
@@ -644,17 +644,17 @@ abstract class ActionController::Base
                 response.headers["Sec-Websocket-Accept"] = accept_code
                 response.upgrade do |io|
                   ws_session = HTTP::WebSocket.new(io)
-                  instance.{{function_name}}(ws_session)
+                  instance.{{ function_name }}(ws_session)
                   ws_session.run
                 end
               else
                 response = context.response
-                response.status_code = {{STATUS_CODES[:upgrade_required]}}
+                response.status_code = {{ STATUS_CODES[:upgrade_required] }}
                 response.content_type = MIME_TYPES[:text]
                 response << "This service requires use of the WebSocket protocol"
               end
             {% else %}
-              instance.{{function_name}}
+              instance.{{ function_name }}
             {% end %}
 
           {% if !before_actions.empty? %}
@@ -694,7 +694,7 @@ abstract class ActionController::Base
             {% OPENAPI_FILTER_MAP[verb_route] = OPENAPI_FILTER_MAP[verb_route] + after_actions.map(&.stringify) %}
             ActionController::Base.__yield__(instance) do
               {% for action in after_actions %}
-                {{action}}
+                {{ action }}
               {% end %}
             end
           {% end %}
@@ -708,9 +708,9 @@ abstract class ActionController::Base
           {% if !RESCUE.empty? %}
             {% for exception, details in RESCUE %}
               {% OPENAPI_ERRORS_MAP[verb_route] = OPENAPI_ERRORS_MAP[verb_route] + [exception.id.stringify] %}
-              rescue e : {{exception.id}}
+              rescue e : {{ exception.id }}
                 instance.__reraise_if_rendered__(e)
-                instance.{{details[0]}}(e)
+                instance.{{ details[0] }}(e)
             {% end %}
 
             end
@@ -811,7 +811,7 @@ abstract class ActionController::Base
         {% unless details[8] %}
         {% reference_name = details[5] %}
         {% route_path = details[1] %}
-        def self.{{reference_name}}(hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
+        def self.{{ reference_name }}(hash_parts : Hash((String | Symbol), (Nil | Bool | Int32 | Int64 | Float32 | Float64 | String | Symbol))? = nil, **tuple_parts)
           route = {{ (NAMESPACE[0].id.stringify + route_path.id.stringify).gsub(/\/\//, "/") }}
           ActionController::Support.build_route(route, hash_parts, **tuple_parts)
         end
@@ -828,7 +828,7 @@ abstract class ActionController::Base
             {% http_method = details[0] %}
             {% route_path = details[1] %}
             {% reference_name = details[5] %}
-            { "{{@type.name}}", :{{reference_name}}, :{{http_method.id}}, "{{NAMESPACE[0].id}}{{route_path.id}}".gsub("//", "/")},
+            { "{{ @type.name }}", :{{ reference_name }}, :{{ http_method.id }}, "{{ NAMESPACE[0].id }}{{ route_path.id }}".gsub("//", "/")},
             {% end %}
           {% end %}
         ] of Tuple(String, Symbol, Symbol, String)
@@ -883,14 +883,14 @@ abstract class ActionController::Base
 
   # Define each method for supported http methods except head (which is meta)
   {% for http_method in ::ActionController::Router::HTTP_METHODS.reject(&.==("head")) %}
-    # define a new route that responds to {{http_method.id.stringify.upcase.id}} requests
+    # define a new route that responds to {{ http_method.id.stringify.upcase.id }} requests
     #
     # `internal: true` routes are not exposed via HTTP, they're used to implement MCP prompts
-    macro {{http_method.id}}(path, function = nil, annotations = nil, reference = nil, execution_context = nil, internal = false, &block)
+    macro {{ http_method.id }}(path, function = nil, annotations = nil, reference = nil, execution_context = nil, internal = false, &block)
       \{% unless function %}
-        \{% function = "_route_" + {{http_method}} + path.gsub(/\W/, "_") %}
+        \{% function = "_route_" + {{ http_method }} + path.gsub(/\W/, "_") %}
       \{% end %}
-      \{% LOCAL_ROUTES[{{http_method}} + path] = { {{http_method}}, path, annotations, block, false, (reference || function).id, function.id, execution_context, internal } %}
+      \{% LOCAL_ROUTES[{{ http_method }} + path] = { {{ http_method }}, path, annotations, block, false, (reference || function).id, function.id, execution_context, internal } %}
       \{% if annotations %}
         \{% annotations = [annotations] unless annotations.is_a?(ArrayLiteral) %}
         \{% for ann in annotations %}
@@ -917,8 +917,8 @@ abstract class ActionController::Base
         {{ ann.id }}
       {% end %}
     {% end %}
-    def {{function.id}}({{block.args.splat}})
-      {{block.body}}
+    def {{ function.id }}({{ block.args.splat }})
+      {{ block.body }}
     end
   end
 
@@ -936,15 +936,15 @@ abstract class ActionController::Base
 
   # :nodoc:
   macro __define_filter_macro__(name, store, method = nil)
-    macro {{name.id}}({% if method.nil? %} method, {% end %} only = nil, except = nil, filter_name = nil)
+    macro {{ name.id }}({% if method.nil? %} method, {% end %} only = nil, except = nil, filter_name = nil)
     {% if method %}
-      \{% method = {{method}} %}
+      \{% method = {{ method }} %}
     {% else %}
       \{% method = method.id %}
     {% end %}
       \{% prev_only = nil %}
       \{% prev_except = nil %}
-      \{% if existing = {{store}}[method] %}
+      \{% if existing = {{ store }}[method] %}
         \{% prev_only = existing[0] %}
         \{% prev_except = existing[1] %}
       \{% end %}
@@ -970,7 +970,7 @@ abstract class ActionController::Base
       \{% else %}
         \{% filter_name = method %}
       \{% end %}
-      \{% {{store}}[method] = {only, except, filter_name} %}
+      \{% {{ store }}[method] = {only, except, filter_name} %}
     end
   end
 
@@ -1041,7 +1041,7 @@ abstract class ActionController::Base
 
   # :ditto:
   macro force_tls(only = nil, except = nil)
-    force_ssl({{only}}, {{except}})
+    force_ssl({{ only }}, {{ except }})
   end
 
   # ===============

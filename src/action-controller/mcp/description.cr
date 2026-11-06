@@ -179,7 +179,7 @@ module ActionController::MCPServer
 
     # the card the host renders for the results and who can call the tool
     private def ui_meta(json : JSON::Builder) : Nil
-      resource = self.ui.try { |uri| UI.versioned(uri) }
+      resource = ui.try { |uri| UI.versioned(uri) }
       visible = visibility
       return unless resource || visible
 

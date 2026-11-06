@@ -194,7 +194,7 @@ module ActionController::OpenAPI
   # :nodoc:
   # the schema of a type, in the JSON Schema dialect of the OpenAPI version being generated
   macro introspect_schema(type)
-    (openapi_3_0 ? ::JSON::Schema.introspect({{type}}, openapi: true, refs: definitions) : ::JSON::Schema.introspect({{type}}, refs: definitions))
+    (openapi_3_0 ? ::JSON::Schema.introspect({{ type }}, openapi: true, refs: definitions) : ::JSON::Schema.introspect({{ type }}, refs: definitions))
   end
 
   # :nodoc:
@@ -228,7 +228,7 @@ module ActionController::OpenAPI
 
         {% request_body = details[:request_body].id %}
         {% if request_body.stringify != "Nil" %}
-          add_schema(response_types, definitions, {{request_body.stringify}}, introspect_schema({{ request_body }}))
+          add_schema(response_types, definitions, {{ request_body.stringify }}, introspect_schema({{ request_body }}))
         {% end %}
 
         {% responses = {} of Nil => Nil %}
@@ -264,9 +264,9 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            add_schema(response_types, definitions, {{resolved_klass.stringify}}, introspect_schema({{ resolved_klass }}))
+            add_schema(response_types, definitions, {{ resolved_klass.stringify }}, introspect_schema({{ resolved_klass }}))
           {% end %}
-          route_response[{{route_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
+          route_response[{{ route_key }}][{ {{ is_array }}, {{ resolved_klass.stringify }} }] = ({{ response_code }}).to_i
         {% end %}
         {% end %}
       {% end %}
@@ -305,16 +305,16 @@ module ActionController::OpenAPI
           {% end %}
 
           {% if resolved_klass != Nil %}
-            add_schema(response_types, definitions, {{resolved_klass.stringify}}, introspect_schema({{ resolved_klass }}))
+            add_schema(response_types, definitions, {{ resolved_klass.stringify }}, introspect_schema({{ resolved_klass }}))
           {% end %}
-          route_response[{{exception_key}}][{ {{is_array}}, {{resolved_klass.stringify}} }] = ({{response_code}}).to_i
+          route_response[{{ exception_key }}][{ {{ is_array }}, {{ resolved_klass.stringify }} }] = ({{ response_code }}).to_i
         {% end %}
       {% end %}
 
       filters = {
         {% for filter_key, details in Route::Builder::OPENAPI_FILTERS %}
           {% params = details[:params] %}
-          {{filter_key}} => {
+          {{ filter_key }} => {
             controller: {{ details[:controller] }},
             method: {{ details[:method] }},
             wrapper_method: {{ details[:wrapper_method] }},
@@ -339,12 +339,12 @@ module ActionController::OpenAPI
 
       exceptions = {
         {% for exception_key, details in Route::Builder::OPENAPI_ERRORS %}
-          {{exception_key}} => {
+          {{ exception_key }} => {
             method: {{ details[:method] }},
             controller: {{ details[:controller] }},
             exception_name: {{ details[:exception] }},
             exception_key: {{ exception_key }},
-            responses: route_response[{{exception_key}}]
+            responses: route_response[{{ exception_key }}]
           },
         {% end %}
       }{% if Route::Builder::OPENAPI_ERRORS.empty? %} of String => ExceptionHandler{% end %}
@@ -361,15 +361,15 @@ module ActionController::OpenAPI
         {% filters = Base::OPENAPI_FILTER_MAP[route_key] %}
         {% errors = Base::OPENAPI_ERRORS_MAP[route_key] %}
 
-        route_filters = {{filters}}{% if filters.empty? %} of String{% end %}
-        route_errors = {{errors}}{% if errors.empty? %} of String{% end %}
+        route_filters = {{ filters }}{% if filters.empty? %} of String{% end %}
+        route_errors = {{ errors }}{% if errors.empty? %} of String{% end %}
         route_class = {{ details[:controller] }}
         class_description, filter_keys, error_keys = find_matching(descriptions, route_class, filters, exceptions, route_filters, route_errors)
 
         {% params = details[:params] %}
 
-        routes[{{route_key}}] = {
-          route_lookup: {{route_key}},
+        routes[{{ route_key }}] = {
+          route_lookup: {{ route_key }},
           verb: {{ details[:verb] }},
           route: {{ details[:route] }},
           params: [
@@ -391,7 +391,7 @@ module ActionController::OpenAPI
           error_handlers: error_keys,
           controller: {{ details[:controller] }},
           request_body: {{ details[:request_body].id.stringify }},
-          route_responses: route_response[{{route_key}}]
+          route_responses: route_response[{{ route_key }}]
         }
         {% end %}
       {% end %}

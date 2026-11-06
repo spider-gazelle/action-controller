@@ -762,7 +762,7 @@ describe ActionController::MCPServer do
       client = MCPTestClient.new
       client.initialize_session
       # browsing toolboxes doesn't change data
-      %w(list_toolboxes open_toolbox).each do |name|
+      %w[list_toolboxes open_toolbox].each do |name|
         client.tools.find!(&.["name"].==(name))["annotations"]["readOnlyHint"].should be_true
       end
       client.tools.find!(&.["name"].==("call_read_only"))["annotations"]["readOnlyHint"].should be_true
@@ -818,7 +818,7 @@ describe ActionController::MCPServer do
         names.first(DEFAULT_TOOLS.size - 4).should eq DEFAULT_TOOLS[4..]
         names.should contain "mcp_widgets_show"
         names.should contain "mcp_ui_summary"
-        %w(list_toolboxes open_toolbox call_tool call_read_only).each do |meta|
+        %w[list_toolboxes open_toolbox call_tool call_read_only].each do |meta|
           names.should_not contain meta
           response = client.post({jsonrpc: "2.0", id: 9, method: "tools/call", params: {name: meta, arguments: {name: "mcp_root_time"}}}, "application/json")
           JSON.parse(response.body)["error"]["message"].should eq "Unknown tool: #{meta}"
@@ -937,7 +937,7 @@ describe ActionController::MCPServer do
     it "has no toolboxes or proxies" do
       client = MCPTestClient.new(account_uri.call("acme"))
       client.initialize_session
-      %w(list_toolboxes open_toolbox call_tool secret mcp_widgets_colours).each do |name|
+      %w[list_toolboxes open_toolbox call_tool secret mcp_widgets_colours].each do |name|
         response = client.post({jsonrpc: "2.0", id: 2, method: "tools/call", params: {name: name, arguments: {} of String => String}}, "application/json")
         JSON.parse(response.body)["error"]["message"].should eq "Unknown tool: #{name}"
       end

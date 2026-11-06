@@ -73,7 +73,7 @@ class ActionController::ErrorHandlerProduction
 
   def call(context)
     call_next(context)
-  rescue ex : Exception
+  rescue Exception
     response = context.response
     reset(response)
 
