@@ -375,6 +375,16 @@ describe ActionController::MCPServer do
       result["structuredContent"]["body"].should eq %(["a", "b"]|[1, 2]|[])
     end
 
+    it "leaves out routes with a binary body or response, keeping images" do
+      description = ActionController::MCPServer.description
+      description.tool?("binary_data_create").should be_nil
+      description.tool?("binary_data_show").should be_nil
+      description.tool?("binary_data_double").should be_nil
+      description.tool?("binary_data_stream").should be_nil
+      description.tool?("binary_data_image").should_not be_nil
+      description.tool?("binary_data_number").should_not be_nil
+    end
+
     it "leaves binary only raw body routes out, and sends a text raw body as its type" do
       description = ActionController::MCPServer.description
       description.tool?("filtering_upload").should be_nil

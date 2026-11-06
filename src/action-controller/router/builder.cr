@@ -594,7 +594,11 @@ module ActionController::Route::Builder
           {% raise "#{@type.name}##{method_name}: consumes needs a body argument, see body:" if consumes && body_argument == "%" %}
           {% max_body_bytes = ann[:max_body_bytes] %}
           {% raise "#{@type.name}##{method_name}: max_body_bytes needs a body argument, see body:" if max_body_bytes && body_argument == "%" %}
+          # IO serialisable types (`T.from_io(io, format)`, `obj.to_io(io, format)`, like BinData)
+          # are read and written in this byte order. Numbers are IO serialisable too, but stay JSON
+          {% byte_format = ann[:byte_format] || "IO::ByteFormat::SystemEndian".id %}
           {% raw_body = nil %}
+          {% io_body = nil %}
           {% string_body = false %}
           {% for arg in method.args %}
             {% if body_argument == arg.name.id.stringify && arg.restriction %}
@@ -607,10 +611,12 @@ module ActionController::Route::Builder
                 {% raw_body = body_types[0] %}
               {% elsif body_types.size == 1 && body_types[0] < IO %}
                 {% raise "#{@type.name}##{method_name}: #{arg.name} : #{body_types[0]}, a raw body is typed IO or Bytes" %}
+              {% elsif body_types.size == 1 && body_types[0].class.has_method?(:from_io) && !(body_types[0] < Number) && !(body_types[0] < JSON::Serializable) %}
+                {% io_body = body_types[0] %}
               {% end %}
             {% end %}
           {% end %}
-          {% if consumes && !raw_body %}
+          {% if consumes && !raw_body && !io_body %}
             {% for type in consumes %}
               {% unless PARSERS[type] || (type == "text/plain" && string_body) %}
                 {% raise "#{@type.name}##{method_name}: no parser registered for #{type}, see add_parser" %}
@@ -618,6 +624,29 @@ module ActionController::Route::Builder
             {% end %}
           {% end %}
           {% response_type = ann[:response_type] || method.return_type %}
+
+          # a response that's written as it is: IO, Bytes or an IO serialisable type
+          {% binary_response = nil %}
+          {% if response_type && !{AC::Route::Filter, AC::Route::Exception, AC::Route::WebSocket}.includes?(route_method) %}
+            {% response_types = [] of Nil %}
+            {% response_type.resolve.union_types.each { |type| type.union_types.each { |inner| response_types << inner unless response_types.includes?(inner) } } %}
+            {% response_types = response_types.reject(&.nilable?) %}
+            {% if response_types.size == 1 %}
+              {% response_klass = response_types[0] %}
+              {% if response_klass <= IO %}
+                {% binary_response = :io %}
+              {% elsif response_klass.stringify == "Slice(UInt8)" %}
+                {% binary_response = :bytes %}
+              {% elsif response_klass.has_method?(:to_io) && !(response_klass < Number) && !(response_klass < JSON::Serializable) %}
+                {% binary_response = :io_serializable %}
+              {% end %}
+            {% end %}
+          {% end %}
+          {% if ann[:byte_format] && !io_body && binary_response != :io_serializable %}
+            {% raise "#{@type.name}##{method_name}: byte_format: needs an IO serialisable body or response" %}
+          {% end %}
+          # written as it is, so there's no responder to negotiate
+          {% content_type = content_type || "application/octet-stream" if binary_response %}
 
           {% open_api_route = {} of Nil => Nil %}
           {% open_api_params = {} of Nil => Nil %}
@@ -751,7 +780,7 @@ module ActionController::Route::Builder
             {% else %}
               # check we can parse the body if a content type is provided
               {% string_body_possible = false %}
-              {% if body_argument != "%" && raw_body %}
+              {% if body_argument != "%" && (raw_body || io_body) %}
                 {% if consumes %}
                   body_type = request_content_type
                   unless body_type && {{ consumes }}.includes?(body_type)
@@ -894,15 +923,22 @@ module ActionController::Route::Builder
 
                     # Build the argument named tuple with the correct types
                     {{ arg.name.id }}: (
-                      {% if body_argument == string_name && raw_body %}
-                        {% open_api_route[:request_body] = raw_body %}
+                      {% if body_argument == string_name && (raw_body || io_body) %}
+                        {% open_api_route[:request_body] = raw_body || io_body %}
+                        {% open_api_route[:raw_body] = true %}
                         {% open_api_route[:consumes] = consumes %}
 
                         if body_io = @__context__.request.body
                           {% if max_body_bytes %}
                             body_io = ::AC::Route::LimitedBody.wrap(body_io, @__context__.request.content_length, {{ max_body_bytes }})
                           {% end %}
-                          {% if raw_body.stringify == "IO" %}body_io{% else %}body_io.getb_to_end{% end %}
+                          {% if io_body %}
+                            {{ io_body }}.from_io(body_io, {{ byte_format }})
+                          {% elsif raw_body.stringify == "IO" %}
+                            body_io
+                          {% else %}
+                            body_io.getb_to_end
+                          {% end %}
                         {% if arg.default_value.stringify != "" %}
                         else
                           {{ arg.default_value }}
@@ -1007,6 +1043,7 @@ module ActionController::Route::Builder
             {% end %}
 
             {% if !{AC::Route::Filter, AC::Route::WebSocket}.includes?(route_method) %}
+              {% open_api_route[:binary_response] = content_type if binary_response %}
               {% if response_type %}
                 {% open_api_route[:default_response] = {response_type.resolve, status_code, true} %}
               {% else %}
@@ -1048,12 +1085,40 @@ module ActionController::Route::Builder
                 unless @__head_request__ || result.nil?
                   {% if ::ActionController::ExecutionContext::ENABLED && bound_execution_context == nil && ::ActionController::ExecutionContext::OFFLOAD_RESPONSES[0] %}
                     ::ActionController::ExecutionContext.offload do
-                      __transform_response__(responds_with, response, result, {{ method_name.id.symbolize }})
+                      {% if binary_response == :io %}
+                        begin
+                          IO.copy(result, response)
+                        ensure
+                          result.close
+                        end
+                      {% elsif binary_response == :bytes %}
+                        response.write(result)
+                      {% elsif binary_response == :io_serializable %}
+                        result.to_io(response, {{ byte_format }})
+                      {% else %}
+                        __transform_response__(responds_with, response, result, {{ method_name.id.symbolize }})
+                      {% end %}
                     end
                   {% else %}
-                    __transform_response__(responds_with, response, result, {{ method_name.id.symbolize }})
+                    {% if binary_response == :io %}
+                      begin
+                        IO.copy(result, response)
+                      ensure
+                        result.close
+                      end
+                    {% elsif binary_response == :bytes %}
+                      response.write(result)
+                    {% elsif binary_response == :io_serializable %}
+                      result.to_io(response, {{ byte_format }})
+                    {% else %}
+                      __transform_response__(responds_with, response, result, {{ method_name.id.symbolize }})
+                    {% end %}
                   {% end %}
                 end
+                {% if binary_response == :io %}
+                  # a HEAD request skips the body, but the IO is still the route's to close
+                  result.try(&.close) if @__head_request__
+                {% end %}
                 @__render_called__ = true
               end
             {% end %}

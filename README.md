@@ -228,6 +228,33 @@ JSON, XML, YAML or a form), which the tool takes as a string and sends as the
 first such type. A binary only route is left out, as a model can't write its
 bytes in a JSON string.
 
+### Binary bodies and responses
+
+A type that is IO serialisable, with `T.from_io(io, format)` and
+`obj.to_io(io, format)` such as a [BinData](https://github.com/spider-gazelle/bindata)
+class, is read from a body and written as a response as it is, with no parser or
+responder. So are `Bytes` and `IO` responses (an `IO` is closed once it's copied).
+The response is `application/octet-stream` unless the route sets `content_type:`, and
+the OpenAPI document describes both as `string`/`binary`. `byte_format:` sets the byte
+order (`IO::ByteFormat::SystemEndian` by default); a BinData class uses its own
+`endian`. Numbers are IO serialisable too, but stay JSON.
+
+```crystal
+class Packet < BinData
+  endian big
+
+  field id : UInt16
+  field flags : UInt8
+end
+
+@[AC::Route::POST("/packets", body: :packet, consumes: "application/x-packet", content_type: "application/x-packet")]
+def echo(packet : Packet) : Packet
+  packet
+end
+```
+
+A route whose response is binary, other than an image or audio, isn't an MCP tool.
+
 ## MCP Server
 
 Action Controller can expose your annotated routes to LLM clients as a

@@ -552,7 +552,7 @@ abstract class ActionController::Base
           # Create an instance of the controller
           instance = {{ @type.name }}.new(context, :{{ reference_name }}, head_request)
           {% route_metadata = ::ActionController::Route::Builder::OPENAPI_ROUTES[verb_route] %}
-          {% if route_metadata && ::ActionController::Route::Builder::RAW_BODY_TYPES.includes?(route_metadata[:request_body].stringify) %}
+          {% if route_metadata && route_metadata[:raw_body] %}
             # filters reading params mustn't consume the raw body
             instance.__raw_body__ = true
           {% end %}

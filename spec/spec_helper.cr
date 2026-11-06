@@ -2,6 +2,7 @@ require "kilt"
 require "spec"
 require "xml"
 require "log"
+require "bindata"
 require "../src/action-controller/spec_helper"
 
 Spec.before_suite do
@@ -64,6 +65,71 @@ class SkippingSymbol < FilterOrdering
   @[AC::Route::GET("/")]
   def index
     render text: "ok #{@trusted}"
+  end
+end
+
+class Packet < BinData
+  endian big
+
+  field id : UInt16
+  field flags : UInt8
+end
+
+# IO serialisable by hand, in whichever byte order the route asks for
+struct Reading
+  getter value : Int32
+
+  def initialize(@value)
+  end
+
+  def self.from_io(io : IO, format : IO::ByteFormat) : self
+    new(io.read_bytes(Int32, format))
+  end
+
+  def to_io(io : IO, format : IO::ByteFormat) : Nil
+    io.write_bytes(@value, format)
+  end
+end
+
+# IO serialisable bodies and responses, written and read with from_io / to_io
+class BinaryData < AC::Base
+  base "/binary"
+
+  # a BinData body, which isn't read as a form either
+  @[AC::Route::POST("/packets", body: :packet, max_body_bytes: 16, content_type: "text/plain")]
+  def create(packet : Packet, note : String? = nil) : String
+    "#{packet.id}:#{packet.flags}:#{note}"
+  end
+
+  # a BinData response
+  @[AC::Route::GET("/packets/:id")]
+  def show(id : UInt16) : Packet
+    packet = Packet.new
+    packet.id = id
+    packet.flags = 7_u8
+    packet
+  end
+
+  # both ways in the route's byte order
+  @[AC::Route::POST("/readings", body: :reading, byte_format: IO::ByteFormat::LittleEndian, consumes: "application/x-reading", content_type: "application/x-reading")]
+  def double(reading : Reading) : Reading
+    Reading.new(reading.value * 2)
+  end
+
+  @[AC::Route::GET("/image", content_type: "image/png")]
+  def image : Bytes
+    Bytes[1, 2, 3]
+  end
+
+  @[AC::Route::GET("/stream")]
+  def stream : IO
+    IO::Memory.new("streamed")
+  end
+
+  # numbers have from_io too, but stay JSON
+  @[AC::Route::POST("/number", body: :value, content_type: "text/plain")]
+  def number(value : Int32) : String
+    (value + 1).to_s
   end
 end
 

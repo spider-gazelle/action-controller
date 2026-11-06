@@ -47,6 +47,8 @@ module ActionController::OpenAPI
     controller: String,
     request_body: String,
     consumes: Array(String)?,
+    raw_body: Bool,
+    binary_response: String?,
     route_responses: Hash(Tuple(Bool, String), Int32),
   )
 
@@ -228,7 +230,7 @@ module ActionController::OpenAPI
         {% default_specified = details[:default_response][2] %}
 
         {% request_body = details[:request_body].id %}
-        {% if request_body.stringify != "Nil" && !::ActionController::Route::Builder::RAW_BODY_TYPES.includes?(request_body.stringify) %}
+        {% if request_body.stringify != "Nil" && !details[:raw_body] %}
           add_schema(response_types, definitions, {{ request_body.stringify }}, introspect_schema({{ request_body }}))
         {% end %}
 
@@ -264,10 +266,15 @@ module ActionController::OpenAPI
             {% resolved_klass = resolved_klass.type_vars[0] %}
           {% end %}
 
-          {% if resolved_klass != Nil %}
-            add_schema(response_types, definitions, {{ resolved_klass.stringify }}, introspect_schema({{ resolved_klass }}))
+          {% if details[:binary_response] && resolved_klass != Nil %}
+            # written as it is (IO, Bytes or IO serialisable), so there's no schema
+            route_response[{{ route_key }}][{false, BINARY_RESPONSE}] = ({{ response_code }}).to_i
+          {% else %}
+            {% if resolved_klass != Nil %}
+              add_schema(response_types, definitions, {{ resolved_klass.stringify }}, introspect_schema({{ resolved_klass }}))
+            {% end %}
+            route_response[{{ route_key }}][{ {{ is_array }}, {{ resolved_klass.stringify }} }] = ({{ response_code }}).to_i
           {% end %}
-          route_response[{{ route_key }}][{ {{ is_array }}, {{ resolved_klass.stringify }} }] = ({{ response_code }}).to_i
         {% end %}
         {% end %}
       {% end %}
@@ -393,6 +400,8 @@ module ActionController::OpenAPI
           controller: {{ details[:controller] }},
           request_body: {{ details[:request_body].id.stringify }},
           consumes: {{ details[:consumes] }}.as(Array(String)?),
+          raw_body: {{ details[:raw_body] == true }},
+          binary_response: {{ details[:binary_response] }}.as(String?),
           route_responses: route_response[{{ route_key }}]
         }
         {% end %}
@@ -633,7 +642,7 @@ module ActionController::OpenAPI
 
       # see if there is any requirement for a request body
       if raw_req_body != "Nil"
-        req_body = if ::ActionController::Route::Builder::RAW_BODY_TYPES.includes?(raw_req_body)
+        req_body = if route[:raw_body]
                      binary_body(route[:consumes] || ["application/octet-stream"])
                    else
                      build_response(route[:consumes] || accepts, false, raw_req_body, nil)
@@ -644,7 +653,12 @@ module ActionController::OpenAPI
 
       # assemble the list of responses
       route[:route_responses].each do |(is_array, klass_name), response_code|
-        operation.responses[response_code.to_s] = build_response(responders, is_array, klass_name, response_code)
+        binary = route[:binary_response]
+        operation.responses[response_code.to_s] = if binary && klass_name == BINARY_RESPONSE
+                                                    binary_body([binary]).tap { |response| response.description = HTTP::Status.from_value(response_code).description }
+                                                  else
+                                                    build_response(responders, is_array, klass_name, response_code)
+                                                  end
       end
 
       route[:error_handlers].each do |error_handler|
@@ -772,6 +786,10 @@ module ActionController::OpenAPI
       end
     end
   end
+
+  # :nodoc:
+  # the response "type" of a route whose response is written as it is
+  BINARY_RESPONSE = "binary"
 
   # :nodoc:
   def binary_body(types : Array(String)) : Response
