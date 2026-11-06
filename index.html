@@ -693,6 +693,31 @@ it to answer 413).</p>
 JSON, XML, YAML or a form), which the tool takes as a string and sends as the
 first such type. A binary only route is left out, as a model can't write its
 bytes in a JSON string.</p>
+<h3><a id="binary-bodies-and-responses" class="anchor" href="#binary-bodies-and-responses">
+  <svg class="octicon-link" aria-hidden="true">
+    <use href="#octicon-link"/>
+  </svg>
+</a>Binary bodies and responses</h3>
+<p>A type that is IO serialisable, with <code>T.from_io(io, format)</code> and
+<code>obj.to_io(io, format)</code> such as a <a href="https://github.com/spider-gazelle/bindata">BinData</a>
+class, is read from a body and written as a response as it is, with no parser or
+responder. So are <code>Bytes</code> and <code>IO</code> responses (an <code>IO</code> is closed once it's copied).
+The response is <code>application/octet-stream</code> unless the route sets <code>content_type:</code>, and
+the OpenAPI document describes both as <code>string</code>/<code>binary</code>. <code>byte_format:</code> sets the byte
+order (<code>IO::ByteFormat::SystemEndian</code> by default); a BinData class uses its own
+<code>endian</code>. Numbers are IO serialisable too, but stay JSON.</p>
+<pre><code class="language-crystal"><span class="k">class</span> <span class="t">Packet</span> <span class="o">&lt;</span> <span class="t">BinData</span>
+  endian big
+
+  field id : <span class="t">UInt16</span>
+  field flags : <span class="t">UInt8</span>
+<span class="k">end</span>
+
+@[<span class="t">AC</span><span class="t">::</span><span class="t">Route</span><span class="t">::</span><span class="t">POST</span>(<span class="s">&quot;/packets&quot;</span>, body: <span class="n">:packet</span>, consumes: <span class="s">&quot;application/x-packet&quot;</span>, content_type: <span class="s">&quot;application/x-packet&quot;</span>)]
+<span class="k">def</span> <span class="m">echo</span>(packet : <span class="t">Packet</span>) : <span class="t">Packet</span>
+  packet
+<span class="k">end</span></code></pre>
+<p>A route whose response is binary, other than an image or audio, isn't an MCP tool.</p>
 <h2><a id="mcp-server" class="anchor" href="#mcp-server">
   <svg class="octicon-link" aria-hidden="true">
     <use href="#octicon-link"/>
