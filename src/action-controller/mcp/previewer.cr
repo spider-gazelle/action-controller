@@ -20,7 +20,7 @@ module ActionController::MCPServer
   # * `viewport_size=desktop|tablet|mobile` and `theme=light|dark`
   # * `header.<Name>=<value>` request headers, i.e. `header.Authorization=Bearer%20...`
   #
-  # The page's assets are only compiled in when this method is called, see the README
+  # The page's assets are only compiled in when this method is called, see https://spider-gazelle.net/mcp/ui/
   # for excluding it from release builds.
   def mount_card_previewer(router : Router, path : String = "/mcp/card/preview", mcp : String? = nil, composition : Composition = composition_for(router)) : CardPreviewer
     mcp ||= mounted_path(router) || raise ArgumentError.new("mount the MCP server before the card previewer, `ActionController::MCPServer.mount(server, \"/mcp\")`, or provide its path with `mcp:`")
