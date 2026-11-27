@@ -142,6 +142,7 @@ describe ActionController::MCPServer do
     widget_docs = ActionController::OpenAPI::KlassDoc.new("McpWidgets", "Manages widgets, used by the MCP specs\n\nwidgets are not persisted")
     widget_docs.methods["show"] = "returns the widget requested"
     widget_docs.methods["summarise"] = "summarise a widget for the user"
+    widget_docs.methods["destroy"] = "removes a widget\nit can't be restored"
     account_docs = ActionController::OpenAPI::KlassDoc.new("McpAccount", "Manages an account, call show to look up its widgets")
     ActionController::MCPServer.description = ActionController::MCPServer.generate_description({"McpWidgets" => widget_docs, "McpAccount" => account_docs})
     ActionController::MCPServer.ui_base = File.join(__DIR__, "cards")
@@ -170,6 +171,7 @@ describe ActionController::MCPServer do
       show = widgets.tools.first
       show.description.should eq "returns the widget requested"
       widgets.tools[1].description.should eq "POST /mcp_widgets"
+      widgets.tools[2].description.should eq "removes a widget\nit can't be restored"
       show.verb.should eq "get"
       show.path.should eq "/mcp_widgets/:id"
       show.params.map { |param| {param.name, param.in} }.should eq [{"id", "path"}, {"detailed", "query"}, {"X-Tenant", "header"}]
