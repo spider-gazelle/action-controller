@@ -472,6 +472,22 @@ module ActionController::OpenAPI
   end
 
   # :nodoc:
+  def route_docs(descriptions : Hash(String, KlassDoc), controller : String, method : String) : String?
+    return unless controller_docs = descriptions[controller]?
+    controller_docs.methods[method]? || controller_docs.ancestors.each do |ancestor_klass|
+      if docs = descriptions[ancestor_klass]?.try(&.methods[method]?)
+        return docs
+      end
+    end
+  end
+
+  # :nodoc:
+  def summary_and_description(docs : String) : Tuple(String, String?)
+    summary, _, description = docs.strip.partition('\n')
+    {summary.strip, description.strip.presence}
+  end
+
+  # :nodoc:
   # converts a route, `/users/:id`, into OpenAPI format, `/users/{id}`
   def openapi_path(route : String) : String
     route.split('/').join('/') do |i|
@@ -526,30 +542,12 @@ module ActionController::OpenAPI
       operation = Operation.new
       path_summary = path_description = nil
 
-      # see if we have some documentation for the controller
-      if controller_docs = descriptions[route[:controller]]?
-        if docs = controller_docs.docs
-          doc_lines = docs.split("\n", 2)
-          path_summary = doc_lines[0].strip
-          path_description = docs.strip if doc_lines.size > 1
-        end
+      if docs = descriptions[route[:controller]]?.try(&.docs)
+        path_summary, path_description = summary_and_description(docs)
+      end
 
-        # grab the documentation for the route
-        docs = controller_docs.methods[route[:method]]?
-
-        # might have to check for docs in the ancestor classes
-        unless docs
-          controller_docs.ancestors.each do |ancestor_klass|
-            docs = descriptions[ancestor_klass]?.try(&.methods[route[:method]]?)
-            break if docs
-          end
-        end
-
-        if docs
-          doc_lines = docs.split("\n", 2)
-          operation.summary = doc_lines[0].strip
-          operation.description = docs.strip if doc_lines.size > 1
-        end
+      if docs = route_docs(descriptions, route[:controller], route[:method])
+        operation.summary, operation.description = summary_and_description(docs)
       end
 
       op_id = "#{route[:controller]}_#{route[:method]}"

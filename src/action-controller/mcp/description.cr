@@ -692,7 +692,7 @@ module ActionController::MCPServer
 
       toolbox = toolbox_for(toolboxes, route[:controller], namespace, descriptions, route[:toolbox_icons], identity, label)
       name = unique_name(tool_names, yield(toolbox, route[:method]))
-      description = operation.description || operation.summary || "#{route[:verb].upcase} #{route[:route]}"
+      description = OpenAPI.route_docs(descriptions, route[:controller], route[:method]).try(&.strip.presence) || "#{route[:verb].upcase} #{route[:route]}"
       route = route.merge(root: true) if root
       toolbox.tools << build_tool(name, description, route, operation, schemas, bound)
       methods << {identity, route[:method]}

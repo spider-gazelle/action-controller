@@ -165,6 +165,35 @@ describe ActionController::OpenAPI do
     end
   end
 
+  describe "doc comments" do
+    paths_docs = ActionController::OpenAPI::KlassDoc.new("OpenAPIPaths", "routes the OpenAPI specs use\n\nchecks the document is valid")
+    paths_docs.methods["listing"] = "lists the items\nincluding the hidden ones"
+    paths_docs.methods["eink"] = "renders an e-ink display"
+    paths = JSON.parse(ActionController::OpenAPI.generate_open_api_docs({"OpenAPIPaths" => paths_docs}, "title", "version").to_json)["paths"]
+
+    it "summarises with the first line and describes with the rest" do
+      listing = paths["/openapi_paths/{tenant}/listing"]
+      listing["summary"].should eq "routes the OpenAPI specs use"
+      listing["description"].should eq "checks the document is valid"
+      listing["get"]["summary"].should eq "lists the items"
+      listing["get"]["description"].should eq "including the hidden ones"
+    end
+
+    it "has no description for a single line" do
+      eink = paths["/openapi_paths/{tenant}/eink/{item_id}/{expires_after}"]["get"]
+      eink["summary"].should eq "renders an e-ink display"
+      eink.as_h.has_key?("description").should be_false
+    end
+
+    it "inherits the doc comment of an ancestor's method" do
+      base = ActionController::OpenAPI::KlassDoc.new("Base", nil)
+      base.methods["show"] = "from the base"
+      child = ActionController::OpenAPI::KlassDoc.new("Child", nil)
+      child.ancestors << "Base"
+      ActionController::OpenAPI.route_docs({"Base" => base, "Child" => child}, "Child", "show").should eq "from the base"
+    end
+  end
+
   describe "OpenAPI 3.1" do
     item_docs = ActionController::OpenAPI::KlassDoc.new("OpenAPIRefs::Item", "an item in a list")
     docs = JSON.parse(ActionController::OpenAPI.generate_open_api_docs({"OpenAPIRefs::Item" => item_docs}, "title", "version").to_json)
